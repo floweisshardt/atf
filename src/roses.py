@@ -17,6 +17,21 @@ from shape_msgs.msg import SolidPrimitive
 from simple_script_server import *
 sss = simple_script_server()
 
+def move_gripper(component_name, pos):
+    error_code = -1
+    counter = 0
+    while not rospy.is_shutdown() and error_code != 0:
+        print "trying to move", component_name, "to", pos, "retries: ", counter
+        handle = sss.move(component_name, pos)
+        handle.wait()
+        error_code = handle.get_error_code()
+        if counter > 100:
+            rospy.logerr(component_name + "does not work any more. retries: " + str(counter) + ". Please reset USB connection and press <ENTER>.")
+            sss.wait_for_input()
+            return False
+        counter += 1
+    return True
+
 class RotateRose(smach.State):
     def __init__(self):
         smach.State.__init__(self, 
@@ -40,21 +55,21 @@ class RotateRose(smach.State):
 
     def execute(self, userdata):
         if self.angle_offset_yaw >= 0.5 * math.pi:
-            self.direction_yaw = -1;
+            self.direction_yaw = -1
         elif self.angle_offset_yaw <= -0.5 * math.pi:
-            self.direction_yaw = 1;
+            self.direction_yaw = 1
 
         if self.direction_yaw == 1:
-            self.angle_offset_yaw += 5.0 / 180.0 * math.pi;
+            self.angle_offset_yaw += 5.0 / 180.0 * math.pi
         elif self.direction_yaw == -1:
-            self.angle_offset_yaw -= 5.0 / 180.0 * math.pi;
+            self.angle_offset_yaw -= 5.0 / 180.0 * math.pi
 
         if userdata.active_arm == "left":
             self.angle_offset_roll = math.pi
-            self.rose_position_y = 0.3;
+            self.rose_position_y = 0.3
         elif userdata.active_arm == "right":
             self.angle_offset_roll = 0
-            self.rose_position_y = -0.3;
+            self.rose_position_y = -0.3
         return "succeeded"
 
 class GraspRose(smach.State):
@@ -130,7 +145,6 @@ class GraspRose(smach.State):
         
         if not (frac_approach == 1.0):
             rospy.logerr("Unable to plan approach trajectory")
-            #sss.say(["no approach trajectory: skipping rose"], False)
             return False
 
         ### Set next (virtual) start state
@@ -167,7 +181,6 @@ class GraspRose(smach.State):
         
         if not (frac_grasp == 1.0):
             rospy.logerr("Unable to plan grasp trajectory")
-            #sss.say(["no grasp trajectory: skipping rose"], False)
             return False
 
         ### Set next (virtual) start state
@@ -189,9 +202,9 @@ class GraspRose(smach.State):
         lift_pose_offset.header.frame_id = "current_rose"
         lift_pose_offset.header.stamp = rospy.Time(0)
         if userdata.active_arm == "left":
-            lift_pose_offset.pose.position.z = -0.2#-0.2#-0.3#-0.12
+            lift_pose_offset.pose.position.z = -0.2
         elif userdata.active_arm == "right":
-            lift_pose_offset.pose.position.z = 0.2#0.3#0.12
+            lift_pose_offset.pose.position.z = 0.2
         else:
             rospy.logerr("invalid active_arm: %s", userdata.active_arm)
             sys.exit()
@@ -212,16 +225,12 @@ class GraspRose(smach.State):
         
         if not (frac_lift == 1.0):
             rospy.logerr("Unable to plan lift trajectory")
-            #sss.say(["no lift trajectory: skipping rose"], False)
             return False
 
-        #if not (frac_approach == 1.0 and frac_grasp == 1.0 and frac_lift == 1.0 and not traj_pre_grasp == None):
         if not (frac_approach == 1.0 and frac_grasp == 1.0 and frac_lift == 1.0):
             rospy.logerr("Unable to plan whole grasping trajectory")
-            sss.say(["skipping rose"], False)
             return False
         else:
-            sss.say(["grasping rose"], False)
 
             # fix trajectories to stop at the end
             traj_approach.joint_trajectory.points[-1].velocities = [0]*7
@@ -238,45 +247,25 @@ class GraspRose(smach.State):
                 traj_lift.joint_trajectory.points[i].time_from_start *= speed_factor
 
             ### execute
-            #sss.wait_for_input()
             sss.move("arm_" + userdata.active_arm, "pre_grasp")
-            #sss.wait_for_input()
             rospy.loginfo("approach")
             if userdata.active_arm == "left":
                 self.mgc_left.execute(traj_approach)
-                #handle_gripper = sss.move("gripper_" + userdata.active_arm, "open")
-                #move_gripper("gripper_" + userdata.active_arm, "open")
-                #sss.wait_for_input()
+                move_gripper("gripper_" + userdata.active_arm, "open")
                 rospy.loginfo("grasp")
                 self.mgc_left.execute(traj_grasp)
-                #sss.wait_for_input()
-                #sss.move("gripper_" + userdata.active_arm, "close")
-                #move_gripper("gripper_" + userdata.active_arm, "close")
+                move_gripper("gripper_" + userdata.active_arm, "close")
                 rospy.loginfo("lift")
                 self.mgc_left.execute(traj_lift)
-                #sss.wait_for_input()
-                #self.mgc_left.execute(traj_pre_grasp)
-                #rospy.sleep(1)
-                #sss.move("base","middle", mode="linear", blocking=False)
-                #rospy.sleep(0.5) #wait for base to move away from table
                 handle_arm = sss.move("arm_" + userdata.active_arm, "retreat")
             elif userdata.active_arm == "right":
                 self.mgc_right.execute(traj_approach)
-                #sss.move("gripper_" + userdata.active_arm, "open")
-                #move_gripper("gripper_" + userdata.active_arm, "open")
-                #sss.wait_for_input()
+                move_gripper("gripper_" + userdata.active_arm, "open")
                 rospy.loginfo("grasp")
                 self.mgc_right.execute(traj_grasp)
-                #sss.wait_for_input()
-                #sss.move("gripper_" + userdata.active_arm, "close")
-                #move_gripper("gripper_" + userdata.active_arm, "close")
+                move_gripper("gripper_" + userdata.active_arm, "close")
                 rospy.loginfo("lift")
                 self.mgc_right.execute(traj_lift)
-                #sss.wait_for_input()
-                #self.mgc_right.execute(traj_pre_grasp)
-                #rospy.sleep(1)
-                #sss.move("base","middle", mode="linear", blocking=False)
-                #rospy.sleep(0.5) #wait for base to move away from table
                 handle_arm = sss.move("arm_" + userdata.active_arm, "retreat")
             else:
                 rospy.logerr("invalid arm_active")
@@ -285,17 +274,14 @@ class GraspRose(smach.State):
         return True
         
     def smooth_cartesian_path(self, traj):
-        #print traj
+
         time_offset = 0.2
         
         for i in range(len(traj.joint_trajectory.points)):
             traj.joint_trajectory.points[i].time_from_start += rospy.Duration(time_offset)
         
         traj.joint_trajectory.points[-1].time_from_start += rospy.Duration(time_offset)
-        
-        
-        #print "\n\n\n"
-        #print traj
+
         return traj
 
 
@@ -304,7 +290,7 @@ class SM(smach.StateMachine):
     def __init__(self):        
         smach.StateMachine.__init__(self,outcomes=['ended'])
         
-        self.userdata.active_arm = 'right'
+        self.userdata.active_arm = 'left'
         
         with self:
             smach.StateMachine.add('GRASP',GraspRose(),
