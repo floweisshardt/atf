@@ -24,27 +24,37 @@ class RotateRose(smach.State):
             input_keys=['active_arm'])
         self.angle_offset_yaw = 0
         self.angle_offset_roll = 0
-        self.rose_position_y = 0.1
+        self.rose_position_y = 0.3
+        self.direction_yaw = 1
         
         rospy.Timer(rospy.Duration(0.1), self.broadcast_tf)
         self.br = tf.TransformBroadcaster()
         
     def broadcast_tf(self, event):
         self.br.sendTransform(
-            (0.6, self.rose_position_y, 0.6),
+            (0.6, self.rose_position_y, 0.8),
             tf.transformations.quaternion_from_euler(self.angle_offset_roll, 0, self.angle_offset_yaw),
             event.current_real,
             "current_rose",
             "base_link")
 
     def execute(self, userdata):
-        self.angle_offset_yaw += 5.0 / 180.0*math.pi
+        if self.angle_offset_yaw >= 0.5 * math.pi:
+            self.direction_yaw = -1;
+        elif self.angle_offset_yaw <= -0.5 * math.pi:
+            self.direction_yaw = 1;
+
+        if self.direction_yaw == 1:
+            self.angle_offset_yaw += 5.0 / 180.0 * math.pi;
+        elif self.direction_yaw == -1:
+            self.angle_offset_yaw -= 5.0 / 180.0 * math.pi;
+
         if userdata.active_arm == "left":
             self.angle_offset_roll = math.pi
-            self.rose_position_y = 0.1;
+            self.rose_position_y = 0.3;
         elif userdata.active_arm == "right":
             self.angle_offset_roll = 0
-            self.rose_position_y = -0.1;
+            self.rose_position_y = -0.3;
         return "succeeded"
 
 class GraspRose(smach.State):
@@ -179,7 +189,7 @@ class GraspRose(smach.State):
         lift_pose_offset.header.frame_id = "current_rose"
         lift_pose_offset.header.stamp = rospy.Time(0)
         if userdata.active_arm == "left":
-            lift_pose_offset.pose.position.z = 0.2#-0.2#-0.3#-0.12
+            lift_pose_offset.pose.position.z = -0.2#-0.2#-0.3#-0.12
         elif userdata.active_arm == "right":
             lift_pose_offset.pose.position.z = 0.2#0.3#0.12
         else:
@@ -294,7 +304,7 @@ class SM(smach.StateMachine):
     def __init__(self):        
         smach.StateMachine.__init__(self,outcomes=['ended'])
         
-        self.userdata.active_arm = 'left'
+        self.userdata.active_arm = 'right'
         
         with self:
             smach.StateMachine.add('GRASP',GraspRose(),
