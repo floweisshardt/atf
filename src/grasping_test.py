@@ -116,7 +116,7 @@ class Grasping(smach.State):
         return "succeeded"
 
     ### Todo: Fix start pose for retreat
-    def plan_pose(self, arm, pose):
+    def plan_movement(self, arm, pose):
         (config, error_code) = sss.compose_trajectory("arm_" + arm, pose)
         if error_code != 0:
             rospy.logerr("unable to parse " + pose + " configuration")
@@ -145,14 +145,14 @@ class Grasping(smach.State):
             rospy.logerr("invalid arm_active")
 
         plan = self.smooth_cartesian_path(plan)
-        plan = self.fix_velocities(plan)
+        plan = self.scale_joint_trajectory_speed(plan, 0.3)
         return plan
 
     def plan_and_execute(self, userdata):
 
         while not self.pre_grasp:
             try:
-                self.traj_pre_grasp = self.plan_pose(userdata.active_arm, "pre_grasp")
+                self.traj_pre_grasp = self.plan_movement(userdata.active_arm, "pre_grasp")
             except (ValueError,IndexError):
                 self.pre_grasp = False
             else:
@@ -298,8 +298,6 @@ class Grasping(smach.State):
             traj_lift = self.fix_velocities(traj_lift)
 
             ### execute
-            #sss.move("arm_" + userdata.active_arm, "pre_grasp")
-
             if userdata.active_arm == "left":
                 rospy.loginfo("approach")
                 self.mgc_left.execute(traj_approach)
@@ -309,7 +307,6 @@ class Grasping(smach.State):
                 move_gripper("gripper_" + userdata.active_arm, "close")
                 rospy.loginfo("lift")
                 self.mgc_left.execute(traj_lift)
-                #sss.move("arm_" + userdata.active_arm, "retreat")
             elif userdata.active_arm == "right":
                 rospy.loginfo("approach")
                 self.mgc_right.execute(traj_approach)
@@ -319,19 +316,19 @@ class Grasping(smach.State):
                 move_gripper("gripper_" + userdata.active_arm, "close")
                 rospy.loginfo("lift")
                 self.mgc_right.execute(traj_lift)
-                #sss.move("arm_" + userdata.active_arm, "retreat")
             else:
                 rospy.logerr("invalid arm_active")
                 return False
 
+        ### Plan Retreat
         while not self.retreat:
             try:
-                self.traj_retreat = self.plan_pose(userdata.active_arm, "retreat")
+                self.traj_retreat = self.plan_movement(userdata.active_arm, "retreat")
             except (ValueError,IndexError):
                 self.retreat = False
             else:
                 self.retreat = True
-                rospy.loginfo("pre_grasp")
+                rospy.loginfo("retreat")
                 if userdata.active_arm == "left":
                     self.mgc_left.execute(self.traj_retreat)
                 elif userdata.active_arm == "right":
@@ -361,6 +358,41 @@ class Grasping(smach.State):
 
         return traj
 
+    def scale_joint_trajectory_speed(self, traj, scale):
+           # Create a new trajectory object
+           new_traj = RobotTrajectory()
+
+           # Initialize the new trajectory to be the same as the planned trajectory
+           new_traj.joint_trajectory = traj.joint_trajectory
+
+           # Get the number of joints involved
+           n_joints = len(traj.joint_trajectory.joint_names)
+
+           # Get the number of points on the trajectory
+           n_points = len(traj.joint_trajectory.points)
+
+           # Store the trajectory points
+           points = list(traj.joint_trajectory.points)
+
+           # Cycle through all points and scale the time from start, speed and acceleration
+           for i in range(n_points):
+               point = JointTrajectoryPoint()
+               point.time_from_start = traj.joint_trajectory.points[i].time_from_start / scale
+               point.velocities = list(traj.joint_trajectory.points[i].velocities)
+               point.accelerations = list(traj.joint_trajectory.points[i].accelerations)
+               point.positions = traj.joint_trajectory.points[i].positions
+
+               for j in range(n_joints):
+                   point.velocities[j] = point.velocities[j] * scale
+                   point.accelerations[j] = point.accelerations[j] * scale * scale
+
+               points[i] = point
+
+           # Assign the modified points to the new trajectory
+           new_traj.joint_trajectory.points = points
+
+           # Return the new trajecotry
+           return new_traj
 
 class SM(smach.StateMachine):
     def __init__(self):        
