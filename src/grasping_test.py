@@ -394,6 +394,28 @@ class Grasping(smach.State):
            # Return the new trajecotry
            return new_traj
 
+
+class SwitchArm(smach.State):
+    def __init__(self):
+        smach.State.__init__(self,
+            outcomes=['succeeded','finished'],
+            input_keys=['active_arm'],
+            output_keys=['active_arm'])
+
+        self.counter = 1
+
+    def execute(self, userdata):
+        if self.counter == 2:
+            return "finished"
+        else:
+            if userdata.active_arm == "left":
+                userdata.active_arm = "right"
+            elif userdata.active_arm == "right":
+                userdata.active_arm = "left"
+            self.counter += 1.0
+            return "succeeded"
+
+
 class SM(smach.StateMachine):
     def __init__(self):        
         smach.StateMachine.__init__(self,outcomes=['ended'])
@@ -402,10 +424,13 @@ class SM(smach.StateMachine):
         
         with self:
             smach.StateMachine.add('GRASP',Grasping(),
-                transitions={'succeeded':'ended',
+                transitions={'succeeded':'SWITCH_ARM',
                     'failed':'ROTATE_COORDINATESYSTEM'})
             smach.StateMachine.add('ROTATE_COORDINATESYSTEM',RotateCS(),
                 transitions={'succeeded':'GRASP'})
+            smach.StateMachine.add('SWITCH_ARM',SwitchArm(),
+                transitions={'succeeded':'ROTATE_COORDINATESYSTEM',
+                    'finished':'ended'})
 
 if __name__=='__main__':
     rospy.init_node('roses')    
