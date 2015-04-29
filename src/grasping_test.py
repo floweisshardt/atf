@@ -18,7 +18,7 @@ from trajectory_msgs.msg import JointTrajectoryPoint
 
 from simple_script_server import *
 sss = simple_script_server()
-active_arm = 'left'
+active_arm = 'right'
 
 def move_gripper(component_name, pos):
     error_code = -1
@@ -35,7 +35,7 @@ def move_gripper(component_name, pos):
         counter += 1
     return True
 
-class RotateRose(smach.State):
+class RotateCS(smach.State):
     def __init__(self):
         smach.State.__init__(self,
             outcomes=['succeeded'],
@@ -81,7 +81,7 @@ class RotateRose(smach.State):
             self.rose_position_y = -0.3
         return "succeeded"
 
-class GraspRose(smach.State):
+class Grasping(smach.State):
     def __init__(self):
         smach.State.__init__(self,
             outcomes=['succeeded','failed'],
@@ -95,7 +95,7 @@ class GraspRose(smach.State):
         self.mgc_right = MoveGroupCommander("arm_right")
 
         self.traj_pre_grasp = RobotTrajectory()
-        self.lift_pose = PoseStamped()
+        self.traj_retreat = RobotTrajectory()
 
         ### Create a handle for the Planning Scene Interface
         #self.psi = PlanningSceneInterface()
@@ -104,6 +104,7 @@ class GraspRose(smach.State):
         self.jump_threshold = 2
 
         self.pre_grasp = False
+        self.retreat = False
 
         rospy.sleep(1)
 
@@ -115,7 +116,7 @@ class GraspRose(smach.State):
         return "succeeded"
 
     ### Todo: Fix start pose for retreat
-    def move_to_pose(self, arm, pose):
+    def plan_pose(self, arm, pose):
         (config, error_code) = sss.compose_trajectory("arm_" + arm, pose)
         if error_code != 0:
             rospy.logerr("unable to parse " + pose + " configuration")
@@ -149,10 +150,18 @@ class GraspRose(smach.State):
 
     def plan_and_execute(self, userdata):
 
-        if not self.pre_grasp:
-            move_gripper("gripper_" + userdata.active_arm, "open")
-            self.traj_pre_grasp = self.move_to_pose(userdata.active_arm, "pre_grasp")
-            self.pre_grasp = True
+        while not self.pre_grasp:
+            try:
+                self.traj_pre_grasp = self.plan_pose(userdata.active_arm, "pre_grasp")
+            except (ValueError,IndexError):
+                self.pre_grasp = False
+            else:
+                self.pre_grasp = True
+                rospy.loginfo("pre_grasp")
+                if userdata.active_arm == "left":
+                    self.mgc_left.execute(self.traj_pre_grasp)
+                elif userdata.active_arm == "right":
+                    self.mgc_right.execute(self.traj_pre_grasp)
 
         ### Set next (virtual) start state
         start_state = RobotState()
@@ -261,12 +270,12 @@ class GraspRose(smach.State):
             rospy.logerr("invalid active_arm: %s", userdata.active_arm)
             sys.exit()
         lift_pose_offset.pose.orientation.w = 1
-        self.lift_pose = self.listener.transformPose("odom_combined", lift_pose_offset)
+        lift_pose = self.listener.transformPose("odom_combined", lift_pose_offset)
 
         if userdata.active_arm == "left":
-            (traj_lift,frac_lift) = self.mgc_left.compute_cartesian_path([self.lift_pose.pose], self.eef_step, self.jump_threshold, True)
+            (traj_lift,frac_lift) = self.mgc_left.compute_cartesian_path([lift_pose.pose], self.eef_step, self.jump_threshold, True)
         elif userdata.active_arm == "right":
-            (traj_lift,frac_lift) = self.mgc_right.compute_cartesian_path([self.lift_pose.pose], self.eef_step, self.jump_threshold, True)
+            (traj_lift,frac_lift) = self.mgc_right.compute_cartesian_path([lift_pose.pose], self.eef_step, self.jump_threshold, True)
         else:
             rospy.logerr("invalid arm_active")
             return False
@@ -278,8 +287,6 @@ class GraspRose(smach.State):
         if not (frac_lift == 1.0):
             rospy.logerr("Unable to plan lift trajectory")
             return False
-
-        traj_ret = self.move_to_pose(userdata.active_arm, "retreat")
 
         if not (frac_approach == 1.0 and frac_grasp == 1.0 and frac_lift == 1.0):
             rospy.logerr("Unable to plan whole grasping trajectory")
@@ -294,34 +301,41 @@ class GraspRose(smach.State):
             #sss.move("arm_" + userdata.active_arm, "pre_grasp")
 
             if userdata.active_arm == "left":
-                rospy.loginfo("pre_grasp")
-                self.mgc_left.execute(self.traj_pre_grasp)
                 rospy.loginfo("approach")
                 self.mgc_left.execute(traj_approach)
+                move_gripper("gripper_" + userdata.active_arm, "open")
                 rospy.loginfo("grasp")
                 self.mgc_left.execute(traj_grasp)
                 move_gripper("gripper_" + userdata.active_arm, "close")
                 rospy.loginfo("lift")
                 self.mgc_left.execute(traj_lift)
-                rospy.loginfo("retreat")
-                self.mgc_left.execute(traj_ret)
                 #sss.move("arm_" + userdata.active_arm, "retreat")
             elif userdata.active_arm == "right":
-                rospy.loginfo("pre_grasp")
-                self.mgc_right.execute(self.traj_pre_grasp)
                 rospy.loginfo("approach")
                 self.mgc_right.execute(traj_approach)
+                move_gripper("gripper_" + userdata.active_arm, "open")
                 rospy.loginfo("grasp")
                 self.mgc_right.execute(traj_grasp)
                 move_gripper("gripper_" + userdata.active_arm, "close")
                 rospy.loginfo("lift")
                 self.mgc_right.execute(traj_lift)
-                rospy.loginfo("retreat")
-                self.mgc_right.execute(traj_ret)
                 #sss.move("arm_" + userdata.active_arm, "retreat")
             else:
                 rospy.logerr("invalid arm_active")
                 return False
+
+        while not self.retreat:
+            try:
+                self.traj_retreat = self.plan_pose(userdata.active_arm, "retreat")
+            except (ValueError,IndexError):
+                self.retreat = False
+            else:
+                self.retreat = True
+                rospy.loginfo("pre_grasp")
+                if userdata.active_arm == "left":
+                    self.mgc_left.execute(self.traj_retreat)
+                elif userdata.active_arm == "right":
+                    self.mgc_right.execute(self.traj_retreat)
 
         return True
 
@@ -355,10 +369,10 @@ class SM(smach.StateMachine):
         self.userdata.active_arm = active_arm
         
         with self:
-            smach.StateMachine.add('GRASP',GraspRose(),
+            smach.StateMachine.add('GRASP',Grasping(),
                 transitions={'succeeded':'ended',
-                    'failed':'ROTATE_ROSE'})
-            smach.StateMachine.add('ROTATE_ROSE',RotateRose(),
+                    'failed':'ROTATE_COORDINATESYSTEM'})
+            smach.StateMachine.add('ROTATE_COORDINATESYSTEM',RotateCS(),
                 transitions={'succeeded':'GRASP'})
 
 if __name__=='__main__':
