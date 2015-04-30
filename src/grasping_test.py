@@ -8,13 +8,14 @@ import sys
 import copy
 
 import random
-
+from pyassimp import pyassimp
 from geometry_msgs.msg import PoseStamped
-from moveit_commander import MoveGroupCommander, PlanningSceneInterface
-from moveit_msgs.msg import RobotState, AttachedCollisionObject, CollisionObject
+from moveit_commander import MoveGroupCommander, PlanningSceneInterface, RobotCommander
+from moveit_msgs.msg import RobotState, AttachedCollisionObject, CollisionObject, PlanningScene
 from shape_msgs.msg import SolidPrimitive
 from moveit_msgs.msg import RobotTrajectory
 from trajectory_msgs.msg import JointTrajectoryPoint
+from shape_msgs.msg import MeshTriangle, Mesh, SolidPrimitive, Plane
 
 from simple_script_server import *
 sss = simple_script_server()
@@ -51,12 +52,12 @@ class RotateCS(smach.State):
             self.rose_position_y = -0.3
             self.direction_yaw = 1
         
-        rospy.Timer(rospy.Duration(0.1), self.broadcast_tf)
+        rospy.Timer(rospy.Duration(0.05), self.broadcast_tf)
         self.br = tf.TransformBroadcaster()
         
     def broadcast_tf(self, event):
         self.br.sendTransform(
-            (0.6, self.rose_position_y, 0.8),
+            (0.6, self.rose_position_y, 0.7),
             tf.transformations.quaternion_from_euler(self.angle_offset_roll, 0, self.angle_offset_yaw),
             event.current_real,
             "current_rose",
@@ -97,8 +98,10 @@ class Grasping(smach.State):
         self.traj_pre_grasp = RobotTrajectory()
         self.traj_retreat = RobotTrajectory()
 
-        ### Create a handle for the Planning Scene Interface
-        #self.psi = PlanningSceneInterface()
+        ### Create a scene publisher to push changes to the scene
+        self.pub_collision_object = rospy.Publisher("collision_object", CollisionObject, queue_size=1)
+        self.p = PlanningScene()
+        self.p.is_diff = True
 
         self.eef_step = 0.01
         self.jump_threshold = 2
@@ -107,6 +110,58 @@ class Grasping(smach.State):
         self.retreat = False
 
         rospy.sleep(1)
+
+    def add_table(self):
+
+        collision_object = CollisionObject()
+        collision_object.header.stamp = rospy.Time.now()
+        collision_object.header.frame_id = "/world";
+
+        collision_object.operation = CollisionObject.REMOVE
+        self.pub_collision_object.publish(collision_object)
+
+        rospy.sleep(1)
+
+        collision_object.header.stamp = rospy.Time.now()
+        collision_object.header.frame_id = "/world";
+        collision_object.id = "table"
+
+        filename = rospkg.RosPack().get_path("cob_grasping") + "/files/table.stl"
+        collision_object.meshes.append(self.load_mesh(filename))
+
+        mesh_pose = Pose()
+        mesh_pose.position.x = 0.37
+        mesh_pose.position.y = -0.3
+        #mesh_pose.position.z = 0.62
+        mesh_pose.position.z = 1.0
+        mesh_pose.orientation.w = 1.0
+        collision_object.mesh_poses.append(mesh_pose)
+        collision_object.operation = CollisionObject.ADD
+
+        self.pub_collision_object.publish(collision_object)
+        rospy.sleep(1)
+
+    def load_mesh(self, filename):
+        scene = pyassimp.load(filename)
+        if not scene.meshes:
+            rospy.logerr('Unable to load mesh')
+            return
+
+        mesh = Mesh()
+        for face in scene.meshes[0].faces:
+            triangle = MeshTriangle()
+            if len(face.indices) == 3:
+                triangle.vertex_indices = [face.indices[0], face.indices[1], face.indices[2]]
+            mesh.triangles.append(triangle)
+        for vertex in scene.meshes[0].vertices:
+            point = Point()
+            point.x = vertex[0]
+            point.y = vertex[1]
+            point.z = vertex[2]
+            mesh.vertices.append(point)
+        pyassimp.release(scene)
+        return mesh
+
 
     def execute(self, userdata):
         if userdata.active_arm == "left":
@@ -144,6 +199,8 @@ class Grasping(smach.State):
 
     def plan_and_execute(self, userdata):
 
+        self.add_table()
+
         while not self.pre_grasp:
             try:
                 self.traj_pre_grasp = self.plan_movement(userdata.active_arm, "pre_grasp")
@@ -160,6 +217,7 @@ class Grasping(smach.State):
         if error_code != 0:
             rospy.logerr("unable to parse pre_grasp configuration")
             return "failed"
+
         start_state.joint_state.name = pre_grasp_config.joint_names
         start_state.joint_state.position = pre_grasp_config.points[0].positions
         start_state.is_diff = True
@@ -179,9 +237,7 @@ class Grasping(smach.State):
 
         (traj_approach,frac_approach) = self.planer.compute_cartesian_path([approach_pose.pose], self.eef_step, self.jump_threshold, True)
 
-        traj_approach = self.smooth_cartesian_path(traj_approach)
-
-        print frac_approach
+        print "Plan approach: "+ str(frac_approach * 100.0) + "%"
 
         if not (frac_approach == 1.0):
             rospy.logerr("Unable to plan approach trajectory")
@@ -203,9 +259,7 @@ class Grasping(smach.State):
         grasp_pose = self.listener.transformPose("odom_combined", grasp_pose_offset)
         (traj_grasp,frac_grasp) = self.planer.compute_cartesian_path([grasp_pose.pose], self.eef_step, self.jump_threshold, True)
 
-        traj_grasp = self.smooth_cartesian_path(traj_grasp)
-
-        print frac_grasp
+        print "Plan grasp: "+ str(frac_grasp * 100.0) + "%"
 
         if not (frac_grasp == 1.0):
             rospy.logerr("Unable to plan grasp trajectory")
@@ -235,18 +289,16 @@ class Grasping(smach.State):
 
         (traj_lift,frac_lift) = self.planer.compute_cartesian_path([lift_pose.pose], self.eef_step, self.jump_threshold, True)
 
-        traj_lift = self.smooth_cartesian_path(traj_lift)
-
-        print frac_lift
+        print "Plan lift: "+ str(frac_lift * 100.0) + "%"
 
         if not (frac_lift == 1.0):
             rospy.logerr("Unable to plan lift trajectory")
             return False
 
-        if not (frac_approach == 1.0 and frac_grasp == 1.0 and frac_lift == 1.0):
-            rospy.logerr("Unable to plan whole grasping trajectory")
-            return False
         else:
+            traj_approach = self.smooth_cartesian_path(traj_approach)
+            traj_grasp = self.smooth_cartesian_path(traj_grasp)
+            traj_lift = self.smooth_cartesian_path(traj_lift)
 
             traj_approach = self.fix_velocities(traj_approach)
             traj_grasp = self.fix_velocities(traj_grasp)
@@ -262,16 +314,17 @@ class Grasping(smach.State):
             rospy.loginfo("lift")
             self.planer.execute(traj_lift)
 
-        ### Plan Retreat
-        while not self.retreat:
-            try:
-                self.traj_retreat = self.plan_movement(userdata.active_arm, "retreat")
-            except (ValueError,IndexError):
-                self.retreat = False
-            else:
-                self.retreat = True
-                rospy.loginfo("retreat")
-                self.planer.execute(self.traj_retreat)
+            ### Plan Retreat
+            while not self.retreat:
+                try:
+                    self.traj_retreat = self.plan_movement(userdata.active_arm, "retreat")
+                except (ValueError,IndexError):
+                    self.retreat = False
+                else:
+                    self.retreat = True
+                    rospy.loginfo("retreat")
+                    self.planer.execute(self.traj_retreat)
+
 
         return True
 
