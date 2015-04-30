@@ -109,13 +109,18 @@ class Grasping(smach.State):
         rospy.sleep(1)
 
     def execute(self, userdata):
+        if userdata.active_arm == "left":
+            self.planer = self.mgc_left
+        elif userdata.active_arm == "right":
+            self.planer = self.mgc_right
+        else:
+            rospy.logerr("invalid arm_active")
 
         if not self.plan_and_execute(userdata):
             return "failed"
 
         return "succeeded"
 
-    ### Todo: Fix start pose for retreat
     def plan_movement(self, arm, pose):
         (config, error_code) = sss.compose_trajectory("arm_" + arm, pose)
         if error_code != 0:
@@ -123,29 +128,18 @@ class Grasping(smach.State):
 
         start_state = RobotState()
         start_state.joint_state.name = config.joint_names
-        if arm == "left":
-            start_state.joint_state.position = self.mgc_left.get_current_joint_values()
-            self.mgc_left.set_start_state(start_state)
 
-            self.mgc_left.clear_pose_targets()
-            self.mgc_left.set_joint_value_target(config.points[0].positions)
+        start_state.joint_state.position = self.planer.get_current_joint_values()
+        self.planer.set_start_state(start_state)
 
-            plan = self.mgc_left.plan()
+        self.planer.clear_pose_targets()
+        self.planer.set_joint_value_target(config.points[0].positions)
 
-        elif arm == "right":
-            start_state.joint_state.position = self.mgc_right.get_current_joint_values()
-            self.mgc_right.set_start_state(start_state)
-
-            self.mgc_right.clear_pose_targets()
-            self.mgc_right.set_joint_value_target(config.points[0].positions)
-
-            plan = self.mgc_right.plan()
-
-        else:
-            rospy.logerr("invalid arm_active")
+        plan = self.planer.plan()
 
         plan = self.smooth_cartesian_path(plan)
-        plan = self.scale_joint_trajectory_speed(plan, 0.3)
+        #plan = self.scale_joint_trajectory_speed(plan, 0.3)
+        plan = self.scale_joint_trajectory_speed(plan, 1.0)
         return plan
 
     def plan_and_execute(self, userdata):
@@ -158,10 +152,7 @@ class Grasping(smach.State):
             else:
                 self.pre_grasp = True
                 rospy.loginfo("pre_grasp")
-                if userdata.active_arm == "left":
-                    self.mgc_left.execute(self.traj_pre_grasp)
-                elif userdata.active_arm == "right":
-                    self.mgc_right.execute(self.traj_pre_grasp)
+                self.planer.execute(self.traj_pre_grasp)
 
         ### Set next (virtual) start state
         start_state = RobotState()
@@ -172,13 +163,7 @@ class Grasping(smach.State):
         start_state.joint_state.name = pre_grasp_config.joint_names
         start_state.joint_state.position = pre_grasp_config.points[0].positions
         start_state.is_diff = True
-        if userdata.active_arm == "left":
-            self.mgc_left.set_start_state(start_state)
-        elif userdata.active_arm == "right":
-            self.mgc_right.set_start_state(start_state)
-        else:
-            rospy.logerr("invalid arm_active")
-            return False
+        self.planer.set_start_state(start_state)
 
         ### Plan Approach
         approach_pose_offset = PoseStamped()
@@ -192,13 +177,7 @@ class Grasping(smach.State):
             rospy.logerr("could not transform pose. Exception: %s", str(e))
             return False
 
-        if userdata.active_arm == "left":
-            (traj_approach,frac_approach) = self.mgc_left.compute_cartesian_path([approach_pose.pose], self.eef_step, self.jump_threshold, True)
-        elif userdata.active_arm == "right":
-            (traj_approach,frac_approach) = self.mgc_right.compute_cartesian_path([approach_pose.pose], self.eef_step, self.jump_threshold, True)
-        else:
-            rospy.logerr("invalid arm_active")
-            return False
+        (traj_approach,frac_approach) = self.planer.compute_cartesian_path([approach_pose.pose], self.eef_step, self.jump_threshold, True)
 
         traj_approach = self.smooth_cartesian_path(traj_approach)
 
@@ -214,13 +193,7 @@ class Grasping(smach.State):
         start_state.joint_state.name = traj_approach.joint_trajectory.joint_names
         start_state.joint_state.position = traj_approach_endpoint.positions
         start_state.is_diff = True
-        if userdata.active_arm == "left":
-            self.mgc_left.set_start_state(start_state)
-        elif userdata.active_arm == "right":
-            self.mgc_right.set_start_state(start_state)
-        else:
-            rospy.logerr("invalid arm_active")
-            return False
+        self.planer.set_start_state(start_state)
 
         ### Plan Grasp
         grasp_pose_offset = PoseStamped()
@@ -228,13 +201,7 @@ class Grasping(smach.State):
         grasp_pose_offset.header.stamp = rospy.Time(0)
         grasp_pose_offset.pose.orientation.w = 1
         grasp_pose = self.listener.transformPose("odom_combined", grasp_pose_offset)
-        if userdata.active_arm == "left":
-            (traj_grasp,frac_grasp) = self.mgc_left.compute_cartesian_path([grasp_pose.pose], self.eef_step, self.jump_threshold, True)
-        elif userdata.active_arm == "right":
-            (traj_grasp,frac_grasp) = self.mgc_right.compute_cartesian_path([grasp_pose.pose], self.eef_step, self.jump_threshold, True)
-        else:
-            rospy.logerr("invalid arm_active")
-            return False
+        (traj_grasp,frac_grasp) = self.planer.compute_cartesian_path([grasp_pose.pose], self.eef_step, self.jump_threshold, True)
 
         traj_grasp = self.smooth_cartesian_path(traj_grasp)
 
@@ -250,13 +217,7 @@ class Grasping(smach.State):
         start_state.joint_state.name = traj_grasp.joint_trajectory.joint_names
         start_state.joint_state.position = traj_grasp_endpoint.positions
         start_state.is_diff = True
-        if userdata.active_arm == "left":
-            self.mgc_left.set_start_state(start_state)
-        elif userdata.active_arm == "right":
-            self.mgc_right.set_start_state(start_state)
-        else:
-            rospy.logerr("invalid arm_active")
-            return False
+        self.planer.set_start_state(start_state)
 
         ### Plan Lift
         lift_pose_offset = PoseStamped()
@@ -272,13 +233,7 @@ class Grasping(smach.State):
         lift_pose_offset.pose.orientation.w = 1
         lift_pose = self.listener.transformPose("odom_combined", lift_pose_offset)
 
-        if userdata.active_arm == "left":
-            (traj_lift,frac_lift) = self.mgc_left.compute_cartesian_path([lift_pose.pose], self.eef_step, self.jump_threshold, True)
-        elif userdata.active_arm == "right":
-            (traj_lift,frac_lift) = self.mgc_right.compute_cartesian_path([lift_pose.pose], self.eef_step, self.jump_threshold, True)
-        else:
-            rospy.logerr("invalid arm_active")
-            return False
+        (traj_lift,frac_lift) = self.planer.compute_cartesian_path([lift_pose.pose], self.eef_step, self.jump_threshold, True)
 
         traj_lift = self.smooth_cartesian_path(traj_lift)
 
@@ -298,27 +253,14 @@ class Grasping(smach.State):
             traj_lift = self.fix_velocities(traj_lift)
 
             ### execute
-            if userdata.active_arm == "left":
-                rospy.loginfo("approach")
-                self.mgc_left.execute(traj_approach)
-                move_gripper("gripper_" + userdata.active_arm, "open")
-                rospy.loginfo("grasp")
-                self.mgc_left.execute(traj_grasp)
-                move_gripper("gripper_" + userdata.active_arm, "close")
-                rospy.loginfo("lift")
-                self.mgc_left.execute(traj_lift)
-            elif userdata.active_arm == "right":
-                rospy.loginfo("approach")
-                self.mgc_right.execute(traj_approach)
-                move_gripper("gripper_" + userdata.active_arm, "open")
-                rospy.loginfo("grasp")
-                self.mgc_right.execute(traj_grasp)
-                move_gripper("gripper_" + userdata.active_arm, "close")
-                rospy.loginfo("lift")
-                self.mgc_right.execute(traj_lift)
-            else:
-                rospy.logerr("invalid arm_active")
-                return False
+            rospy.loginfo("approach")
+            self.planer.execute(traj_approach)
+            #move_gripper("gripper_" + userdata.active_arm, "open")
+            rospy.loginfo("grasp")
+            self.planer.execute(traj_grasp)
+            #move_gripper("gripper_" + userdata.active_arm, "close")
+            rospy.loginfo("lift")
+            self.planer.execute(traj_lift)
 
         ### Plan Retreat
         while not self.retreat:
@@ -329,10 +271,7 @@ class Grasping(smach.State):
             else:
                 self.retreat = True
                 rospy.loginfo("retreat")
-                if userdata.active_arm == "left":
-                    self.mgc_left.execute(self.traj_retreat)
-                elif userdata.active_arm == "right":
-                    self.mgc_right.execute(self.traj_retreat)
+                self.planer.execute(self.traj_retreat)
 
         return True
 

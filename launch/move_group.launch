@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <launch>
 
-      <!-- Parameter Upload -->
+    <!-- Parameter Upload -->
     <include file="$(find cob_grasping)/launch/upload_param.launch"/>
     
     <!-- Move Group -->
