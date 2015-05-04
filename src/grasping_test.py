@@ -99,9 +99,10 @@ class Grasping(smach.State):
         self.traj_retreat = RobotTrajectory()
 
         ### Create a scene publisher to push changes to the scene
-        self.pub_collision_object = rospy.Publisher("collision_object", CollisionObject, queue_size=1)
-        self.p = PlanningScene()
-        self.p.is_diff = True
+        self.pub_planning_scene = rospy.Publisher("/planning_scene", PlanningScene, queue_size=1)
+
+        self.planning_scene = PlanningScene()
+        self.planning_scene.is_diff = True
 
         self.eef_step = 0.01
         self.jump_threshold = 2
@@ -109,21 +110,27 @@ class Grasping(smach.State):
         self.pre_grasp = False
         self.retreat = False
 
+        self.add_table()
+
         rospy.sleep(1)
 
     def add_table(self):
+        remove_object = CollisionObject()
+        remove_object.id = "table"
+        remove_object.header.stamp = rospy.Time.now()
+        remove_object.header.frame_id = "/world"
+        remove_object.operation = CollisionObject.REMOVE
 
-        collision_object = CollisionObject()
-        collision_object.header.stamp = rospy.Time.now()
-        collision_object.header.frame_id = "/world";
+        self.planning_scene.world.collision_objects[:] = []
+        self.planning_scene.world.collision_objects.append(remove_object)
 
-        collision_object.operation = CollisionObject.REMOVE
-        self.pub_collision_object.publish(collision_object)
-
+        self.pub_planning_scene.publish(self.planning_scene)
         rospy.sleep(1)
 
+        collision_object = CollisionObject()
+
         collision_object.header.stamp = rospy.Time.now()
-        collision_object.header.frame_id = "/world";
+        collision_object.header.frame_id = "/world"
         collision_object.id = "table"
 
         filename = rospkg.RosPack().get_path("cob_grasping") + "/files/table.stl"
@@ -132,13 +139,12 @@ class Grasping(smach.State):
         mesh_pose = Pose()
         mesh_pose.position.x = 0.37
         mesh_pose.position.y = -0.3
-        #mesh_pose.position.z = 0.62
-        mesh_pose.position.z = 1.0
+        mesh_pose.position.z = 0.62
         mesh_pose.orientation.w = 1.0
         collision_object.mesh_poses.append(mesh_pose)
-        collision_object.operation = CollisionObject.ADD
 
-        self.pub_collision_object.publish(collision_object)
+        self.planning_scene.world.collision_objects.append(collision_object)
+        self.pub_planning_scene.publish(self.planning_scene)
         rospy.sleep(1)
 
     def load_mesh(self, filename):
@@ -198,8 +204,6 @@ class Grasping(smach.State):
         return plan
 
     def plan_and_execute(self, userdata):
-
-        self.add_table()
 
         while not self.pre_grasp:
             try:
