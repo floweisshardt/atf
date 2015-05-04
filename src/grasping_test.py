@@ -60,7 +60,7 @@ class RotateCS(smach.State):
             (0.6, self.rose_position_y, 0.7),
             tf.transformations.quaternion_from_euler(self.angle_offset_roll, 0, self.angle_offset_yaw),
             event.current_real,
-            "current_rose",
+            "current_object",
             "base_link")
 
     def execute(self, userdata):
@@ -91,14 +91,14 @@ class Grasping(smach.State):
         # initialize tf listener
         self.listener = tf.TransformListener()
 
-        ### Create a handle for the Move Group Commander
+        # Create a handle for the Move Group Commander
         self.mgc_left = MoveGroupCommander("arm_left")
         self.mgc_right = MoveGroupCommander("arm_right")
 
         self.traj_pre_grasp = RobotTrajectory()
         self.traj_retreat = RobotTrajectory()
 
-        ### Create a scene publisher to push changes to the scene
+        # Create a scene publisher to push changes to the scene
         self.pub_planning_scene = rospy.Publisher("/planning_scene", PlanningScene, queue_size=1)
 
         self.planning_scene = PlanningScene()
@@ -110,11 +110,18 @@ class Grasping(smach.State):
         self.pre_grasp = False
         self.retreat = False
 
-        self.add_table()
-
+        rospy.loginfo("Add table to world")
+        self.add_table_to_world()
         rospy.sleep(1)
 
-    def add_table(self):
+        rospy.loginfo("Add object to world")
+        self.add_object_to_world()
+        rospy.sleep(1)
+
+        move_gripper("gripper_left", "open")
+        move_gripper("gripper_right", "open")
+
+    def add_table_to_world(self):
         remove_object = CollisionObject()
         remove_object.id = "table"
         remove_object.header.stamp = rospy.Time.now()
@@ -123,7 +130,6 @@ class Grasping(smach.State):
 
         self.planning_scene.world.collision_objects[:] = []
         self.planning_scene.world.collision_objects.append(remove_object)
-
         self.pub_planning_scene.publish(self.planning_scene)
         rospy.sleep(1)
 
@@ -168,6 +174,64 @@ class Grasping(smach.State):
         pyassimp.release(scene)
         return mesh
 
+    def add_object_to_world(self):
+        remove_object = CollisionObject()
+        remove_object.id = "object"
+        remove_object.header.stamp = rospy.Time.now()
+        remove_object.header.frame_id = "/world"
+        remove_object.operation = CollisionObject.REMOVE
+
+        self.planning_scene.world.collision_objects[:] = []
+        self.planning_scene.world.collision_objects.append(remove_object)
+        self.pub_planning_scene.publish(self.planning_scene)
+        rospy.sleep(1)
+
+        collision_object = CollisionObject()
+
+        collision_object.header.stamp = rospy.Time.now()
+        collision_object.header.frame_id = "/world"
+        collision_object.id = "object"
+        collision_object.operation = CollisionObject.ADD
+
+        object_shape = SolidPrimitive()
+        object_shape.type = 3  # CYLINDER
+        object_shape.dimensions.append(0.2)
+        object_shape.dimensions.append(0.01)
+
+        object_pose = Pose()
+        object_pose.position.x = 0.62
+        object_pose.position.y = -0.3
+        object_pose.position.z = 0.7
+        object_pose.orientation.w = 1.0
+
+        collision_object.primitives.append(object_shape)
+        collision_object.primitive_poses.append(object_pose)
+
+        self.planning_scene.world.collision_objects.append(collision_object)
+        self.pub_planning_scene.publish(self.planning_scene)
+        rospy.sleep(1)
+
+        '''
+        rose_collision = CollisionObject()
+        rose_collision.header.frame_id = "gripper_"+userdata.active_arm+"_grasp_link"
+        rose_collision.id = "current_object"
+        rose_collision.primitives.append(rose_primitive)
+        rose_collision.primitive_poses.append(rose_pose)
+        rose_collision.operation = 0 #ADD
+        rose_attached = AttachedCollisionObject()
+        rose_attached.link_name = "gripper_"+userdata.active_arm+"_grasp_link"
+        rose_attached.object = rose_collision
+        rose_attached.touch_links = ["gripper_"+userdata.active_arm+"_base_link", "gripper_"+userdata.active_arm+"_camera_link", "gripper_"+userdata.active_arm+"_finger_1_link", "gripper_"+userdata.active_arm+"_finger_2_link", "gripper_"+userdata.active_arm+"_grasp_link", "gripper_"+userdata.active_arm+"_palm_link"]
+        start_state.attached_collision_objects.append(rose_attached)
+
+        mesh_pose = Pose()
+        mesh_pose.position.x = 0.37
+        mesh_pose.position.y = -0.3
+        mesh_pose.position.z = 0.62
+        mesh_pose.orientation.w = 1.0
+        collision_object.mesh_poses.append(mesh_pose)
+        '''
+
 
     def execute(self, userdata):
         if userdata.active_arm == "left":
@@ -199,7 +263,7 @@ class Grasping(smach.State):
         plan = self.planer.plan()
 
         plan = self.smooth_cartesian_path(plan)
-        #plan = self.scale_joint_trajectory_speed(plan, 0.3)
+        # plan = self.scale_joint_trajectory_speed(plan, 0.3)
         plan = self.scale_joint_trajectory_speed(plan, 1.0)
         return plan
 
@@ -215,7 +279,7 @@ class Grasping(smach.State):
                 rospy.loginfo("pre_grasp")
                 self.planer.execute(self.traj_pre_grasp)
 
-        ### Set next (virtual) start state
+        # Set next (virtual) start state
         start_state = RobotState()
         (pre_grasp_config, error_code) = sss.compose_trajectory("arm_" + userdata.active_arm, "pre_grasp")
         if error_code != 0:
@@ -227,9 +291,9 @@ class Grasping(smach.State):
         start_state.is_diff = True
         self.planer.set_start_state(start_state)
 
-        ### Plan Approach
+        # Plan Approach
         approach_pose_offset = PoseStamped()
-        approach_pose_offset.header.frame_id = "current_rose"
+        approach_pose_offset.header.frame_id = "current_object"
         approach_pose_offset.header.stamp = rospy.Time(0)
         approach_pose_offset.pose.position.x = -0.12
         approach_pose_offset.pose.orientation.w = 1
@@ -239,7 +303,7 @@ class Grasping(smach.State):
             rospy.logerr("could not transform pose. Exception: %s", str(e))
             return False
 
-        (traj_approach,frac_approach) = self.planer.compute_cartesian_path([approach_pose.pose], self.eef_step, self.jump_threshold, True)
+        (traj_approach, frac_approach) = self.planer.compute_cartesian_path([approach_pose.pose], self.eef_step, self.jump_threshold, True)
 
         print "Plan approach: "+ str(frac_approach * 100.0) + "%"
 
@@ -247,7 +311,7 @@ class Grasping(smach.State):
             rospy.logerr("Unable to plan approach trajectory")
             return False
 
-        ### Set next (virtual) start state
+        # Set next (virtual) start state
         traj_approach_endpoint = traj_approach.joint_trajectory.points[-1]
         start_state = RobotState()
         start_state.joint_state.name = traj_approach.joint_trajectory.joint_names
@@ -255,13 +319,13 @@ class Grasping(smach.State):
         start_state.is_diff = True
         self.planer.set_start_state(start_state)
 
-        ### Plan Grasp
+        # Plan Grasp
         grasp_pose_offset = PoseStamped()
-        grasp_pose_offset.header.frame_id = "current_rose"
+        grasp_pose_offset.header.frame_id = "current_object"
         grasp_pose_offset.header.stamp = rospy.Time(0)
         grasp_pose_offset.pose.orientation.w = 1
         grasp_pose = self.listener.transformPose("odom_combined", grasp_pose_offset)
-        (traj_grasp,frac_grasp) = self.planer.compute_cartesian_path([grasp_pose.pose], self.eef_step, self.jump_threshold, True)
+        (traj_grasp, frac_grasp) = self.planer.compute_cartesian_path([grasp_pose.pose], self.eef_step, self.jump_threshold, True)
 
         print "Plan grasp: "+ str(frac_grasp * 100.0) + "%"
 
@@ -269,7 +333,7 @@ class Grasping(smach.State):
             rospy.logerr("Unable to plan grasp trajectory")
             return False
 
-        ### Set next (virtual) start state
+        # Set next (virtual) start state
         traj_grasp_endpoint = traj_grasp.joint_trajectory.points[-1]
         start_state = RobotState()
         start_state.joint_state.name = traj_grasp.joint_trajectory.joint_names
@@ -277,9 +341,9 @@ class Grasping(smach.State):
         start_state.is_diff = True
         self.planer.set_start_state(start_state)
 
-        ### Plan Lift
+        # Plan Lift
         lift_pose_offset = PoseStamped()
-        lift_pose_offset.header.frame_id = "current_rose"
+        lift_pose_offset.header.frame_id = "current_object"
         lift_pose_offset.header.stamp = rospy.Time(0)
         if userdata.active_arm == "left":
             lift_pose_offset.pose.position.z = -0.2
@@ -291,7 +355,7 @@ class Grasping(smach.State):
         lift_pose_offset.pose.orientation.w = 1
         lift_pose = self.listener.transformPose("odom_combined", lift_pose_offset)
 
-        (traj_lift,frac_lift) = self.planer.compute_cartesian_path([lift_pose.pose], self.eef_step, self.jump_threshold, True)
+        (traj_lift, frac_lift) = self.planer.compute_cartesian_path([lift_pose.pose], self.eef_step, self.jump_threshold, True)
 
         print "Plan lift: "+ str(frac_lift * 100.0) + "%"
 
@@ -308,17 +372,17 @@ class Grasping(smach.State):
             traj_grasp = self.fix_velocities(traj_grasp)
             traj_lift = self.fix_velocities(traj_lift)
 
-            ### execute
+            # execute
             rospy.loginfo("approach")
             self.planer.execute(traj_approach)
-            #move_gripper("gripper_" + userdata.active_arm, "open")
+            # move_gripper("gripper_" + userdata.active_arm, "open")
             rospy.loginfo("grasp")
             self.planer.execute(traj_grasp)
-            #move_gripper("gripper_" + userdata.active_arm, "close")
+            # move_gripper("gripper_" + userdata.active_arm, "close")
             rospy.loginfo("lift")
             self.planer.execute(traj_lift)
 
-            ### Plan Retreat
+            # Plan Retreat
             while not self.retreat:
                 try:
                     self.traj_retreat = self.plan_movement(userdata.active_arm, "retreat")
@@ -355,40 +419,40 @@ class Grasping(smach.State):
         return traj
 
     def scale_joint_trajectory_speed(self, traj, scale):
-           # Create a new trajectory object
-           new_traj = RobotTrajectory()
+            # Create a new trajectory object
+            new_traj = RobotTrajectory()
 
-           # Initialize the new trajectory to be the same as the planned trajectory
-           new_traj.joint_trajectory = traj.joint_trajectory
+            # Initialize the new trajectory to be the same as the planned trajectory
+            new_traj.joint_trajectory = traj.joint_trajectory
 
-           # Get the number of joints involved
-           n_joints = len(traj.joint_trajectory.joint_names)
+            # Get the number of joints involved
+            n_joints = len(traj.joint_trajectory.joint_names)
 
-           # Get the number of points on the trajectory
-           n_points = len(traj.joint_trajectory.points)
+            # Get the number of points on the trajectory
+            n_points = len(traj.joint_trajectory.points)
 
-           # Store the trajectory points
-           points = list(traj.joint_trajectory.points)
+            # Store the trajectory points
+            points = list(traj.joint_trajectory.points)
 
-           # Cycle through all points and scale the time from start, speed and acceleration
-           for i in range(n_points):
-               point = JointTrajectoryPoint()
-               point.time_from_start = traj.joint_trajectory.points[i].time_from_start / scale
-               point.velocities = list(traj.joint_trajectory.points[i].velocities)
-               point.accelerations = list(traj.joint_trajectory.points[i].accelerations)
-               point.positions = traj.joint_trajectory.points[i].positions
+            # Cycle through all points and scale the time from start, speed and acceleration
+            for i in range(n_points):
+                point = JointTrajectoryPoint()
+                point.time_from_start = traj.joint_trajectory.points[i].time_from_start / scale
+                point.velocities = list(traj.joint_trajectory.points[i].velocities)
+                point.accelerations = list(traj.joint_trajectory.points[i].accelerations)
+                point.positions = traj.joint_trajectory.points[i].positions
 
-               for j in range(n_joints):
-                   point.velocities[j] = point.velocities[j] * scale
-                   point.accelerations[j] = point.accelerations[j] * scale * scale
+                for j in range(n_joints):
+                    point.velocities[j] = point.velocities[j] * scale
+                    point.accelerations[j] = point.accelerations[j] * scale * scale
 
-               points[i] = point
+                points[i] = point
 
-           # Assign the modified points to the new trajectory
-           new_traj.joint_trajectory.points = points
+            # Assign the modified points to the new trajectory
+            new_traj.joint_trajectory.points = points
 
-           # Return the new trajecotry
-           return new_traj
+            # Return the new trajecotry
+            return new_traj
 
 
 class SwitchArm(smach.State):
