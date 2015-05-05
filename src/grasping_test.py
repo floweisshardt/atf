@@ -1,5 +1,4 @@
 #!/usr/bin/python
-import rospy
 import rospkg
 import smach
 import smach_ros
@@ -108,45 +107,67 @@ class Grasping(smach.State):
         self.jump_threshold = 2
 
         rospy.loginfo("Add table to world")
-        self.add_table_to_world()
-        rospy.sleep(1)
+        table = CollisionObject()
+        table.id = "table"
+        table.header.stamp = rospy.Time.now()
+        table.header.frame_id = "/world"
+        filename = rospkg.RosPack().get_path("cob_grasping") + "/files/table.stl"
+        table.meshes.append(self.load_mesh(filename))
+        self.add_remove_object("remove", table, "", "")
+        position = [0.37, -0.3, 0.62, 1.0]
+        self.add_remove_object("add", table, position, "mesh")
 
-        rospy.loginfo("Add object to world")
-        self.add_object_to_world()
-        rospy.sleep(1)
+        rospy.loginfo("Add object1 to world")
+        collision_object = CollisionObject()
+        collision_object.header.stamp = rospy.Time.now()
+        collision_object.header.frame_id = "/world"
+        collision_object.id = "object1"
+        object_shape = SolidPrimitive()
+        object_shape.type = 3  # CYLINDER
+        object_shape.dimensions.append(0.2)  # Height
+        object_shape.dimensions.append(0.01)  # Radius
+        collision_object.primitives.append(object_shape)
+        self.add_remove_object("remove", collision_object, "", "")
+        position = [0.62, -0.3, 0.7, 1.0]
+        self.add_remove_object("add", collision_object, position, "primitive")
+
+        rospy.loginfo("Add object2 to world")
+        collision_object.header.stamp = rospy.Time.now()
+        collision_object.header.frame_id = "/world"
+        collision_object.id = "object2"
+        object_shape = SolidPrimitive()
+        object_shape.type = 3  # CYLINDER
+        object_shape.dimensions.append(0.2)  # Height
+        object_shape.dimensions.append(0.01)  # Radius
+        collision_object.primitives.append(object_shape)
+        self.add_remove_object("remove", collision_object, "", "")
+        position = [0.62, 0.3, 0.7, 1.0]
+        self.add_remove_object("add", collision_object, position, "primitive")
 
         # move_gripper("gripper_left", "open")
         # move_gripper("gripper_right", "open")
 
-    def add_table_to_world(self):
-        remove_object = CollisionObject()
-        remove_object.id = "table"
-        remove_object.header.stamp = rospy.Time.now()
-        remove_object.header.frame_id = "/world"
-        remove_object.operation = CollisionObject.REMOVE
-
-        self.planning_scene.world.collision_objects[:] = []
-        self.planning_scene.world.collision_objects.append(remove_object)
+    def add_remove_object(self, co_operation, co_object, co_position, co_type):
+        if co_operation == "add":
+            co_object.operation = CollisionObject.ADD
+            pose = Pose()
+            pose.position.x = co_position[0]
+            pose.position.y = co_position[1]
+            pose.position.z = co_position[2]
+            pose.orientation.w = co_position[3]
+            if co_type == "mesh":
+                co_object.mesh_poses.append(pose)
+            elif co_type == "primitive":
+                co_object.primitive_poses.append(pose)
+        elif co_operation == "remove":
+            co_object.operation = CollisionObject.REMOVE
+            self.planning_scene.world.collision_objects[:] = []
+        else:
+            rospy.logerr("invalid command")
+            return
+        self.planning_scene.world.collision_objects.append(co_object)
         self.pub_planning_scene.publish(self.planning_scene)
-
-        collision_object = CollisionObject()
-
-        collision_object.header.stamp = rospy.Time.now()
-        collision_object.header.frame_id = "/world"
-        collision_object.id = "table"
-
-        filename = rospkg.RosPack().get_path("cob_grasping") + "/files/table.stl"
-        collision_object.meshes.append(self.load_mesh(filename))
-
-        mesh_pose = Pose()
-        mesh_pose.position.x = 0.37
-        mesh_pose.position.y = -0.3
-        mesh_pose.position.z = 0.62
-        mesh_pose.orientation.w = 1.0
-        collision_object.mesh_poses.append(mesh_pose)
-
-        self.planning_scene.world.collision_objects.append(collision_object)
-        self.pub_planning_scene.publish(self.planning_scene)
+        rospy.sleep(1)
 
     @staticmethod
     def load_mesh(filename):
@@ -191,8 +212,8 @@ class Grasping(smach.State):
 
         object_shape = SolidPrimitive()
         object_shape.type = 3  # CYLINDER
-        object_shape.dimensions.append(0.2)
-        object_shape.dimensions.append(0.01)
+        object_shape.dimensions.append(0.2)  # Height
+        object_shape.dimensions.append(0.01)  # Radius
 
         object_pose = Pose()
         object_pose.position.x = 0.62
@@ -394,13 +415,12 @@ class Grasping(smach.State):
     @staticmethod
     def smooth_cartesian_path(traj):
 
-        # time_offset = 0.2
-        time_offset = 12.0
+        time_offset = 0.2
 
         for i in range(len(traj.joint_trajectory.points)):
-            traj.joint_trajectory.points[i].time_from_start += rospy.Duration.from_sec(time_offset)
+            traj.joint_trajectory.points[i].time_from_start += rospy.Duration(time_offset)
 
-        traj.joint_trajectory.points[-1].time_from_start += rospy.Duration.from_sec(time_offset)
+        traj.joint_trajectory.points[-1].time_from_start += rospy.Duration(time_offset)
 
         return traj
 
