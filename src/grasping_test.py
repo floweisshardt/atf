@@ -4,22 +4,18 @@ import rospkg
 import smach
 import smach_ros
 import tf
-import sys
-import copy
 
-import random
 from pyassimp import pyassimp
-from geometry_msgs.msg import PoseStamped
-from moveit_commander import MoveGroupCommander, PlanningSceneInterface, RobotCommander
+
+from moveit_commander import MoveGroupCommander
 from moveit_msgs.msg import RobotState, AttachedCollisionObject, CollisionObject, PlanningScene
-from shape_msgs.msg import SolidPrimitive
 from moveit_msgs.msg import RobotTrajectory
-from trajectory_msgs.msg import JointTrajectoryPoint
-from shape_msgs.msg import MeshTriangle, Mesh, SolidPrimitive, Plane
+from shape_msgs.msg import MeshTriangle, Mesh, SolidPrimitive
 
 from simple_script_server import *
 sss = simple_script_server()
 active_arm = 'right'
+
 
 def move_gripper(component_name, pos):
     error_code = -1
@@ -30,17 +26,19 @@ def move_gripper(component_name, pos):
         handle.wait()
         error_code = handle.get_error_code()
         if counter > 100:
-            rospy.logerr(component_name + "does not work any more. retries: " + str(counter) + ". Please reset USB connection and press <ENTER>.")
+            rospy.logerr(component_name + "does not work any more. retries: " + str(counter) +
+                         ". Please reset USB connection and press <ENTER>.")
             sss.wait_for_input()
             return False
         counter += 1
     return True
 
+
 class RotateCS(smach.State):
     def __init__(self):
         smach.State.__init__(self,
-            outcomes=['succeeded'],
-            input_keys=['active_arm'])
+                             outcomes=['succeeded'],
+                             input_keys=['active_arm'])
         self.angle_offset_yaw = 0
 
         if active_arm == "left":
@@ -52,13 +50,13 @@ class RotateCS(smach.State):
             self.rose_position_y = -0.3
             self.direction_yaw = 1
         
-        rospy.Timer(rospy.Duration(0.05), self.broadcast_tf)
+        rospy.Timer(rospy.Duration.from_sec(3.0), self.broadcast_tf)
         self.br = tf.TransformBroadcaster()
         
     def broadcast_tf(self, event):
         self.br.sendTransform(
             (0.6, self.rose_position_y, 0.7),
-            tf.transformations.quaternion_from_euler(self.angle_offset_roll, 0, self.angle_offset_yaw),
+            quaternion_from_euler(self.angle_offset_roll, 0, self.angle_offset_yaw),
             event.current_real,
             "current_object",
             "base_link")
@@ -82,11 +80,13 @@ class RotateCS(smach.State):
             self.rose_position_y = -0.3
         return "succeeded"
 
+
 class Grasping(smach.State):
     def __init__(self):
         smach.State.__init__(self,
-            outcomes=['succeeded','failed'],
-            input_keys=['active_arm'])
+                             outcomes=['succeeded', 'failed'],
+                             input_keys=['active_arm', 'pre_grasp', 'retreat'],
+                             output_keys=['pre_grasp', 'retreat'])
 
         # initialize tf listener
         self.listener = tf.TransformListener()
@@ -107,9 +107,6 @@ class Grasping(smach.State):
         self.eef_step = 0.01
         self.jump_threshold = 2
 
-        self.pre_grasp = False
-        self.retreat = False
-
         rospy.loginfo("Add table to world")
         self.add_table_to_world()
         rospy.sleep(1)
@@ -118,8 +115,8 @@ class Grasping(smach.State):
         self.add_object_to_world()
         rospy.sleep(1)
 
-        move_gripper("gripper_left", "open")
-        move_gripper("gripper_right", "open")
+        # move_gripper("gripper_left", "open")
+        # move_gripper("gripper_right", "open")
 
     def add_table_to_world(self):
         remove_object = CollisionObject()
@@ -131,7 +128,6 @@ class Grasping(smach.State):
         self.planning_scene.world.collision_objects[:] = []
         self.planning_scene.world.collision_objects.append(remove_object)
         self.pub_planning_scene.publish(self.planning_scene)
-        rospy.sleep(1)
 
         collision_object = CollisionObject()
 
@@ -151,9 +147,10 @@ class Grasping(smach.State):
 
         self.planning_scene.world.collision_objects.append(collision_object)
         self.pub_planning_scene.publish(self.planning_scene)
-        rospy.sleep(1)
 
-    def load_mesh(self, filename):
+    @staticmethod
+    def load_mesh(filename):
+
         scene = pyassimp.load(filename)
         if not scene.meshes:
             rospy.logerr('Unable to load mesh')
@@ -184,7 +181,6 @@ class Grasping(smach.State):
         self.planning_scene.world.collision_objects[:] = []
         self.planning_scene.world.collision_objects.append(remove_object)
         self.pub_planning_scene.publish(self.planning_scene)
-        rospy.sleep(1)
 
         collision_object = CollisionObject()
 
@@ -209,7 +205,6 @@ class Grasping(smach.State):
 
         self.planning_scene.world.collision_objects.append(collision_object)
         self.pub_planning_scene.publish(self.planning_scene)
-        rospy.sleep(1)
 
         '''
         rose_collision = CollisionObject()
@@ -221,7 +216,7 @@ class Grasping(smach.State):
         rose_attached = AttachedCollisionObject()
         rose_attached.link_name = "gripper_"+userdata.active_arm+"_grasp_link"
         rose_attached.object = rose_collision
-        rose_attached.touch_links = ["gripper_"+userdata.active_arm+"_base_link", "gripper_"+userdata.active_arm+"_camera_link", "gripper_"+userdata.active_arm+"_finger_1_link", "gripper_"+userdata.active_arm+"_finger_2_link", "gripper_"+userdata.active_arm+"_grasp_link", "gripper_"+userdata.active_arm+"_palm_link"]
+        rose_attached.touch_links = ["gripper_"+userdata.active_arm+"_base_link","gripper_"+userdata.active_arm+"_camera_link", "gripper_"+userdata.active_arm+"_finger_1_link", "gripper_"+userdata.active_arm+"_finger_2_link", "gripper_"+userdata.active_arm+"_grasp_link", "gripper_"+userdata.active_arm+"_palm_link"]
         start_state.attached_collision_objects.append(rose_attached)
 
         mesh_pose = Pose()
@@ -231,7 +226,6 @@ class Grasping(smach.State):
         mesh_pose.orientation.w = 1.0
         collision_object.mesh_poses.append(mesh_pose)
         '''
-
 
     def execute(self, userdata):
         if userdata.active_arm == "left":
@@ -263,19 +257,18 @@ class Grasping(smach.State):
         plan = self.planer.plan()
 
         plan = self.smooth_cartesian_path(plan)
-        # plan = self.scale_joint_trajectory_speed(plan, 0.3)
-        plan = self.scale_joint_trajectory_speed(plan, 1.0)
+        plan = self.scale_joint_trajectory_speed(plan, 0.3)
         return plan
 
     def plan_and_execute(self, userdata):
 
-        while not self.pre_grasp:
+        while not userdata.pre_grasp:
             try:
                 self.traj_pre_grasp = self.plan_movement(userdata.active_arm, "pre_grasp")
-            except (ValueError,IndexError):
-                self.pre_grasp = False
+            except (ValueError, IndexError):
+                userdata.pre_grasp = False
             else:
-                self.pre_grasp = True
+                userdata.pre_grasp = True
                 rospy.loginfo("pre_grasp")
                 self.planer.execute(self.traj_pre_grasp)
 
@@ -303,9 +296,10 @@ class Grasping(smach.State):
             rospy.logerr("could not transform pose. Exception: %s", str(e))
             return False
 
-        (traj_approach, frac_approach) = self.planer.compute_cartesian_path([approach_pose.pose], self.eef_step, self.jump_threshold, True)
+        (traj_approach, frac_approach) = self.planer.compute_cartesian_path([approach_pose.pose],
+                                                                            self.eef_step, self.jump_threshold, True)
 
-        print "Plan approach: "+ str(frac_approach * 100.0) + "%"
+        print "Plan approach: " + str(frac_approach * 100.0) + "%"
 
         if not (frac_approach == 1.0):
             rospy.logerr("Unable to plan approach trajectory")
@@ -325,9 +319,10 @@ class Grasping(smach.State):
         grasp_pose_offset.header.stamp = rospy.Time(0)
         grasp_pose_offset.pose.orientation.w = 1
         grasp_pose = self.listener.transformPose("odom_combined", grasp_pose_offset)
-        (traj_grasp, frac_grasp) = self.planer.compute_cartesian_path([grasp_pose.pose], self.eef_step, self.jump_threshold, True)
+        (traj_grasp, frac_grasp) = self.planer.compute_cartesian_path([grasp_pose.pose],
+                                                                      self.eef_step, self.jump_threshold, True)
 
-        print "Plan grasp: "+ str(frac_grasp * 100.0) + "%"
+        print "Plan grasp: " + str(frac_grasp * 100.0) + "%"
 
         if not (frac_grasp == 1.0):
             rospy.logerr("Unable to plan grasp trajectory")
@@ -355,9 +350,10 @@ class Grasping(smach.State):
         lift_pose_offset.pose.orientation.w = 1
         lift_pose = self.listener.transformPose("odom_combined", lift_pose_offset)
 
-        (traj_lift, frac_lift) = self.planer.compute_cartesian_path([lift_pose.pose], self.eef_step, self.jump_threshold, True)
+        (traj_lift, frac_lift) = self.planer.compute_cartesian_path([lift_pose.pose],
+                                                                    self.eef_step, self.jump_threshold, True)
 
-        print "Plan lift: "+ str(frac_lift * 100.0) + "%"
+        print "Plan lift: " + str(frac_lift * 100.0) + "%"
 
         if not (frac_lift == 1.0):
             rospy.logerr("Unable to plan lift trajectory")
@@ -375,39 +371,41 @@ class Grasping(smach.State):
             # execute
             rospy.loginfo("approach")
             self.planer.execute(traj_approach)
-            # move_gripper("gripper_" + userdata.active_arm, "open")
+            move_gripper("gripper_" + userdata.active_arm, "open")
             rospy.loginfo("grasp")
             self.planer.execute(traj_grasp)
-            # move_gripper("gripper_" + userdata.active_arm, "close")
+            move_gripper("gripper_" + userdata.active_arm, "close")
             rospy.loginfo("lift")
             self.planer.execute(traj_lift)
 
             # Plan Retreat
-            while not self.retreat:
+            while not userdata.retreat:
                 try:
                     self.traj_retreat = self.plan_movement(userdata.active_arm, "retreat")
-                except (ValueError,IndexError):
-                    self.retreat = False
+                except (ValueError, IndexError):
+                    userdata.retreat = False
                 else:
-                    self.retreat = True
+                    userdata.retreat = True
                     rospy.loginfo("retreat")
                     self.planer.execute(self.traj_retreat)
 
-
         return True
 
-    def smooth_cartesian_path(self, traj):
+    @staticmethod
+    def smooth_cartesian_path(traj):
 
-        time_offset = 0.2
+        # time_offset = 0.2
+        time_offset = 12.0
 
         for i in range(len(traj.joint_trajectory.points)):
-            traj.joint_trajectory.points[i].time_from_start += rospy.Duration(time_offset)
+            traj.joint_trajectory.points[i].time_from_start += rospy.Duration.from_sec(time_offset)
 
-        traj.joint_trajectory.points[-1].time_from_start += rospy.Duration(time_offset)
+        traj.joint_trajectory.points[-1].time_from_start += rospy.Duration.from_sec(time_offset)
 
         return traj
 
-    def fix_velocities(self, traj):
+    @staticmethod
+    def fix_velocities(traj):
         # fix trajectories to stop at the end
         traj.joint_trajectory.points[-1].velocities = [0]*7
 
@@ -418,7 +416,8 @@ class Grasping(smach.State):
 
         return traj
 
-    def scale_joint_trajectory_speed(self, traj, scale):
+    @staticmethod
+    def scale_joint_trajectory_speed(traj, scale):
             # Create a new trajectory object
             new_traj = RobotTrajectory()
 
@@ -458,9 +457,9 @@ class Grasping(smach.State):
 class SwitchArm(smach.State):
     def __init__(self):
         smach.State.__init__(self,
-            outcomes=['succeeded','finished'],
-            input_keys=['active_arm'],
-            output_keys=['active_arm'])
+                             outcomes=['succeeded', 'finished'],
+                             input_keys=['active_arm'],
+                             output_keys=['active_arm', 'pre_grasp', 'retreat'])
 
         self.counter = 1
 
@@ -473,26 +472,32 @@ class SwitchArm(smach.State):
             elif userdata.active_arm == "right":
                 userdata.active_arm = "left"
             self.counter += 1.0
+            userdata.pre_grasp = False
+            userdata.retreat = False
             return "succeeded"
 
 
 class SM(smach.StateMachine):
     def __init__(self):        
-        smach.StateMachine.__init__(self,outcomes=['ended'])
+        smach.StateMachine.__init__(self, outcomes=['ended'])
 
         self.userdata.active_arm = active_arm
+        self.userdata.pre_grasp = False
+        self.userdata.retreat = False
         
         with self:
-            smach.StateMachine.add('GRASP',Grasping(),
-                transitions={'succeeded':'SWITCH_ARM',
-                    'failed':'ROTATE_COORDINATESYSTEM'})
-            smach.StateMachine.add('ROTATE_COORDINATESYSTEM',RotateCS(),
-                transitions={'succeeded':'GRASP'})
-            smach.StateMachine.add('SWITCH_ARM',SwitchArm(),
-                transitions={'succeeded':'ROTATE_COORDINATESYSTEM',
-                    'finished':'ended'})
+            smach.StateMachine.add('GRASP', Grasping(),
+                                   transitions={'succeeded': 'SWITCH_ARM',
+                                                'failed': 'ROTATE_COORDINATESYSTEM'})
 
-if __name__=='__main__':
+            smach.StateMachine.add('ROTATE_COORDINATESYSTEM', RotateCS(),
+                                   transitions={'succeeded': 'GRASP'})
+
+            smach.StateMachine.add('SWITCH_ARM', SwitchArm(),
+                                   transitions={'succeeded': 'ROTATE_COORDINATESYSTEM',
+                                                'finished': 'ended'})
+
+if __name__ == '__main__':
     rospy.init_node('roses')    
     sm = SM()
     sis = smach_ros.IntrospectionServer('sm', sm, 'SM')
