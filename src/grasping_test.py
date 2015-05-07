@@ -123,6 +123,7 @@ class SpawnObjects(smach.State):
         position = [0.37, -0.3, 0.62, 1.0]
         self.add_remove_object("add", table, position, "mesh")
 
+        '''
         rospy.loginfo("Add an object to world")
         collision_object = CollisionObject()
         collision_object.header.stamp = rospy.Time.now()
@@ -136,6 +137,7 @@ class SpawnObjects(smach.State):
         self.add_remove_object("remove", collision_object, "", "")
         position = [userdata.target[0] + 0.02, userdata.target[1], userdata.target[2], 1.0]
         self.add_remove_object("add", collision_object, position, "primitive")
+        '''
 
         userdata.last_state = "spawn"
         return 'succeeded'
@@ -278,8 +280,8 @@ class Pick(smach.State):
     def __init__(self):
         smach.State.__init__(self,
                              outcomes=['succeeded', 'failed'],
-                             input_keys=['active_arm', 'tf_listener'],
-                             output_keys=['last_state'])
+                             input_keys=['active_arm'],
+                             output_keys=['last_state', 'target_cs'])
 
         self.eef_step = 0.01
         self.jump_threshold = 2
@@ -407,6 +409,7 @@ class Pick(smach.State):
             # move_gripper("gripper_" + userdata.active_arm, "close")
             rospy.loginfo("lift")
             self.planer.execute(traj_lift)
+            userdata.target_cs = 1
             return True
 
 
@@ -415,7 +418,7 @@ class Place(smach.State):
         smach.State.__init__(self,
                              outcomes=['succeeded', 'failed'],
                              input_keys=['active_arm'],
-                             output_keys=['last_state'])
+                             output_keys=['last_state', 'target_cs'])
 
         self.eef_step = 0.01
         self.jump_threshold = 2
@@ -438,112 +441,118 @@ class Place(smach.State):
             rospy.logerr("invalid arm_active")
             return False
 
-        # Set next (virtual) start state
-        start_state = RobotState()
-        (pre_grasp_config, error_code) = sss.compose_trajectory("arm_" + userdata.active_arm, "pre_grasp")
+        # Set start state for moveing
+        (config, error_code) = sss.compose_trajectory("arm_" + userdata.active_arm, "retreat")
         if error_code != 0:
-            rospy.logerr("unable to parse pre_grasp configuration")
-            return False
+            rospy.logerr("unable to parse configuration")
 
-        start_state.joint_state.name = pre_grasp_config.joint_names
-        start_state.joint_state.position = pre_grasp_config.points[0].positions
-        start_state.is_diff = True
+        start_state = RobotState()
+        start_state.joint_state.name = config.joint_names
+        start_state.joint_state.position = self.planer.get_current_joint_values()
         self.planer.set_start_state(start_state)
 
-        # Plan Approach
-        approach_pose_offset = PoseStamped()
-        approach_pose_offset.header.frame_id = "current_object"
-        approach_pose_offset.header.stamp = rospy.Time(0)
-        approach_pose_offset.pose.position.x = -0.12
-        approach_pose_offset.pose.orientation.w = 1
+        # Plan Move
+        move_pose_offset = PoseStamped()
+        move_pose_offset.header.frame_id = "current_object"
+        move_pose_offset.header.stamp = rospy.Time(0)
+        if userdata.active_arm == "left":
+            move_pose_offset.pose.position.z = -0.2
+        elif userdata.active_arm == "right":
+            move_pose_offset.pose.position.z = 0.2
+        else:
+            rospy.logerr("invalid active_arm: %s", userdata.active_arm)
+            sys.exit()
+        move_pose_offset.pose.orientation.w = 1
         try:
-
-            approach_pose = self.listener_place.transformPose("odom_combined", approach_pose_offset)
+            move_pose = self.listener_place.transformPose("odom_combined", move_pose_offset)
         except Exception, e:
             rospy.logerr("could not transform pose. Exception: %s", str(e))
             return False
 
-        (traj_approach, frac_approach) = self.planer.compute_cartesian_path([approach_pose.pose],
-                                                                            self.eef_step, self.jump_threshold, True)
-
-        print "Plan approach: " + str(frac_approach * 100.0) + "%"
-
-        if not (frac_approach == 1.0):
-            rospy.logerr("Unable to plan approach trajectory")
-            return False
-
-        # Set next (virtual) start state
-        traj_approach_endpoint = traj_approach.joint_trajectory.points[-1]
-        start_state = RobotState()
-        start_state.joint_state.name = traj_approach.joint_trajectory.joint_names
-        start_state.joint_state.position = traj_approach_endpoint.positions
-        start_state.is_diff = True
-        self.planer.set_start_state(start_state)
-
-        # Plan Grasp
-        grasp_pose_offset = PoseStamped()
-        grasp_pose_offset.header.frame_id = "current_object"
-        grasp_pose_offset.header.stamp = rospy.Time(0)
-        grasp_pose_offset.pose.orientation.w = 1
-        grasp_pose = self.listener_place.transformPose("odom_combined", grasp_pose_offset)
-        (traj_grasp, frac_grasp) = self.planer.compute_cartesian_path([grasp_pose.pose],
-                                                                      self.eef_step, self.jump_threshold, True)
-
-        print "Plan grasp: " + str(frac_grasp * 100.0) + "%"
-
-        if not (frac_grasp == 1.0):
-            rospy.logerr("Unable to plan grasp trajectory")
-            return False
-
-        # Set next (virtual) start state
-        traj_grasp_endpoint = traj_grasp.joint_trajectory.points[-1]
-        start_state = RobotState()
-        start_state.joint_state.name = traj_grasp.joint_trajectory.joint_names
-        start_state.joint_state.position = traj_grasp_endpoint.positions
-        start_state.is_diff = True
-        self.planer.set_start_state(start_state)
-
-        # Plan Lift
-        lift_pose_offset = PoseStamped()
-        lift_pose_offset.header.frame_id = "current_object"
-        lift_pose_offset.header.stamp = rospy.Time(0)
-        if userdata.active_arm == "left":
-            lift_pose_offset.pose.position.z = -0.2
-        elif userdata.active_arm == "right":
-            lift_pose_offset.pose.position.z = 0.2
-        else:
-            rospy.logerr("invalid active_arm: %s", userdata.active_arm)
-            sys.exit()
-        lift_pose_offset.pose.orientation.w = 1
-        lift_pose = self.listener_place.transformPose("odom_combined", lift_pose_offset)
-
-        (traj_lift, frac_lift) = self.planer.compute_cartesian_path([lift_pose.pose],
+        (traj_move, frac_move) = self.planer.compute_cartesian_path([move_pose.pose],
                                                                     self.eef_step, self.jump_threshold, True)
 
-        print "Plan lift: " + str(frac_lift * 100.0) + "%"
+        print "Plan move: " + str(frac_move * 100.0) + "%"
 
-        if not (frac_lift == 1.0):
-            rospy.logerr("Unable to plan lift trajectory")
+        if not (frac_move == 1.0):
+            rospy.logerr("Unable to plan move trajectory")
+            return False
+
+        # Set next (virtual) start state
+        traj_move_endpoint = traj_move.joint_trajectory.points[-1]
+        start_state = RobotState()
+        start_state.joint_state.name = traj_move.joint_trajectory.joint_names
+        start_state.joint_state.position = traj_move_endpoint.positions
+        start_state.is_diff = True
+        self.planer.set_start_state(start_state)
+
+        # Plan Drop
+        drop_pose_offset = PoseStamped()
+        drop_pose_offset.header.frame_id = "current_object"
+        drop_pose_offset.header.stamp = rospy.Time(0)
+        drop_pose_offset.pose.orientation.w = 1
+        try:
+            drop_pose = self.listener_place.transformPose("odom_combined", drop_pose_offset)
+        except Exception, e:
+            rospy.logerr("could not transform pose. Exception: %s", str(e))
+            return False
+
+        (traj_drop, frac_drop) = self.planer.compute_cartesian_path([drop_pose.pose],
+                                                                    self.eef_step, self.jump_threshold, True)
+
+        print "Plan drop: " + str(frac_drop * 100.0) + "%"
+
+        if not (frac_drop == 1.0):
+            rospy.logerr("Unable to plan move trajectory")
+            return False
+
+        # Set next (virtual) start state
+        traj_drop_endpoint = traj_drop.joint_trajectory.points[-1]
+        start_state = RobotState()
+        start_state.joint_state.name = traj_drop.joint_trajectory.joint_names
+        start_state.joint_state.position = traj_drop_endpoint.positions
+        start_state.is_diff = True
+        self.planer.set_start_state(start_state)
+
+        # Plan Retreat
+        retreat_pose_offset = PoseStamped()
+        retreat_pose_offset.header.frame_id = "current_object"
+        retreat_pose_offset.header.stamp = rospy.Time(0)
+        retreat_pose_offset.pose.position.x = -0.12
+        retreat_pose_offset.pose.orientation.w = 1
+        try:
+            retreat_pose = self.listener_place.transformPose("odom_combined", retreat_pose_offset)
+        except Exception, e:
+            rospy.logerr("could not transform pose. Exception: %s", str(e))
+            return False
+
+        (traj_retreat, frac_retreat) = self.planer.compute_cartesian_path([retreat_pose.pose],
+                                                                          self.eef_step, self.jump_threshold, True)
+
+        print "Plan retreat: " + str(frac_retreat * 100.0) + "%"
+
+        if not (frac_retreat == 1.0):
+            rospy.logerr("Unable to plan retreat trajectory")
             return False
 
         else:
-            traj_approach = smooth_cartesian_path(traj_approach)
-            traj_grasp = smooth_cartesian_path(traj_grasp)
-            traj_lift = smooth_cartesian_path(traj_lift)
+            traj_move = smooth_cartesian_path(traj_move)
+            traj_drop = smooth_cartesian_path(traj_drop)
+            traj_retreat = smooth_cartesian_path(traj_retreat)
 
-            traj_approach = fix_velocities(traj_approach)
-            traj_grasp = fix_velocities(traj_grasp)
-            traj_lift = fix_velocities(traj_lift)
+            traj_move = fix_velocities(traj_move)
+            traj_drop = fix_velocities(traj_drop)
+            traj_retreat = fix_velocities(traj_retreat)
 
             # execute
-            rospy.loginfo("approach")
-            self.planer.execute(traj_approach)
+            rospy.loginfo("move")
+            self.planer.execute(traj_move)
+            rospy.loginfo("drop")
+            self.planer.execute(traj_drop)
             # move_gripper("gripper_" + userdata.active_arm, "open")
-            rospy.loginfo("grasp")
-            self.planer.execute(traj_grasp)
-            # move_gripper("gripper_" + userdata.active_arm, "close")
-            rospy.loginfo("lift")
-            self.planer.execute(traj_lift)
+            rospy.loginfo("retreat")
+            self.planer.execute(traj_retreat)
+            userdata.target_cs = 0
             return True
 
 
@@ -551,7 +560,7 @@ class RotateCS(smach.State):
     def __init__(self):
         smach.State.__init__(self,
                              outcomes=['succeeded_pick', 'succeeded_place', 'succeeded'],
-                             input_keys=['active_arm', 'cs_data', 'last_state', 'target'],
+                             input_keys=['active_arm', 'cs_data', 'last_state', 'target', 'target_cs'],
                              output_keys=['cs_data'])
         self.angle_offset_yaw = 0.0
         self.angle_offset_pitch = 0.0
@@ -591,9 +600,9 @@ class RotateCS(smach.State):
         elif userdata.active_arm == "right":
             userdata.cs_data[0] = 0
 
-        self.cs_position_x = userdata.target[0]
-        self.cs_position_y = userdata.target[1]
-        self.cs_position_z = userdata.target[2]
+        self.cs_position_x = userdata.target[userdata.target_cs][0]
+        self.cs_position_y = userdata.target[userdata.target_cs][1]
+        self.cs_position_z = userdata.target[userdata.target_cs][2]
         self.angle_offset_roll = userdata.cs_data[0]
         self.angle_offset_pitch = userdata.cs_data[1]
         self.angle_offset_yaw = userdata.cs_data[2]
@@ -610,8 +619,8 @@ class SwitchArm(smach.State):
     def __init__(self):
         smach.State.__init__(self,
                              outcomes=['succeeded', 'finished'],
-                             input_keys=['active_arm', 'cs_data'],
-                             output_keys=['active_arm', 'last_state', 'cs_data'])
+                             input_keys=['active_arm', 'cs_data', 'target_right', 'target_left'],
+                             output_keys=['active_arm', 'last_state', 'cs_data', 'target', 'target_cs'])
 
         self.counter = 1
 
@@ -622,9 +631,12 @@ class SwitchArm(smach.State):
             if userdata.active_arm == "left":
                 userdata.active_arm = "right"
                 userdata.cs_data[2] = 0.0
+                userdata.target = userdata.target_right
             elif userdata.active_arm == "right":
                 userdata.active_arm = "left"
                 userdata.cs_data[2] = 0.0
+                userdata.target = userdata.target_left
+            userdata.target_cs = 0
             userdata.cs_data[3] = 1.0
             self.counter += 1.0
             userdata.last_state = "switch"
@@ -636,6 +648,8 @@ class SM(smach.StateMachine):
         smach.StateMachine.__init__(self, outcomes=['ended'])
 
         self.userdata.active_arm = active_arm
+        self.userdata.target_cs = 0
+
         self.userdata.cs_data = range(4)
         self.userdata.cs_data[0] = 0.0  # roll (x)
         self.userdata.cs_data[1] = 0.0  # pitch (y)
@@ -643,17 +657,30 @@ class SM(smach.StateMachine):
         self.userdata.cs_data[3] = 1.0  # direction for rotation
         self.userdata.last_state = ""
 
-        self.userdata.pick = range(3)
-        self.userdata.pick[0] = 0.6  # x
-        self.userdata.pick[1] = -0.25  # y
-        self.userdata.pick[2] = 0.7  # z
+        self.userdata.target_right = range(2)  # list for right arm
+        self.userdata.target_right[0] = range(3)  # pick position
+        self.userdata.target_right[1] = range(3)  # place position
+        self.userdata.target_left = range(2)  # list for left arm
+        self.userdata.target_left[0] = range(3)  # pick position
+        self.userdata.target_left[1] = range(3)  # place position
+        # Pick position for right arm
+        self.userdata.target_right[0][0] = 0.6  # x
+        self.userdata.target_right[0][1] = -0.3  # y
+        self.userdata.target_right[0][2] = 0.7  # z
+        # Place position for right arm
+        self.userdata.target_right[1][0] = 0.6  # x
+        self.userdata.target_right[1][1] = 0.0  # y
+        self.userdata.target_right[1][2] = 0.7  # z
+        # Pick position for left arm
+        self.userdata.target_left[0][0] = 0.6  # x
+        self.userdata.target_left[0][1] = 0.0  # y
+        self.userdata.target_left[0][2] = 0.7  # z
+        # Place position for left arm
+        self.userdata.target_left[1][0] = 0.6  # x
+        self.userdata.target_left[1][1] = 0.3  # y
+        self.userdata.target_left[1][2] = 0.7  # z
 
-        self.userdata.place = range(3)
-        self.userdata.place[0] = 0.6  # x
-        self.userdata.place[1] = 0.25  # y
-        self.userdata.place[2] = 0.7  # z
-
-        self.userdata.target = self.userdata.pick
+        self.userdata.target = self.userdata.target_right
 
         with self:
 
@@ -665,7 +692,7 @@ class SM(smach.StateMachine):
                                                 'failed': 'START_POSITION'})
 
             smach.StateMachine.add('PICK', Pick(),
-                                   transitions={'succeeded': 'END_POSITION',
+                                   transitions={'succeeded': 'PLACE',
                                                 'failed': 'ROTATE_CS'})
 
             smach.StateMachine.add('PLACE', Place(),
