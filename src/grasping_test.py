@@ -105,7 +105,9 @@ def scale_joint_trajectory_speed(traj, scale):
 class SpawnObjects(smach.State):
     def __init__(self):
         smach.State.__init__(self,
-                             outcomes=['succeeded'])
+                             outcomes=['succeeded'],
+                             input_keys=['target'],
+                             output_keys=['last_state'])
         self.pub_planning_scene = rospy.Publisher("planning_scene", PlanningScene, queue_size=1)
 
     def execute(self, userdata):
@@ -132,9 +134,10 @@ class SpawnObjects(smach.State):
         object_shape.dimensions.append(0.01)  # Radius
         collision_object.primitives.append(object_shape)
         self.add_remove_object("remove", collision_object, "", "")
-        position = [0.62, -0.26, 0.7, 1.0]
+        position = [userdata.target[0] + 0.02, userdata.target[1], userdata.target[2], 1.0]
         self.add_remove_object("add", collision_object, position, "primitive")
 
+        userdata.last_state = "spawn"
         return 'succeeded'
 
     def add_remove_object(self, co_operation, co_object, co_position, co_type):
@@ -203,7 +206,6 @@ class StartPosition(smach.State):
         except (ValueError, IndexError):
             return "failed"
         else:
-            rospy.loginfo("pre_grasp")
             self.planer.execute(traj)
             return "succeeded"
 
@@ -248,7 +250,6 @@ class EndPosition(smach.State):
         except (ValueError, IndexError):
             return "failed"
         else:
-            rospy.loginfo("retreat")
             self.planer.execute(traj)
             return "succeeded"
 
@@ -550,19 +551,18 @@ class RotateCS(smach.State):
     def __init__(self):
         smach.State.__init__(self,
                              outcomes=['succeeded_pick', 'succeeded_place', 'succeeded'],
-                             input_keys=['active_arm', 'cs_data', 'last_state'],
+                             input_keys=['active_arm', 'cs_data', 'last_state', 'target'],
                              output_keys=['cs_data'])
         self.angle_offset_yaw = 0.0
         self.angle_offset_pitch = 0.0
-        self.cs_position_x = 0.6
-        self.cs_position_z = 0.7
+        self.cs_position_x = 0.0
+        self.cs_position_y = 0.0
+        self.cs_position_z = 0.0
 
         if active_arm == "left":
             self.angle_offset_roll = math.pi
-            self.cs_position_y = 0.26
         elif active_arm == "right":
             self.angle_offset_roll = 0.0
-            self.cs_position_y = -0.26
 
         rospy.Timer(rospy.Duration.from_sec(3.0), self.broadcast_tf)
         self.br = tf.TransformBroadcaster()
@@ -576,35 +576,33 @@ class RotateCS(smach.State):
             "base_link")
 
     def execute(self, userdata):
-        if userdata.cs_data[5] >= 0.5 * math.pi:
-            userdata.cs_data[6] = -1.0
-        elif userdata.cs_data[5] <= -0.5 * math.pi:
-            userdata.cs_data[6] = 1.0
+        if userdata.cs_data[2] >= 0.5 * math.pi:
+            userdata.cs_data[3] = -1.0
+        elif userdata.cs_data[2] <= -0.5 * math.pi:
+            userdata.cs_data[3] = 1.0
 
-        if userdata.cs_data[6] == 1.0:
-            userdata.cs_data[5] += 5.0 / 180.0 * math.pi
-        elif userdata.cs_data[6] == -1.0:
-            userdata.cs_data[5] -= 5.0 / 180.0 * math.pi
+        if userdata.cs_data[3] == 1.0:
+            userdata.cs_data[2] += 5.0 / 180.0 * math.pi
+        elif userdata.cs_data[3] == -1.0:
+            userdata.cs_data[2] -= 5.0 / 180.0 * math.pi
 
         if userdata.active_arm == "left":
-            userdata.cs_data[3] = math.pi
-            userdata.cs_data[1] = 0.26
+            userdata.cs_data[0] = math.pi
         elif userdata.active_arm == "right":
-            userdata.cs_data[3] = 0
-            userdata.cs_data[1] = -0.26
+            userdata.cs_data[0] = 0
 
-        self.cs_position_x = userdata.cs_data[0]
-        self.cs_position_y = userdata.cs_data[1]
-        self.cs_position_z = userdata.cs_data[2]
-        self.angle_offset_roll = userdata.cs_data[3]
-        self.angle_offset_pitch = userdata.cs_data[4]
-        self.angle_offset_yaw = userdata.cs_data[5]
+        self.cs_position_x = userdata.target[0]
+        self.cs_position_y = userdata.target[1]
+        self.cs_position_z = userdata.target[2]
+        self.angle_offset_roll = userdata.cs_data[0]
+        self.angle_offset_pitch = userdata.cs_data[1]
+        self.angle_offset_yaw = userdata.cs_data[2]
 
         if userdata.last_state == "pick":
             return "succeeded_pick"
         elif userdata.last_state == "place":
             return "succeeded_place"
-        elif userdata.last_state == "switch":
+        elif userdata.last_state == "switch" or userdata.last_state == "spawn":
             return "succeeded"
 
 
@@ -623,12 +621,11 @@ class SwitchArm(smach.State):
         else:
             if userdata.active_arm == "left":
                 userdata.active_arm = "right"
-                userdata.cs_data[5] = 0.0
-                userdata.cs_data[6] = 1.0
+                userdata.cs_data[2] = 0.0
             elif userdata.active_arm == "right":
                 userdata.active_arm = "left"
-                userdata.cs_data[5] = 0.0
-                userdata.cs_data[6] = 1.0
+                userdata.cs_data[2] = 0.0
+            userdata.cs_data[3] = 1.0
             self.counter += 1.0
             userdata.last_state = "switch"
             return "succeeded"
@@ -639,20 +636,29 @@ class SM(smach.StateMachine):
         smach.StateMachine.__init__(self, outcomes=['ended'])
 
         self.userdata.active_arm = active_arm
-        self.userdata.cs_data = range(7)
-        self.userdata.cs_data[0] = 0.6  # x
-        self.userdata.cs_data[1] = -0.25  # y
-        self.userdata.cs_data[2] = 0.7  # z
-        self.userdata.cs_data[3] = 0.0  # roll (x)
-        self.userdata.cs_data[4] = 0.0  # pitch (y)
-        self.userdata.cs_data[5] = 0.0  # yaw (z)
-        self.userdata.cs_data[6] = 1.0  # direction for rotation
+        self.userdata.cs_data = range(4)
+        self.userdata.cs_data[0] = 0.0  # roll (x)
+        self.userdata.cs_data[1] = 0.0  # pitch (y)
+        self.userdata.cs_data[2] = -5.0 / 180.0 * math.pi  # yaw (z)
+        self.userdata.cs_data[3] = 1.0  # direction for rotation
         self.userdata.last_state = ""
+
+        self.userdata.pick = range(3)
+        self.userdata.pick[0] = 0.6  # x
+        self.userdata.pick[1] = -0.25  # y
+        self.userdata.pick[2] = 0.7  # z
+
+        self.userdata.place = range(3)
+        self.userdata.place[0] = 0.6  # x
+        self.userdata.place[1] = 0.25  # y
+        self.userdata.place[2] = 0.7  # z
+
+        self.userdata.target = self.userdata.pick
 
         with self:
 
             smach.StateMachine.add('SPAWN_OBJECTS', SpawnObjects(),
-                                   transitions={'succeeded': 'START_POSITION'})
+                                   transitions={'succeeded': 'ROTATE_CS'})
 
             smach.StateMachine.add('START_POSITION', StartPosition(),
                                    transitions={'succeeded': 'PICK',
