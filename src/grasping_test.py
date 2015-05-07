@@ -573,7 +573,7 @@ class RotateCS(smach.State):
         elif active_arm == "right":
             self.angle_offset_roll = 0.0
 
-        rospy.Timer(rospy.Duration.from_sec(3.0), self.broadcast_tf)
+        rospy.Timer(rospy.Duration.from_sec(0.1), self.broadcast_tf)
         self.br = tf.TransformBroadcaster()
 
     def broadcast_tf(self, event):
@@ -618,29 +618,59 @@ class RotateCS(smach.State):
 class SwitchArm(smach.State):
     def __init__(self):
         smach.State.__init__(self,
-                             outcomes=['succeeded', 'finished'],
+                             outcomes=['succeeded', 'finished', 'switch_targets'],
                              input_keys=['active_arm', 'cs_data', 'target_right', 'target_left'],
                              output_keys=['active_arm', 'last_state', 'cs_data', 'target', 'target_cs'])
 
         self.counter = 1
 
     def execute(self, userdata):
-        if self.counter == 2:
+        if self.counter == 4:
             return "finished"
         else:
+            if self.counter % 2 == 0:
+                userdata.target_cs = 0
+                userdata.cs_data[2] = 0.0
+                self.counter += 1.0
+                return "switch_targets"
             if userdata.active_arm == "left":
                 userdata.active_arm = "right"
-                userdata.cs_data[2] = 0.0
+                userdata.cs_data[3] = 1.0
                 userdata.target = userdata.target_right
             elif userdata.active_arm == "right":
                 userdata.active_arm = "left"
-                userdata.cs_data[2] = 0.0
+                userdata.cs_data[3] = -1.0
                 userdata.target = userdata.target_left
             userdata.target_cs = 0
-            userdata.cs_data[3] = 1.0
+            userdata.cs_data[2] = 0.0
             self.counter += 1.0
             userdata.last_state = "switch"
             return "succeeded"
+
+
+class SwitchTargets(smach.State):
+    def __init__(self):
+        smach.State.__init__(self,
+                             outcomes=['succeeded'],
+                             input_keys=['target_right', 'target_left', 'active_arm'],
+                             output_keys=['target_right', 'target_left', 'target', 'last_state'])
+
+    def execute(self, userdata):
+        temp = range(2)
+        temp[0] = userdata.target_right[0]
+        temp[1] = userdata.target_right[1]
+        userdata.target_right[0] = temp[1]
+        userdata.target_right[1] = temp[0]
+        temp[0] = userdata.target_left[0]
+        temp[1] = userdata.target_left[1]
+        userdata.target_left[0] = temp[1]
+        userdata.target_left[1] = temp[0]
+        if userdata.active_arm == "left":
+            userdata.target = userdata.target_left
+        elif userdata.active_arm == "right":
+            userdata.target = userdata.target_right
+        userdata.last_state = "switch"
+        return "succeeded"
 
 
 class SM(smach.StateMachine):
@@ -705,7 +735,11 @@ class SM(smach.StateMachine):
 
             smach.StateMachine.add('SWITCH_ARM', SwitchArm(),
                                    transitions={'succeeded': 'ROTATE_CS',
-                                                'finished': 'ended'})
+                                                'finished': 'ended',
+                                                'switch_targets': 'SWITCH_TARGETS'})
+
+            smach.StateMachine.add('SWITCH_TARGETS', SwitchTargets(),
+                                   transitions={'succeeded': 'ROTATE_CS'})
 
             smach.StateMachine.add('ROTATE_CS', RotateCS(),
                                    transitions={'succeeded_pick': 'PICK',
