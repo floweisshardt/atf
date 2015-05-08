@@ -106,8 +106,7 @@ class SpawnObjects(smach.State):
     def __init__(self):
         smach.State.__init__(self,
                              outcomes=['succeeded'],
-                             input_keys=['target', 'active_arm'],
-                             output_keys=['last_state'])
+                             input_keys=['target', 'active_arm'])
         self.pub_planning_scene = rospy.Publisher("planning_scene", PlanningScene, queue_size=1)
 
     def execute(self, userdata):
@@ -165,7 +164,6 @@ class SpawnObjects(smach.State):
         self.pub_planning_scene.publish(planning_scene)
         '''
 
-        userdata.last_state = "spawn"
         return 'succeeded'
 
     def add_remove_object(self, co_operation, co_object, co_position, co_type):
@@ -343,7 +341,7 @@ class Manipulation(smach.State):
         smach.State.__init__(self,
                              outcomes=['succeeded', 'failed'],
                              input_keys=['active_arm', 'cs_data', 'target_cs', 'target', 'trajectories'],
-                             output_keys=['last_state', 'target_cs', 'cs_data', 'trajectories'])
+                             output_keys=['target_cs', 'cs_data', 'trajectories'])
         self.angle_offset_yaw = 0.0
         self.angle_offset_pitch = 0.0
         self.cs_position_x = 0.0
@@ -396,7 +394,6 @@ class Manipulation(smach.State):
         self.angle_offset_yaw = userdata.cs_data[2]
 
         if not self.plan_and_move(userdata):
-            userdata.last_state = "pick"
             return "failed"
 
         return "succeeded"
@@ -659,7 +656,7 @@ class SwitchArm(smach.State):
         smach.State.__init__(self,
                              outcomes=['succeeded', 'finished', 'switch_targets'],
                              input_keys=['active_arm', 'cs_data', 'target_right', 'target_left'],
-                             output_keys=['active_arm', 'last_state', 'cs_data', 'target', 'target_cs'])
+                             output_keys=['active_arm', 'cs_data', 'target', 'target_cs'])
 
         self.counter = 1
 
@@ -683,7 +680,6 @@ class SwitchArm(smach.State):
             userdata.target_cs = 0
             userdata.cs_data[2] = 0.0
             self.counter += 1.0
-            userdata.last_state = "switch"
             return "succeeded"
 
 
@@ -692,7 +688,7 @@ class SwitchTargets(smach.State):
         smach.State.__init__(self,
                              outcomes=['succeeded'],
                              input_keys=['target_right', 'target_left', 'active_arm'],
-                             output_keys=['target_right', 'target_left', 'target', 'last_state'])
+                             output_keys=['target_right', 'target_left', 'target'])
 
     def execute(self, userdata):
         temp = range(2)
@@ -708,7 +704,6 @@ class SwitchTargets(smach.State):
             userdata.target = userdata.target_left
         elif userdata.active_arm == "right":
             userdata.target = userdata.target_right
-        userdata.last_state = "switch"
         return "succeeded"
 
 
@@ -724,26 +719,30 @@ class SM(smach.StateMachine):
         self.userdata.cs_data[1] = 0.0  # pitch (y)
         self.userdata.cs_data[2] = -5.0 / 180.0 * math.pi  # yaw (z)
         self.userdata.cs_data[3] = 1.0  # direction for rotation
-        self.userdata.last_state = ""
 
         self.userdata.target_right = range(2)  # list for right arm
-        self.userdata.target_right[0] = range(3)  # pick position
-        self.userdata.target_right[1] = range(3)  # place position
+        self.userdata.target_right[0] = range(3)
+        self.userdata.target_right[1] = range(3)
+
         self.userdata.target_left = range(2)  # list for left arm
-        self.userdata.target_left[0] = range(3)  # pick position
-        self.userdata.target_left[1] = range(3)  # place position
+        self.userdata.target_left[0] = range(3)
+        self.userdata.target_left[1] = range(3)
+
         # Pick position for right arm
         self.userdata.target_right[0][0] = 0.6  # x
         self.userdata.target_right[0][1] = -0.3  # y
         self.userdata.target_right[0][2] = 0.7  # z
+
         # Place position for right arm
         self.userdata.target_right[1][0] = 0.6  # x
         self.userdata.target_right[1][1] = 0.0  # y
         self.userdata.target_right[1][2] = 0.7  # z
+
         # Pick position for left arm
         self.userdata.target_left[0][0] = 0.6  # x
         self.userdata.target_left[0][1] = 0.0  # y
         self.userdata.target_left[0][2] = 0.7  # z
+        
         # Place position for left arm
         self.userdata.target_left[1][0] = 0.6  # x
         self.userdata.target_left[1][1] = 0.3  # y
