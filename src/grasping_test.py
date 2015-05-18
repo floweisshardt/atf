@@ -121,7 +121,7 @@ class SpawnObjects(smach.State):
         self.add_remove_object("remove", table, "", "")
         position = [0.37, -0.3, 0.62, 1.0]
         self.add_remove_object("add", table, position, "mesh")
-        '''
+
         rospy.loginfo("Add an object to world")
         collision_object = CollisionObject()
         collision_object.header.stamp = rospy.Time.now()
@@ -133,36 +133,8 @@ class SpawnObjects(smach.State):
         object_shape.dimensions.append(0.01)  # Radius
         collision_object.primitives.append(object_shape)
         self.add_remove_object("remove", collision_object, "", "")
-        position = [userdata.target[0] + 0.02, userdata.target[1], userdata.target[2], 1.0]
+        position = [userdata.target[0][0], userdata.target[0][1] + 0.02, userdata.target[0][2], 1.0]
         self.add_remove_object("add", collision_object, position, "primitive")
-
-        object_shape = SolidPrimitive()
-        object_shape.type = 3  # Cylinder
-        object_shape.dimensions.append(0.2)  # Height
-        object_shape.dimensions.append(0.01)  # Radius
-
-        pose = Pose()
-        pose.position.x = 0.0
-        pose.position.y = 0.0
-        pose.position.z = 0.0
-        pose.orientation.w = 1.0
-
-        object_attached = AttachedCollisionObject()
-        object_attached.object.header.frame_id = "gripper_" + userdata.active_arm + "_grasp_link"
-        object_attached.link_name = "gripper_"+userdata.active_arm+"_grasp_link"
-        object_attached.object.id = "current_object"
-        object_attached.object.primitives.append(object_shape)
-        object_attached.object.primitive_poses.append(pose)
-        object_attached.touch_links = ["gripper_"+userdata.active_arm+"_base_link",
-                                     "gripper_"+userdata.active_arm+"_camera_link",
-                                     "gripper_"+userdata.active_arm+"_finger_1_link",
-                                     "gripper_"+userdata.active_arm+"_finger_2_link",
-                                     "gripper_"+userdata.active_arm+"_grasp_link",
-                                     "gripper_"+userdata.active_arm+"_palm_link"]
-        object_attached.object.operation = CollisionObject.ADD
-        planning_scene.world.collision_objects.append(object_attached)
-        self.pub_planning_scene.publish(planning_scene)
-        '''
 
         return 'succeeded'
 
@@ -212,47 +184,15 @@ class SpawnObjects(smach.State):
         return mesh
 
 
-class AttacheObject(smach.State):
-    def __init__(self):
-        smach.State.__init__(self,
-                             outcomes=['succeeded'],
-                             input_keys=['target', 'active_arm'])
-    def execute(self, userdata):
-        '''
-        collision_object = CollisionObject()
-        collision_object.header.frame_id = "gripper_"+userdata.active_arm+"_grasp_link"
-        collision_object.id = "current_object"
-        object_shape = SolidPrimitive()
-        object_shape.type = 3  # Cylinder
-        object_shape.dimensions.append(0.2)  # Height
-        object_shape.dimensions.append(0.01)  # Radius
-        collision_object.primitives.append(object_shape)
-        pose = Pose()
-        pose.position.x = 0
-        pose.position.y = 0
-        pose.position.z = 0
-        pose.orientation.w = 1
-        collision_object.primitive_poses.append(pose)
-        collision_object.operation = 0 #ADD
-        object_attached = AttachedCollisionObject()
-        object_attached.link_name = "gripper_"+userdata.active_arm+"_grasp_link"
-        object_attached.object = collision_object
-        object_attached.touch_links = ["gripper_"+userdata.active_arm+"_base_link",
-                                     "gripper_"+userdata.active_arm+"_camera_link",
-                                     "gripper_"+userdata.active_arm+"_finger_1_link",
-                                     "gripper_"+userdata.active_arm+"_finger_2_link",
-                                     "gripper_"+userdata.active_arm+"_grasp_link",
-                                     "gripper_"+userdata.active_arm+"_palm_link"]
-        planning_scene.world.collision_objects.append(object_attached)
-        self.pub_planning_scene.publish(planning_scene)
-        '''
-
-
 class StartPosition(smach.State):
     def __init__(self):
         smach.State.__init__(self,
-                             outcomes=['succeeded', 'failed'],
-                             input_keys=['active_arm'])
+                             outcomes=['succeeded', 'failed', 'error'],
+                             input_keys=['active_arm', 'error_max'],
+                             output_keys=['error_message'])
+
+        self.planning_error = 0
+        self.traj_name = "pre_grasp"
 
     def execute(self, userdata):
         if userdata.active_arm == "left":
@@ -264,8 +204,15 @@ class StartPosition(smach.State):
             return 'failed'
 
         try:
-            traj = self.plan_movement(userdata.active_arm, "pre_grasp")
+            traj = self.plan_movement(userdata.active_arm, self.traj_name)
         except (ValueError, IndexError):
+            if self.planning_error == userdata.error_max:
+                self.planning_error = 0
+                userdata.error_message = "Unabled to plan " + self.traj_name + " trajectory for " + userdata.active_arm\
+                                         + " arm"
+                return "error"
+
+            self.planning_error += 1
             return "failed"
         else:
             self.planer.execute(traj)
@@ -295,8 +242,12 @@ class StartPosition(smach.State):
 class EndPosition(smach.State):
     def __init__(self):
         smach.State.__init__(self,
-                             outcomes=['succeeded', 'failed'],
-                             input_keys=['active_arm'])
+                             outcomes=['succeeded', 'failed', 'error'],
+                             input_keys=['active_arm', 'error_max'],
+                             output_keys=['error_message'])
+
+        self.planning_error = 0
+        self.traj_name = "retreat"
 
     def execute(self, userdata):
         if userdata.active_arm == "left":
@@ -308,8 +259,15 @@ class EndPosition(smach.State):
             return 'failed'
 
         try:
-            traj = self.plan_movement(userdata.active_arm, "retreat")
+            traj = self.plan_movement(userdata.active_arm, self.traj_name)
         except (ValueError, IndexError):
+            if self.planning_error == userdata.error_max:
+                self.planning_error = 0
+                userdata.error_message = "Unabled to plan " + self.traj_name + " trajectory for " + userdata.active_arm\
+                                         + " arm"
+                return "error"
+
+            self.planning_error += 1
             return "failed"
         else:
             self.planer.execute(traj)
@@ -339,9 +297,9 @@ class EndPosition(smach.State):
 class Manipulation(smach.State):
     def __init__(self):
         smach.State.__init__(self,
-                             outcomes=['succeeded', 'failed'],
-                             input_keys=['active_arm', 'cs_data', 'target_cs', 'target', 'trajectories'],
-                             output_keys=['target_cs', 'cs_data', 'trajectories'])
+                             outcomes=['succeeded', 'failed', 'error'],
+                             input_keys=['active_arm', 'cs_data', 'target_cs', 'target', 'trajectories', 'error_max', 'error_message'],
+                             output_keys=['target_cs', 'cs_data', 'trajectories', 'error_message'])
         self.angle_offset_yaw = 0.0
         self.angle_offset_pitch = 0.0
         self.cs_position_x = 0.0
@@ -360,6 +318,9 @@ class Manipulation(smach.State):
 
         rospy.Timer(rospy.Duration.from_sec(0.1), self.broadcast_tf)
         self.br = tf.TransformBroadcaster()
+
+        self.planning_error = 0
+        self.traj_name = ""
 
     def broadcast_tf(self, event):
         self.br.sendTransform(
@@ -407,10 +368,12 @@ class Manipulation(smach.State):
             rospy.logerr("Invalid arm_active")
             return False
 
-        if not (userdata.trajectories[0] and userdata.trajectories[1] and userdata.trajectories[2]):
+        # Plan Pick-Trajectorie
+        if userdata.trajectories[0] == 0.0 or userdata.trajectories[1] == 0.0 or userdata.trajectories[2] == 0.0:
 
             # -------------------- PICK --------------------
             # ----------- APPROACH -----------
+            self.traj_name = "approach"
             start_state = RobotState()
             (pre_grasp_config, error_code) = sss.compose_trajectory("arm_" + userdata.active_arm, "pre_grasp")
             if error_code != 0:
@@ -437,15 +400,24 @@ class Manipulation(smach.State):
                                                                                 self.eef_step,
                                                                                 self.jump_threshold, True)
 
-            print "Plan approach: " + str(frac_approach * 100.0) + "%"
+            print "Plan " + self.traj_name + ": " + str(frac_approach * 100.0) + "%"
 
             if not (frac_approach == 1.0):
-                rospy.logerr("Unable to plan approach trajectory")
+                userdata.error_message = "Unable to plan " + self.traj_name + " trajectory"
+                rospy.logerr(userdata.error_message)
+
+                if self.planning_error == userdata.error_max:
+                    self.planning_error = 0
+                    return 'error'
+
+                self.planning_error += 1
+
                 return False
 
             userdata.trajectories[0] = traj_approach
 
             # ----------- GRASP -----------
+            self.traj_name = "grasp"
             traj_approach_endpoint = traj_approach.joint_trajectory.points[-1]
             start_state = RobotState()
             start_state.joint_state.name = traj_approach.joint_trajectory.joint_names
@@ -464,16 +436,65 @@ class Manipulation(smach.State):
             print "Plan grasp: " + str(frac_grasp * 100.0) + "%"
 
             if not (frac_grasp == 1.0):
-                rospy.logerr("Unable to plan grasp trajectory")
+                userdata.error_message = "Unable to plan " + self.traj_name + " trajectory"
+                rospy.logerr(userdata.error_message)
+
+                if self.planning_error == userdata.error_max:
+                    self.planning_error = 0
+                    return 'error'
+
+                self.planning_error += 1
+
                 return False
 
             userdata.trajectories[1] = traj_grasp
 
+            collision_object = CollisionObject()
+            collision_object.header.stamp = rospy.Time.now()
+            collision_object.header.frame_id = "odom_combined"
+            collision_object.id = "object"
+            object_shape = SolidPrimitive()
+            object_shape.type = 3  # Cylinder
+            object_shape.dimensions.append(0.2)  # Height
+            object_shape.dimensions.append(0.01)  # Radius
+            collision_object.primitives.append(object_shape)
+            # SpawnObjects.add_remove_object(SpawnObjects, "remove", collision_object, "", "")
+
             # ----------- LIFT -----------
+            self.traj_name = "lift"
             traj_grasp_endpoint = traj_grasp.joint_trajectory.points[-1]
             start_state = RobotState()
             start_state.joint_state.name = traj_grasp.joint_trajectory.joint_names
             start_state.joint_state.position = traj_grasp_endpoint.positions
+
+            # Attach object
+            object_shape = SolidPrimitive()
+            object_shape.type = 3  # CYLINDER
+            object_shape.dimensions.append(0.2)
+            object_shape.dimensions.append(0.01)
+
+            object_pose = Pose()
+            object_pose.orientation.w = 1.0
+
+            object_collision = CollisionObject()
+            object_collision.header.frame_id = "gripper_"+userdata.active_arm+"_grasp_link"
+            object_collision.id = "object"
+            object_collision.primitives.append(object_shape)
+            object_collision.primitive_poses.append(object_pose)
+            object_collision.operation = CollisionObject.ADD
+
+            object_attached = AttachedCollisionObject()
+            object_attached.link_name = "gripper_"+userdata.active_arm+"_grasp_link"
+            object_attached.object = object_collision
+            object_attached.touch_links = ["gripper_"+userdata.active_arm+"_base_link",
+                                           "gripper_"+userdata.active_arm+"_camera_link",
+                                           "gripper_"+userdata.active_arm+"_finger_1_link",
+                                           "gripper_"+userdata.active_arm+"_finger_2_link",
+                                           "gripper_"+userdata.active_arm+"_grasp_link",
+                                           "gripper_"+userdata.active_arm+"_palm_link"]
+
+            # start_state.attached_collision_objects.append(object_attached)
+
             start_state.is_diff = True
             self.planer.set_start_state(start_state)
 
@@ -496,18 +517,30 @@ class Manipulation(smach.State):
             print "Plan lift: " + str(frac_lift * 100.0) + "%"
 
             if not (frac_lift == 1.0):
-                rospy.logerr("Unable to plan lift trajectory")
+                userdata.error_message = "Unable to plan " + self.traj_name + " trajectory"
+                rospy.logerr(userdata.error_message)
+
+                if self.planning_error == userdata.error_max:
+                    self.planning_error = 0
+                    return 'error'
+
+                self.planning_error += 1
+
                 return False
 
             userdata.trajectories[2] = traj_lift
+            self.planning_error = 0
+
             userdata.target_cs = 1
             rospy.loginfo("Pick planning complete")
             return False
 
+        # Plan Place-Trajectorie
         else:
 
             # -------------------- PLACE --------------------
             # ----------- MOVE -----------
+            self.traj_name = "move"
             traj_lift_endpoint = userdata.trajectories[2].joint_trajectory.points[-1]
             start_state = RobotState()
             start_state.joint_state.name = userdata.trajectories[2].joint_trajectory.joint_names
@@ -538,7 +571,15 @@ class Manipulation(smach.State):
             print "Plan move: " + str(frac_move * 100.0) + "%"
 
             if not (frac_move == 1.0):
-                rospy.logerr("Unable to plan move trajectory")
+                userdata.error_message = "Unable to plan " + self.traj_name + " trajectory"
+                rospy.logerr(userdata.error_message)
+
+                if self.planning_error == userdata.error_max:
+                    self.planning_error = 0
+                    return 'error'
+
+                self.planning_error += 1
+
                 return False
 
             userdata.trajectories[3] = traj_move
@@ -549,6 +590,7 @@ class Manipulation(smach.State):
                 return False
 
             # ----------- DROP -----------
+            self.traj_name = "drop"
             traj_move_endpoint = traj_move.joint_trajectory.points[-1]
             start_state = RobotState()
             start_state.joint_state.name = traj_move.joint_trajectory.joint_names
@@ -571,12 +613,68 @@ class Manipulation(smach.State):
             print "Plan drop: " + str(frac_drop * 100.0) + "%"
 
             if not (frac_drop == 1.0):
-                rospy.logerr("Unable to plan move trajectory")
+                userdata.error_message = "Unable to plan " + self.traj_name + " trajectory"
+                rospy.logerr(userdata.error_message)
+
+                if self.planning_error == userdata.error_max:
+                    self.planning_error = 0
+                    return 'error'
+
+                self.planning_error += 1
+
                 return False
 
             userdata.trajectories[4] = traj_drop
+            '''
+            # Detach object
+            traj_lift_endpoint = traj_lift.joint_trajectory.points[-1]
+            start_state = RobotState()
+            start_state.joint_state.name = traj_lift.joint_trajectory.joint_names
+            start_state.joint_state.position = traj_lift_endpoint.positions
+
+            rose_primitive = SolidPrimitive()
+            rose_primitive.type = 3 #CYLINDER
+            rose_height = 0.4
+            rose_radius = 0.05
+            rose_primitive.dimensions.append(rose_height)
+            rose_primitive.dimensions.append(rose_radius)
+
+            rose_pose = Pose()
+            rose_pose.orientation.w = 1.0
+
+            rose_collision = CollisionObject()
+            rose_collision.header.frame_id = "gripper_"+userdata.active_arm+"_grasp_link"
+            rose_collision.id = "current_rose"
+            rose_collision.primitives.append(rose_primitive)
+            rose_collision.primitive_poses.append(rose_pose)
+            rose_collision.operation = 0 #ADD
+
+            rose_attached = AttachedCollisionObject()
+            rose_attached.link_name = "gripper_"+userdata.active_arm+"_grasp_link"
+            rose_attached.object = rose_collision
+            rose_attached.touch_links = ["gripper_"+userdata.active_arm+"_base_link", "gripper_"+userdata.active_arm+"_camera_link", "gripper_"+userdata.active_arm+"_finger_1_link", "gripper_"+userdata.active_arm+"_finger_2_link", "gripper_"+userdata.active_arm+"_grasp_link", "gripper_"+userdata.active_arm+"_palm_link"]
+
+            start_state.attached_collision_objects.append(rose_attached)
+
+            start_state.is_diff = True
+
+            rospy.loginfo("Add an object to world")
+            collision_object = CollisionObject()
+            collision_object.header.stamp = rospy.Time.now()
+            collision_object.header.frame_id = "odom_combined"
+            collision_object.id = "object"
+            object_shape = SolidPrimitive()
+            object_shape.type = 3  # Cylinder
+            object_shape.dimensions.append(0.2)  # Height
+            object_shape.dimensions.append(0.01)  # Radius
+            collision_object.primitives.append(object_shape)
+            self.add_remove_object("remove", collision_object, "", "")
+            position = [userdata.target[0] + 0.02, userdata.target[1], userdata.target[2], 1.0]
+            self.add_remove_object("add", collision_object, position, "primitive")
+            '''
 
             # ----------- RETREAT -----------
+            self.traj_name = "retreat"
             traj_drop_endpoint = traj_drop.joint_trajectory.points[-1]
             start_state = RobotState()
             start_state.joint_state.name = traj_drop.joint_trajectory.joint_names
@@ -601,21 +699,35 @@ class Manipulation(smach.State):
             print "Plan retreat: " + str(frac_retreat * 100.0) + "%"
 
             if not (frac_retreat == 1.0):
-                rospy.logerr("Unable to plan retreat trajectory")
+                userdata.error_message = "Unable to plan " + self.traj_name + " trajectory"
+                rospy.logerr(userdata.error_message)
+
+                if self.planning_error == userdata.error_max:
+                    self.planning_error = 0
+                    return 'error'
+
+                self.planning_error += 1
+
                 return False
 
             userdata.trajectories[5] = traj_retreat
+            self.planning_error = 0
             userdata.target_cs = 0
             rospy.loginfo("Place planning complete")
 
         # ----------- TRAJECTORY OPERATIONS -----------
         rospy.loginfo("Smooth trajectories")
-        userdata.trajectories[0] = smooth_cartesian_path(userdata.trajectories[0])
-        userdata.trajectories[1] = smooth_cartesian_path(userdata.trajectories[1])
-        userdata.trajectories[2] = smooth_cartesian_path(userdata.trajectories[2])
-        userdata.trajectories[3] = smooth_cartesian_path(userdata.trajectories[3])
-        userdata.trajectories[4] = smooth_cartesian_path(userdata.trajectories[4])
-        userdata.trajectories[5] = smooth_cartesian_path(userdata.trajectories[5])
+        try:
+            userdata.trajectories[0] = smooth_cartesian_path(userdata.trajectories[0])
+            userdata.trajectories[1] = smooth_cartesian_path(userdata.trajectories[1])
+            userdata.trajectories[2] = smooth_cartesian_path(userdata.trajectories[2])
+            userdata.trajectories[3] = smooth_cartesian_path(userdata.trajectories[3])
+            userdata.trajectories[4] = smooth_cartesian_path(userdata.trajectories[4])
+            userdata.trajectories[5] = smooth_cartesian_path(userdata.trajectories[5])
+        except (ValueError, IndexError, AttributeError):
+            userdata.trajectories[:] = []
+            userdata.trajectories = range(6)
+            return "failed"
 
         rospy.loginfo("Fix velocities")
         userdata.trajectories[0] = fix_velocities(userdata.trajectories[0])
@@ -661,7 +773,7 @@ class SwitchArm(smach.State):
         self.counter = 1
 
     def execute(self, userdata):
-        if self.counter == 4:
+        if self.counter == 2:
             return "finished"
         else:
             if self.counter % 2 == 0:
@@ -707,6 +819,17 @@ class SwitchTargets(smach.State):
         return "succeeded"
 
 
+class Error(smach.State):
+    def __init__(self):
+        smach.State.__init__(self,
+                             outcomes=['finished'],
+                             input_keys=['error_message'])
+
+    def execute(self, userdata):
+        print userdata.error_message
+        return "finished"
+
+
 class SM(smach.StateMachine):
     def __init__(self):        
         smach.StateMachine.__init__(self, outcomes=['ended'])
@@ -720,10 +843,12 @@ class SM(smach.StateMachine):
         self.userdata.cs_data[2] = -5.0 / 180.0 * math.pi  # yaw (z)
         self.userdata.cs_data[3] = 1.0  # direction for rotation
 
+        self.userdata.target_right = [[]]
         self.userdata.target_right = range(2)  # list for right arm
         self.userdata.target_right[0] = range(3)
         self.userdata.target_right[1] = range(3)
 
+        self.userdata.target_left = [[]]
         self.userdata.target_left = range(2)  # list for left arm
         self.userdata.target_left[0] = range(3)
         self.userdata.target_left[1] = range(3)
@@ -748,9 +873,13 @@ class SM(smach.StateMachine):
         self.userdata.target_left[1][1] = 0.3  # y
         self.userdata.target_left[1][2] = 0.7  # z
 
-        self.userdata.trajectories = range(6)  # list for trajectories
+        self.userdata.trajectories = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]  # list for trajectories
 
         self.userdata.target = self.userdata.target_right
+
+        # Error Counter
+        self.userdata.error_max = 5
+        self.userdata.error_message = ""
 
         with self:
 
@@ -759,15 +888,18 @@ class SM(smach.StateMachine):
 
             smach.StateMachine.add('START_POSITION', StartPosition(),
                                    transitions={'succeeded': 'MANIPULATION',
-                                                'failed': 'START_POSITION'})
+                                                'failed': 'START_POSITION',
+                                                'error': 'ERROR'})
 
             smach.StateMachine.add('MANIPULATION', Manipulation(),
                                    transitions={'succeeded': 'END_POSITION',
-                                                'failed': 'MANIPULATION'})
+                                                'failed': 'MANIPULATION',
+                                                'error': 'ERROR'})
 
             smach.StateMachine.add('END_POSITION', EndPosition(),
                                    transitions={'succeeded': 'SWITCH_ARM',
-                                                'failed': 'END_POSITION'})
+                                                'failed': 'END_POSITION',
+                                                'error': 'ERROR'})
 
             smach.StateMachine.add('SWITCH_ARM', SwitchArm(),
                                    transitions={'succeeded': 'START_POSITION',
@@ -776,6 +908,9 @@ class SM(smach.StateMachine):
 
             smach.StateMachine.add('SWITCH_TARGETS', SwitchTargets(),
                                    transitions={'succeeded': 'START_POSITION'})
+
+            smach.StateMachine.add('ERROR', Error(),
+                                   transitions={'finished': 'ended'})
 
 
 if __name__ == '__main__':
