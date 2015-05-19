@@ -20,6 +20,7 @@ planning_scene = PlanningScene()
 planning_scene.is_diff = True
 
 planning_scene_interface = PlanningSceneInterface()
+pub_planning_scene = rospy.Publisher("planning_scene", PlanningScene, queue_size=1)
 
 active_arm = "right"
 
@@ -102,43 +103,28 @@ def scale_joint_trajectory_speed(traj, scale):
     return new_traj
 
 
-class SpawnObjects(smach.State):
-    def __init__(self):
-        smach.State.__init__(self,
-                             outcomes=['succeeded'],
-                             input_keys=['target', 'active_arm'])
-        self.pub_planning_scene = rospy.Publisher("planning_scene", PlanningScene, queue_size=1)
+def plan_movement(planer, arm, pose):
+        (config, error_code) = sss.compose_trajectory("arm_" + arm, pose)
+        if error_code != 0:
+            rospy.logerr("Unable to parse " + pose + " configuration")
 
-    def execute(self, userdata):
-        # Initialize objects
-        rospy.loginfo("Add table to world")
-        table = CollisionObject()
-        table.id = "table"
-        table.header.stamp = rospy.Time.now()
-        table.header.frame_id = "odom_combined"
-        filename = rospkg.RosPack().get_path("cob_grasping") + "/files/table.stl"
-        table.meshes.append(self.load_mesh(filename))
-        self.add_remove_object("remove", table, "", "")
-        position = [0.37, -0.3, 0.62, 1.0]
-        self.add_remove_object("add", table, position, "mesh")
+        start_state = RobotState()
+        start_state.joint_state.name = config.joint_names
 
-        rospy.loginfo("Add an object to world")
-        collision_object = CollisionObject()
-        collision_object.header.stamp = rospy.Time.now()
-        collision_object.header.frame_id = "odom_combined"
-        collision_object.id = "object"
-        object_shape = SolidPrimitive()
-        object_shape.type = 3  # Cylinder
-        object_shape.dimensions.append(0.2)  # Height
-        object_shape.dimensions.append(0.01)  # Radius
-        collision_object.primitives.append(object_shape)
-        self.add_remove_object("remove", collision_object, "", "")
-        position = [userdata.target[0][0], userdata.target[0][1] + 0.02, userdata.target[0][2], 1.0]
-        self.add_remove_object("add", collision_object, position, "primitive")
+        start_state.joint_state.position = planer.get_current_joint_values()
+        planer.set_start_state(start_state)
 
-        return 'succeeded'
+        planer.clear_pose_targets()
+        planer.set_joint_value_target(config.points[0].positions)
 
-    def add_remove_object(self, co_operation, co_object, co_position, co_type):
+        plan = planer.plan()
+
+        plan = smooth_cartesian_path(plan)
+        plan = scale_joint_trajectory_speed(plan, 0.3)
+        return plan
+
+
+def add_remove_object(co_operation, co_object, co_position, co_type):
         if co_operation == "add":
             co_object.operation = CollisionObject.ADD
             pose = Pose()
@@ -157,8 +143,30 @@ class SpawnObjects(smach.State):
             rospy.logerr("Invalid command")
             return
         planning_scene.world.collision_objects.append(co_object)
-        self.pub_planning_scene.publish(planning_scene)
-        rospy.sleep(1)
+        pub_planning_scene.publish(planning_scene)
+        rospy.sleep(1.0)
+
+
+class SpawnEnvironment(smach.State):
+    def __init__(self):
+        smach.State.__init__(self,
+                             outcomes=['succeeded'],
+                             input_keys=['target', 'active_arm'])
+
+    def execute(self, userdata):
+        # Initialize objects
+        rospy.loginfo("Add table to world")
+        table = CollisionObject()
+        table.id = "table"
+        table.header.stamp = rospy.Time.now()
+        table.header.frame_id = "odom_combined"
+        filename = rospkg.RosPack().get_path("cob_grasping") + "/files/table.stl"
+        table.meshes.append(self.load_mesh(filename))
+        add_remove_object("remove", table, "", "")
+        position = [0.37, -0.3, 0.62, 1.0]
+        add_remove_object("add", table, position, "mesh")
+
+        return 'succeeded'
 
     @staticmethod
     def load_mesh(filename):
@@ -204,7 +212,7 @@ class StartPosition(smach.State):
             return 'failed'
 
         try:
-            traj = self.plan_movement(userdata.active_arm, self.traj_name)
+            traj = plan_movement(self.planer, userdata.active_arm, self.traj_name)
         except (ValueError, IndexError):
             if self.planning_error == userdata.error_plan_max:
                 self.planning_error = 0
@@ -218,32 +226,12 @@ class StartPosition(smach.State):
             self.planer.execute(traj)
             return "succeeded"
 
-    def plan_movement(self, arm, pose):
-        (config, error_code) = sss.compose_trajectory("arm_" + arm, pose)
-        if error_code != 0:
-            rospy.logerr("Unable to parse " + pose + " configuration")
-
-        start_state = RobotState()
-        start_state.joint_state.name = config.joint_names
-
-        start_state.joint_state.position = self.planer.get_current_joint_values()
-        self.planer.set_start_state(start_state)
-
-        self.planer.clear_pose_targets()
-        self.planer.set_joint_value_target(config.points[0].positions)
-
-        plan = self.planer.plan()
-
-        plan = smooth_cartesian_path(plan)
-        plan = scale_joint_trajectory_speed(plan, 0.3)
-        return plan
-
 
 class EndPosition(smach.State):
     def __init__(self):
         smach.State.__init__(self,
                              outcomes=['succeeded', 'failed', 'error'],
-                             input_keys=['active_arm', 'error_plan_max'],
+                             input_keys=['active_arm', 'error_plan_max', 'target'],
                              output_keys=['error_message'])
 
         self.planning_error = 0
@@ -258,8 +246,22 @@ class EndPosition(smach.State):
             userdata.error_message = "Invalid arm"
             return "error"
 
+        # ----------- SPAWN OBJECT ------------
+        collision_object = CollisionObject()
+        collision_object.header.stamp = rospy.Time.now()
+        collision_object.header.frame_id = "odom_combined"
+        collision_object.id = "object"
+        object_shape = SolidPrimitive()
+        object_shape.type = 3  # Cylinder
+        object_shape.dimensions.append(0.17)  # Height
+        object_shape.dimensions.append(0.01)  # Radius
+        collision_object.primitives.append(object_shape)
+        add_remove_object("remove", collision_object, "", "")
+        position = [userdata.target[1][0], userdata.target[1][1], userdata.target[1][2], 1.0]
+        add_remove_object("add", collision_object, position, "primitive")
+
         try:
-            traj = self.plan_movement(userdata.active_arm, self.traj_name)
+            traj = plan_movement(self.planer, userdata.active_arm, self.traj_name)
         except (ValueError, IndexError):
             if self.planning_error == userdata.error_plan_max:
                 self.planning_error = 0
@@ -271,27 +273,18 @@ class EndPosition(smach.State):
             return "failed"
         else:
             self.planer.execute(traj)
+            # ----------- REMOVE OBJECT ------------
+            collision_object = CollisionObject()
+            collision_object.header.stamp = rospy.Time.now()
+            collision_object.header.frame_id = "odom_combined"
+            collision_object.id = "object"
+            object_shape = SolidPrimitive()
+            object_shape.type = 3  # Cylinder
+            object_shape.dimensions.append(0.17)  # Height
+            object_shape.dimensions.append(0.01)  # Radius
+            collision_object.primitives.append(object_shape)
+            add_remove_object("remove", collision_object, "", "")
             return "succeeded"
-
-    def plan_movement(self, arm, pose):
-        (config, error_code) = sss.compose_trajectory("arm_" + arm, pose)
-        if error_code != 0:
-            rospy.logerr("Unable to parse " + pose + " configuration")
-
-        start_state = RobotState()
-        start_state.joint_state.name = config.joint_names
-
-        start_state.joint_state.position = self.planer.get_current_joint_values()
-        self.planer.set_start_state(start_state)
-
-        self.planer.clear_pose_targets()
-        self.planer.set_joint_value_target(config.points[0].positions)
-
-        plan = self.planer.plan()
-
-        plan = smooth_cartesian_path(plan)
-        plan = scale_joint_trajectory_speed(plan, 0.3)
-        return plan
 
 
 class Manipulation(smach.State):
@@ -378,7 +371,7 @@ class Manipulation(smach.State):
             return "error"
 
         # Plan Pick-Trajectorie
-        if userdata.trajectories[0] == 0.0 or userdata.trajectories[1] == 0.0 or userdata.trajectories[2] == 0.0:
+        if not (userdata.trajectories[0] and userdata.trajectories[1] and userdata.trajectories[2]):
 
             # -------------------- PICK --------------------
             # ----------- APPROACH -----------
@@ -412,7 +405,9 @@ class Manipulation(smach.State):
                                                                                 self.jump_threshold,
                                                                                 True)
 
-            if frac_approach < 1.0:
+            if frac_approach < 0.5:
+                rospy.logerr("Plan " + self.traj_name + ": " + str(round(frac_approach * 100, 2)) + "%")
+            elif 0.5 <= frac_approach < 1.0:
                 rospy.logwarn("Plan " + self.traj_name + ": " + str(round(frac_approach * 100, 2)) + "%")
             else:
                 rospy.loginfo("Plan " + self.traj_name + ": " + str(round(frac_approach * 100, 2)) + "%")
@@ -442,7 +437,9 @@ class Manipulation(smach.State):
                                                                           self.eef_step, self.jump_threshold,
                                                                           True)
 
-            if frac_grasp < 1.0:
+            if frac_grasp < 0.5:
+                rospy.logerr("Plan " + self.traj_name + ": " + str(round(frac_grasp * 100, 2)) + "%")
+            elif 0.5 <= frac_grasp < 1.0:
                 rospy.logwarn("Plan " + self.traj_name + ": " + str(round(frac_grasp * 100, 2)) + "%")
             else:
                 rospy.loginfo("Plan " + self.traj_name + ": " + str(round(frac_grasp * 100, 2)) + "%")
@@ -454,17 +451,6 @@ class Manipulation(smach.State):
 
             userdata.trajectories[1] = traj_grasp
 
-            collision_object = CollisionObject()
-            collision_object.header.stamp = rospy.Time.now()
-            collision_object.header.frame_id = "odom_combined"
-            collision_object.id = "object"
-            object_shape = SolidPrimitive()
-            object_shape.type = 3  # Cylinder
-            object_shape.dimensions.append(0.2)  # Height
-            object_shape.dimensions.append(0.01)  # Radius
-            collision_object.primitives.append(object_shape)
-            # SpawnObjects.add_remove_object(SpawnObjects, "remove", collision_object, "", "")
-
             # ----------- LIFT -----------
             self.traj_name = "lift"
             traj_grasp_endpoint = traj_grasp.joint_trajectory.points[-1]
@@ -475,14 +461,14 @@ class Manipulation(smach.State):
             # Attach object
             object_shape = SolidPrimitive()
             object_shape.type = 3  # CYLINDER
-            object_shape.dimensions.append(0.2)
+            object_shape.dimensions.append(0.17)
             object_shape.dimensions.append(0.01)
 
             object_pose = Pose()
             object_pose.orientation.w = 1.0
 
             object_collision = CollisionObject()
-            object_collision.header.frame_id = "gripper_"+userdata.active_arm+"_grasp_link"
+            object_collision.header.frame_id = "gripper_" + userdata.active_arm + "_grasp_link"
             object_collision.id = "object"
             object_collision.primitives.append(object_shape)
             object_collision.primitive_poses.append(object_pose)
@@ -498,7 +484,7 @@ class Manipulation(smach.State):
                                            "gripper_"+userdata.active_arm+"_grasp_link",
                                            "gripper_"+userdata.active_arm+"_palm_link"]
 
-            # start_state.attached_collision_objects.append(object_attached)
+            start_state.attached_collision_objects.append(object_attached)
 
             start_state.is_diff = True
             self.planer.set_start_state(start_state)
@@ -517,7 +503,9 @@ class Manipulation(smach.State):
                                                                         self.eef_step, self.jump_threshold,
                                                                         True)
 
-            if frac_lift < 1.0:
+            if frac_lift < 0.5:
+                rospy.logerr("Plan " + self.traj_name + ": " + str(round(frac_lift * 100, 2)) + "%")
+            elif 0.5 <= frac_lift < 1.0:
                 rospy.logwarn("Plan " + self.traj_name + ": " + str(round(frac_lift * 100, 2)) + "%")
             else:
                 rospy.loginfo("Plan " + self.traj_name + ": " + str(round(frac_lift * 100, 2)) + "%")
@@ -535,11 +523,18 @@ class Manipulation(smach.State):
 
         # Plan Place-Trajectorie
         else:
-
             # -------------------- PLACE --------------------
             # ----------- MOVE -----------
             self.traj_name = "move"
-            traj_lift_endpoint = userdata.trajectories[2].joint_trajectory.points[-1]
+            try:
+                traj_lift_endpoint = userdata.trajectories[2].joint_trajectory.points[-1]
+            except AttributeError:
+                userdata.trajectories[:] = []
+                userdata.trajectories = [False]*6
+                userdata.error_message = "Error: " + str(AttributeError)
+                self.planning_error += 1
+                return False
+
             start_state = RobotState()
             start_state.joint_state.name = userdata.trajectories[2].joint_trajectory.joint_names
             start_state.joint_state.position = traj_lift_endpoint.positions
@@ -565,7 +560,9 @@ class Manipulation(smach.State):
                                                                         self.eef_step, self.jump_threshold,
                                                                         True)
 
-            if frac_move < 1.0:
+            if frac_move < 0.5:
+                rospy.logerr("Plan " + self.traj_name + ": " + str(round(frac_move * 100, 2)) + "%")
+            elif 0.5 <= frac_move < 1.0:
                 rospy.logwarn("Plan " + self.traj_name + ": " + str(round(frac_move * 100, 2)) + "%")
             else:
                 rospy.loginfo("Plan " + self.traj_name + ": " + str(round(frac_move * 100, 2)) + "%")
@@ -605,7 +602,9 @@ class Manipulation(smach.State):
                                                                         self.eef_step, self.jump_threshold,
                                                                         True)
 
-            if frac_drop < 1.0:
+            if frac_drop < 0.5:
+                rospy.logerr("Plan " + self.traj_name + ": " + str(round(frac_drop * 100, 2)) + "%")
+            elif 0.5 <= frac_drop < 1.0:
                 rospy.logwarn("Plan " + self.traj_name + ": " + str(round(frac_drop * 100, 2)) + "%")
             else:
                 rospy.loginfo("Plan " + self.traj_name + ": " + str(round(frac_drop * 100, 2)) + "%")
@@ -616,53 +615,6 @@ class Manipulation(smach.State):
                 return False
 
             userdata.trajectories[4] = traj_drop
-            '''
-            # Detach object
-            traj_lift_endpoint = traj_lift.joint_trajectory.points[-1]
-            start_state = RobotState()
-            start_state.joint_state.name = traj_lift.joint_trajectory.joint_names
-            start_state.joint_state.position = traj_lift_endpoint.positions
-
-            rose_primitive = SolidPrimitive()
-            rose_primitive.type = 3 #CYLINDER
-            rose_height = 0.4
-            rose_radius = 0.05
-            rose_primitive.dimensions.append(rose_height)
-            rose_primitive.dimensions.append(rose_radius)
-
-            rose_pose = Pose()
-            rose_pose.orientation.w = 1.0
-
-            rose_collision = CollisionObject()
-            rose_collision.header.frame_id = "gripper_"+userdata.active_arm+"_grasp_link"
-            rose_collision.id = "current_rose"
-            rose_collision.primitives.append(rose_primitive)
-            rose_collision.primitive_poses.append(rose_pose)
-            rose_collision.operation = 0 #ADD
-
-            rose_attached = AttachedCollisionObject()
-            rose_attached.link_name = "gripper_"+userdata.active_arm+"_grasp_link"
-            rose_attached.object = rose_collision
-            rose_attached.touch_links = ["gripper_"+userdata.active_arm+"_base_link", "gripper_"+userdata.active_arm+"_camera_link", "gripper_"+userdata.active_arm+"_finger_1_link", "gripper_"+userdata.active_arm+"_finger_2_link", "gripper_"+userdata.active_arm+"_grasp_link", "gripper_"+userdata.active_arm+"_palm_link"]
-
-            start_state.attached_collision_objects.append(rose_attached)
-
-            start_state.is_diff = True
-
-            rospy.loginfo("Add an object to world")
-            collision_object = CollisionObject()
-            collision_object.header.stamp = rospy.Time.now()
-            collision_object.header.frame_id = "odom_combined"
-            collision_object.id = "object"
-            object_shape = SolidPrimitive()
-            object_shape.type = 3  # Cylinder
-            object_shape.dimensions.append(0.2)  # Height
-            object_shape.dimensions.append(0.01)  # Radius
-            collision_object.primitives.append(object_shape)
-            self.add_remove_object("remove", collision_object, "", "")
-            position = [userdata.target[0] + 0.02, userdata.target[1], userdata.target[2], 1.0]
-            self.add_remove_object("add", collision_object, position, "primitive")
-            '''
 
             # ----------- RETREAT -----------
             self.traj_name = "retreat"
@@ -670,6 +622,7 @@ class Manipulation(smach.State):
             start_state = RobotState()
             start_state.joint_state.name = traj_drop.joint_trajectory.joint_names
             start_state.joint_state.position = traj_drop_endpoint.positions
+            start_state.attached_collision_objects[:] = []
             start_state.is_diff = True
             self.planer.set_start_state(start_state)
 
@@ -689,7 +642,9 @@ class Manipulation(smach.State):
                                                                               self.eef_step, self.jump_threshold,
                                                                               True)
 
-            if frac_retreat < 1.0:
+            if frac_retreat < 0.5:
+                rospy.logerr("Plan " + self.traj_name + ": " + str(round(frac_retreat * 100, 2)) + "%")
+            elif 0.5 <= frac_retreat < 1.0:
                 rospy.logwarn("Plan " + self.traj_name + ": " + str(round(frac_retreat * 100, 2)) + "%")
             else:
                 rospy.loginfo("Plan " + self.traj_name + ": " + str(round(frac_retreat * 100, 2)) + "%")
@@ -714,7 +669,7 @@ class Manipulation(smach.State):
             userdata.trajectories[5] = smooth_cartesian_path(userdata.trajectories[5])
         except (ValueError, IndexError, AttributeError):
             userdata.trajectories[:] = []
-            userdata.trajectories = range(6)
+            userdata.trajectories = [False]*6
             userdata.error_message = "Error: " + str(AttributeError)
             self.planning_error += 1
             return False
@@ -749,7 +704,7 @@ class Manipulation(smach.State):
 
         # ----------- CLEAR TRAJECTORY LIST -----------
         userdata.trajectories[:] = []
-        userdata.trajectories = range(6)
+        userdata.trajectories = [False]*6
 
         return True
 
@@ -864,7 +819,7 @@ class SM(smach.StateMachine):
         self.userdata.target_left[1][1] = 0.3  # y
         self.userdata.target_left[1][2] = 0.7  # z
 
-        self.userdata.trajectories = [0.0]*6  # list for trajectories
+        self.userdata.trajectories = [False]*6  # list for trajectories
 
         self.userdata.target = self.userdata.target_right
 
@@ -875,7 +830,7 @@ class SM(smach.StateMachine):
 
         with self:
 
-            smach.StateMachine.add('SPAWN_OBJECTS', SpawnObjects(),
+            smach.StateMachine.add('SPAWN_ENVIRONMENT', SpawnEnvironment(),
                                    transitions={'succeeded': 'START_POSITION'})
 
             smach.StateMachine.add('START_POSITION', StartPosition(),
