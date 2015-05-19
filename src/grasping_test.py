@@ -43,12 +43,12 @@ def move_gripper(component_name, pos):
 
 def smooth_cartesian_path(traj):
 
-    time_offset = 0.2
+    time_offset = 200000000  # 0.2s
 
     for i in range(len(traj.joint_trajectory.points)):
-        traj.joint_trajectory.points[i].time_from_start += rospy.Duration(time_offset)
+        traj.joint_trajectory.points[i].time_from_start += rospy.Duration(0, time_offset)
 
-    traj.joint_trajectory.points[-1].time_from_start += rospy.Duration(time_offset)
+    traj.joint_trajectory.points[-1].time_from_start += rospy.Duration(0, time_offset)
 
     return traj
 
@@ -188,7 +188,7 @@ class StartPosition(smach.State):
     def __init__(self):
         smach.State.__init__(self,
                              outcomes=['succeeded', 'failed', 'error'],
-                             input_keys=['active_arm', 'error_max'],
+                             input_keys=['active_arm', 'error_plan_max'],
                              output_keys=['error_message'])
 
         self.planning_error = 0
@@ -200,13 +200,13 @@ class StartPosition(smach.State):
         elif userdata.active_arm == "right":
             self.planer = mgc_right
         else:
-            rospy.logerr("Invalid arm_active")
+            userdata.error_message = "Invalid arm"
             return 'failed'
 
         try:
             traj = self.plan_movement(userdata.active_arm, self.traj_name)
         except (ValueError, IndexError):
-            if self.planning_error == userdata.error_max:
+            if self.planning_error == userdata.error_plan_max:
                 self.planning_error = 0
                 userdata.error_message = "Unabled to plan " + self.traj_name + " trajectory for " + userdata.active_arm\
                                          + " arm"
@@ -243,7 +243,7 @@ class EndPosition(smach.State):
     def __init__(self):
         smach.State.__init__(self,
                              outcomes=['succeeded', 'failed', 'error'],
-                             input_keys=['active_arm', 'error_max'],
+                             input_keys=['active_arm', 'error_plan_max'],
                              output_keys=['error_message'])
 
         self.planning_error = 0
@@ -255,13 +255,13 @@ class EndPosition(smach.State):
         elif userdata.active_arm == "right":
             self.planer = mgc_right
         else:
-            rospy.logerr("Invalid arm_active")
-            return 'failed'
+            userdata.error_message = "Invalid arm"
+            return "error"
 
         try:
             traj = self.plan_movement(userdata.active_arm, self.traj_name)
         except (ValueError, IndexError):
-            if self.planning_error == userdata.error_max:
+            if self.planning_error == userdata.error_plan_max:
                 self.planning_error = 0
                 userdata.error_message = "Unabled to plan " + self.traj_name + " trajectory for " + userdata.active_arm\
                                          + " arm"
@@ -298,7 +298,7 @@ class Manipulation(smach.State):
     def __init__(self):
         smach.State.__init__(self,
                              outcomes=['succeeded', 'failed', 'error'],
-                             input_keys=['active_arm', 'cs_data', 'target_cs', 'target', 'trajectories', 'error_max', 'error_message'],
+                             input_keys=['active_arm', 'cs_data', 'target_cs', 'target', 'trajectories', 'error_tf_max', 'error_plan_max', 'error_message'],
                              output_keys=['target_cs', 'cs_data', 'trajectories', 'error_message'])
         self.angle_offset_yaw = 0.0
         self.angle_offset_pitch = 0.0
@@ -320,6 +320,7 @@ class Manipulation(smach.State):
         self.br = tf.TransformBroadcaster()
 
         self.planning_error = 0
+        self.tf_error = 0
         self.traj_name = ""
 
     def broadcast_tf(self, event):
@@ -355,8 +356,16 @@ class Manipulation(smach.State):
         self.angle_offset_yaw = userdata.cs_data[2]
 
         if not self.plan_and_move(userdata):
+            if self.planning_error == userdata.error_plan_max:
+                self.planning_error = 0
+                return "error"
+            elif self.tf_error == userdata.error_tf_max:
+                self.tf_error = 0
+                return "error"
+
             return "failed"
 
+        self.planning_error = 0
         return "succeeded"
 
     def plan_and_move(self, userdata):
@@ -365,8 +374,8 @@ class Manipulation(smach.State):
         elif userdata.active_arm == "right":
             self.planer = mgc_right
         else:
-            rospy.logerr("Invalid arm_active")
-            return False
+            userdata.error_message = "Invalid arm"
+            return "error"
 
         # Plan Pick-Trajectorie
         if userdata.trajectories[0] == 0.0 or userdata.trajectories[1] == 0.0 or userdata.trajectories[2] == 0.0:
@@ -377,7 +386,8 @@ class Manipulation(smach.State):
             start_state = RobotState()
             (pre_grasp_config, error_code) = sss.compose_trajectory("arm_" + userdata.active_arm, "pre_grasp")
             if error_code != 0:
-                rospy.logerr("Unable to parse pre_grasp configuration")
+                userdata.error_message = "Unable to parse pre_grasp configuration"
+                self.planning_error += 1
                 return False
 
             start_state.joint_state.name = pre_grasp_config.joint_names
@@ -393,25 +403,23 @@ class Manipulation(smach.State):
             try:
                 approach_pose = self.tf_listener.transformPose("odom_combined", approach_pose_offset)
             except Exception, e:
-                rospy.logerr("Could not transform pose. Exception: %s", str(e))
+                userdata.error_message = "Could not transform pose. Exception: " + str(e)
+                self.tf_error += 1
                 return False
 
             (traj_approach, frac_approach) = self.planer.compute_cartesian_path([approach_pose.pose],
                                                                                 self.eef_step,
-                                                                                self.jump_threshold, True)
+                                                                                self.jump_threshold,
+                                                                                True)
 
-            print "Plan " + self.traj_name + ": " + str(frac_approach * 100.0) + "%"
+            if frac_approach < 1.0:
+                rospy.logwarn("Plan " + self.traj_name + ": " + str(round(frac_approach * 100, 2)) + "%")
+            else:
+                rospy.loginfo("Plan " + self.traj_name + ": " + str(round(frac_approach * 100, 2)) + "%")
 
             if not (frac_approach == 1.0):
                 userdata.error_message = "Unable to plan " + self.traj_name + " trajectory"
-                rospy.logerr(userdata.error_message)
-
-                if self.planning_error == userdata.error_max:
-                    self.planning_error = 0
-                    return 'error'
-
                 self.planning_error += 1
-
                 return False
 
             userdata.trajectories[0] = traj_approach
@@ -431,20 +439,17 @@ class Manipulation(smach.State):
             grasp_pose_offset.pose.orientation.w = 1
             grasp_pose = self.tf_listener.transformPose("odom_combined", grasp_pose_offset)
             (traj_grasp, frac_grasp) = self.planer.compute_cartesian_path([grasp_pose.pose],
-                                                                          self.eef_step, self.jump_threshold, True)
+                                                                          self.eef_step, self.jump_threshold,
+                                                                          True)
 
-            print "Plan grasp: " + str(frac_grasp * 100.0) + "%"
+            if frac_grasp < 1.0:
+                rospy.logwarn("Plan " + self.traj_name + ": " + str(round(frac_grasp * 100, 2)) + "%")
+            else:
+                rospy.loginfo("Plan " + self.traj_name + ": " + str(round(frac_grasp * 100, 2)) + "%")
 
             if not (frac_grasp == 1.0):
                 userdata.error_message = "Unable to plan " + self.traj_name + " trajectory"
-                rospy.logerr(userdata.error_message)
-
-                if self.planning_error == userdata.error_max:
-                    self.planning_error = 0
-                    return 'error'
-
                 self.planning_error += 1
-
                 return False
 
             userdata.trajectories[1] = traj_grasp
@@ -505,31 +510,24 @@ class Manipulation(smach.State):
                 lift_pose_offset.pose.position.z = -0.2
             elif userdata.active_arm == "right":
                 lift_pose_offset.pose.position.z = 0.2
-            else:
-                rospy.logerr("Invalid active_arm: %s", userdata.active_arm)
-                sys.exit()
             lift_pose_offset.pose.orientation.w = 1
             lift_pose = self.tf_listener.transformPose("odom_combined", lift_pose_offset)
 
             (traj_lift, frac_lift) = self.planer.compute_cartesian_path([lift_pose.pose],
-                                                                        self.eef_step, self.jump_threshold, True)
+                                                                        self.eef_step, self.jump_threshold,
+                                                                        True)
 
-            print "Plan lift: " + str(frac_lift * 100.0) + "%"
+            if frac_lift < 1.0:
+                rospy.logwarn("Plan " + self.traj_name + ": " + str(round(frac_lift * 100, 2)) + "%")
+            else:
+                rospy.loginfo("Plan " + self.traj_name + ": " + str(round(frac_lift * 100, 2)) + "%")
 
             if not (frac_lift == 1.0):
                 userdata.error_message = "Unable to plan " + self.traj_name + " trajectory"
-                rospy.logerr(userdata.error_message)
-
-                if self.planning_error == userdata.error_max:
-                    self.planning_error = 0
-                    return 'error'
-
                 self.planning_error += 1
-
                 return False
 
             userdata.trajectories[2] = traj_lift
-            self.planning_error = 0
 
             userdata.target_cs = 1
             rospy.loginfo("Pick planning complete")
@@ -555,31 +553,25 @@ class Manipulation(smach.State):
                 move_pose_offset.pose.position.z = -0.2
             elif userdata.active_arm == "right":
                 move_pose_offset.pose.position.z = 0.2
-            else:
-                rospy.logerr("Invalid active_arm: %s", userdata.active_arm)
-                sys.exit()
             move_pose_offset.pose.orientation.w = 1
             try:
                 move_pose = self.tf_listener.transformPose("odom_combined", move_pose_offset)
             except Exception, e:
-                rospy.logerr("Could not transform pose. Exception: %s", str(e))
+                userdata.error_message = "Could not transform pose. Exception: " + str(e)
+                self.tf_error += 1
                 return False
 
             (traj_move, frac_move) = self.planer.compute_cartesian_path([move_pose.pose],
-                                                                        self.eef_step, self.jump_threshold, True)
+                                                                        self.eef_step, self.jump_threshold,
+                                                                        True)
 
-            print "Plan move: " + str(frac_move * 100.0) + "%"
+            if frac_move < 1.0:
+                rospy.logwarn("Plan " + self.traj_name + ": " + str(round(frac_move * 100, 2)) + "%")
+            else:
+                rospy.loginfo("Plan " + self.traj_name + ": " + str(round(frac_move * 100, 2)) + "%")
 
             if not (frac_move == 1.0):
                 userdata.error_message = "Unable to plan " + self.traj_name + " trajectory"
-                rospy.logerr(userdata.error_message)
-
-                if self.planning_error == userdata.error_max:
-                    self.planning_error = 0
-                    return 'error'
-
-                self.planning_error += 1
-
                 return False
 
             userdata.trajectories[3] = traj_move
@@ -587,6 +579,7 @@ class Manipulation(smach.State):
             if len(traj_move.joint_trajectory.points) < 10:
                 rospy.logerr("Computed trajectory is too short. Replanning...")
                 rospy.sleep(1.5)
+                self.planning_error += 1
                 return False
 
             # ----------- DROP -----------
@@ -604,24 +597,22 @@ class Manipulation(smach.State):
             try:
                 drop_pose = self.tf_listener.transformPose("odom_combined", drop_pose_offset)
             except Exception, e:
-                rospy.logerr("could not transform pose. Exception: %s", str(e))
+                userdata.error_message = "Could not transform pose. Exception: " + str(e)
+                self.tf_error += 1
                 return False
 
             (traj_drop, frac_drop) = self.planer.compute_cartesian_path([drop_pose.pose],
-                                                                        self.eef_step, self.jump_threshold, True)
+                                                                        self.eef_step, self.jump_threshold,
+                                                                        True)
 
-            print "Plan drop: " + str(frac_drop * 100.0) + "%"
+            if frac_drop < 1.0:
+                rospy.logwarn("Plan " + self.traj_name + ": " + str(round(frac_drop * 100, 2)) + "%")
+            else:
+                rospy.loginfo("Plan " + self.traj_name + ": " + str(round(frac_drop * 100, 2)) + "%")
 
             if not (frac_drop == 1.0):
                 userdata.error_message = "Unable to plan " + self.traj_name + " trajectory"
-                rospy.logerr(userdata.error_message)
-
-                if self.planning_error == userdata.error_max:
-                    self.planning_error = 0
-                    return 'error'
-
                 self.planning_error += 1
-
                 return False
 
             userdata.trajectories[4] = traj_drop
@@ -690,28 +681,25 @@ class Manipulation(smach.State):
             try:
                 retreat_pose = self.tf_listener.transformPose("odom_combined", retreat_pose_offset)
             except Exception, e:
-                rospy.logerr("could not transform pose. Exception: %s", str(e))
+                userdata.error_message = "Could not transform pose. Exception: " + str(e)
+                self.tf_error += 1
                 return False
 
             (traj_retreat, frac_retreat) = self.planer.compute_cartesian_path([retreat_pose.pose],
-                                                                              self.eef_step, self.jump_threshold, True)
+                                                                              self.eef_step, self.jump_threshold,
+                                                                              True)
 
-            print "Plan retreat: " + str(frac_retreat * 100.0) + "%"
+            if frac_retreat < 1.0:
+                rospy.logwarn("Plan " + self.traj_name + ": " + str(round(frac_retreat * 100, 2)) + "%")
+            else:
+                rospy.loginfo("Plan " + self.traj_name + ": " + str(round(frac_retreat * 100, 2)) + "%")
 
             if not (frac_retreat == 1.0):
                 userdata.error_message = "Unable to plan " + self.traj_name + " trajectory"
-                rospy.logerr(userdata.error_message)
-
-                if self.planning_error == userdata.error_max:
-                    self.planning_error = 0
-                    return 'error'
-
                 self.planning_error += 1
-
                 return False
 
             userdata.trajectories[5] = traj_retreat
-            self.planning_error = 0
             userdata.target_cs = 0
             rospy.loginfo("Place planning complete")
 
@@ -727,7 +715,9 @@ class Manipulation(smach.State):
         except (ValueError, IndexError, AttributeError):
             userdata.trajectories[:] = []
             userdata.trajectories = range(6)
-            return "failed"
+            userdata.error_message = "Error: " + str(AttributeError)
+            self.planning_error += 1
+            return False
 
         rospy.loginfo("Fix velocities")
         userdata.trajectories[0] = fix_velocities(userdata.trajectories[0])
@@ -738,7 +728,7 @@ class Manipulation(smach.State):
         userdata.trajectories[5] = fix_velocities(userdata.trajectories[5])
 
         # ----------- EXECUTE -----------
-        rospy.loginfo("---- Execute ----")
+        rospy.loginfo("---- Start execution ----")
         rospy.loginfo("Approach")
         self.planer.execute(userdata.trajectories[0])
         # move_gripper("gripper_" + userdata.active_arm, "open")
@@ -755,6 +745,7 @@ class Manipulation(smach.State):
         rospy.loginfo("Retreat")
         self.planer.execute(userdata.trajectories[5])
         # move_gripper("gripper_" + userdata.active_arm, "close")
+        rospy.loginfo("---- Execution finished ----")
 
         # ----------- CLEAR TRAJECTORY LIST -----------
         userdata.trajectories[:] = []
@@ -826,7 +817,7 @@ class Error(smach.State):
                              input_keys=['error_message'])
 
     def execute(self, userdata):
-        print userdata.error_message
+        rospy.logerr(userdata.error_message)
         return "finished"
 
 
@@ -873,12 +864,13 @@ class SM(smach.StateMachine):
         self.userdata.target_left[1][1] = 0.3  # y
         self.userdata.target_left[1][2] = 0.7  # z
 
-        self.userdata.trajectories = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]  # list for trajectories
+        self.userdata.trajectories = [0.0]*6  # list for trajectories
 
         self.userdata.target = self.userdata.target_right
 
         # Error Counter
-        self.userdata.error_max = 5
+        self.userdata.error_tf_max = 60
+        self.userdata.error_plan_max = 30
         self.userdata.error_message = ""
 
         with self:
