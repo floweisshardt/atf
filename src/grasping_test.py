@@ -10,6 +10,10 @@ from moveit_commander import MoveGroupCommander, PlanningSceneInterface
 from moveit_msgs.msg import RobotState, AttachedCollisionObject, CollisionObject, PlanningScene
 from moveit_msgs.msg import RobotTrajectory
 from shape_msgs.msg import MeshTriangle, Mesh, SolidPrimitive
+from interactive_markers.interactive_marker_server import *
+from interactive_markers.menu_handler import *
+from geometry_msgs.msg import Point
+from visualization_msgs.msg import InteractiveMarkerControl, Marker
 
 from simple_script_server import *
 sss = simple_script_server()
@@ -21,8 +25,6 @@ planning_scene.is_diff = True
 
 planning_scene_interface = PlanningSceneInterface()
 pub_planning_scene = rospy.Publisher("planning_scene", PlanningScene, queue_size=1)
-
-active_arm = "right"
 
 
 def move_gripper(component_name, pos):
@@ -189,7 +191,128 @@ class SpawnEnvironment(smach.State):
             point.z = vertex[2]
             mesh.vertices.append(point)
         pyassimp.release(scene)
+
         return mesh
+
+
+class SetTargets(smach.State):
+    def __init__(self):
+        smach.State.__init__(self,
+                             outcomes=['succeeded'],
+                             input_keys=['target_left', 'target_right'],
+                             output_keys=['target', 'target_left', 'target_right'])
+
+        self.server = InteractiveMarkerServer("grasping_targets")
+        self.menu_handler = MenuHandler()
+
+        self.make6dofmarker("right_arm_start", InteractiveMarkerControl.MOVE_3D, Point(0.6, -0.3, 0.7))
+        self.make6dofmarker("right_arm_goal", InteractiveMarkerControl.MOVE_3D, Point(0.6, 0.0, 0.7))
+        self.make6dofmarker("left_arm_goal", InteractiveMarkerControl.MOVE_3D, Point(0.6, 0.3, 0.7))
+
+        self.server.applyChanges()
+
+        self.start_rx = 0.6
+        self.start_ry = -0.3
+        self.start_rz = 0.7
+
+        self.goal_rx = 0.6
+        self.goal_ry = 0.0
+        self.goal_rz = 0.7
+
+        self.goal_lx = 0.6
+        self.goal_ly = 0.3
+        self.goal_lz = 0.7
+
+    def execute(self, userdata):
+        try:
+            raw_input("Press enter to continue")
+        except SyntaxError:
+            pass
+
+        # Pick position for right arm
+        userdata.target_right[0][0] = self.start_rx  # x
+        userdata.target_right[0][1] = self.start_ry  # y
+        userdata.target_right[0][2] = self.start_rz  # z
+
+        # Place position for right arm
+        userdata.target_right[1][0] = self.goal_rx  # x
+        userdata.target_right[1][1] = self.goal_ry  # y
+        userdata.target_right[1][2] = self.goal_rz  # z
+
+        # Pick position for left arm
+        userdata.target_left[0][0] = userdata.target_right[1][0]  # x
+        userdata.target_left[0][1] = userdata.target_right[1][1]  # y
+        userdata.target_left[0][2] = userdata.target_right[1][2]  # z
+
+        # Place position for left arm
+        userdata.target_left[1][0] = self.goal_lx  # x
+        userdata.target_left[1][1] = self.goal_ly  # y
+        userdata.target_left[1][2] = self.goal_lz  # z
+
+        userdata.target = userdata.target_right
+
+        return "succeeded"
+
+    @staticmethod
+    def makebox(msg):
+        marker = Marker()
+
+        marker.type = Marker.CUBE
+        marker.scale.x = msg.scale * 0.03
+        marker.scale.y = msg.scale * 0.03
+        marker.scale.z = msg.scale * 0.03
+        marker.color.r = 0.5
+        marker.color.g = 0.5
+        marker.color.b = 0.5
+        marker.color.a = 1.0
+
+        return marker
+
+    def makeboxcontrol(self, msg):
+        control = InteractiveMarkerControl()
+        control.always_visible = True
+        control.markers.append(self.makebox(msg))
+        msg.controls.append(control)
+        return control
+
+    def make6dofmarker(self, name, interaction_mode, position):
+        int_marker = InteractiveMarker()
+        int_marker.header.frame_id = "/base_link"
+        int_marker.pose.position = position
+        int_marker.scale = 1
+
+        int_marker.name = name
+        int_marker.description = name
+
+        # insert a box
+        self.makeboxcontrol(int_marker)
+        int_marker.controls[0].interaction_mode = interaction_mode
+
+        self.server.insert(int_marker, self.processfeedback)
+        self.menu_handler.apply(self.server, int_marker.name)
+
+    def processfeedback(self, feedback):
+        if feedback.event_type == InteractiveMarkerFeedback.MOUSE_UP and feedback.mouse_point_valid:
+            if feedback.marker_name == "right_arm_start":
+                self.start_rx = feedback.mouse_point.x
+                self.start_ry = feedback.mouse_point.y
+                self.start_rz = feedback.mouse_point.z
+                rospy.loginfo("Start R: x " + str(round(self.start_rx, 2)) + " | y " + str(round(self.start_ry, 2))
+                              + " | z " + str(round(self.start_rz, 2)))
+            elif feedback.marker_name == "right_arm_goal":
+                self.goal_rx = feedback.mouse_point.x
+                self.goal_ry = feedback.mouse_point.y
+                self.goal_rz = feedback.mouse_point.z
+                rospy.loginfo("Goal R: x " + str(round(self.goal_rx, 2)) + " | y " + str(round(self.goal_ry, 2))
+                              + " | z " + str(round(self.goal_rz, 2)))
+            elif feedback.marker_name == "left_arm_goal":
+                self.goal_lx = feedback.mouse_point.x
+                self.goal_ly = feedback.mouse_point.y
+                self.goal_lz = feedback.mouse_point.z
+                rospy.loginfo("Goal L: x " + str(round(self.goal_lx, 2)) + " | y " + str(round(self.goal_ly, 2))
+                              + " | z " + str(round(self.goal_lz, 2)))
+        self.server.applyChanges()
+
 
 
 class StartPosition(smach.State):
@@ -209,7 +332,7 @@ class StartPosition(smach.State):
             self.planer = mgc_right
         else:
             userdata.error_message = "Invalid arm"
-            return 'failed'
+            return "failed"
 
         try:
             traj = plan_movement(self.planer, userdata.active_arm, self.traj_name)
@@ -295,14 +418,10 @@ class Manipulation(smach.State):
                              output_keys=['target_cs', 'cs_data', 'trajectories', 'error_message'])
         self.angle_offset_yaw = 0.0
         self.angle_offset_pitch = 0.0
+        self.angle_offset_roll = 0.0
         self.cs_position_x = 0.0
         self.cs_position_y = 0.0
         self.cs_position_z = 0.0
-
-        if active_arm == "left":
-            self.angle_offset_roll = math.pi
-        elif active_arm == "right":
-            self.angle_offset_roll = 0.0
 
         self.eef_step = 0.01
         self.jump_threshold = 2
@@ -342,7 +461,7 @@ class Manipulation(smach.State):
         if userdata.active_arm == "left":
             userdata.cs_data[0] = math.pi
         elif userdata.active_arm == "right":
-            userdata.cs_data[0] = 0
+            userdata.cs_data[0] = 0.0
 
         self.angle_offset_roll = userdata.cs_data[0]
         self.angle_offset_pitch = userdata.cs_data[1]
@@ -359,6 +478,7 @@ class Manipulation(smach.State):
             return "failed"
 
         self.planning_error = 0
+        self.tf_error = 0
         return "succeeded"
 
     def plan_and_move(self, userdata):
@@ -573,7 +693,7 @@ class Manipulation(smach.State):
 
             userdata.trajectories[3] = traj_move
 
-            if len(traj_move.joint_trajectory.points) < 10:
+            if len(traj_move.joint_trajectory.points) < 20:
                 rospy.logerr("Computed trajectory is too short. Replanning...")
                 rospy.sleep(1.5)
                 self.planning_error += 1
@@ -780,7 +900,7 @@ class SM(smach.StateMachine):
     def __init__(self):        
         smach.StateMachine.__init__(self, outcomes=['ended'])
 
-        self.userdata.active_arm = active_arm
+        self.userdata.active_arm = "right"
         self.userdata.target_cs = 0
 
         self.userdata.cs_data = range(4)
@@ -810,14 +930,14 @@ class SM(smach.StateMachine):
         self.userdata.target_right[1][2] = 0.7  # z
 
         # Pick position for left arm
-        self.userdata.target_left[0][0] = 0.6  # x
-        self.userdata.target_left[0][1] = 0.0  # y
-        self.userdata.target_left[0][2] = 0.7  # z
+        self.userdata.target_left[0][0] = self.userdata.target_right[1][0]  # x
+        self.userdata.target_left[0][1] = self.userdata.target_right[1][1]  # y
+        self.userdata.target_left[0][2] = self.userdata.target_right[1][2]  # z
         
         # Place position for left arm
-        self.userdata.target_left[1][0] = 0.6  # x
-        self.userdata.target_left[1][1] = 0.3  # y
-        self.userdata.target_left[1][2] = 0.7  # z
+        self.userdata.target_left[1][0] = self.userdata.target_right[0][0]  # x
+        self.userdata.target_left[1][1] = -1 * self.userdata.target_right[0][1]  # y
+        self.userdata.target_left[1][2] = self.userdata.target_right[0][2]  # z
 
         self.userdata.trajectories = [False]*6  # list for trajectories
 
@@ -831,6 +951,9 @@ class SM(smach.StateMachine):
         with self:
 
             smach.StateMachine.add('SPAWN_ENVIRONMENT', SpawnEnvironment(),
+                                   transitions={'succeeded': 'SET_TARGETS'})
+
+            smach.StateMachine.add('SET_TARGETS', SetTargets(),
                                    transitions={'succeeded': 'START_POSITION'})
 
             smach.StateMachine.add('START_POSITION', StartPosition(),
