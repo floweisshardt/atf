@@ -12,7 +12,6 @@ from moveit_msgs.msg import RobotTrajectory
 from shape_msgs.msg import MeshTriangle, Mesh, SolidPrimitive
 from interactive_markers.interactive_marker_server import *
 from interactive_markers.menu_handler import *
-from geometry_msgs.msg import Point
 from visualization_msgs.msg import InteractiveMarkerControl, Marker
 
 from simple_script_server import *
@@ -205,9 +204,9 @@ class SetTargets(smach.State):
         self.server = InteractiveMarkerServer("grasping_targets")
         self.menu_handler = MenuHandler()
 
-        self.make6dofmarker("right_arm_start", InteractiveMarkerControl.MOVE_3D, Point(0.6, -0.3, 0.7))
-        self.make6dofmarker("right_arm_goal", InteractiveMarkerControl.MOVE_3D, Point(0.6, 0.0, 0.7))
-        self.make6dofmarker("left_arm_goal", InteractiveMarkerControl.MOVE_3D, Point(0.6, 0.3, 0.7))
+        self.makemarker("right_arm_start", InteractiveMarkerControl.MOVE_3D, Point(0.6, -0.3, 0.7))
+        self.makemarker("right_arm_goal", InteractiveMarkerControl.MOVE_3D, Point(0.6, 0.0, 0.7))
+        self.makemarker("left_arm_goal", InteractiveMarkerControl.MOVE_3D, Point(0.6, 0.3, 0.7))
 
         self.server.applyChanges()
 
@@ -225,7 +224,7 @@ class SetTargets(smach.State):
 
     def execute(self, userdata):
         try:
-            raw_input("Press enter to continue")
+            raw_input("Move the markers and press enter to continue:")
         except SyntaxError:
             pass
 
@@ -275,7 +274,7 @@ class SetTargets(smach.State):
         msg.controls.append(control)
         return control
 
-    def make6dofmarker(self, name, interaction_mode, position):
+    def makemarker(self, name, interaction_mode, position):
         int_marker = InteractiveMarker()
         int_marker.header.frame_id = "/base_link"
         int_marker.pose.position = position
@@ -292,27 +291,20 @@ class SetTargets(smach.State):
         self.menu_handler.apply(self.server, int_marker.name)
 
     def processfeedback(self, feedback):
-        if feedback.event_type == InteractiveMarkerFeedback.MOUSE_UP and feedback.mouse_point_valid:
+        if feedback.event_type == InteractiveMarkerFeedback.POSE_UPDATE:
             if feedback.marker_name == "right_arm_start":
-                self.start_rx = feedback.mouse_point.x
-                self.start_ry = feedback.mouse_point.y
-                self.start_rz = feedback.mouse_point.z
-                rospy.loginfo("Start R: x " + str(round(self.start_rx, 2)) + " | y " + str(round(self.start_ry, 2))
-                              + " | z " + str(round(self.start_rz, 2)))
+                self.start_rx = feedback.pose.position.x
+                self.start_ry = feedback.pose.position.y
+                self.start_rz = feedback.pose.position.z
             elif feedback.marker_name == "right_arm_goal":
-                self.goal_rx = feedback.mouse_point.x
-                self.goal_ry = feedback.mouse_point.y
-                self.goal_rz = feedback.mouse_point.z
-                rospy.loginfo("Goal R: x " + str(round(self.goal_rx, 2)) + " | y " + str(round(self.goal_ry, 2))
-                              + " | z " + str(round(self.goal_rz, 2)))
+                self.goal_rx = feedback.pose.position.x
+                self.goal_ry = feedback.pose.position.y
+                self.goal_rz = feedback.pose.position.z
             elif feedback.marker_name == "left_arm_goal":
-                self.goal_lx = feedback.mouse_point.x
-                self.goal_ly = feedback.mouse_point.y
-                self.goal_lz = feedback.mouse_point.z
-                rospy.loginfo("Goal L: x " + str(round(self.goal_lx, 2)) + " | y " + str(round(self.goal_ly, 2))
-                              + " | z " + str(round(self.goal_lz, 2)))
+                self.goal_lx = feedback.pose.position.x
+                self.goal_ly = feedback.pose.position.y
+                self.goal_lz = feedback.pose.position.z
         self.server.applyChanges()
-
 
 
 class StartPosition(smach.State):
@@ -396,16 +388,12 @@ class EndPosition(smach.State):
             return "failed"
         else:
             self.planer.execute(traj)
+
             # ----------- REMOVE OBJECT ------------
             collision_object = CollisionObject()
             collision_object.header.stamp = rospy.Time.now()
             collision_object.header.frame_id = "odom_combined"
             collision_object.id = "object"
-            object_shape = SolidPrimitive()
-            object_shape.type = 3  # Cylinder
-            object_shape.dimensions.append(0.17)  # Height
-            object_shape.dimensions.append(0.01)  # Radius
-            collision_object.primitives.append(object_shape)
             add_remove_object("remove", collision_object, "", "")
             return "succeeded"
 
@@ -422,6 +410,7 @@ class Manipulation(smach.State):
         self.cs_position_x = 0.0
         self.cs_position_y = 0.0
         self.cs_position_z = 0.0
+        self.lift_height = 0.05
 
         self.eef_step = 0.01
         self.jump_threshold = 2
@@ -613,9 +602,9 @@ class Manipulation(smach.State):
             lift_pose_offset.header.frame_id = "current_object"
             lift_pose_offset.header.stamp = rospy.Time(0)
             if userdata.active_arm == "left":
-                lift_pose_offset.pose.position.z = -0.2
+                lift_pose_offset.pose.position.z = -self.lift_height
             elif userdata.active_arm == "right":
-                lift_pose_offset.pose.position.z = 0.2
+                lift_pose_offset.pose.position.z = self.lift_height
             lift_pose_offset.pose.orientation.w = 1
             lift_pose = self.tf_listener.transformPose("odom_combined", lift_pose_offset)
 
@@ -665,9 +654,9 @@ class Manipulation(smach.State):
             move_pose_offset.header.frame_id = "current_object"
             move_pose_offset.header.stamp = rospy.Time(0)
             if userdata.active_arm == "left":
-                move_pose_offset.pose.position.z = -0.2
+                move_pose_offset.pose.position.z = -self.lift_height
             elif userdata.active_arm == "right":
-                move_pose_offset.pose.position.z = 0.2
+                move_pose_offset.pose.position.z = self.lift_height
             move_pose_offset.pose.orientation.w = 1
             try:
                 move_pose = self.tf_listener.transformPose("odom_combined", move_pose_offset)
