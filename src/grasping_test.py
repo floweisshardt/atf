@@ -25,6 +25,8 @@ planning_scene.is_diff = True
 planning_scene_interface = PlanningSceneInterface()
 pub_planning_scene = rospy.Publisher("planning_scene", PlanningScene, queue_size=1)
 
+object_dim = [0.02, 0.02, 0.1]
+
 
 def move_gripper(component_name, pos):
     error_code = -1
@@ -132,7 +134,11 @@ def add_remove_object(co_operation, co_object, co_position, co_type):
             pose.position.x = co_position[0]
             pose.position.y = co_position[1]
             pose.position.z = co_position[2]
-            pose.orientation.w = co_position[3]
+            pose.orientation.x = co_position[3]
+            pose.orientation.y = co_position[4]
+            pose.orientation.z = co_position[5]
+            pose.orientation.w = co_position[6]
+
             if co_type == "mesh":
                 co_object.mesh_poses.append(pose)
             elif co_type == "primitive":
@@ -156,21 +162,23 @@ class SpawnEnvironment(smach.State):
 
     def execute(self, userdata):
         # Initialize objects
-        rospy.loginfo("Add table to world")
-        table = CollisionObject()
-        table.id = "table"
-        table.header.stamp = rospy.Time.now()
-        table.header.frame_id = "odom_combined"
-        filename = rospkg.RosPack().get_path("cob_grasping") + "/files/table.stl"
-        table.meshes.append(self.load_mesh(filename))
-        add_remove_object("remove", table, "", "")
-        position = [0.37, -0.3, 0.62, 1.0]
-        add_remove_object("add", table, position, "mesh")
+        rospy.loginfo("Building environment...")
+        environment = CollisionObject()
+        environment.id = "rack"
+        environment.header.stamp = rospy.Time.now()
+        environment.header.frame_id = "odom_combined"
+        filename = rospkg.RosPack().get_path("cob_grasping") + "/files/rack.stl"
+        scale = 0.002
+        environment.meshes.append(self.load_mesh(filename, scale))
+        add_remove_object("remove", environment, "", "")
+        q = quaternion_from_euler(0.5*math.pi, 0.0, 0.5*math.pi)
+        position = [0.48, -0.64, 0.0, q[0], q[1], q[2], q[3]]
+        add_remove_object("add", environment, position, "mesh")
 
         return 'succeeded'
 
     @staticmethod
-    def load_mesh(filename):
+    def load_mesh(filename, scale):
 
         scene = pyassimp.load(filename)
         if not scene.meshes:
@@ -185,9 +193,9 @@ class SpawnEnvironment(smach.State):
             mesh.triangles.append(triangle)
         for vertex in scene.meshes[0].vertices:
             point = Point()
-            point.x = vertex[0]
-            point.y = vertex[1]
-            point.z = vertex[2]
+            point.x = vertex[0] * scale
+            point.y = vertex[1] * scale
+            point.z = vertex[2] * scale
             mesh.vertices.append(point)
         pyassimp.release(scene)
 
@@ -198,29 +206,32 @@ class SetTargets(smach.State):
     def __init__(self):
         smach.State.__init__(self,
                              outcomes=['succeeded'],
-                             input_keys=['target_left', 'target_right'],
+                             input_keys=['target_left', 'target_right', 'active_arm'],
                              output_keys=['target', 'target_left', 'target_right'])
 
         self.server = InteractiveMarkerServer("grasping_targets")
         self.menu_handler = MenuHandler()
 
-        self.makemarker("right_arm_start", InteractiveMarkerControl.MOVE_3D, Point(0.6, -0.3, 0.7))
-        self.makemarker("right_arm_goal", InteractiveMarkerControl.MOVE_3D, Point(0.6, 0.0, 0.7))
-        self.makemarker("left_arm_goal", InteractiveMarkerControl.MOVE_3D, Point(0.6, 0.3, 0.7))
-
-        self.server.applyChanges()
-
         self.start_rx = 0.6
         self.start_ry = -0.3
-        self.start_rz = 0.7
+        self.start_rz = 0.8
 
         self.goal_rx = 0.6
         self.goal_ry = 0.0
-        self.goal_rz = 0.7
+        self.goal_rz = 0.8
 
         self.goal_lx = 0.6
         self.goal_ly = 0.3
-        self.goal_lz = 0.7
+        self.goal_lz = 0.8
+
+        self.makemarker("right_arm_start", InteractiveMarkerControl.MOVE_3D, Point(self.start_rx, self.start_ry,
+                                                                                   self.start_rz))
+        self.makemarker("right_arm_goal", InteractiveMarkerControl.MOVE_3D, Point(self.goal_rx, self.goal_ry,
+                                                                                  self.goal_rz))
+        self.makemarker("left_arm_goal", InteractiveMarkerControl.MOVE_3D, Point(self.goal_lx, self.goal_ly,
+                                                                                 self.goal_lz))
+
+        self.server.applyChanges()
 
     def execute(self, userdata):
         try:
@@ -248,7 +259,10 @@ class SetTargets(smach.State):
         userdata.target_left[1][1] = self.goal_ly  # y
         userdata.target_left[1][2] = self.goal_lz  # z
 
-        userdata.target = userdata.target_right
+        if userdata.active_arm == "left":
+            userdata.target = userdata.target_left
+        elif userdata.active_arm == "right":
+            userdata.target = userdata.target_right
 
         return "succeeded"
 
@@ -256,10 +270,10 @@ class SetTargets(smach.State):
     def makebox(msg):
         marker = Marker()
 
-        marker.type = Marker.CUBE
-        marker.scale.x = msg.scale * 0.03
-        marker.scale.y = msg.scale * 0.03
-        marker.scale.z = msg.scale * 0.03
+        marker.type = Marker.CYLINDER
+        marker.scale.x = msg.scale * object_dim[0]  # diameter in x
+        marker.scale.y = msg.scale * object_dim[1]  # diameter in y
+        marker.scale.z = msg.scale * object_dim[2]  # height
         marker.color.r = 0.5
         marker.color.g = 0.5
         marker.color.b = 0.5
@@ -329,7 +343,7 @@ class StartPosition(smach.State):
         try:
             traj = plan_movement(self.planer, userdata.active_arm, self.traj_name)
         except (ValueError, IndexError):
-            if self.planning_error == userdata.error_plan_max:
+            if self.planning_error == (userdata.error_plan_max - 20):
                 self.planning_error = 0
                 userdata.error_message = "Unabled to plan " + self.traj_name + " trajectory for " + userdata.active_arm\
                                          + " arm"
@@ -346,7 +360,7 @@ class EndPosition(smach.State):
     def __init__(self):
         smach.State.__init__(self,
                              outcomes=['succeeded', 'failed', 'error'],
-                             input_keys=['active_arm', 'error_plan_max', 'target'],
+                             input_keys=['active_arm', 'error_plan_max', 'target', 'object'],
                              output_keys=['error_message'])
 
         self.planning_error = 0
@@ -368,17 +382,17 @@ class EndPosition(smach.State):
         collision_object.id = "object"
         object_shape = SolidPrimitive()
         object_shape.type = 3  # Cylinder
-        object_shape.dimensions.append(0.17)  # Height
-        object_shape.dimensions.append(0.01)  # Radius
+        object_shape.dimensions.append(userdata.object[2])  # Height
+        object_shape.dimensions.append(userdata.object[0]*0.5)  # Radius
         collision_object.primitives.append(object_shape)
         add_remove_object("remove", collision_object, "", "")
-        position = [userdata.target[1][0], userdata.target[1][1], userdata.target[1][2], 1.0]
+        position = [userdata.target[1][0], userdata.target[1][1], userdata.target[1][2], 0.0, 0.0, 0.0, 1.0]
         add_remove_object("add", collision_object, position, "primitive")
 
         try:
             traj = plan_movement(self.planer, userdata.active_arm, self.traj_name)
         except (ValueError, IndexError):
-            if self.planning_error == userdata.error_plan_max:
+            if self.planning_error == (userdata.error_plan_max - 20):
                 self.planning_error = 0
                 userdata.error_message = "Unabled to plan " + self.traj_name + " trajectory for " + userdata.active_arm\
                                          + " arm"
@@ -402,15 +416,17 @@ class Manipulation(smach.State):
     def __init__(self):
         smach.State.__init__(self,
                              outcomes=['succeeded', 'failed', 'error'],
-                             input_keys=['active_arm', 'cs_data', 'target_cs', 'target', 'trajectories', 'error_tf_max', 'error_plan_max', 'error_message'],
+                             input_keys=['active_arm', 'cs_data', 'target_cs', 'target', 'trajectories', 'error_tf_max',
+                                         'error_plan_max', 'error_message', 'object'],
                              output_keys=['target_cs', 'cs_data', 'trajectories', 'error_message'])
+
         self.angle_offset_yaw = 0.0
         self.angle_offset_pitch = 0.0
         self.angle_offset_roll = 0.0
         self.cs_position_x = 0.0
         self.cs_position_y = 0.0
         self.cs_position_z = 0.0
-        self.lift_height = 0.05
+        self.lift_height = 0.02
 
         self.eef_step = 0.01
         self.jump_threshold = 2
@@ -438,8 +454,10 @@ class Manipulation(smach.State):
         self.cs_position_z = userdata.target[userdata.target_cs][2]
 
         if userdata.cs_data[2] >= 0.5 * math.pi:
+            # Rotate clockwise
             userdata.cs_data[3] = -1.0
         elif userdata.cs_data[2] <= -0.5 * math.pi:
+            # Rotate counterclockwise
             userdata.cs_data[3] = 1.0
 
         if userdata.cs_data[3] == 1.0:
@@ -459,9 +477,15 @@ class Manipulation(smach.State):
         if not self.plan_and_move(userdata):
             if self.planning_error == userdata.error_plan_max:
                 self.planning_error = 0
+                userdata.trajectories[:] = []
+                userdata.trajectories = [False]*6
+                userdata.target_cs = 0
                 return "error"
             elif self.tf_error == userdata.error_tf_max:
                 self.tf_error = 0
+                userdata.trajectories[:] = []
+                userdata.trajectories = [False]*6
+                userdata.target_cs = 0
                 return "error"
 
             return "failed"
@@ -479,7 +503,7 @@ class Manipulation(smach.State):
             userdata.error_message = "Invalid arm"
             return "error"
 
-        # Plan Pick-Trajectorie
+        # Plan Pick-Trajectory
         if not (userdata.trajectories[0] and userdata.trajectories[1] and userdata.trajectories[2]):
 
             # -------------------- PICK --------------------
@@ -570,8 +594,8 @@ class Manipulation(smach.State):
             # Attach object
             object_shape = SolidPrimitive()
             object_shape.type = 3  # CYLINDER
-            object_shape.dimensions.append(0.17)
-            object_shape.dimensions.append(0.01)
+            object_shape.dimensions.append(userdata.object[2])
+            object_shape.dimensions.append(userdata.object[0])
 
             object_pose = Pose()
             object_pose.orientation.w = 1.0
@@ -627,10 +651,12 @@ class Manipulation(smach.State):
             userdata.trajectories[2] = traj_lift
 
             userdata.target_cs = 1
+            self.planning_error = 0
+            self.tf_error = 0
             rospy.loginfo("Pick planning complete")
             return False
 
-        # Plan Place-Trajectorie
+        # Plan Place-Trajectory
         else:
             # -------------------- PLACE --------------------
             # ----------- MOVE -----------
@@ -678,11 +704,12 @@ class Manipulation(smach.State):
 
             if not (frac_move == 1.0):
                 userdata.error_message = "Unable to plan " + self.traj_name + " trajectory"
+                self.planning_error += 1
                 return False
 
             userdata.trajectories[3] = traj_move
 
-            if len(traj_move.joint_trajectory.points) < 20:
+            if len(traj_move.joint_trajectory.points) < 15:
                 rospy.logerr("Computed trajectory is too short. Replanning...")
                 rospy.sleep(1.5)
                 self.planning_error += 1
@@ -911,12 +938,12 @@ class SM(smach.StateMachine):
         # Pick position for right arm
         self.userdata.target_right[0][0] = 0.6  # x
         self.userdata.target_right[0][1] = -0.3  # y
-        self.userdata.target_right[0][2] = 0.7  # z
+        self.userdata.target_right[0][2] = 0.8  # z
 
         # Place position for right arm
         self.userdata.target_right[1][0] = 0.6  # x
         self.userdata.target_right[1][1] = 0.0  # y
-        self.userdata.target_right[1][2] = 0.7  # z
+        self.userdata.target_right[1][2] = 0.8  # z
 
         # Pick position for left arm
         self.userdata.target_left[0][0] = self.userdata.target_right[1][0]  # x
@@ -934,8 +961,11 @@ class SM(smach.StateMachine):
 
         # Error Counter
         self.userdata.error_tf_max = 60
-        self.userdata.error_plan_max = 30
+        self.userdata.error_plan_max = 60
         self.userdata.error_message = ""
+
+        # Objekt dimensions [diameter in x, diameter in y, height]
+        self.userdata.object = [object_dim[0], object_dim[1], object_dim[2]]
 
         with self:
 
@@ -969,7 +999,7 @@ class SM(smach.StateMachine):
                                    transitions={'succeeded': 'START_POSITION'})
 
             smach.StateMachine.add('ERROR', Error(),
-                                   transitions={'finished': 'ended'})
+                                   transitions={'finished': 'SET_TARGETS'})
 
 
 if __name__ == '__main__':
