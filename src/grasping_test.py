@@ -13,6 +13,8 @@ from shape_msgs.msg import MeshTriangle, Mesh, SolidPrimitive
 from interactive_markers.interactive_marker_server import *
 from interactive_markers.menu_handler import *
 from visualization_msgs.msg import InteractiveMarkerControl, Marker
+from dynamic_reconfigure.server import Server
+from cob_grasping.cfg import parameterConfig
 
 from simple_script_server import *
 sss = simple_script_server()
@@ -26,6 +28,10 @@ planning_scene_interface = PlanningSceneInterface()
 pub_planning_scene = rospy.Publisher("planning_scene", PlanningScene, queue_size=1)
 
 object_dim = [0.02, 0.02, 0.1]
+
+start_r = Point(0.6, -0.3, 0.8)
+goal_r = Point(0.6, 0.0, 0.8)
+goal_l = Point(0.6, 0.3, 0.8)
 
 
 def move_gripper(component_name, pos):
@@ -212,52 +218,37 @@ class SetTargets(smach.State):
         self.server = InteractiveMarkerServer("grasping_targets")
         self.menu_handler = MenuHandler()
 
-        self.start_rx = 0.6
-        self.start_ry = -0.3
-        self.start_rz = 0.8
-
-        self.goal_rx = 0.6
-        self.goal_ry = 0.0
-        self.goal_rz = 0.8
-
-        self.goal_lx = 0.6
-        self.goal_ly = 0.3
-        self.goal_lz = 0.8
-
-        self.makemarker("right_arm_start", InteractiveMarkerControl.MOVE_3D, Point(self.start_rx, self.start_ry,
-                                                                                   self.start_rz))
-        self.makemarker("right_arm_goal", InteractiveMarkerControl.MOVE_3D, Point(self.goal_rx, self.goal_ry,
-                                                                                  self.goal_rz))
-        self.makemarker("left_arm_goal", InteractiveMarkerControl.MOVE_3D, Point(self.goal_lx, self.goal_ly,
-                                                                                 self.goal_lz))
+        self.makemarker("right_arm_start", InteractiveMarkerControl.MOVE_3D, start_r)
+        self.makemarker("right_arm_goal", InteractiveMarkerControl.MOVE_3D, goal_r)
+        self.makemarker("left_arm_goal", InteractiveMarkerControl.MOVE_3D, goal_l)
 
         self.server.applyChanges()
 
     def execute(self, userdata):
         try:
-            raw_input("Move the markers and press enter to continue:")
+            raw_input("Move the markers and press enter to continue:\n")
         except SyntaxError:
             pass
 
         # Pick position for right arm
-        userdata.target_right[0][0] = self.start_rx  # x
-        userdata.target_right[0][1] = self.start_ry  # y
-        userdata.target_right[0][2] = self.start_rz  # z
+        userdata.target_right[0].x = start_r.x  # x
+        userdata.target_right[0].y = start_r.y  # y
+        userdata.target_right[0].z = start_r.z  # z
 
         # Place position for right arm
-        userdata.target_right[1][0] = self.goal_rx  # x
-        userdata.target_right[1][1] = self.goal_ry  # y
-        userdata.target_right[1][2] = self.goal_rz  # z
+        userdata.target_right[1].x = goal_r.x  # x
+        userdata.target_right[1].y = goal_r.y  # y
+        userdata.target_right[1].z = goal_r.z  # z
 
         # Pick position for left arm
-        userdata.target_left[0][0] = userdata.target_right[1][0]  # x
-        userdata.target_left[0][1] = userdata.target_right[1][1]  # y
-        userdata.target_left[0][2] = userdata.target_right[1][2]  # z
+        userdata.target_left[0].x = userdata.target_right[1].x  # x
+        userdata.target_left[0].y = userdata.target_right[1].y  # y
+        userdata.target_left[0].z = userdata.target_right[1].z  # z
 
         # Place position for left arm
-        userdata.target_left[1][0] = self.goal_lx  # x
-        userdata.target_left[1][1] = self.goal_ly  # y
-        userdata.target_left[1][2] = self.goal_lz  # z
+        userdata.target_left[1].x = goal_l.x  # x
+        userdata.target_left[1].y = goal_l.y  # y
+        userdata.target_left[1].z = goal_l.z  # z
 
         if userdata.active_arm == "left":
             userdata.target = userdata.target_left
@@ -274,9 +265,9 @@ class SetTargets(smach.State):
         marker.scale.x = msg.scale * object_dim[0]  # diameter in x
         marker.scale.y = msg.scale * object_dim[1]  # diameter in y
         marker.scale.z = msg.scale * object_dim[2]  # height
-        marker.color.r = 0.5
-        marker.color.g = 0.5
-        marker.color.b = 0.5
+        marker.color.r = 1.0
+        marker.color.g = 0.0
+        marker.color.b = 0.0
         marker.color.a = 1.0
 
         return marker
@@ -305,19 +296,21 @@ class SetTargets(smach.State):
         self.menu_handler.apply(self.server, int_marker.name)
 
     def processfeedback(self, feedback):
-        if feedback.event_type == InteractiveMarkerFeedback.POSE_UPDATE:
+        if feedback.event_type == InteractiveMarkerFeedback.MOUSE_UP:
             if feedback.marker_name == "right_arm_start":
-                self.start_rx = feedback.pose.position.x
-                self.start_ry = feedback.pose.position.y
-                self.start_rz = feedback.pose.position.z
+                start_r.x = feedback.pose.position.x
+                start_r.y = feedback.pose.position.y
+                start_r.z = feedback.pose.position.z
             elif feedback.marker_name == "right_arm_goal":
-                self.goal_rx = feedback.pose.position.x
-                self.goal_ry = feedback.pose.position.y
-                self.goal_rz = feedback.pose.position.z
+                goal_r.x = feedback.pose.position.x
+                goal_r.y = feedback.pose.position.y
+                goal_r.z = feedback.pose.position.z
             elif feedback.marker_name == "left_arm_goal":
-                self.goal_lx = feedback.pose.position.x
-                self.goal_ly = feedback.pose.position.y
-                self.goal_lz = feedback.pose.position.z
+                goal_l.x = feedback.pose.position.x
+                goal_l.y = feedback.pose.position.y
+                goal_l.z = feedback.pose.position.z
+            rospy.loginfo("Position " + feedback.marker_name + ": x = " + str(feedback.pose.position.x)
+                          + " | y = " + str(feedback.pose.position.y) + " | z = " + str(feedback.pose.position.z))
         self.server.applyChanges()
 
 
@@ -386,7 +379,7 @@ class EndPosition(smach.State):
         object_shape.dimensions.append(userdata.object[0]*0.5)  # Radius
         collision_object.primitives.append(object_shape)
         add_remove_object("remove", collision_object, "", "")
-        position = [userdata.target[1][0], userdata.target[1][1], userdata.target[1][2], 0.0, 0.0, 0.0, 1.0]
+        position = [userdata.target[1].x, userdata.target[1].y, userdata.target[1].z, 0.0, 0.0, 0.0, 1.0]
         add_remove_object("add", collision_object, position, "primitive")
 
         try:
@@ -417,7 +410,7 @@ class Manipulation(smach.State):
         smach.State.__init__(self,
                              outcomes=['succeeded', 'failed', 'error'],
                              input_keys=['active_arm', 'cs_data', 'target_cs', 'target', 'trajectories', 'error_tf_max',
-                                         'error_plan_max', 'error_message', 'object'],
+                                         'error_plan_max', 'error_message', 'object', 'lift_height'],
                              output_keys=['target_cs', 'cs_data', 'trajectories', 'error_message'])
 
         self.angle_offset_yaw = 0.0
@@ -426,7 +419,6 @@ class Manipulation(smach.State):
         self.cs_position_x = 0.0
         self.cs_position_y = 0.0
         self.cs_position_z = 0.0
-        self.lift_height = 0.02
 
         self.eef_step = 0.01
         self.jump_threshold = 2
@@ -449,9 +441,9 @@ class Manipulation(smach.State):
             "base_link")
 
     def execute(self, userdata):
-        self.cs_position_x = userdata.target[userdata.target_cs][0]
-        self.cs_position_y = userdata.target[userdata.target_cs][1]
-        self.cs_position_z = userdata.target[userdata.target_cs][2]
+        self.cs_position_x = userdata.target[userdata.target_cs].x
+        self.cs_position_y = userdata.target[userdata.target_cs].y
+        self.cs_position_z = userdata.target[userdata.target_cs].z
 
         if userdata.cs_data[2] >= 0.5 * math.pi:
             # Rotate clockwise
@@ -626,9 +618,9 @@ class Manipulation(smach.State):
             lift_pose_offset.header.frame_id = "current_object"
             lift_pose_offset.header.stamp = rospy.Time(0)
             if userdata.active_arm == "left":
-                lift_pose_offset.pose.position.z = -self.lift_height
+                lift_pose_offset.pose.position.z = -userdata.lift_height
             elif userdata.active_arm == "right":
-                lift_pose_offset.pose.position.z = self.lift_height
+                lift_pose_offset.pose.position.z = userdata.lift_height
             lift_pose_offset.pose.orientation.w = 1
             lift_pose = self.tf_listener.transformPose("odom_combined", lift_pose_offset)
 
@@ -680,9 +672,9 @@ class Manipulation(smach.State):
             move_pose_offset.header.frame_id = "current_object"
             move_pose_offset.header.stamp = rospy.Time(0)
             if userdata.active_arm == "left":
-                move_pose_offset.pose.position.z = -self.lift_height
+                move_pose_offset.pose.position.z = -userdata.lift_height
             elif userdata.active_arm == "right":
-                move_pose_offset.pose.position.z = self.lift_height
+                move_pose_offset.pose.position.z = userdata.lift_height
             move_pose_offset.pose.orientation.w = 1
             try:
                 move_pose = self.tf_listener.transformPose("odom_combined", move_pose_offset)
@@ -849,13 +841,14 @@ class SwitchArm(smach.State):
     def __init__(self):
         smach.State.__init__(self,
                              outcomes=['succeeded', 'finished', 'switch_targets'],
-                             input_keys=['active_arm', 'cs_data', 'target_right', 'target_left'],
+                             input_keys=['active_arm', 'cs_data', 'target_right', 'target_left',
+                                         'manipulation_repeats'],
                              output_keys=['active_arm', 'cs_data', 'target', 'target_cs'])
 
         self.counter = 1
 
     def execute(self, userdata):
-        if self.counter == 2:
+        if self.counter == userdata.manipulation_repeats:
             return "finished"
         else:
             if self.counter % 2 == 0:
@@ -925,47 +918,20 @@ class SM(smach.StateMachine):
         self.userdata.cs_data[2] = -5.0 / 180.0 * math.pi  # yaw (z)
         self.userdata.cs_data[3] = 1.0  # direction for rotation
 
-        self.userdata.target_right = [[]]
-        self.userdata.target_right = range(2)  # list for right arm
-        self.userdata.target_right[0] = range(3)
-        self.userdata.target_right[1] = range(3)
-
-        self.userdata.target_left = [[]]
-        self.userdata.target_left = range(2)  # list for left arm
-        self.userdata.target_left[0] = range(3)
-        self.userdata.target_left[1] = range(3)
-
-        # Pick position for right arm
-        self.userdata.target_right[0][0] = 0.6  # x
-        self.userdata.target_right[0][1] = -0.3  # y
-        self.userdata.target_right[0][2] = 0.8  # z
-
-        # Place position for right arm
-        self.userdata.target_right[1][0] = 0.6  # x
-        self.userdata.target_right[1][1] = 0.0  # y
-        self.userdata.target_right[1][2] = 0.8  # z
-
-        # Pick position for left arm
-        self.userdata.target_left[0][0] = self.userdata.target_right[1][0]  # x
-        self.userdata.target_left[0][1] = self.userdata.target_right[1][1]  # y
-        self.userdata.target_left[0][2] = self.userdata.target_right[1][2]  # z
-        
-        # Place position for left arm
-        self.userdata.target_left[1][0] = self.userdata.target_right[0][0]  # x
-        self.userdata.target_left[1][1] = -1 * self.userdata.target_right[0][1]  # y
-        self.userdata.target_left[1][2] = self.userdata.target_right[0][2]  # z
+        # Pick / place position for arms
+        self.userdata.target_right = [start_r, goal_r]
+        self.userdata.target_left = [goal_r, goal_l]
+        self.userdata.target = self.userdata.target_right
 
         self.userdata.trajectories = [False]*6  # list for trajectories
 
-        self.userdata.target = self.userdata.target_right
-
         # Error Counter
-        self.userdata.error_tf_max = 60
-        self.userdata.error_plan_max = 60
         self.userdata.error_message = ""
 
         # Objekt dimensions [diameter in x, diameter in y, height]
         self.userdata.object = [object_dim[0], object_dim[1], object_dim[2]]
+
+        Server(parameterConfig, self.dynreccallback)
 
         with self:
 
@@ -1000,6 +966,16 @@ class SM(smach.StateMachine):
 
             smach.StateMachine.add('ERROR', Error(),
                                    transitions={'finished': 'SET_TARGETS'})
+
+    def dynreccallback(self, config, level):
+        self.userdata.error_plan_max = config["error_plan_max"]
+        self.userdata.error_tf_max = config["error_tf_max"]
+        self.userdata.lift_height = config["lift_height"]
+        self.userdata.manipulation_repeats = config["manipulation_repeats"]
+        rospy.loginfo("Reconfigure: " + str(self.userdata.error_plan_max) + " | " + str(self.userdata.error_tf_max)
+                      + " | " + str(self.userdata.lift_height) + " | " + str(self.userdata.manipulation_repeats))
+
+        return config
 
 
 if __name__ == '__main__':
