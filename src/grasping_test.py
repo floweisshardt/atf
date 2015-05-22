@@ -405,7 +405,7 @@ class EndPosition(smach.State):
             return "succeeded"
 
 
-class Manipulation(smach.State):
+class PlanningAndExecution(smach.State):
     def __init__(self):
         smach.State.__init__(self,
                              outcomes=['succeeded', 'failed', 'error'],
@@ -495,6 +495,12 @@ class Manipulation(smach.State):
             userdata.error_message = "Invalid arm"
             return "error"
 
+        # ----------- LOAD CONFIG -----------
+        (config, error_code) = sss.compose_trajectory("arm_" + userdata.active_arm, "pre_grasp")
+        if error_code != 0:
+            userdata.error_message = "Unable to parse pre_grasp configuration"
+            return "error"
+
         # Plan Pick-Trajectory
         if not (userdata.trajectories[0] and userdata.trajectories[1] and userdata.trajectories[2]):
 
@@ -502,14 +508,8 @@ class Manipulation(smach.State):
             # ----------- APPROACH -----------
             self.traj_name = "approach"
             start_state = RobotState()
-            (pre_grasp_config, error_code) = sss.compose_trajectory("arm_" + userdata.active_arm, "pre_grasp")
-            if error_code != 0:
-                userdata.error_message = "Unable to parse pre_grasp configuration"
-                self.planning_error += 1
-                return False
-
-            start_state.joint_state.name = pre_grasp_config.joint_names
-            start_state.joint_state.position = pre_grasp_config.points[0].positions
+            start_state.joint_state.name = config.joint_names
+            start_state.joint_state.position = config.points[0].positions
             start_state.is_diff = True
             self.planer.set_start_state(start_state)
 
@@ -522,6 +522,8 @@ class Manipulation(smach.State):
                 approach_pose = self.tf_listener.transformPose("odom_combined", approach_pose_offset)
             except Exception, e:
                 userdata.error_message = "Could not transform pose. Exception: " + str(e)
+                self.tf_listener.clear()
+                print str(e)
                 self.tf_error += 1
                 return False
 
@@ -783,6 +785,7 @@ class Manipulation(smach.State):
                 return False
 
             userdata.trajectories[5] = traj_retreat
+
             userdata.target_cs = 0
             rospy.loginfo("Place planning complete")
 
@@ -942,13 +945,13 @@ class SM(smach.StateMachine):
                                    transitions={'succeeded': 'START_POSITION'})
 
             smach.StateMachine.add('START_POSITION', StartPosition(),
-                                   transitions={'succeeded': 'MANIPULATION',
+                                   transitions={'succeeded': 'PLANNINGANDEXECUTION',
                                                 'failed': 'START_POSITION',
                                                 'error': 'ERROR'})
 
-            smach.StateMachine.add('MANIPULATION', Manipulation(),
+            smach.StateMachine.add('PLANNINGANDEXECUTION', PlanningAndExecution(),
                                    transitions={'succeeded': 'END_POSITION',
-                                                'failed': 'MANIPULATION',
+                                                'failed': 'PLANNINGANDEXECUTION',
                                                 'error': 'ERROR'})
 
             smach.StateMachine.add('END_POSITION', EndPosition(),
