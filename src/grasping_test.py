@@ -3,7 +3,6 @@ import rospkg
 import smach
 import smach_ros
 import tf
-import threading
 
 from pyassimp import pyassimp
 
@@ -269,9 +268,9 @@ class SetTargets(smach.State):
         marker = Marker()
 
         marker.type = Marker.CYLINDER
-        marker.scale.x = msg.scale * object_dim[0]  # diameter in x
-        marker.scale.y = msg.scale * object_dim[1]  # diameter in y
-        marker.scale.z = msg.scale * object_dim[2]  # height
+        marker.scale.x = object_dim[0]  # diameter in x
+        marker.scale.y = object_dim[1]  # diameter in y
+        marker.scale.z = object_dim[2]  # height
         marker.color.r = 1.0
         marker.color.g = 0.0
         marker.color.b = 0.0
@@ -290,7 +289,6 @@ class SetTargets(smach.State):
         int_marker = InteractiveMarker()
         int_marker.header.frame_id = "base_link"
         int_marker.pose.position = position
-        int_marker.scale = 1
 
         int_marker.name = name
         int_marker.description = name
@@ -674,10 +672,7 @@ class PlanningAndExecution(smach.State):
                 self.tf_error += 1
                 return False
 
-            # (traj_move, frac_move) = self.planer.compute_cartesian_path([move_pose.pose],
-            #                                                            self.eef_step, self.jump_threshold,
-            #                                                            True)
-
+            '''
             self.planer.set_pose_target(move_pose, self.planer.get_end_effector_link())
 
             try:
@@ -686,22 +681,27 @@ class PlanningAndExecution(smach.State):
                 traj_move = scale_joint_trajectory_speed(traj_move, 0.3)
             except (ValueError, IndexError):
                 userdata.error_message = "Unabled to plan " + self.traj_name + " trajectory for " + userdata.active_arm\
-                                             + " arm"
+                                         + " arm"
 
                 self.planning_error += 1
                 return False
+            '''
 
-            # if frac_move < 0.5:
-            #    rospy.logerr("Plan " + self.traj_name + ": " + str(round(frac_move * 100, 2)) + "%")
-            # elif 0.5 <= frac_move < 1.0:
-            #    rospy.logwarn("Plan " + self.traj_name + ": " + str(round(frac_move * 100, 2)) + "%")
-            # else:
-            #    rospy.loginfo("Plan " + self.traj_name + ": " + str(round(frac_move * 100, 2)) + "%")
+            (traj_move, frac_move) = self.planer.compute_cartesian_path([move_pose.pose],
+                                                                        self.eef_step, self.jump_threshold,
+                                                                        True)
 
-            # if not (frac_move == 1.0):
-            #    userdata.error_message = "Unable to plan " + self.traj_name + " trajectory"
-            #    self.planning_error += 1
-            #   return False
+            if frac_move < 0.5:
+                rospy.logerr("Plan " + self.traj_name + ": " + str(round(frac_move * 100, 2)) + "%")
+            elif 0.5 <= frac_move < 1.0:
+                rospy.logwarn("Plan " + self.traj_name + ": " + str(round(frac_move * 100, 2)) + "%")
+            else:
+                rospy.loginfo("Plan " + self.traj_name + ": " + str(round(frac_move * 100, 2)) + "%")
+
+            if not (frac_move == 1.0):
+                userdata.error_message = "Unable to plan " + self.traj_name + " trajectory"
+                self.planning_error += 1
+                return False
 
             userdata.trajectories[3] = traj_move
 
@@ -934,18 +934,18 @@ class SM(smach.StateMachine):
         # Objekt dimensions [diameter in x, diameter in y, height]
         self.userdata.object = [object_dim[0], object_dim[1], object_dim[2]]
 
-        # scale = 0.002
-        # q = quaternion_from_euler(0.5*math.pi, 0.0, 0.5*math.pi)
-        # position = [0.48, -0.64, 0.0, q[0], q[1], q[2], q[3]]
-        # self.userdata.environment = ["rack", rospkg.RosPack().get_path("cob_grasping") + "/files/rack.stl", scale,
-        #                               position]
+        scale = 0.002
+        q = quaternion_from_euler(0.5*math.pi, 0.0, 0.5*math.pi)
+        position = [0.48, -0.64, 0.0, q[0], q[1], q[2], q[3]]
+        self.userdata.environment = ["rack", rospkg.RosPack().get_path("cob_grasping") + "/files/rack.stl", scale,
+                                       position]
 
-        scale = 1.0
-        q = quaternion_from_euler(0.0, 0.0, 0.0)
-        position = [0.48, 0.0, 0.61, q[0], q[1], q[2], q[3]]
+        # scale = 1.0
+        # q = quaternion_from_euler(0.0, 0.0, 0.0)
+        # position = [0.48, 0.0, 0.61, q[0], q[1], q[2], q[3]]
 
-        self.userdata.environment = ["table", rospkg.RosPack().get_path("cob_grasping") + "/files/table.stl", scale,
-                                     position]
+        # self.userdata.environment = ["table", rospkg.RosPack().get_path("cob_grasping") + "/files/table.stl", scale,
+        #                             position]
 
         # scale = 0.01
         # q = quaternion_from_euler(0.5*math.pi, 0.0, 0.5*math.pi)
