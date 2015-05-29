@@ -3,6 +3,7 @@ import rospkg
 import smach
 import smach_ros
 import tf
+import threading
 
 from pyassimp import pyassimp
 
@@ -164,22 +165,20 @@ class SpawnEnvironment(smach.State):
     def __init__(self):
         smach.State.__init__(self,
                              outcomes=['succeeded'],
-                             input_keys=['target', 'active_arm'])
+                             input_keys=['target', 'active_arm', 'environment'])
 
     def execute(self, userdata):
         # Initialize objects
         rospy.loginfo("Building environment...")
         environment = CollisionObject()
-        environment.id = "rack"
+        environment.id = userdata.environment[0]
         environment.header.stamp = rospy.Time.now()
         environment.header.frame_id = "odom_combined"
-        filename = rospkg.RosPack().get_path("cob_grasping") + "/files/rack.stl"
-        scale = 0.002
+        filename = userdata.environment[1]
+        scale = userdata.environment[2]
         environment.meshes.append(self.load_mesh(filename, scale))
         add_remove_object("remove", environment, "", "")
-        q = quaternion_from_euler(0.5*math.pi, 0.0, 0.5*math.pi)
-        position = [0.48, -0.64, 0.0, q[0], q[1], q[2], q[3]]
-        add_remove_object("add", environment, position, "mesh")
+        add_remove_object("add", environment, userdata.environment[3], "mesh")
 
         return 'succeeded'
 
@@ -213,22 +212,30 @@ class SetTargets(smach.State):
         smach.State.__init__(self,
                              outcomes=['succeeded'],
                              input_keys=['target_left', 'target_right', 'active_arm'],
-                             output_keys=['target', 'target_left', 'target_right'])
+                             output_keys=['target', 'target_left', 'target_right', 'active_arm'])
 
         self.server = InteractiveMarkerServer("grasping_targets")
         self.menu_handler = MenuHandler()
 
-        self.makemarker("right_arm_start", InteractiveMarkerControl.MOVE_3D, start_r)
-        self.makemarker("right_arm_goal", InteractiveMarkerControl.MOVE_3D, goal_r)
-        self.makemarker("left_arm_goal", InteractiveMarkerControl.MOVE_3D, goal_l)
+        self.make_marker("right_arm_start", InteractiveMarkerControl.MOVE_3D, start_r)
+        self.make_marker("right_arm_goal", InteractiveMarkerControl.MOVE_3D, goal_r)
+        self.make_marker("left_arm_goal", InteractiveMarkerControl.MOVE_3D, goal_l)
 
         self.server.applyChanges()
 
+        self.menu_handler.insert("Start", callback=self.start_planning)
+        self.menu_handler.apply(self.server, "right_arm_start")
+        self.menu_handler.apply(self.server, "right_arm_goal")
+        self.menu_handler.apply(self.server, "left_arm_goal")
+
+        self.server.applyChanges()
+
+        self.start_manipulation = threading.Event()
+
     def execute(self, userdata):
-        try:
-            raw_input("Move the markers and press enter to continue:\n")
-        except SyntaxError:
-            pass
+        rospy.loginfo("Press start to continue...")
+        self.start_manipulation.wait()
+        self.start_manipulation.clear()
 
         # Pick position for right arm
         userdata.target_right[0].x = start_r.x  # x
@@ -241,9 +248,9 @@ class SetTargets(smach.State):
         userdata.target_right[1].z = goal_r.z  # z
 
         # Pick position for left arm
-        userdata.target_left[0].x = userdata.target_right[1].x  # x
-        userdata.target_left[0].y = userdata.target_right[1].y  # y
-        userdata.target_left[0].z = userdata.target_right[1].z  # z
+        userdata.target_left[0].x = goal_r.x  # x
+        userdata.target_left[0].y = goal_r.y  # y
+        userdata.target_left[0].z = goal_r.z  # z
 
         # Place position for left arm
         userdata.target_left[1].x = goal_l.x  # x
@@ -258,7 +265,7 @@ class SetTargets(smach.State):
         return "succeeded"
 
     @staticmethod
-    def makebox(msg):
+    def make_box(msg):
         marker = Marker()
 
         marker.type = Marker.CYLINDER
@@ -272,16 +279,16 @@ class SetTargets(smach.State):
 
         return marker
 
-    def makeboxcontrol(self, msg):
+    def make_boxcontrol(self, msg):
         control = InteractiveMarkerControl()
         control.always_visible = True
-        control.markers.append(self.makebox(msg))
+        control.markers.append(self.make_box(msg))
         msg.controls.append(control)
         return control
 
-    def makemarker(self, name, interaction_mode, position):
+    def make_marker(self, name, interaction_mode, position):
         int_marker = InteractiveMarker()
-        int_marker.header.frame_id = "/base_link"
+        int_marker.header.frame_id = "base_link"
         int_marker.pose.position = position
         int_marker.scale = 1
 
@@ -289,13 +296,13 @@ class SetTargets(smach.State):
         int_marker.description = name
 
         # insert a box
-        self.makeboxcontrol(int_marker)
+        self.make_boxcontrol(int_marker)
         int_marker.controls[0].interaction_mode = interaction_mode
 
-        self.server.insert(int_marker, self.processfeedback)
+        self.server.insert(int_marker, self.process_feedback)
         self.menu_handler.apply(self.server, int_marker.name)
 
-    def processfeedback(self, feedback):
+    def process_feedback(self, feedback):
         if feedback.event_type == InteractiveMarkerFeedback.MOUSE_UP:
             if feedback.marker_name == "right_arm_start":
                 start_r.x = feedback.pose.position.x
@@ -312,6 +319,9 @@ class SetTargets(smach.State):
             rospy.loginfo("Position " + feedback.marker_name + ": x = " + str(feedback.pose.position.x)
                           + " | y = " + str(feedback.pose.position.y) + " | z = " + str(feedback.pose.position.z))
         self.server.applyChanges()
+
+    def start_planning(self, feedback):
+        self.start_manipulation.set()
 
 
 class StartPosition(smach.State):
@@ -409,41 +419,21 @@ class PlanningAndExecution(smach.State):
     def __init__(self):
         smach.State.__init__(self,
                              outcomes=['succeeded', 'failed', 'error'],
-                             input_keys=['active_arm', 'cs_data', 'target_cs', 'target', 'trajectories', 'error_tf_max',
-                                         'error_plan_max', 'error_message', 'object', 'lift_height'],
+                             input_keys=['active_arm', 'cs_data', 'trajectories', 'error_tf_max',
+                                         'error_plan_max', 'error_message', 'object', 'lift_height',
+                                         'trajectory_length'],
                              output_keys=['target_cs', 'cs_data', 'trajectories', 'error_message'])
-
-        self.angle_offset_yaw = 0.0
-        self.angle_offset_pitch = 0.0
-        self.angle_offset_roll = 0.0
-        self.cs_position_x = 0.0
-        self.cs_position_y = 0.0
-        self.cs_position_z = 0.0
-
-        self.eef_step = 0.01
-        self.jump_threshold = 2
 
         self.tf_listener = tf.TransformListener()
 
-        rospy.Timer(rospy.Duration.from_sec(0.1), self.broadcast_tf)
-        self.br = tf.TransformBroadcaster()
+        self.eef_step = 0.01
+        self.jump_threshold = 2
 
         self.planning_error = 0
         self.tf_error = 0
         self.traj_name = ""
 
-    def broadcast_tf(self, event):
-        self.br.sendTransform(
-            (self.cs_position_x, self.cs_position_y, self.cs_position_z),
-            quaternion_from_euler(self.angle_offset_roll, self.angle_offset_pitch, self.angle_offset_yaw),
-            event.current_real,
-            "current_object",
-            "base_link")
-
     def execute(self, userdata):
-        self.cs_position_x = userdata.target[userdata.target_cs].x
-        self.cs_position_y = userdata.target[userdata.target_cs].y
-        self.cs_position_z = userdata.target[userdata.target_cs].z
 
         if userdata.cs_data[2] >= 0.5 * math.pi:
             # Rotate clockwise
@@ -462,18 +452,14 @@ class PlanningAndExecution(smach.State):
         elif userdata.active_arm == "right":
             userdata.cs_data[0] = 0.0
 
-        self.angle_offset_roll = userdata.cs_data[0]
-        self.angle_offset_pitch = userdata.cs_data[1]
-        self.angle_offset_yaw = userdata.cs_data[2]
-
         if not self.plan_and_move(userdata):
-            if self.planning_error == userdata.error_plan_max:
+            if self.planning_error >= userdata.error_plan_max:
                 self.planning_error = 0
                 userdata.trajectories[:] = []
                 userdata.trajectories = [False]*6
                 userdata.target_cs = 0
                 return "error"
-            elif self.tf_error == userdata.error_tf_max:
+            elif self.tf_error >= userdata.error_tf_max:
                 self.tf_error = 0
                 userdata.trajectories[:] = []
                 userdata.trajectories = [False]*6
@@ -648,6 +634,7 @@ class PlanningAndExecution(smach.State):
             self.planning_error = 0
             self.tf_error = 0
             rospy.loginfo("Pick planning complete")
+            rospy.sleep(1.5)
             return False
 
         # Plan Place-Trajectory
@@ -670,6 +657,7 @@ class PlanningAndExecution(smach.State):
             start_state.is_diff = True
             self.planer.set_start_state(start_state)
 
+            self.planer.clear_pose_targets()
             move_pose_offset = PoseStamped()
             move_pose_offset.header.frame_id = "current_object"
             move_pose_offset.header.stamp = rospy.Time(0)
@@ -678,6 +666,7 @@ class PlanningAndExecution(smach.State):
             elif userdata.active_arm == "right":
                 move_pose_offset.pose.position.z = userdata.lift_height
             move_pose_offset.pose.orientation.w = 1
+
             try:
                 move_pose = self.tf_listener.transformPose("odom_combined", move_pose_offset)
             except Exception, e:
@@ -685,29 +674,36 @@ class PlanningAndExecution(smach.State):
                 self.tf_error += 1
                 return False
 
-            (traj_move, frac_move) = self.planer.compute_cartesian_path([move_pose.pose],
-                                                                        self.eef_step, self.jump_threshold,
-                                                                        True)
+            # (traj_move, frac_move) = self.planer.compute_cartesian_path([move_pose.pose],
+            #                                                            self.eef_step, self.jump_threshold,
+            #                                                            True)
 
-            if frac_move < 0.5:
-                rospy.logerr("Plan " + self.traj_name + ": " + str(round(frac_move * 100, 2)) + "%")
-            elif 0.5 <= frac_move < 1.0:
-                rospy.logwarn("Plan " + self.traj_name + ": " + str(round(frac_move * 100, 2)) + "%")
-            else:
-                rospy.loginfo("Plan " + self.traj_name + ": " + str(round(frac_move * 100, 2)) + "%")
+            self.planer.set_pose_target(move_pose, self.planer.get_end_effector_link())
 
-            if not (frac_move == 1.0):
-                userdata.error_message = "Unable to plan " + self.traj_name + " trajectory"
+            try:
+                traj_move = self.planer.plan()
+                traj_move = smooth_cartesian_path(traj_move)
+                traj_move = scale_joint_trajectory_speed(traj_move, 0.3)
+            except (ValueError, IndexError):
+                userdata.error_message = "Unabled to plan " + self.traj_name + " trajectory for " + userdata.active_arm\
+                                             + " arm"
+
                 self.planning_error += 1
                 return False
+
+            # if frac_move < 0.5:
+            #    rospy.logerr("Plan " + self.traj_name + ": " + str(round(frac_move * 100, 2)) + "%")
+            # elif 0.5 <= frac_move < 1.0:
+            #    rospy.logwarn("Plan " + self.traj_name + ": " + str(round(frac_move * 100, 2)) + "%")
+            # else:
+            #    rospy.loginfo("Plan " + self.traj_name + ": " + str(round(frac_move * 100, 2)) + "%")
+
+            # if not (frac_move == 1.0):
+            #    userdata.error_message = "Unable to plan " + self.traj_name + " trajectory"
+            #    self.planning_error += 1
+            #   return False
 
             userdata.trajectories[3] = traj_move
-
-            if len(traj_move.joint_trajectory.points) < 15:
-                rospy.logerr("Computed trajectory is too short. Replanning...")
-                rospy.sleep(1.5)
-                self.planning_error += 1
-                return False
 
             # ----------- DROP -----------
             self.traj_name = "drop"
@@ -844,8 +840,7 @@ class SwitchArm(smach.State):
     def __init__(self):
         smach.State.__init__(self,
                              outcomes=['succeeded', 'finished', 'switch_targets'],
-                             input_keys=['active_arm', 'cs_data', 'target_right', 'target_left',
-                                         'manipulation_repeats'],
+                             input_keys=['active_arm', 'cs_data', 'target_right', 'target_left','manipulation_repeats'],
                              output_keys=['active_arm', 'cs_data', 'target', 'target_cs'])
 
         self.counter = 1
@@ -912,6 +907,11 @@ class SM(smach.StateMachine):
     def __init__(self):        
         smach.StateMachine.__init__(self, outcomes=['ended'])
 
+        self.tf_listener = tf.TransformListener()
+
+        rospy.Timer(rospy.Duration.from_sec(0.1), self.broadcast_tf)
+        self.br = tf.TransformBroadcaster()
+
         self.userdata.active_arm = "right"
         self.userdata.target_cs = 0
 
@@ -933,6 +933,26 @@ class SM(smach.StateMachine):
 
         # Objekt dimensions [diameter in x, diameter in y, height]
         self.userdata.object = [object_dim[0], object_dim[1], object_dim[2]]
+
+        # scale = 0.002
+        # q = quaternion_from_euler(0.5*math.pi, 0.0, 0.5*math.pi)
+        # position = [0.48, -0.64, 0.0, q[0], q[1], q[2], q[3]]
+        # self.userdata.environment = ["rack", rospkg.RosPack().get_path("cob_grasping") + "/files/rack.stl", scale,
+        #                               position]
+
+        scale = 1.0
+        q = quaternion_from_euler(0.0, 0.0, 0.0)
+        position = [0.48, 0.0, 0.61, q[0], q[1], q[2], q[3]]
+
+        self.userdata.environment = ["table", rospkg.RosPack().get_path("cob_grasping") + "/files/table.stl", scale,
+                                     position]
+
+        # scale = 0.01
+        # q = quaternion_from_euler(0.5*math.pi, 0.0, 0.5*math.pi)
+        # position = [0.88, -0.12, 0.16, q[0], q[1], q[2], q[3]]
+
+        # self.userdata.environment = ["shelf_unit", rospkg.RosPack().get_path("cob_grasping")
+        #                             + "/files/shelf_unit.stl", scale, position]
 
         Server(parameterConfig, self.dynreccallback)
 
@@ -979,6 +999,15 @@ class SM(smach.StateMachine):
                       + " | " + str(self.userdata.lift_height) + " | " + str(self.userdata.manipulation_repeats))
 
         return config
+
+    def broadcast_tf(self, event):
+        self.br.sendTransform(
+            (self.userdata.target[self.userdata.target_cs].x, self.userdata.target[self.userdata.target_cs].y,
+             self.userdata.target[self.userdata.target_cs].z),
+            quaternion_from_euler(self.userdata.cs_data[0], self.userdata.cs_data[1], self.userdata.cs_data[2]),
+            event.current_real,
+            "current_object",
+            "base_link")
 
 
 if __name__ == '__main__':
