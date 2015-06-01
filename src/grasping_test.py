@@ -15,6 +15,7 @@ from interactive_markers.menu_handler import *
 from visualization_msgs.msg import InteractiveMarkerControl, Marker
 from dynamic_reconfigure.server import Server
 from cob_grasping.cfg import parameterConfig
+from std_msgs.msg import ColorRGBA
 
 from simple_script_server import *
 sss = simple_script_server()
@@ -33,23 +34,7 @@ start_r = Point(0.6, -0.3, 0.8)
 goal_r = Point(0.6, 0.0, 0.8)
 goal_l = Point(0.6, 0.3, 0.8)
 
-
-def move_gripper(component_name, pos):
-    error_code = -1
-    counter = 0
-    while not rospy.is_shutdown() and error_code != 0:
-        print "Trying to move", component_name, "to", pos, "retries: ", counter
-        handle = sss.move(component_name, pos)
-        handle.wait()
-        error_code = handle.get_error_code()
-        if counter > 100:
-            rospy.logerr(component_name + "does not work any more. retries: " + str(counter) +
-                         ". Please reset USB connection and press <ENTER>.")
-            sss.wait_for_input()
-            return False
-        counter += 1
-    return True
-
+waypoints = [Point(0.4, -0.2, 0.8), Point(0.4, 0.0, 0.8)]
 
 def smooth_cartesian_path(traj):
 
@@ -210,22 +195,39 @@ class SetTargets(smach.State):
     def __init__(self):
         smach.State.__init__(self,
                              outcomes=['succeeded'],
-                             input_keys=['target_left', 'target_right', 'active_arm'],
-                             output_keys=['target', 'target_left', 'target_right', 'active_arm'])
+                             input_keys=['active_arm', 'target_left', 'target_right', 'waypoints'],
+                             output_keys=['target', 'target_left', 'target_right', 'waypoints'])
 
         self.server = InteractiveMarkerServer("grasping_targets")
         self.menu_handler = MenuHandler()
 
-        self.make_marker("right_arm_start", InteractiveMarkerControl.MOVE_3D, start_r)
-        self.make_marker("right_arm_goal", InteractiveMarkerControl.MOVE_3D, goal_r)
-        self.make_marker("left_arm_goal", InteractiveMarkerControl.MOVE_3D, goal_l)
+        color = ColorRGBA()
+        color.r = 1.0
+        color.g = 0.0
+        color.b = 0.0
+        color.a = 1.0
+
+        self.make_marker("right_arm_start", color, InteractiveMarkerControl.MOVE_3D, start_r)
+        self.make_marker("right_arm_goal", color, InteractiveMarkerControl.MOVE_3D, goal_r)
+        self.make_marker("left_arm_goal", color, InteractiveMarkerControl.MOVE_3D, goal_l)
+
+        color = ColorRGBA()
+        color.r = 0.0
+        color.g = 0.0
+        color.b = 1.0
+        color.a = 1.0
+
+        self.make_marker("waypoint_1", color, InteractiveMarkerControl.MOVE_3D, waypoints[0])
+        self.make_marker("waypoint_2", color, InteractiveMarkerControl.MOVE_3D, waypoints[1])
 
         self.server.applyChanges()
 
-        self.menu_handler.insert("Start", callback=self.start_planning)
+        self.menu_handler.insert("Start execution", callback=self.start_planning)
         self.menu_handler.apply(self.server, "right_arm_start")
         self.menu_handler.apply(self.server, "right_arm_goal")
         self.menu_handler.apply(self.server, "left_arm_goal")
+        self.menu_handler.apply(self.server, "waypoint_1")
+        self.menu_handler.apply(self.server, "waypoint_2")
 
         self.server.applyChanges()
 
@@ -237,24 +239,19 @@ class SetTargets(smach.State):
         self.start_manipulation.clear()
 
         # Pick position for right arm
-        userdata.target_right[0].x = start_r.x  # x
-        userdata.target_right[0].y = start_r.y  # y
-        userdata.target_right[0].z = start_r.z  # z
+        userdata.target_right[0] = start_r
 
         # Place position for right arm
-        userdata.target_right[1].x = goal_r.x  # x
-        userdata.target_right[1].y = goal_r.y  # y
-        userdata.target_right[1].z = goal_r.z  # z
+        userdata.target_right[1] = goal_r
 
         # Pick position for left arm
-        userdata.target_left[0].x = goal_r.x  # x
-        userdata.target_left[0].y = goal_r.y  # y
-        userdata.target_left[0].z = goal_r.z  # z
+        userdata.target_left[0] = goal_r
 
         # Place position for left arm
-        userdata.target_left[1].x = goal_l.x  # x
-        userdata.target_left[1].y = goal_l.y  # y
-        userdata.target_left[1].z = goal_l.z  # z
+        userdata.target_left[1] = goal_l
+
+        # Positions for waypoints
+        userdata.waypoints = waypoints
 
         if userdata.active_arm == "left":
             userdata.target = userdata.target_left
@@ -264,28 +261,25 @@ class SetTargets(smach.State):
         return "succeeded"
 
     @staticmethod
-    def make_box(msg):
+    def make_box(color):
         marker = Marker()
 
         marker.type = Marker.CYLINDER
         marker.scale.x = object_dim[0]  # diameter in x
         marker.scale.y = object_dim[1]  # diameter in y
         marker.scale.z = object_dim[2]  # height
-        marker.color.r = 1.0
-        marker.color.g = 0.0
-        marker.color.b = 0.0
-        marker.color.a = 1.0
+        marker.color = color
 
         return marker
 
-    def make_boxcontrol(self, msg):
+    def make_boxcontrol(self, msg, color):
         control = InteractiveMarkerControl()
         control.always_visible = True
-        control.markers.append(self.make_box(msg))
+        control.markers.append(self.make_box(color))
         msg.controls.append(control)
         return control
 
-    def make_marker(self, name, interaction_mode, position):
+    def make_marker(self, name, color, interaction_mode, position):
         int_marker = InteractiveMarker()
         int_marker.header.frame_id = "base_link"
         int_marker.pose.position = position
@@ -294,7 +288,7 @@ class SetTargets(smach.State):
         int_marker.description = name
 
         # insert a box
-        self.make_boxcontrol(int_marker)
+        self.make_boxcontrol(int_marker, color)
         int_marker.controls[0].interaction_mode = interaction_mode
 
         self.server.insert(int_marker, self.process_feedback)
@@ -314,6 +308,14 @@ class SetTargets(smach.State):
                 goal_l.x = feedback.pose.position.x
                 goal_l.y = feedback.pose.position.y
                 goal_l.z = feedback.pose.position.z
+            elif feedback.marker_name == "waypoint_1":
+                waypoints[0].x = feedback.pose.position.x
+                waypoints[0].y = feedback.pose.position.y
+                waypoints[0].z = feedback.pose.position.z
+            elif feedback.marker_name == "waypoint_2":
+                waypoints[1].x = feedback.pose.position.x
+                waypoints[1].y = feedback.pose.position.y
+                waypoints[1].z = feedback.pose.position.z
             rospy.loginfo("Position " + feedback.marker_name + ": x = " + str(feedback.pose.position.x)
                           + " | y = " + str(feedback.pose.position.y) + " | z = " + str(feedback.pose.position.z))
         self.server.applyChanges()
@@ -344,7 +346,7 @@ class StartPosition(smach.State):
         try:
             traj = plan_movement(self.planer, userdata.active_arm, self.traj_name)
         except (ValueError, IndexError):
-            if self.planning_error == (userdata.error_plan_max - 20):
+            if self.planning_error >= (userdata.error_plan_max - 20):
                 self.planning_error = 0
                 userdata.error_message = "Unabled to plan " + self.traj_name + " trajectory for " + userdata.active_arm\
                                          + " arm"
@@ -393,7 +395,7 @@ class EndPosition(smach.State):
         try:
             traj = plan_movement(self.planer, userdata.active_arm, self.traj_name)
         except (ValueError, IndexError):
-            if self.planning_error == (userdata.error_plan_max - 20):
+            if self.planning_error >= (userdata.error_plan_max - 20):
                 self.planning_error = 0
                 userdata.error_message = "Unabled to plan " + self.traj_name + " trajectory for " + userdata.active_arm\
                                          + " arm"
@@ -463,8 +465,8 @@ class PlanningAndExecution(smach.State):
                 userdata.trajectories = [False]*6
                 userdata.target_cs = 0
                 return "error"
-
-            return "failed"
+            else:
+                return "failed"
 
         self.planning_error = 0
         self.tf_error = 0
@@ -485,7 +487,6 @@ class PlanningAndExecution(smach.State):
             userdata.error_message = "Unable to parse pre_grasp configuration"
             return "error"
 
-        # Plan Pick-Trajectory
         if not (userdata.trajectories[0] and userdata.trajectories[1] and userdata.trajectories[2]):
 
             # -------------------- PICK --------------------
@@ -635,7 +636,6 @@ class PlanningAndExecution(smach.State):
             rospy.sleep(1.5)
             return False
 
-        # Plan Place-Trajectory
         else:
             # -------------------- PLACE --------------------
             # ----------- MOVE -----------
@@ -671,7 +671,6 @@ class PlanningAndExecution(smach.State):
                 userdata.error_message = "Could not transform pose. Exception: " + str(e)
                 self.tf_error += 1
                 return False
-
             '''
             self.planer.set_pose_target(move_pose, self.planer.get_end_effector_link())
 
@@ -686,7 +685,6 @@ class PlanningAndExecution(smach.State):
                 self.planning_error += 1
                 return False
             '''
-
             (traj_move, frac_move) = self.planer.compute_cartesian_path([move_pose.pose],
                                                                         self.eef_step, self.jump_threshold,
                                                                         True)
@@ -700,6 +698,12 @@ class PlanningAndExecution(smach.State):
 
             if not (frac_move == 1.0):
                 userdata.error_message = "Unable to plan " + self.traj_name + " trajectory"
+                self.planning_error += 1
+                return False
+
+            if len(traj_move.joint_trajectory.points) < 15:
+                rospy.logerr("Computed trajectory is too short. Replanning...")
+                rospy.sleep(1.5)
                 self.planning_error += 1
                 return False
 
@@ -813,26 +817,43 @@ class PlanningAndExecution(smach.State):
         rospy.loginfo("---- Start execution ----")
         rospy.loginfo("Approach")
         self.planer.execute(userdata.trajectories[0])
-        # move_gripper("gripper_" + userdata.active_arm, "open")
+        # self.move_gripper("gripper_" + userdata.active_arm, "open")
         rospy.loginfo("Grasp")
         self.planer.execute(userdata.trajectories[1])
-        # move_gripper("gripper_" + userdata.active_arm, "close")
+        # self.move_gripper("gripper_" + userdata.active_arm, "close")
         rospy.loginfo("Lift")
         self.planer.execute(userdata.trajectories[2])
         rospy.loginfo("Move")
         self.planer.execute(userdata.trajectories[3])
         rospy.loginfo("Drop")
         self.planer.execute(userdata.trajectories[4])
-        # move_gripper("gripper_" + userdata.active_arm, "open")
+        # self.move_gripper("gripper_" + userdata.active_arm, "open")
         rospy.loginfo("Retreat")
         self.planer.execute(userdata.trajectories[5])
-        # move_gripper("gripper_" + userdata.active_arm, "close")
+        # self.move_gripper("gripper_" + userdata.active_arm, "close")
         rospy.loginfo("---- Execution finished ----")
 
         # ----------- CLEAR TRAJECTORY LIST -----------
         userdata.trajectories[:] = []
         userdata.trajectories = [False]*6
 
+        return True
+
+    @staticmethod
+    def move_gripper(component_name, pos):
+        error_code = -1
+        counter = 0
+        while not rospy.is_shutdown() and error_code != 0:
+            print "Trying to move", component_name, "to", pos, "retries: ", counter
+            handle = sss.move(component_name, pos)
+            handle.wait()
+            error_code = handle.get_error_code()
+            if counter > 100:
+                rospy.logerr(component_name + "does not work any more. retries: " + str(counter) +
+                             ". Please reset USB connection and press <ENTER>.")
+                sss.wait_for_input()
+                return False
+            counter += 1
         return True
 
 
@@ -907,11 +928,6 @@ class SM(smach.StateMachine):
     def __init__(self):        
         smach.StateMachine.__init__(self, outcomes=['ended'])
 
-        self.tf_listener = tf.TransformListener()
-
-        rospy.Timer(rospy.Duration.from_sec(0.1), self.broadcast_tf)
-        self.br = tf.TransformBroadcaster()
-
         self.userdata.active_arm = "right"
         self.userdata.target_cs = 0
 
@@ -926,6 +942,9 @@ class SM(smach.StateMachine):
         self.userdata.target_left = [goal_r, goal_l]
         self.userdata.target = self.userdata.target_right
 
+        # Waypoints
+        self.userdata.waypoints = waypoints
+
         self.userdata.trajectories = [False]*6  # list for trajectories
 
         # Error Counter
@@ -934,25 +953,47 @@ class SM(smach.StateMachine):
         # Objekt dimensions [diameter in x, diameter in y, height]
         self.userdata.object = [object_dim[0], object_dim[1], object_dim[2]]
 
-        scale = 0.002
-        q = quaternion_from_euler(0.5*math.pi, 0.0, 0.5*math.pi)
-        position = [0.48, -0.64, 0.0, q[0], q[1], q[2], q[3]]
-        self.userdata.environment = ["rack", rospkg.RosPack().get_path("cob_grasping") + "/files/rack.stl", scale,
-                                       position]
+        env_object = "table"
 
-        # scale = 1.0
-        # q = quaternion_from_euler(0.0, 0.0, 0.0)
-        # position = [0.48, 0.0, 0.61, q[0], q[1], q[2], q[3]]
+        if env_object == "table":
+            scale = 1.0
+            q = quaternion_from_euler(0.0, 0.0, 0.0)
+            position = [0.56, 0.0, 0.61, q[0], q[1], q[2], q[3]]
 
-        # self.userdata.environment = ["table", rospkg.RosPack().get_path("cob_grasping") + "/files/table.stl", scale,
-        #                             position]
+            self.userdata.environment = ["table", rospkg.RosPack().get_path("cob_grasping") + "/files/table.stl", scale,
+                                         position]
 
-        # scale = 0.01
-        # q = quaternion_from_euler(0.5*math.pi, 0.0, 0.5*math.pi)
-        # position = [0.88, -0.12, 0.16, q[0], q[1], q[2], q[3]]
+            collision_object = CollisionObject()
+            collision_object.header.stamp = rospy.Time.now()
+            collision_object.header.frame_id = "odom_combined"
+            collision_object.id = "wall"
+            object_shape = SolidPrimitive()
+            object_shape.type = object_shape.BOX
+            object_shape.dimensions.append(0.48)  # X
+            object_shape.dimensions.append(0.05)  # Y
+            object_shape.dimensions.append(0.5)  # Z
+            collision_object.primitives.append(object_shape)
+            add_remove_object("remove", collision_object, "", "")
+            position = [0.8, -0.15, 0.86, 0.0, 0.0, 0.0, 1.0]
+            add_remove_object("add", collision_object, position, "primitive")
 
-        # self.userdata.environment = ["shelf_unit", rospkg.RosPack().get_path("cob_grasping")
-        #                             + "/files/shelf_unit.stl", scale, position]
+        elif env_object == "rack":
+            scale = 0.002
+            q = quaternion_from_euler(0.5*math.pi, 0.0, 0.5*math.pi)
+            position = [0.56, -0.64, 0.0, q[0], q[1], q[2], q[3]]
+            self.userdata.environment = ["rack", rospkg.RosPack().get_path("cob_grasping") + "/files/rack.stl", scale,
+                                         position]
+        elif env_object == "shelf":
+            scale = 0.01
+            q = quaternion_from_euler(0.5*math.pi, 0.0, 0.5*math.pi)
+            position = [0.96, -0.12, 0.16, q[0], q[1], q[2], q[3]]
+
+            self.userdata.environment = ["shelf_unit", rospkg.RosPack().get_path("cob_grasping")
+                                         + "/files/shelf_unit.stl", scale, position]
+
+        self.tf_listener = tf.TransformListener()
+        self.br = tf.TransformBroadcaster()
+        rospy.Timer(rospy.Duration.from_sec(0.01), self.broadcast_tf)
 
         Server(parameterConfig, self.dynreccallback)
 
@@ -1005,9 +1046,10 @@ class SM(smach.StateMachine):
             (self.userdata.target[self.userdata.target_cs].x, self.userdata.target[self.userdata.target_cs].y,
              self.userdata.target[self.userdata.target_cs].z),
             quaternion_from_euler(self.userdata.cs_data[0], self.userdata.cs_data[1], self.userdata.cs_data[2]),
-            event.current_real,
+            rospy.Time.now(),
             "current_object",
             "base_link")
+        rospy.sleep(0.01)
 
 
 if __name__ == '__main__':
