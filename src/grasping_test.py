@@ -277,43 +277,43 @@ class SetTargets(smach.State):
         with open(filename, 'r') as stream:
             doc = yaml.load(stream)
 
-        values[0] = Point(doc["table"]["start_r"][0], doc["table"]["start_r"][1], doc["table"]["start_r"][2])
-        values[1] = Point(doc["table"]["goal_r"][0], doc["table"]["goal_r"][1], doc["table"]["goal_r"][2])
-        values[2] = Point(doc["table"]["goal_l"][0], doc["table"]["goal_l"][1], doc["table"]["goal_l"][2])
-        values[3] = [Point(doc["table"]["waypoints_r"][0][0], doc["table"]["waypoints_r"][0][1],
-                           doc["table"]["waypoints_r"][0][2]),
-                     Point(doc["table"]["waypoints_r"][1][0], doc["table"]["waypoints_r"][1][1],
-                           doc["table"]["waypoints_r"][1][2])]
-        values[4] = [Point(doc["table"]["waypoints_l"][0][0], doc["table"]["waypoints_l"][0][1],
-                           doc["table"]["waypoints_l"][0][2]),
-                     Point(doc["table"]["waypoints_l"][1][0], doc["table"]["waypoints_l"][1][1],
-                           doc["table"]["waypoints_l"][1][2])]
+        values[0] = Point(doc[env_object]["start_r"][0], doc[env_object]["start_r"][1], doc[env_object]["start_r"][2])
+        values[1] = Point(doc[env_object]["goal_r"][0], doc[env_object]["goal_r"][1], doc[env_object]["goal_r"][2])
+        values[2] = Point(doc[env_object]["goal_l"][0], doc[env_object]["goal_l"][1], doc[env_object]["goal_l"][2])
+        values[3] = [Point(doc[env_object]["waypoints_r"][0][0], doc[env_object]["waypoints_r"][0][1],
+                           doc[env_object]["waypoints_r"][0][2]),
+                     Point(doc[env_object]["waypoints_r"][1][0], doc[env_object]["waypoints_r"][1][1],
+                           doc[env_object]["waypoints_r"][1][2])]
+        values[4] = [Point(doc[env_object]["waypoints_l"][0][0], doc[env_object]["waypoints_l"][0][1],
+                           doc[env_object]["waypoints_l"][0][2]),
+                     Point(doc[env_object]["waypoints_l"][1][0], doc[env_object]["waypoints_l"][1][1],
+                           doc[env_object]["waypoints_l"][1][2])]
 
         return values
 
     def save_positions(self, filename):
         with open(filename, 'r') as stream:
             doc = yaml.load(stream)
-        self.set_in_dict(doc, ["table", "start_r"], [round(self.start_r.x, 3),
+        self.set_in_dict(doc, [env_object, "start_r"], [round(self.start_r.x, 3),
                                                      round(self.start_r.y, 3),
                                                      round(self.start_r.z, 3)])
 
-        self.set_in_dict(doc, ["table", "goal_r"], [round(self.goal_r.x, 3),
+        self.set_in_dict(doc, [env_object, "goal_r"], [round(self.goal_r.x, 3),
                                                     round(self.goal_r.y, 3),
                                                     round(self.goal_r.z, 3)])
 
-        self.set_in_dict(doc, ["table", "goal_l"], [round(self.goal_l.x, 3),
+        self.set_in_dict(doc, [env_object, "goal_l"], [round(self.goal_l.x, 3),
                                                     round(self.goal_l.y, 3),
                                                     round(self.goal_l.z, 3)])
 
-        self.set_in_dict(doc, ["table", "waypoints_r"], [[round(self.waypoints_r[0].x, 3),
+        self.set_in_dict(doc, [env_object, "waypoints_r"], [[round(self.waypoints_r[0].x, 3),
                                                           round(self.waypoints_r[0].y, 3),
                                                           round(self.waypoints_r[0].z, 3)],
                                                          [round(self.waypoints_r[1].x, 3),
                                                           round(self.waypoints_r[1].y, 3),
                                                           round(self.waypoints_r[1].z, 3)]])
 
-        self.set_in_dict(doc, ["table", "waypoints_l"], [[round(self.waypoints_l[0].x, 3),
+        self.set_in_dict(doc, [env_object, "waypoints_l"], [[round(self.waypoints_l[0].x, 3),
                                                           round(self.waypoints_l[0].y, 3),
                                                           round(self.waypoints_l[0].z, 3)],
                                                          [round(self.waypoints_l[1].x, 3),
@@ -470,8 +470,7 @@ class EndPosition(smach.State):
         object_shape.dimensions.append(userdata.object[0]*0.5)  # Radius
         collision_object.primitives.append(object_shape)
         add_remove_object("remove", collision_object, "", "")
-        position = [userdata.target[1].x+userdata.object[0]*0.5, userdata.target[1].y-userdata.object[0]*0.5,
-                    userdata.target[1].z, 0.0, 0.0, 0.0, 1.0]
+        position = [userdata.target[1].x, userdata.target[1].y, userdata.target[1].z, 0.0, 0.0, 0.0, 1.0]
         add_remove_object("add", collision_object, position, "primitive")
 
         try:
@@ -662,8 +661,8 @@ class PlanningAndExecution(smach.State):
             # Attach object
             object_shape = SolidPrimitive()
             object_shape.type = 3  # CYLINDER
-            object_shape.dimensions.append(userdata.object[2])
-            object_shape.dimensions.append(userdata.object[0])
+            object_shape.dimensions.append(userdata.object[2])  # Height
+            object_shape.dimensions.append(userdata.object[0]*0.5)  # Radius
 
             object_pose = Pose()
             object_pose.orientation.w = 1.0
@@ -1048,9 +1047,10 @@ class SM(smach.StateMachine):
 
         smach.StateMachine.__init__(self, outcomes=['ended'])
 
-        global object_dim
+        global object_dim, env_object
         object_dim = [0.02, 0.02, 0.1]
         env_position = [0.56, 0.0, 0.61]
+        env_object = "rack"
 
         self.userdata.active_arm = "right"
         self.userdata.target_cs = 0
@@ -1078,14 +1078,12 @@ class SM(smach.StateMachine):
         # Objekt dimensions [diameter in x, diameter in y, height]
         self.userdata.object = [object_dim[0], object_dim[1], object_dim[2]]
 
-        env_object = "table"
-
         if env_object == "table":
             scale = 1.0
             q = quaternion_from_euler(0.0, 0.0, 0.0)
             position = [env_position[0], env_position[1], env_position[2], q[0], q[1], q[2], q[3]]
 
-            self.userdata.environment = ["table", rospkg.RosPack().get_path("cob_grasping") + "/files/table.stl", scale,
+            self.userdata.environment = [env_object, rospkg.RosPack().get_path("cob_grasping") + "/files/table.stl", scale,
                                          position]
 
             collision_object = CollisionObject()
@@ -1120,14 +1118,14 @@ class SM(smach.StateMachine):
             scale = 0.002
             q = quaternion_from_euler(0.5*math.pi, 0.0, 0.5*math.pi)
             position = [0.56, -0.64, 0.0, q[0], q[1], q[2], q[3]]
-            self.userdata.environment = ["rack", rospkg.RosPack().get_path("cob_grasping") + "/files/rack.stl", scale,
+            self.userdata.environment = [env_object, rospkg.RosPack().get_path("cob_grasping") + "/files/rack.stl", scale,
                                          position]
         elif env_object == "shelf":
             scale = 0.01
             q = quaternion_from_euler(0.5*math.pi, 0.0, 0.5*math.pi)
             position = [0.96, -0.12, 0.16, q[0], q[1], q[2], q[3]]
 
-            self.userdata.environment = ["shelf_unit", rospkg.RosPack().get_path("cob_grasping")
+            self.userdata.environment = [env_object, rospkg.RosPack().get_path("cob_grasping")
                                          + "/files/shelf_unit.stl", scale, position]
 
         self.tf_listener = tf.TransformListener()
