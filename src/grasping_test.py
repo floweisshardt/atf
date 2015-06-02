@@ -3,6 +3,7 @@ import rospkg
 import smach
 import smach_ros
 import tf
+import yaml
 
 from pyassimp import pyassimp
 
@@ -26,15 +27,6 @@ planning_scene.is_diff = True
 
 planning_scene_interface = PlanningSceneInterface()
 pub_planning_scene = rospy.Publisher("planning_scene", PlanningScene, queue_size=1)
-
-object_dim = [0.02, 0.02, 0.1]
-
-start_r = Point(0.6, -0.3, 0.8)
-goal_r = Point(0.6, 0.0, 0.8)
-goal_l = Point(0.6, 0.3, 0.8)
-
-waypoints_r = [Point(0.4, -0.2, 0.8), Point(0.4, -0.02, 0.8)]
-waypoints_l = [Point(0.4, 0.2, 0.8), Point(0.4, 0.02, 0.8)]
 
 
 def smooth_cartesian_path(traj):
@@ -201,6 +193,16 @@ class SetTargets(smach.State):
                              output_keys=['target', 'target_left', 'target_right', 'waypoints', 'waypoints_left',
                                           'waypoints_right'])
 
+        rospy.loginfo("Reading positions from yaml file...")
+        path = rospkg.RosPack().get_path("cob_grasping") + "/config/positions.yaml"
+        data = self.load_positions(path)
+
+        self.start_r = data[0]
+        self.goal_r = data[1]
+        self.goal_l = data[2]
+        self.waypoints_r = data[3]
+        self.waypoints_l = data[4]
+
         self.server = InteractiveMarkerServer("grasping_targets")
         self.menu_handler = MenuHandler()
 
@@ -210,9 +212,9 @@ class SetTargets(smach.State):
         color.b = 0.0
         color.a = 1.0
 
-        self.make_marker("right_arm_start", color, InteractiveMarkerControl.MOVE_3D, start_r)
-        self.make_marker("right_arm_goal", color, InteractiveMarkerControl.MOVE_3D, goal_r)
-        self.make_marker("left_arm_goal", color, InteractiveMarkerControl.MOVE_3D, goal_l)
+        self.make_marker("right_arm_start", color, InteractiveMarkerControl.MOVE_3D, self.start_r)
+        self.make_marker("right_arm_goal", color, InteractiveMarkerControl.MOVE_3D, self.goal_r)
+        self.make_marker("left_arm_goal", color, InteractiveMarkerControl.MOVE_3D, self.goal_l)
 
         color = ColorRGBA()
         color.r = 0.0
@@ -220,10 +222,10 @@ class SetTargets(smach.State):
         color.b = 1.0
         color.a = 1.0
 
-        self.make_marker("waypoint_r1", color, InteractiveMarkerControl.MOVE_3D, waypoints_r[0])
-        self.make_marker("waypoint_r2", color, InteractiveMarkerControl.MOVE_3D, waypoints_r[1])
-        self.make_marker("waypoint_l1", color, InteractiveMarkerControl.MOVE_3D, waypoints_l[0])
-        self.make_marker("waypoint_l2", color, InteractiveMarkerControl.MOVE_3D, waypoints_l[1])
+        self.make_marker("waypoint_r1", color, InteractiveMarkerControl.MOVE_3D, self.waypoints_r[0])
+        self.make_marker("waypoint_r2", color, InteractiveMarkerControl.MOVE_3D, self.waypoints_r[1])
+        self.make_marker("waypoint_l1", color, InteractiveMarkerControl.MOVE_3D, self.waypoints_l[0])
+        self.make_marker("waypoint_l2", color, InteractiveMarkerControl.MOVE_3D, self.waypoints_l[1])
 
         self.server.applyChanges()
 
@@ -247,14 +249,14 @@ class SetTargets(smach.State):
         self.start_manipulation.clear()
 
         # Pick / place position for right arm
-        userdata.target_right = [start_r, goal_r]
+        userdata.target_right = [self.start_r, self.goal_r]
 
         # Pick / place position for left arm
-        userdata.target_left = [goal_r, goal_l]
+        userdata.target_left = [self.goal_r, self.goal_l]
 
         # Positions for waypoints
-        userdata.waypoints_right = waypoints_r
-        userdata.waypoints_left = waypoints_l
+        userdata.waypoints_right = self.waypoints_r
+        userdata.waypoints_left = self.waypoints_l
 
         if userdata.active_arm == "left":
             userdata.target = userdata.target_left
@@ -263,7 +265,69 @@ class SetTargets(smach.State):
             userdata.target = userdata.target_right
             userdata.waypoints = userdata.waypoints_right
 
+        rospy.loginfo("Writing positions to yaml file...")
+        path = rospkg.RosPack().get_path("cob_grasping") + "/config/positions.yaml"
+        self.save_positions(path)
+
         return "succeeded"
+
+    @staticmethod
+    def load_positions(filename):
+        values = [Point(), Point(), Point(), [Point(), Point()], [Point(), Point()]]
+        with open(filename, 'r') as stream:
+            doc = yaml.load(stream)
+
+        values[0] = Point(doc["table"]["start_r"][0], doc["table"]["start_r"][1], doc["table"]["start_r"][2])
+        values[1] = Point(doc["table"]["goal_r"][0], doc["table"]["goal_r"][1], doc["table"]["goal_r"][2])
+        values[2] = Point(doc["table"]["goal_l"][0], doc["table"]["goal_l"][1], doc["table"]["goal_l"][2])
+        values[3] = [Point(doc["table"]["waypoints_r"][0][0], doc["table"]["waypoints_r"][0][1],
+                           doc["table"]["waypoints_r"][0][2]),
+                     Point(doc["table"]["waypoints_r"][1][0], doc["table"]["waypoints_r"][1][1],
+                           doc["table"]["waypoints_r"][1][2])]
+        values[4] = [Point(doc["table"]["waypoints_l"][0][0], doc["table"]["waypoints_l"][0][1],
+                           doc["table"]["waypoints_l"][0][2]),
+                     Point(doc["table"]["waypoints_l"][1][0], doc["table"]["waypoints_l"][1][1],
+                           doc["table"]["waypoints_l"][1][2])]
+
+        return values
+
+    def save_positions(self, filename):
+        with open(filename, 'r') as stream:
+            doc = yaml.load(stream)
+        self.set_in_dict(doc, ["table", "start_r"], [round(self.start_r.x, 3),
+                                                     round(self.start_r.y, 3),
+                                                     round(self.start_r.z, 3)])
+
+        self.set_in_dict(doc, ["table", "goal_r"], [round(self.goal_r.x, 3),
+                                                    round(self.goal_r.y, 3),
+                                                    round(self.goal_r.z, 3)])
+
+        self.set_in_dict(doc, ["table", "goal_l"], [round(self.goal_l.x, 3),
+                                                    round(self.goal_l.y, 3),
+                                                    round(self.goal_l.z, 3)])
+
+        self.set_in_dict(doc, ["table", "waypoints_r"], [[round(self.waypoints_r[0].x, 3),
+                                                          round(self.waypoints_r[0].y, 3),
+                                                          round(self.waypoints_r[0].z, 3)],
+                                                         [round(self.waypoints_r[1].x, 3),
+                                                          round(self.waypoints_r[1].y, 3),
+                                                          round(self.waypoints_r[1].z, 3)]])
+
+        self.set_in_dict(doc, ["table", "waypoints_l"], [[round(self.waypoints_l[0].x, 3),
+                                                          round(self.waypoints_l[0].y, 3),
+                                                          round(self.waypoints_l[0].z, 3)],
+                                                         [round(self.waypoints_l[1].x, 3),
+                                                          round(self.waypoints_l[1].y, 3),
+                                                          round(self.waypoints_l[1].z, 3)]])
+        stream = file(filename, 'w')
+        yaml.dump(doc, stream)
+
+    @staticmethod
+    def get_from_dict(datadict, maplist):
+        return reduce(lambda d, k: d[k], maplist, datadict)
+
+    def set_in_dict(self, datadict, maplist, value):
+        self.get_from_dict(datadict, maplist[:-1])[maplist[-1]] = value
 
     @staticmethod
     def make_box(color):
@@ -302,33 +366,33 @@ class SetTargets(smach.State):
     def process_feedback(self, feedback):
         if feedback.event_type == InteractiveMarkerFeedback.MOUSE_UP:
             if feedback.marker_name == "right_arm_start":
-                start_r.x = feedback.pose.position.x
-                start_r.y = feedback.pose.position.y
-                start_r.z = feedback.pose.position.z
+                self.start_r.x = feedback.pose.position.x
+                self.start_r.y = feedback.pose.position.y
+                self.start_r.z = feedback.pose.position.z
             elif feedback.marker_name == "right_arm_goal":
-                goal_r.x = feedback.pose.position.x
-                goal_r.y = feedback.pose.position.y
-                goal_r.z = feedback.pose.position.z
+                self.goal_r.x = feedback.pose.position.x
+                self.goal_r.y = feedback.pose.position.y
+                self.goal_r.z = feedback.pose.position.z
             elif feedback.marker_name == "left_arm_goal":
-                goal_l.x = feedback.pose.position.x
-                goal_l.y = feedback.pose.position.y
-                goal_l.z = feedback.pose.position.z
+                self.goal_l.x = feedback.pose.position.x
+                self.goal_l.y = feedback.pose.position.y
+                self.goal_l.z = feedback.pose.position.z
             elif feedback.marker_name == "waypoint_r1":
-                waypoints_r[0].x = feedback.pose.position.x
-                waypoints_r[0].y = feedback.pose.position.y
-                waypoints_r[0].z = feedback.pose.position.z
+                self.waypoints_r[0].x = feedback.pose.position.x
+                self.waypoints_r[0].y = feedback.pose.position.y
+                self.waypoints_r[0].z = feedback.pose.position.z
             elif feedback.marker_name == "waypoint_r2":
-                waypoints_r[1].x = feedback.pose.position.x
-                waypoints_r[1].y = feedback.pose.position.y
-                waypoints_r[1].z = feedback.pose.position.z
+                self.waypoints_r[1].x = feedback.pose.position.x
+                self.waypoints_r[1].y = feedback.pose.position.y
+                self.waypoints_r[1].z = feedback.pose.position.z
             elif feedback.marker_name == "waypoint_l1":
-                waypoints_l[0].x = feedback.pose.position.x
-                waypoints_l[0].y = feedback.pose.position.y
-                waypoints_l[0].z = feedback.pose.position.z
+                self.waypoints_l[0].x = feedback.pose.position.x
+                self.waypoints_l[0].y = feedback.pose.position.y
+                self.waypoints_l[0].z = feedback.pose.position.z
             elif feedback.marker_name == "waypoint_l2":
-                waypoints_l[1].x = feedback.pose.position.x
-                waypoints_l[1].y = feedback.pose.position.y
-                waypoints_l[1].z = feedback.pose.position.z
+                self.waypoints_l[1].x = feedback.pose.position.x
+                self.waypoints_l[1].y = feedback.pose.position.y
+                self.waypoints_l[1].z = feedback.pose.position.z
             rospy.loginfo("Position " + feedback.marker_name + ": x = " + str(feedback.pose.position.x)
                           + " | y = " + str(feedback.pose.position.y) + " | z = " + str(feedback.pose.position.z))
         self.server.applyChanges()
@@ -406,7 +470,8 @@ class EndPosition(smach.State):
         object_shape.dimensions.append(userdata.object[0]*0.5)  # Radius
         collision_object.primitives.append(object_shape)
         add_remove_object("remove", collision_object, "", "")
-        position = [userdata.target[1].x, userdata.target[1].y, userdata.target[1].z, 0.0, 0.0, 0.0, 1.0]
+        position = [userdata.target[1].x+userdata.object[0]*0.5, userdata.target[1].y-userdata.object[0]*0.5,
+                    userdata.target[1].z, 0.0, 0.0, 0.0, 1.0]
         add_remove_object("add", collision_object, position, "primitive")
 
         try:
@@ -530,10 +595,8 @@ class PlanningAndExecution(smach.State):
                 error_counter[1] += 1
                 return False
 
-            (traj_approach, frac_approach) = self.planer.compute_cartesian_path([approach_pose.pose],
-                                                                                self.eef_step,
-                                                                                self.jump_threshold,
-                                                                                True)
+            (traj_approach, frac_approach) = self.planer.compute_cartesian_path([approach_pose.pose], self.eef_step,
+                                                                                self.jump_threshold, True)
 
             if frac_approach < 0.5:
                 rospy.logerr("Plan " + self.traj_name + ": " + str(round(frac_approach * 100, 2)) + "%")
@@ -562,10 +625,18 @@ class PlanningAndExecution(smach.State):
             grasp_pose_offset.header.frame_id = "current_object"
             grasp_pose_offset.header.stamp = rospy.Time(0)
             grasp_pose_offset.pose.orientation.w = 1
-            grasp_pose = self.tf_listener.transformPose("odom_combined", grasp_pose_offset)
-            (traj_grasp, frac_grasp) = self.planer.compute_cartesian_path([grasp_pose.pose],
-                                                                          self.eef_step, self.jump_threshold,
-                                                                          True)
+
+            try:
+                grasp_pose = self.tf_listener.transformPose("odom_combined", grasp_pose_offset)
+            except Exception, e:
+                userdata.error_message = "Could not transform pose. Exception: " + str(e)
+                self.tf_listener.clear()
+                print str(e)
+                error_counter[1] += 1
+                return False
+
+            (traj_grasp, frac_grasp) = self.planer.compute_cartesian_path([grasp_pose.pose], self.eef_step,
+                                                                          self.jump_threshold, True)
 
             if frac_grasp < 0.5:
                 rospy.logerr("Plan " + self.traj_name + ": " + str(round(frac_grasp * 100, 2)) + "%")
@@ -627,11 +698,18 @@ class PlanningAndExecution(smach.State):
             elif userdata.active_arm == "right":
                 lift_pose_offset.pose.position.z = userdata.lift_height
             lift_pose_offset.pose.orientation.w = 1
-            lift_pose = self.tf_listener.transformPose("odom_combined", lift_pose_offset)
 
-            (traj_lift, frac_lift) = self.planer.compute_cartesian_path([lift_pose.pose],
-                                                                        self.eef_step, self.jump_threshold,
-                                                                        True)
+            try:
+                lift_pose = self.tf_listener.transformPose("odom_combined", lift_pose_offset)
+            except Exception, e:
+                userdata.error_message = "Could not transform pose. Exception: " + str(e)
+                self.tf_listener.clear()
+                print str(e)
+                error_counter[1] += 1
+                return False
+
+            (traj_lift, frac_lift) = self.planer.compute_cartesian_path([lift_pose.pose], self.eef_step,
+                                                                        self.jump_threshold, True)
 
             if frac_lift < 0.5:
                 rospy.logerr("Plan " + self.traj_name + ": " + str(round(frac_lift * 100, 2)) + "%")
@@ -689,35 +767,30 @@ class PlanningAndExecution(smach.State):
                 userdata.error_message = "Could not transform pose. Exception: " + str(e)
                 error_counter[1] += 1
                 return False
-            '''
-            self.planer.set_pose_target(move_pose, self.planer.get_end_effector_link())
-
-            try:
-                traj_move = self.planer.plan()
-                traj_move = smooth_cartesian_path(traj_move)
-                traj_move = scale_joint_trajectory_speed(traj_move, 0.3)
-            except (ValueError, IndexError):
-                userdata.error_message = "Unabled to plan " + self.traj_name + " trajectory for " + userdata.active_arm\
-                                         + " arm"
-
-                self.planning_error += 1
-                return False
-            '''
 
             way_move = []
 
             for i in range(0, len(userdata.waypoints)):
-                wpose = Pose()
-                wpose.orientation.w = 1.0
-                wpose.position.x = userdata.waypoints[i].x
-                wpose.position.y = userdata.waypoints[i].y
-                wpose.position.z = userdata.waypoints[i].z
-                way_move.append(wpose)
+                wpose_offset = PoseStamped()
+                wpose_offset.header.frame_id = "current_object"
+                wpose_offset.header.stamp = rospy.Time(0)
+                wpose_offset.pose.orientation.w = 1
+
+                try:
+                    wpose = self.tf_listener.transformPose("odom_combined", wpose_offset)
+                except Exception, e:
+                    userdata.error_message = "Could not transform pose. Exception: " + str(e)
+                    error_counter[1] += 1
+                    return False
+
+                wpose.pose.position.x = userdata.waypoints[i].x
+                wpose.pose.position.y = userdata.waypoints[i].y
+                wpose.pose.position.z = userdata.waypoints[i].z
+                way_move.append(wpose.pose)
 
             way_move.append(move_pose.pose)
 
-            (traj_move, frac_move) = self.planer.compute_cartesian_path(way_move,
-                                                                        self.eef_step, self.jump_threshold,
+            (traj_move, frac_move) = self.planer.compute_cartesian_path(way_move, self.eef_step, self.jump_threshold,
                                                                         True)
 
             if frac_move < 0.5:
@@ -734,7 +807,6 @@ class PlanningAndExecution(smach.State):
 
             if len(traj_move.joint_trajectory.points) < 15:
                 rospy.logerr("Computed trajectory is too short. Replanning...")
-                rospy.sleep(1.5)
                 error_counter[0] += 1
                 return False
 
@@ -759,9 +831,8 @@ class PlanningAndExecution(smach.State):
                 error_counter[1] += 1
                 return False
 
-            (traj_drop, frac_drop) = self.planer.compute_cartesian_path([drop_pose.pose],
-                                                                        self.eef_step, self.jump_threshold,
-                                                                        True)
+            (traj_drop, frac_drop) = self.planer.compute_cartesian_path([drop_pose.pose], self.eef_step,
+                                                                        self.jump_threshold, True)
 
             if frac_drop < 0.5:
                 rospy.logerr("Plan " + self.traj_name + ": " + str(round(frac_drop * 100, 2)) + "%")
@@ -799,9 +870,8 @@ class PlanningAndExecution(smach.State):
                 error_counter[1] += 1
                 return False
 
-            (traj_retreat, frac_retreat) = self.planer.compute_cartesian_path([retreat_pose.pose],
-                                                                              self.eef_step, self.jump_threshold,
-                                                                              True)
+            (traj_retreat, frac_retreat) = self.planer.compute_cartesian_path([retreat_pose.pose], self.eef_step,
+                                                                              self.jump_threshold, True)
 
             if frac_retreat < 0.5:
                 rospy.logerr("Plan " + self.traj_name + ": " + str(round(frac_retreat * 100, 2)) + "%")
@@ -974,8 +1044,13 @@ class Error(smach.State):
 
 
 class SM(smach.StateMachine):
-    def __init__(self):        
+    def __init__(self):
+
         smach.StateMachine.__init__(self, outcomes=['ended'])
+
+        global object_dim
+        object_dim = [0.02, 0.02, 0.1]
+        env_position = [0.56, 0.0, 0.61]
 
         self.userdata.active_arm = "right"
         self.userdata.target_cs = 0
@@ -987,16 +1062,13 @@ class SM(smach.StateMachine):
         self.userdata.cs_data[3] = 1.0  # direction for rotation
 
         # Pick / place position for arms
-        self.userdata.target_right = [start_r, goal_r]
-        self.userdata.target_left = [goal_r, goal_l]
-        self.userdata.target = self.userdata.target_right
+        self.userdata.target_right = self.userdata.target_left = self.userdata.target = [Point(), Point()]
 
         # Waypoints
-        self.userdata.waypoints_right = waypoints_r
-        self.userdata.waypoints_left = waypoints_l
-        self.userdata.waypoints = self.userdata.waypoints_right
+        self.userdata.waypoints_right = self.userdata.waypoints_left = self.userdata.waypoints = [Point(), Point()]
 
-        self.userdata.trajectories = [False]*6  # list for trajectories
+        # List for trajectories
+        self.userdata.trajectories = [False]*6
 
         # Error message / counter
         self.userdata.error_message = ""
@@ -1011,7 +1083,7 @@ class SM(smach.StateMachine):
         if env_object == "table":
             scale = 1.0
             q = quaternion_from_euler(0.0, 0.0, 0.0)
-            position = [0.56, 0.0, 0.61, q[0], q[1], q[2], q[3]]
+            position = [env_position[0], env_position[1], env_position[2], q[0], q[1], q[2], q[3]]
 
             self.userdata.environment = ["table", rospkg.RosPack().get_path("cob_grasping") + "/files/table.stl", scale,
                                          position]
@@ -1019,7 +1091,7 @@ class SM(smach.StateMachine):
             collision_object = CollisionObject()
             collision_object.header.stamp = rospy.Time.now()
             collision_object.header.frame_id = "odom_combined"
-            collision_object.id = "wall"
+            collision_object.id = "wall_r"
             object_shape = SolidPrimitive()
             object_shape.type = object_shape.BOX
             object_shape.dimensions.append(0.48)  # X
@@ -1028,6 +1100,20 @@ class SM(smach.StateMachine):
             collision_object.primitives.append(object_shape)
             add_remove_object("remove", collision_object, "", "")
             position = [0.8, -0.15, 0.86, 0.0, 0.0, 0.0, 1.0]
+            add_remove_object("add", collision_object, position, "primitive")
+
+            collision_object = CollisionObject()
+            collision_object.header.stamp = rospy.Time.now()
+            collision_object.header.frame_id = "odom_combined"
+            collision_object.id = "wall_l"
+            object_shape = SolidPrimitive()
+            object_shape.type = object_shape.BOX
+            object_shape.dimensions.append(0.48)  # X
+            object_shape.dimensions.append(0.05)  # Y
+            object_shape.dimensions.append(0.5)  # Z
+            collision_object.primitives.append(object_shape)
+            add_remove_object("remove", collision_object, "", "")
+            position = [0.8, 0.15, 0.86, 0.0, 0.0, 0.0, 1.0]
             add_remove_object("add", collision_object, position, "primitive")
 
         elif env_object == "rack":

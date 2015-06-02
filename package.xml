@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <package>
     <name>cob_grasping</name>
-    <version>0.5.0</version>
+    <version>0.7.0</version>
     <description>Grasping application for the Care-O-bot 4</description>
 
     <!-- One maintainer tag required, multiple allowed, one person per tag -->
