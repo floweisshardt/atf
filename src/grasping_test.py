@@ -135,7 +135,7 @@ def add_remove_object(co_operation, co_object, co_position, co_type):
             return
         planning_scene.world.collision_objects.append(co_object)
         pub_planning_scene.publish(planning_scene)
-        rospy.sleep(0.5)
+        rospy.sleep(0.1)
 
 
 class SetTargets(smach.State):
@@ -492,6 +492,9 @@ class SetTargets(smach.State):
                 for x in range(0, len(self.environment[i]["add_objects"]), 1):
                     co_object.id = self.environment[i]["add_objects"][x]["id"]
                     add_remove_object("remove", copy(co_object), "", "")
+
+        co_object.id = "object"
+        add_remove_object("remove", copy(co_object), "", "")
 
 
 class StartPosition(smach.State):
@@ -1266,5 +1269,5 @@ if __name__ == '__main__':
     sis = smach_ros.IntrospectionServer('sm', sm, 'SM')
     sis.start()
     outcome = sm.execute()
-    rospy.spin()
+    # rospy.spin()
     sis.stop()
