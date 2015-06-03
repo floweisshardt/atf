@@ -33,7 +33,7 @@ def smooth_cartesian_path(traj):
 
     time_offset = 200000000  # 0.2s
 
-    for i in range(len(traj.joint_trajectory.points)):
+    for i in xrange(len(traj.joint_trajectory.points)):
         traj.joint_trajectory.points[i].time_from_start += rospy.Duration(0, time_offset)
 
     traj.joint_trajectory.points[-1].time_from_start += rospy.Duration(0, time_offset)
@@ -47,7 +47,7 @@ def fix_velocities(traj):
 
     # fix trajectories to be slower
     speed_factor = 1.0
-    for i in range(len(traj.joint_trajectory.points)):
+    for i in xrange(len(traj.joint_trajectory.points)):
         traj.joint_trajectory.points[i].time_from_start *= speed_factor
 
     return traj
@@ -70,14 +70,14 @@ def scale_joint_trajectory_speed(traj, scale):
     points = list(traj.joint_trajectory.points)
 
     # Cycle through all points and scale the time from start, speed and acceleration
-    for i in range(n_points):
+    for i in xrange(n_points):
         point = JointTrajectoryPoint()
         point.time_from_start = traj.joint_trajectory.points[i].time_from_start / scale
         point.velocities = list(traj.joint_trajectory.points[i].velocities)
         point.accelerations = list(traj.joint_trajectory.points[i].accelerations)
         point.positions = traj.joint_trajectory.points[i].positions
 
-        for j in range(n_joints):
+        for j in xrange(n_joints):
             point.velocities[j] = point.velocities[j] * scale
             point.accelerations[j] = point.accelerations[j] * scale * scale
 
@@ -150,8 +150,8 @@ class SetTargets(smach.State):
         self.scenario = "table"
 
         rospy.loginfo("Reading positions from yaml file...")
-        path = rospkg.RosPack().get_path("cob_grasping") + "/config/positions.yaml"
-        data = self.load_positions(path)
+        self.path = rospkg.RosPack().get_path("cob_grasping") + "/config/positions.yaml"
+        data = self.load_positions(self.path)
 
         self.start_r = data[0]
         self.goal_r = data[1]
@@ -236,8 +236,7 @@ class SetTargets(smach.State):
             userdata.waypoints = userdata.waypoints_right
 
         rospy.loginfo("Writing positions to yaml file...")
-        path = rospkg.RosPack().get_path("cob_grasping") + "/config/positions.yaml"
-        self.save_positions(path)
+        self.save_positions(self.path)
 
         return "succeeded"
 
@@ -369,36 +368,23 @@ class SetTargets(smach.State):
     def process_feedback(self, feedback):
         if feedback.event_type == InteractiveMarkerFeedback.MOUSE_UP:
             if feedback.marker_name == "right_arm_start":
-                self.start_r.x = feedback.pose.position.x
-                self.start_r.y = feedback.pose.position.y
-                self.start_r.z = feedback.pose.position.z
+                self.start_r = feedback.pose.position
             elif feedback.marker_name == "right_arm_goal":
-                self.goal_r.x = feedback.pose.position.x
-                self.goal_r.y = feedback.pose.position.y
-                self.goal_r.z = feedback.pose.position.z
+                self.goal_r = feedback.pose.position
             elif feedback.marker_name == "left_arm_goal":
-                self.goal_l.x = feedback.pose.position.x
-                self.goal_l.y = feedback.pose.position.y
-                self.goal_l.z = feedback.pose.position.z
+                self.goal_l = feedback.pose.position
             elif feedback.marker_name == "waypoint_r1":
-                self.waypoints_r[0].x = feedback.pose.position.x
-                self.waypoints_r[0].y = feedback.pose.position.y
-                self.waypoints_r[0].z = feedback.pose.position.z
+                self.waypoints_r[0] = feedback.pose.position
             elif feedback.marker_name == "waypoint_r2":
-                self.waypoints_r[1].x = feedback.pose.position.x
-                self.waypoints_r[1].y = feedback.pose.position.y
-                self.waypoints_r[1].z = feedback.pose.position.z
+                self.waypoints_r[1] = feedback.pose.position
             elif feedback.marker_name == "waypoint_l1":
-                self.waypoints_l[0].x = feedback.pose.position.x
-                self.waypoints_l[0].y = feedback.pose.position.y
-                self.waypoints_l[0].z = feedback.pose.position.z
+                self.waypoints_l[0] = feedback.pose.position
             elif feedback.marker_name == "waypoint_l2":
-                self.waypoints_l[1].x = feedback.pose.position.x
-                self.waypoints_l[1].y = feedback.pose.position.y
-                self.waypoints_l[1].z = feedback.pose.position.z
+                self.waypoints_l[1] = feedback.pose.position
+
             rospy.loginfo("Position " + feedback.marker_name + ": x = " + str(feedback.pose.position.x)
                           + " | y = " + str(feedback.pose.position.y) + " | z = " + str(feedback.pose.position.z))
-        self.server.applyChanges()
+            self.server.applyChanges()
 
     def start_planning(self, feedback):
         self.start_manipulation.set()
@@ -426,8 +412,7 @@ class SetTargets(smach.State):
 
             # Load positions
             rospy.loginfo("Reading positions from yaml file...")
-            path = rospkg.RosPack().get_path("cob_grasping") + "/config/positions.yaml"
-            data = self.load_positions(path)
+            data = self.load_positions(self.path)
 
             self.start_r = data[0]
             self.goal_r = data[1]
@@ -468,7 +453,7 @@ class SetTargets(smach.State):
         add_remove_object("add", copy(environment), self.environment[self.scenario]["position"], "mesh")
 
         if "add_objects" in self.environment[self.scenario]:
-            for i in range(0, len(self.environment[self.scenario]["add_objects"]), 1):
+            for i in xrange(0, len(self.environment[self.scenario]["add_objects"]), 1):
 
                 collision_object = CollisionObject()
                 collision_object.header.stamp = rospy.Time.now()
@@ -489,7 +474,7 @@ class SetTargets(smach.State):
             co_object.id = i
             add_remove_object("remove", copy(co_object), "", "")
             if "add_objects" in self.environment[i]:
-                for x in range(0, len(self.environment[i]["add_objects"]), 1):
+                for x in xrange(0, len(self.environment[i]["add_objects"]), 1):
                     co_object.id = self.environment[i]["add_objects"][x]["id"]
                     add_remove_object("remove", copy(co_object), "", "")
 
@@ -762,14 +747,14 @@ class PlanningAndExecution(smach.State):
             object_collision.operation = CollisionObject.ADD
 
             object_attached = AttachedCollisionObject()
-            object_attached.link_name = "gripper_"+userdata.active_arm+"_grasp_link"
+            object_attached.link_name = "gripper_" + userdata.active_arm + "_grasp_link"
             object_attached.object = object_collision
-            object_attached.touch_links = ["gripper_"+userdata.active_arm+"_base_link",
-                                           "gripper_"+userdata.active_arm+"_camera_link",
-                                           "gripper_"+userdata.active_arm+"_finger_1_link",
-                                           "gripper_"+userdata.active_arm+"_finger_2_link",
-                                           "gripper_"+userdata.active_arm+"_grasp_link",
-                                           "gripper_"+userdata.active_arm+"_palm_link"]
+            object_attached.touch_links = ["gripper_" + userdata.active_arm + "_base_link",
+                                           "gripper_" + userdata.active_arm + "_camera_link",
+                                           "gripper_" + userdata.active_arm + "_finger_1_link",
+                                           "gripper_" + userdata.active_arm + "_finger_2_link",
+                                           "gripper_" + userdata.active_arm + "_grasp_link",
+                                           "gripper_" + userdata.active_arm + "_palm_link"]
 
             start_state.attached_collision_objects.append(object_attached)
 
@@ -815,7 +800,6 @@ class PlanningAndExecution(smach.State):
             error_counter[0] = 0
             error_counter[1] = 0
             rospy.loginfo("Pick planning complete")
-            rospy.sleep(1.5)
             return False
 
         else:
@@ -856,7 +840,7 @@ class PlanningAndExecution(smach.State):
 
             way_move = []
 
-            for i in range(0, len(userdata.waypoints)):
+            for i in xrange(0, len(userdata.waypoints)):
                 wpose_offset = PoseStamped()
                 wpose_offset.header.frame_id = "current_object"
                 wpose_offset.header.stamp = rospy.Time(0)
@@ -1089,25 +1073,11 @@ class SwitchTargets(smach.State):
                                           'waypoints'])
 
     def execute(self, userdata):
-        temp = range(2)
-        temp[0] = userdata.target_right[0]
-        temp[1] = userdata.target_right[1]
-        userdata.target_right[0] = temp[1]
-        userdata.target_right[1] = temp[0]
-        temp[0] = userdata.target_left[0]
-        temp[1] = userdata.target_left[1]
-        userdata.target_left[0] = temp[1]
-        userdata.target_left[1] = temp[0]
+        userdata.target_right = list(reversed(userdata.target_right))
+        userdata.target_left = list(reversed(userdata.target_left))
 
-        temp = range(2)
-        temp[0] = userdata.waypoints_right[0]
-        temp[1] = userdata.waypoints_right[1]
-        userdata.waypoints_right[0] = temp[1]
-        userdata.waypoints_right[1] = temp[0]
-        temp[0] = userdata.waypoints_left[0]
-        temp[1] = userdata.waypoints_left[1]
-        userdata.waypoints_left[0] = temp[1]
-        userdata.waypoints_left[1] = temp[0]
+        userdata.waypoints_right = list(reversed(userdata.waypoints_right))
+        userdata.waypoints_left = list(reversed(userdata.waypoints_left))
 
         if userdata.active_arm == "left":
             userdata.target = userdata.target_left
@@ -1140,11 +1110,10 @@ class SM(smach.StateMachine):
         self.userdata.active_arm = "right"
         self.userdata.target_cs = 0
 
-        self.userdata.cs_data = range(4)
-        self.userdata.cs_data[0] = 0.0  # roll (x)
-        self.userdata.cs_data[1] = 0.0  # pitch (y)
-        self.userdata.cs_data[2] = -5.0 / 180.0 * math.pi  # yaw (z)
-        self.userdata.cs_data[3] = 1.0  # direction for rotation
+        self.userdata.cs_data = [0.0,  # roll (x)
+                                 0.0,  # pitch (y)
+                                 -5.0 / 180.0 * math.pi,  # yaw (z)
+                                 1.0]  # direction for rotation
 
         # Pick / place position for arms
         self.userdata.target_right = self.userdata.target_left = self.userdata.target = [Point(), Point()]
@@ -1194,7 +1163,7 @@ class SM(smach.StateMachine):
                         "size": [0.48, 0.05, 0.5],
                         "position": [0.8, 0.15, 0.86, 0.0, 0.0, 0.0, 1.0]}]
 
-        for i in range(0, len(env_list), 1):
+        for i in xrange(0, len(env_list), 1):
             if env_list[i] == "table":
                 self.userdata.environment[env_list[i]] = {"path": path[i],
                                                           "scale": scale[i],
@@ -1260,7 +1229,6 @@ class SM(smach.StateMachine):
             event.current_real,
             "current_object",
             "base_link")
-        rospy.sleep(0.01)
 
 
 if __name__ == '__main__':
