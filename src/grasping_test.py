@@ -441,6 +441,7 @@ class SetTargets(smach.State):
 
     def spawn_environment(self):
         # Clear environment
+        rospy.loginfo("Spawning environment '" + self.scenario + "'")
         self.clear_environment()
 
         environment = CollisionObject()
