@@ -478,7 +478,7 @@ class StartPosition(smach.State):
     def __init__(self):
         smach.State.__init__(self,
                              outcomes=['succeeded', 'failed', 'error'],
-                             input_keys=['active_arm', 'error_plan_max'],
+                             input_keys=['active_arm', 'error_max'],
                              output_keys=['error_message'])
 
         self.traj_name = "pre_grasp"
@@ -495,7 +495,7 @@ class StartPosition(smach.State):
         try:
             traj = plan_movement(self.planer, userdata.active_arm, self.traj_name)
         except (ValueError, IndexError):
-            if error_counter[0] >= userdata.error_plan_max:
+            if error_counter[0] >= userdata.error_max[0]:
                 error_counter[0] = 0
                 error_counter[1] = 0
                 userdata.error_message = "Unabled to plan " + self.traj_name + " trajectory for " + userdata.active_arm\
@@ -513,7 +513,7 @@ class EndPosition(smach.State):
     def __init__(self):
         smach.State.__init__(self,
                              outcomes=['succeeded', 'failed', 'error'],
-                             input_keys=['active_arm', 'error_plan_max', 'arm_positions', 'object'],
+                             input_keys=['active_arm', 'error_max', 'arm_positions', 'object'],
                              output_keys=['error_message'])
 
         self.traj_name = "retreat"
@@ -547,7 +547,7 @@ class EndPosition(smach.State):
         try:
             traj = plan_movement(self.planer, userdata.active_arm, self.traj_name)
         except (ValueError, IndexError):
-            if error_counter[0] >= userdata.error_plan_max:
+            if error_counter[0] >= userdata.error_max[0]:
                 error_counter[0] = 0
                 error_counter[1] = 0
                 userdata.error_message = "Unabled to plan " + self.traj_name + " trajectory for " + userdata.active_arm\
@@ -568,9 +568,8 @@ class PlanningAndExecution(smach.State):
     def __init__(self):
         smach.State.__init__(self,
                              outcomes=['succeeded', 'failed', 'error'],
-                             input_keys=['active_arm', 'cs_orientation', 'computed_trajectories', 'error_tf_max',
-                                         'error_plan_max', 'error_message', 'object', 'lift_height',
-                                         'arm_positions'],
+                             input_keys=['active_arm', 'cs_orientation', 'computed_trajectories', 'error_max',
+                                         'error_message', 'object', 'manipulation_options', 'arm_positions'],
                              output_keys=['cs_position', 'cs_orientation', 'computed_trajectories', 'error_message'])
 
         self.tf_listener = tf.TransformListener()
@@ -600,14 +599,14 @@ class PlanningAndExecution(smach.State):
             userdata.cs_orientation[0] = 0.0
 
         if not self.plan_and_move(userdata):
-            if error_counter[0] >= userdata.error_plan_max:
+            if error_counter[0] >= userdata.error_max[0]:
                 error_counter[0] = 0
                 error_counter[1] = 0
                 userdata.computed_trajectories[:] = []
                 userdata.computed_trajectories = [False]*6
                 userdata.cs_position = "start"
                 return "error"
-            elif error_counter[1] >= userdata.error_tf_max:
+            elif error_counter[1] >= userdata.error_max[1]:
                 error_counter[0] = 0
                 error_counter[1] = 0
                 userdata.computed_trajectories[:] = []
@@ -651,7 +650,7 @@ class PlanningAndExecution(smach.State):
             approach_pose_offset = PoseStamped()
             approach_pose_offset.header.frame_id = "current_object"
             approach_pose_offset.header.stamp = rospy.Time(0)
-            approach_pose_offset.pose.position.x = -0.12
+            approach_pose_offset.pose.position.x = -userdata.manipulation_options["approach_dist"]
             approach_pose_offset.pose.orientation.w = 1
             try:
                 approach_pose = self.tf_listener.transformPose("odom_combined", approach_pose_offset)
@@ -761,9 +760,9 @@ class PlanningAndExecution(smach.State):
             lift_pose_offset.header.frame_id = "current_object"
             lift_pose_offset.header.stamp = rospy.Time(0)
             if userdata.active_arm == "left":
-                lift_pose_offset.pose.position.z = -userdata.lift_height
+                lift_pose_offset.pose.position.z = -userdata.manipulation_options["lift_height"]
             elif userdata.active_arm == "right":
-                lift_pose_offset.pose.position.z = userdata.lift_height
+                lift_pose_offset.pose.position.z = userdata.manipulation_options["lift_height"]
             lift_pose_offset.pose.orientation.w = 1
 
             try:
@@ -822,9 +821,9 @@ class PlanningAndExecution(smach.State):
             move_pose_offset.header.frame_id = "current_object"
             move_pose_offset.header.stamp = rospy.Time(0)
             if userdata.active_arm == "left":
-                move_pose_offset.pose.position.z = -userdata.lift_height
+                move_pose_offset.pose.position.z = -userdata.manipulation_options["lift_height"]
             elif userdata.active_arm == "right":
-                move_pose_offset.pose.position.z = userdata.lift_height
+                move_pose_offset.pose.position.z = userdata.manipulation_options["lift_height"]
             move_pose_offset.pose.orientation.w = 1
 
             try:
@@ -925,7 +924,7 @@ class PlanningAndExecution(smach.State):
             retreat_pose_offset = PoseStamped()
             retreat_pose_offset.header.frame_id = "current_object"
             retreat_pose_offset.header.stamp = rospy.Time(0)
-            retreat_pose_offset.pose.position.x = -0.12
+            retreat_pose_offset.pose.position.x = -userdata.manipulation_options["approach_dist"]
             retreat_pose_offset.pose.orientation.w = 1
             try:
                 retreat_pose = self.tf_listener.transformPose("odom_combined", retreat_pose_offset)
@@ -1027,13 +1026,13 @@ class SwitchArm(smach.State):
     def __init__(self):
         smach.State.__init__(self,
                              outcomes=['succeeded', 'finished', 'switch_targets'],
-                             input_keys=['active_arm', 'cs_orientation', 'arm_positions', 'manipulation_repeats'],
+                             input_keys=['active_arm', 'cs_orientation', 'arm_positions', 'manipulation_options'],
                              output_keys=['active_arm', 'cs_orientation', 'arm_positions', 'cs_position'])
 
         self.counter = 1
 
     def execute(self, userdata):
-        if self.counter == userdata.manipulation_repeats:
+        if self.counter == userdata.manipulation_options["repeats"]:
             return "finished"
         else:
             if self.counter % 2 == 0:
@@ -1098,11 +1097,14 @@ class SM(smach.StateMachine):
 
         smach.StateMachine.__init__(self, outcomes=['ended'])
 
-        global object_dim, env_list, id_list, error_counter, tf_timer
+        global object_dim, env_list, id_list, error_counter
         object_dim = [0.02, 0.02, 0.1]
 
         self.userdata.active_arm = "right"
         self.userdata.cs_position = "start"
+        self.userdata.manipulation_options = {"lift_height": float,
+                                              "approach_dist": float,
+                                              "repeats": int}
 
         self.userdata.cs_orientation = [0.0,  # roll (x)
                                         0.0,  # pitch (y)
@@ -1173,7 +1175,7 @@ class SM(smach.StateMachine):
         # ---- TF BROADCASTER ----
         self.tf_listener = tf.TransformListener()
         self.br = tf.TransformBroadcaster()
-        rospy.Timer(rospy.Duration.from_sec(0.1), self.broadcast_tf)
+        rospy.Timer(rospy.Duration.from_sec(0.01), self.broadcast_tf)
 
         # ---- DYNAMIC RECONFIGURE SERVER ---
         Server(parameterConfig, self.dynreccallback)
@@ -1210,12 +1212,14 @@ class SM(smach.StateMachine):
                                    transitions={'finished': 'SET_TARGETS'})
 
     def dynreccallback(self, config, level):
-        self.userdata.error_plan_max = config["error_plan_max"]
-        self.userdata.error_tf_max = config["error_tf_max"]
-        self.userdata.lift_height = config["lift_height"]
-        self.userdata.manipulation_repeats = config["manipulation_repeats"]
-        rospy.loginfo("Reconfigure: " + str(self.userdata.error_plan_max) + " | " + str(self.userdata.error_tf_max)
-                      + " | " + str(self.userdata.lift_height) + " | " + str(self.userdata.manipulation_repeats))
+        self.userdata.error_max = [config["error_plan_max"], config["error_tf_max"]]
+        self.userdata.manipulation_options = {"lift_height": config["lift_height"],
+                                              "approach_dist": config["approach_dist"],
+                                              "repeats": config["manipulation_repeats"]}
+        rospy.loginfo("Reconfigure: " + str(self.userdata.error_max[0]) + " | " + str(self.userdata.error_max[1])
+                      + " | " + str(self.userdata.manipulation_options["lift_height"]) + " | "
+                      + str(self.userdata.manipulation_options["approach_dist"]) + " | "
+                      + str(self.userdata.manipulation_options["repeats"]))
 
         return config
 
