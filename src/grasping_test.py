@@ -6,6 +6,7 @@ import tf
 import yaml
 from pyassimp import pyassimp
 from copy import copy
+from re import findall
 
 from moveit_commander import MoveGroupCommander, PlanningSceneInterface
 from moveit_msgs.msg import RobotState, AttachedCollisionObject, CollisionObject, PlanningScene
@@ -146,16 +147,15 @@ class SetTargets(smach.State):
                              output_keys=['arm_positions'])
 
         self.scenario = "table"
+        self.waypoints_used = {"right": bool, "left": bool}
+        self.start_r = Point()
+        self.goal_r = Point()
+        self.goal_l = Point()
+        self.waypoints_r = {}
+        self.waypoints_l = {}
 
-        rospy.loginfo("Reading positions from yaml file...")
         self.path = rospkg.RosPack().get_path("cob_grasping") + "/config/positions.yaml"
-        data = self.load_positions(self.path)
-
-        self.start_r = data[0]
-        self.goal_r = data[1]
-        self.goal_l = data[2]
-        self.waypoints_r = data[3]
-        self.waypoints_l = data[4]
+        self.load_positions(self.path)
 
         self.server = InteractiveMarkerServer("grasping_targets")
         self.menu_handler = MenuHandler()
@@ -166,6 +166,7 @@ class SetTargets(smach.State):
         color.b = 0.0
         color.a = 1.0
 
+        # ---- BUILD POSITION MARKER ----
         self.make_marker("right_arm_start", copy(color), InteractiveMarkerControl.MOVE_3D, self.start_r)
         self.make_marker("right_arm_goal", copy(color), InteractiveMarkerControl.MOVE_3D, self.goal_r)
         self.make_marker("left_arm_goal", copy(color), InteractiveMarkerControl.MOVE_3D, self.goal_l)
@@ -173,16 +174,23 @@ class SetTargets(smach.State):
         color.r = 0.0
         color.b = 1.0
 
-        self.make_marker("waypoint_r1", color, InteractiveMarkerControl.MOVE_3D, self.waypoints_r[0])
-        self.make_marker("waypoint_r2", color, InteractiveMarkerControl.MOVE_3D, self.waypoints_r[1])
-        self.make_marker("waypoint_l1", color, InteractiveMarkerControl.MOVE_3D, self.waypoints_l[0])
-        self.make_marker("waypoint_l2", color, InteractiveMarkerControl.MOVE_3D, self.waypoints_l[1])
+        # ---- BUILD WAYPOINT MARKER ----
+        if self.waypoints_used["right"]:
+            for waypoint in self.waypoints_r:
+                self.make_marker(waypoint, color, InteractiveMarkerControl.MOVE_3D, self.waypoints_r[waypoint])
+
+        if self.waypoints_used["left"]:
+            for waypoint in self.waypoints_l:
+                self.make_marker(waypoint, color, InteractiveMarkerControl.MOVE_3D, self.waypoints_l[waypoint])
 
         self.server.applyChanges()
 
+        # ---- BUILD MENU ----
         self.menu_handler.insert("Start execution", callback=self.start_planning)
         self.menu_handler.insert("Stopp execution", callback=self.stop_planning)
-        h_entry = self.menu_handler.insert("Environment")
+
+        # --- ENVIRONMENT MENU ---
+        env_entry = self.menu_handler.insert("Environment")
 
         self.ids = []
         self.environment = {}
@@ -191,19 +199,30 @@ class SetTargets(smach.State):
             self.ids.append(x)
 
         self.menu_handler.setCheckState(self.menu_handler.insert(env_list[0].title(), callback=self.change_environment,
-                                                                 parent=h_entry), MenuHandler.CHECKED)
+                                                                 parent=env_entry), MenuHandler.CHECKED)
         self.menu_handler.setCheckState(self.menu_handler.insert(env_list[1].title(), callback=self.change_environment,
-                                                                 parent=h_entry), MenuHandler.UNCHECKED)
+                                                                 parent=env_entry), MenuHandler.UNCHECKED)
         self.menu_handler.setCheckState(self.menu_handler.insert(env_list[2].title(), callback=self.change_environment,
-                                                                 parent=h_entry), MenuHandler.UNCHECKED)
+                                                                 parent=env_entry), MenuHandler.UNCHECKED)
 
+        # --- WAYPOINT MENU ---
+        wp_entry = self.menu_handler.insert("Waypoints")
+        self.wp_arm_right = self.menu_handler.insert("Arm right", parent=wp_entry)
+        self.menu_handler.insert("Add waypoint", parent=self.wp_arm_right, callback=self.add_waypoint_right)
+        if self.waypoints_used["right"]:
+            for item in self.waypoints_r:
+                self.menu_handler.insert(item, parent=self.wp_arm_right)
+
+        self.wp_arm_left = self.menu_handler.insert("Arm left", parent=wp_entry)
+        self.menu_handler.insert("Add waypoint", parent=self.wp_arm_left, callback=self.add_waypoint_left)
+        if self.waypoints_used["left"]:
+            for item in self.waypoints_l:
+                self.menu_handler.insert(item, parent=self.wp_arm_left)
+
+        # ---- APPLY MENU TO MARKER ----
         self.menu_handler.apply(self.server, "right_arm_start")
         self.menu_handler.apply(self.server, "right_arm_goal")
         self.menu_handler.apply(self.server, "left_arm_goal")
-        self.menu_handler.apply(self.server, "waypoint_r1")
-        self.menu_handler.apply(self.server, "waypoint_r2")
-        self.menu_handler.apply(self.server, "waypoint_l1")
-        self.menu_handler.apply(self.server, "waypoint_l2")
 
         self.server.applyChanges()
 
@@ -226,41 +245,50 @@ class SetTargets(smach.State):
                                           "waypoints": self.waypoints_l,
                                           "goal": self.goal_l}
 
-        rospy.loginfo("Writing positions to yaml file...")
         self.save_positions(self.path)
 
         return "succeeded"
 
     def load_positions(self, filename):
-        values = [Point(), Point(), Point(), [Point(), Point()], [Point(), Point()]]
+        rospy.loginfo("Reading positions from yaml file...")
+
         with open(filename, 'r') as stream:
             doc = yaml.load(stream)
 
-        values[0] = Point(doc[self.scenario]["start_r"][0],
-                          doc[self.scenario]["start_r"][1],
-                          doc[self.scenario]["start_r"][2])
-        values[1] = Point(doc[self.scenario]["goal_r"][0],
-                          doc[self.scenario]["goal_r"][1],
-                          doc[self.scenario]["goal_r"][2])
-        values[2] = Point(doc[self.scenario]["goal_l"][0],
-                          doc[self.scenario]["goal_l"][1],
-                          doc[self.scenario]["goal_l"][2])
-        values[3] = [Point(doc[self.scenario]["waypoints_r"][0][0],
-                           doc[self.scenario]["waypoints_r"][0][1],
-                           doc[self.scenario]["waypoints_r"][0][2]),
-                     Point(doc[self.scenario]["waypoints_r"][1][0],
-                           doc[self.scenario]["waypoints_r"][1][1],
-                           doc[self.scenario]["waypoints_r"][1][2])]
-        values[4] = [Point(doc[self.scenario]["waypoints_l"][0][0],
-                           doc[self.scenario]["waypoints_l"][0][1],
-                           doc[self.scenario]["waypoints_l"][0][2]),
-                     Point(doc[self.scenario]["waypoints_l"][1][0],
-                           doc[self.scenario]["waypoints_l"][1][1],
-                           doc[self.scenario]["waypoints_l"][1][2])]
+        self.start_r = Point(doc[self.scenario]["start_r"][0],
+                             doc[self.scenario]["start_r"][1],
+                             doc[self.scenario]["start_r"][2])
+        self.goal_r = Point(doc[self.scenario]["goal_r"][0],
+                            doc[self.scenario]["goal_r"][1],
+                            doc[self.scenario]["goal_r"][2])
+        self.goal_l = Point(doc[self.scenario]["goal_l"][0],
+                            doc[self.scenario]["goal_l"][1],
+                            doc[self.scenario]["goal_l"][2])
 
-        return values
+        try:
+            doc[self.scenario]["waypoints_r"]["waypoint_r1"]
+        except TypeError:
+            self.waypoints_used["right"] = False
+        else:
+            self.waypoints_used["right"] = True
+            for wp_r in doc[self.scenario]["waypoints_r"]:
+                self.waypoints_r[wp_r] = Point(doc[self.scenario]["waypoints_r"][wp_r][0],
+                                               doc[self.scenario]["waypoints_r"][wp_r][1],
+                                               doc[self.scenario]["waypoints_r"][wp_r][2])
+
+        try:
+            doc[self.scenario]["waypoints_l"]["waypoint_l1"]
+        except TypeError:
+            self.waypoints_used["left"] = False
+        else:
+            self.waypoints_used["left"] = True
+            for wp_l in doc[self.scenario]["waypoints_l"]:
+                self.waypoints_l[wp_l] = Point(doc[self.scenario]["waypoints_l"][wp_l][0],
+                                               doc[self.scenario]["waypoints_l"][wp_l][1],
+                                               doc[self.scenario]["waypoints_l"][wp_l][2])
 
     def save_positions(self, filename):
+        rospy.loginfo("Writing positions to yaml file...")
         with open(filename, 'r') as stream:
             doc = yaml.load(stream)
         self.set_in_dict(doc, [self.scenario, "start_r"], [round(self.start_r.x, 3),
@@ -275,19 +303,30 @@ class SetTargets(smach.State):
                                                           round(self.goal_l.y, 3),
                                                           round(self.goal_l.z, 3)])
 
-        self.set_in_dict(doc, [self.scenario, "waypoints_r"], [[round(self.waypoints_r[0].x, 3),
-                                                                round(self.waypoints_r[0].y, 3),
-                                                                round(self.waypoints_r[0].z, 3)],
-                                                               [round(self.waypoints_r[1].x, 3),
-                                                                round(self.waypoints_r[1].y, 3),
-                                                                round(self.waypoints_r[1].z, 3)]])
+        try:
+            self.waypoints_r["waypoints_r1"]
+        except TypeError:
+            self.waypoints_used["right"] = False
+        else:
+            self.waypoints_used["right"] = True
+            for item in self.waypoints_r:
+                wps_r = [round(self.waypoints_r[item].x, 3),
+                         round(self.waypoints_r[item].y, 3),
+                         round(self.waypoints_r[item].z, 3)]
+                self.set_in_dict(doc, [self.scenario, "waypoints_r", item], wps_r)
 
-        self.set_in_dict(doc, [self.scenario, "waypoints_l"], [[round(self.waypoints_l[0].x, 3),
-                                                                round(self.waypoints_l[0].y, 3),
-                                                                round(self.waypoints_l[0].z, 3)],
-                                                               [round(self.waypoints_l[1].x, 3),
-                                                                round(self.waypoints_l[1].y, 3),
-                                                                round(self.waypoints_l[1].z, 3)]])
+        try:
+            self.waypoints_l["waypoints_l1"]
+        except TypeError:
+            self.waypoints_used["left"] = False
+        else:
+            self.waypoints_used["left"] = True
+            for item in self.waypoints_l:
+                wps_l = [round(self.waypoints_l[item].x, 3),
+                         round(self.waypoints_l[item].y, 3),
+                         round(self.waypoints_l[item].z, 3)]
+                self.set_in_dict(doc, [self.scenario, "waypoints_l", item], wps_l)
+
         stream = file(filename, 'w')
         yaml.dump(doc, stream)
 
@@ -364,18 +403,109 @@ class SetTargets(smach.State):
                 self.goal_r = feedback.pose.position
             elif feedback.marker_name == "left_arm_goal":
                 self.goal_l = feedback.pose.position
-            elif feedback.marker_name == "waypoint_r1":
-                self.waypoints_r[0] = feedback.pose.position
-            elif feedback.marker_name == "waypoint_r2":
-                self.waypoints_r[1] = feedback.pose.position
-            elif feedback.marker_name == "waypoint_l1":
-                self.waypoints_l[0] = feedback.pose.position
-            elif feedback.marker_name == "waypoint_l2":
-                self.waypoints_l[1] = feedback.pose.position
+            elif "waypoint_r" in feedback.marker_name:
+                self.waypoints_r[feedback.marker_name] = feedback.pose.position
+            elif "waypoint_l" in feedback.marker_name:
+                self.waypoints_l[feedback.marker_name] = feedback.pose.position
 
             rospy.loginfo("Position " + feedback.marker_name + ": x = " + str(feedback.pose.position.x)
                           + " | y = " + str(feedback.pose.position.y) + " | z = " + str(feedback.pose.position.z))
             self.server.applyChanges()
+
+    def add_waypoint_right(self, feedback):
+        name = "waypoint_r" + str(len(self.waypoints_r) + 1)
+
+        color = ColorRGBA()
+        color.r = 0.0
+        color.g = 0.0
+        color.b = 1.0
+        color.a = 1.0
+
+        # Add marker to menu
+        self.waypoints_r[name] = Point(1.0, 0.0, 1.0)
+        self.menu_handler.insert(name, parent=self.wp_arm_right, callback=self.delete_waypoint_right)
+
+        # Add marker to scene
+        self.make_marker(name, color, InteractiveMarkerControl.MOVE_3D, self.waypoints_r[name])
+
+        self.menu_handler.reApply(self.server)
+        self.server.applyChanges()
+
+        rospy.loginfo("Added waypoint '" + str(name) + "' at position (x: " + str(self.waypoints_r[name].x) + " | y: "
+                      + str(self.waypoints_r[name].y) + " | z: " + str(self.waypoints_r[name].z) + ")")
+
+    def delete_waypoint_right(self, feedback):
+        del self.waypoints_r[self.menu_handler.getTitle(feedback.menu_entry_id)]
+
+        if not len(self.waypoints_r) == 0:
+            self.waypoints_r = self.sort_items(self.waypoints_r)
+        self.server.erase(self.menu_handler.getTitle(feedback.menu_entry_id))
+        self.menu_handler.setVisible(feedback.menu_entry_id, False)
+
+        self.menu_handler.reApply(self.server)
+        self.server.applyChanges()
+
+        rospy.loginfo("Deleted waypoint '" + str(self.menu_handler.getTitle(feedback.menu_entry_id)) + "'")
+
+    def add_waypoint_left(self, feedback):
+        name = "waypoint_l" + str(len(self.waypoints_l) + 1)
+
+        color = ColorRGBA()
+        color.r = 0.0
+        color.g = 0.0
+        color.b = 1.0
+        color.a = 1.0
+
+        # Add marker to menu
+        self.waypoints_l[name] = Point(1.0, 0.0, 1.0)
+        self.menu_handler.insert(name, parent=self.wp_arm_left, callback=self.delete_waypoint_left)
+
+        # Add marker to scene
+        self.make_marker(name, color, InteractiveMarkerControl.MOVE_3D, self.waypoints_l[name])
+
+        self.menu_handler.reApply(self.server)
+        self.server.applyChanges()
+
+        rospy.loginfo("Added waypoint '" + str(name) + "' at position (x: " + str(self.waypoints_r[name].x) + " | y: "
+                      + str(self.waypoints_r[name].y) + " | z: " + str(self.waypoints_r[name].z) + ")")
+
+    def delete_waypoint_left(self, feedback):
+        del self.waypoints_l[self.menu_handler.getTitle(feedback.menu_entry_id)]
+
+        if not len(self.waypoints_l) == 0:
+            self.waypoints_l = self.sort_items(self.waypoints_l)
+        self.server.erase(self.menu_handler.getTitle(feedback.menu_entry_id))
+        self.menu_handler.setVisible(feedback.menu_entry_id, False)
+
+        self.menu_handler.reApply(self.server)
+        self.server.applyChanges()
+
+        if not len(self.waypoints_l) == 0:
+            for item in self.waypoints_l:
+                self.menu_handler.insert(str(item), parent=self.wp_arm_left, callback=self.delete_waypoint_left)
+
+            self.menu_handler.reApply(self.server)
+            self.server.applyChanges()
+
+    @staticmethod
+    def sort_items(items):
+        number_temp = 1
+        numbers = []
+        items_temp = copy(items)
+
+        for item in sorted(items_temp.iterkeys()):
+            for s in item:
+                numbers = findall("[-+]?\d+[\.]?\d*", s)
+            number = int(numbers[0])
+            if not number == number_temp:
+                name = "".join([x for x in item if not x.isdigit()]) + str(number_temp)
+                items[name] = items_temp[item]
+                del items[item]
+                # Rename marker
+                # Rename menu entry
+            number_temp += 1
+
+        return items
 
     def start_planning(self, feedback):
         self.start_manipulation.set()
@@ -569,7 +699,8 @@ class PlanningAndExecution(smach.State):
         smach.State.__init__(self,
                              outcomes=['succeeded', 'failed', 'error'],
                              input_keys=['active_arm', 'cs_orientation', 'computed_trajectories', 'error_max',
-                                         'error_message', 'object', 'manipulation_options', 'arm_positions'],
+                                         'error_message', 'object', 'manipulation_options', 'arm_positions',
+                                         'waypoints_used'],
                              output_keys=['cs_position', 'cs_orientation', 'computed_trajectories', 'error_message'])
 
         self.tf_listener = tf.TransformListener()
@@ -835,21 +966,22 @@ class PlanningAndExecution(smach.State):
 
             way_move = []
 
-            for i in xrange(0, len(userdata.arm_positions[userdata.active_arm]["waypoints"])):
-                wpose_offset = PoseStamped()
-                wpose_offset.header.frame_id = "current_object"
-                wpose_offset.header.stamp = rospy.Time(0)
-                wpose_offset.pose.orientation.w = 1
+            if userdata.waypoints_used[userdata.active_arm]:
+                for i in userdata.arm_positions[userdata.active_arm]["waypoints"]:
+                    wpose_offset = PoseStamped()
+                    wpose_offset.header.frame_id = "current_object"
+                    wpose_offset.header.stamp = rospy.Time(0)
+                    wpose_offset.pose.orientation.w = 1
 
-                try:
-                    wpose = self.tf_listener.transformPose("odom_combined", wpose_offset)
-                except Exception, e:
-                    userdata.error_message = "Could not transform pose. Exception: " + str(e)
-                    error_counter[1] += 1
-                    return False
+                    try:
+                        wpose = self.tf_listener.transformPose("odom_combined", wpose_offset)
+                    except Exception, e:
+                        userdata.error_message = "Could not transform pose. Exception: " + str(e)
+                        error_counter[1] += 1
+                        return False
 
-                wpose.pose.position = userdata.arm_positions[userdata.active_arm]["waypoints"][i]
-                way_move.append(wpose.pose)
+                    wpose.pose.position = userdata.arm_positions[userdata.active_arm]["waypoints"][i]
+                    way_move.append(wpose.pose)
 
             way_move.append(move_pose.pose)
 
@@ -1069,8 +1201,10 @@ class SwitchTargets(smach.State):
             self.switch_values(userdata.arm_positions["left"]["start"],
                                userdata.arm_positions["left"]["goal"])
 
-        userdata.arm_positions["right"]["waypoints"] = list(reversed(userdata.arm_positions["right"]["waypoints"]))
-        userdata.arm_positions["left"]["waypoints"] = list(reversed(userdata.arm_positions["left"]["waypoints"]))
+        userdata.arm_positions["right"]["waypoints"] = \
+            list(reversed(sorted(userdata.arm_positions["right"]["waypoints"])))
+        userdata.arm_positions["left"]["waypoints"] = \
+            list(reversed(sorted(userdata.arm_positions["left"]["waypoints"])))
         return "succeeded"
 
     @staticmethod
@@ -1108,16 +1242,18 @@ class SM(smach.StateMachine):
 
         self.userdata.cs_orientation = [0.0,  # roll (x)
                                         0.0,  # pitch (y)
-                                        (0.0 / 180.0) * math.pi,  # yaw (z)
+                                        0.0,  # yaw (z)
                                         1.0]  # direction for rotation
 
         # ---- ARM-POSITIONS ----
         self.userdata.arm_positions = {"right": {"start": Point(),
-                                                 "waypoints": [0.0]*2,
+                                                 "waypoints": {},
                                                  "goal": Point()},
                                        "left": {"start": Point(),
-                                                "waypoints": [0.0]*2,
+                                                "waypoints": {},
                                                 "goal": Point()}}
+
+        self.userdata.waypoints_used = {"right": bool, "left": bool}
 
         # ---- TRAJECTORY LIST ----
         self.userdata.computed_trajectories = [False]*6
