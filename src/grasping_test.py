@@ -144,7 +144,7 @@ class SetTargets(smach.State):
         smach.State.__init__(self,
                              outcomes=['succeeded'],
                              input_keys=['active_arm', 'arm_positions', 'environment'],
-                             output_keys=['arm_positions'])
+                             output_keys=['arm_positions', 'switch_arm'])
 
         self.scenario = "table"
         self.waypoints_used = {"right": bool, "left": bool}
@@ -153,6 +153,7 @@ class SetTargets(smach.State):
         self.goal_l = Point()
         self.waypoints_r = {}
         self.waypoints_l = {}
+        self.switch_arm = True
 
         self.path = rospkg.RosPack().get_path("cob_grasping") + "/config/positions.yaml"
         self.load_positions(self.path)
@@ -188,6 +189,10 @@ class SetTargets(smach.State):
         # ---- BUILD MENU ----
         self.menu_handler.insert("Start execution", callback=self.start_planning)
         self.menu_handler.insert("Stopp execution", callback=self.stop_planning)
+
+        # --- SWITCH ARM ---
+        self.menu_handler.setCheckState(self.menu_handler.insert("Switch arm", callback=self.switch_arm_callback),
+                                        MenuHandler.CHECKED)
 
         # --- ENVIRONMENT MENU ---
         env_entry = self.menu_handler.insert("Environment")
@@ -244,6 +249,9 @@ class SetTargets(smach.State):
         userdata.arm_positions["left"] = {"start": self.goal_r,
                                           "waypoints": self.waypoints_l,
                                           "goal": self.goal_l}
+
+        # Switch arm
+        userdata.switch_arm = self.switch_arm
 
         self.save_positions(self.path)
 
@@ -514,6 +522,17 @@ class SetTargets(smach.State):
     def stop_planning(feedback):
         error_counter[0] = 999
         error_counter[1] = 999
+
+    def switch_arm_callback(self, feedback):
+        if self.menu_handler.getCheckState(feedback.menu_entry_id) == MenuHandler.UNCHECKED:
+            self.menu_handler.setCheckState(feedback.menu_entry_id, MenuHandler.CHECKED)
+            self.switch_arm = True
+        else:
+            self.menu_handler.setCheckState(feedback.menu_entry_id, MenuHandler.UNCHECKED)
+            self.switch_arm = False
+
+        self.menu_handler.reApply(self.server)
+        self.server.applyChanges()
 
     def change_environment(self, feedback):
         if self.menu_handler.getCheckState(feedback.menu_entry_id) == MenuHandler.UNCHECKED:
@@ -1158,7 +1177,8 @@ class SwitchArm(smach.State):
     def __init__(self):
         smach.State.__init__(self,
                              outcomes=['succeeded', 'finished', 'switch_targets'],
-                             input_keys=['active_arm', 'cs_orientation', 'arm_positions', 'manipulation_options'],
+                             input_keys=['active_arm', 'cs_orientation', 'arm_positions', 'manipulation_options',
+                                         'switch_arm'],
                              output_keys=['active_arm', 'cs_orientation', 'arm_positions', 'cs_position'])
 
         self.counter = 1
@@ -1166,7 +1186,14 @@ class SwitchArm(smach.State):
     def execute(self, userdata):
         if self.counter == userdata.manipulation_options["repeats"]:
             return "finished"
-        else:
+
+        elif not userdata.switch_arm:
+            userdata.cs_position = "start"
+            userdata.cs_orientation[2] = 0.0
+            self.counter += 1.0
+            return "switch_targets"
+
+        elif userdata.switch_arm:
             if self.counter % 2 == 0:
                 userdata.cs_position = "start"
                 userdata.cs_orientation[2] = 0.0
@@ -1176,6 +1203,7 @@ class SwitchArm(smach.State):
             if userdata.active_arm == "left":
                 userdata.active_arm = "right"
                 userdata.cs_orientation[3] = 1.0
+
             elif userdata.active_arm == "right":
                 userdata.active_arm = "left"
                 userdata.cs_orientation[3] = -1.0
@@ -1235,6 +1263,7 @@ class SM(smach.StateMachine):
         object_dim = [0.02, 0.02, 0.1]
 
         self.userdata.active_arm = "right"
+        self.userdata.switch_arm = True
         self.userdata.cs_position = "start"
         self.userdata.manipulation_options = {"lift_height": float,
                                               "approach_dist": float,
