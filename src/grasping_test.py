@@ -438,7 +438,7 @@ class SetTargets(smach.State):
         environment = CollisionObject()
         environment.id = self.scenario
         environment.header.stamp = rospy.Time.now()
-        environment.header.frame_id = "odom_combined"
+        environment.header.frame_id = "base_link"
         filename = self.environment[self.scenario]["path"]
         scale = self.environment[self.scenario]["scale"]
         environment.meshes.append(self.load_mesh(filename, scale))
@@ -449,7 +449,7 @@ class SetTargets(smach.State):
 
                 collision_object = CollisionObject()
                 collision_object.header.stamp = rospy.Time.now()
-                collision_object.header.frame_id = "odom_combined"
+                collision_object.header.frame_id = "base_link"
                 collision_object.id = self.environment[self.scenario]["add_objects"][i]["id"]
                 object_shape = SolidPrimitive()
                 object_shape.type = object_shape.BOX
@@ -530,7 +530,7 @@ class EndPosition(smach.State):
         # ----------- SPAWN OBJECT ------------
         collision_object = CollisionObject()
         collision_object.header.stamp = rospy.Time.now()
-        collision_object.header.frame_id = "odom_combined"
+        collision_object.header.frame_id = "base_link"
         collision_object.id = "object"
         object_shape = SolidPrimitive()
         object_shape.type = object_shape.CYLINDER
@@ -653,7 +653,7 @@ class PlanningAndExecution(smach.State):
             approach_pose_offset.pose.position.x = -userdata.manipulation_options["approach_dist"]
             approach_pose_offset.pose.orientation.w = 1
             try:
-                approach_pose = self.tf_listener.transformPose("odom_combined", approach_pose_offset)
+                approach_pose = self.tf_listener.transformPose("base_link", approach_pose_offset)
             except Exception, e:
                 userdata.error_message = "Could not transform pose. Exception: " + str(e)
                 self.tf_listener.clear()
@@ -693,7 +693,7 @@ class PlanningAndExecution(smach.State):
             grasp_pose_offset.pose.orientation.w = 1
 
             try:
-                grasp_pose = self.tf_listener.transformPose("odom_combined", grasp_pose_offset)
+                grasp_pose = self.tf_listener.transformPose("base_link", grasp_pose_offset)
             except Exception, e:
                 userdata.error_message = "Could not transform pose. Exception: " + str(e)
                 self.tf_listener.clear()
@@ -766,7 +766,7 @@ class PlanningAndExecution(smach.State):
             lift_pose_offset.pose.orientation.w = 1
 
             try:
-                lift_pose = self.tf_listener.transformPose("odom_combined", lift_pose_offset)
+                lift_pose = self.tf_listener.transformPose("base_link", lift_pose_offset)
             except Exception, e:
                 userdata.error_message = "Could not transform pose. Exception: " + str(e)
                 self.tf_listener.clear()
@@ -827,7 +827,7 @@ class PlanningAndExecution(smach.State):
             move_pose_offset.pose.orientation.w = 1
 
             try:
-                move_pose = self.tf_listener.transformPose("odom_combined", move_pose_offset)
+                move_pose = self.tf_listener.transformPose("base_link", move_pose_offset)
             except Exception, e:
                 userdata.error_message = "Could not transform pose. Exception: " + str(e)
                 error_counter[1] += 1
@@ -842,7 +842,7 @@ class PlanningAndExecution(smach.State):
                 wpose_offset.pose.orientation.w = 1
 
                 try:
-                    wpose = self.tf_listener.transformPose("odom_combined", wpose_offset)
+                    wpose = self.tf_listener.transformPose("base_link", wpose_offset)
                 except Exception, e:
                     userdata.error_message = "Could not transform pose. Exception: " + str(e)
                     error_counter[1] += 1
@@ -888,7 +888,7 @@ class PlanningAndExecution(smach.State):
             drop_pose_offset.header.frame_id = "current_object"
             drop_pose_offset.pose.orientation.w = 1
             try:
-                drop_pose = self.tf_listener.transformPose("odom_combined", drop_pose_offset)
+                drop_pose = self.tf_listener.transformPose("base_link", drop_pose_offset)
             except Exception, e:
                 userdata.error_message = "Could not transform pose. Exception: " + str(e)
                 error_counter[1] += 1
@@ -927,7 +927,7 @@ class PlanningAndExecution(smach.State):
             retreat_pose_offset.pose.position.x = -userdata.manipulation_options["approach_dist"]
             retreat_pose_offset.pose.orientation.w = 1
             try:
-                retreat_pose = self.tf_listener.transformPose("odom_combined", retreat_pose_offset)
+                retreat_pose = self.tf_listener.transformPose("base_link", retreat_pose_offset)
             except Exception, e:
                 userdata.error_message = "Could not transform pose. Exception: " + str(e)
                 error_counter[1] += 1
@@ -1108,7 +1108,7 @@ class SM(smach.StateMachine):
 
         self.userdata.cs_orientation = [0.0,  # roll (x)
                                         0.0,  # pitch (y)
-                                        (0.0 / 180.0) * math.pi,  # yaw (z)
+                                        0.0 * math.pi,  # yaw (z)
                                         1.0]  # direction for rotation
 
         # ---- ARM-POSITIONS ----

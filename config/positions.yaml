@@ -1,4 +1,9 @@
 rack:
+  environment:
+  - {mesh: rack.stl}
+  - scaling
+  - position: [0, 0, 0]
+  - {orientation: null}
   goal_l: [0.594, 0.15, 1.082]
   goal_r: [0.564, 0.162, 0.841]
   start_r: [0.596, -0.332, 0.854]
