@@ -149,7 +149,7 @@ class SetTargets(smach.State):
         self.scenario = "table"
         self.switch_arm = True
 
-        self.path = rospkg.RosPack().get_path("cob_grasping") + "/config/positions.yaml"
+        self.path = rospkg.RosPack().get_path("cob_grasping") + "/config/scene_config.yaml"
 
         self.start_r = Point()
         self.goal_r = Point()
