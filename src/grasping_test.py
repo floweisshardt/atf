@@ -139,15 +139,15 @@ def add_remove_object(co_operation, co_object, co_position, co_type):
         rospy.sleep(0.1)
 
 
-class SetTargets(smach.State):
+class SceneManager(smach.State):
     def __init__(self):
         smach.State.__init__(self,
                              outcomes=['succeeded'],
-                             input_keys=['active_arm', 'arm_positions', 'environment'],
+                             input_keys=['active_arm', 'arm_positions'],
                              output_keys=['arm_positions', 'switch_arm'])
 
-        self.scenario = "table"
-        self.switch_arm = True
+        self.scenario = rospy.get_param(str(rospy.get_name()) + "/scene")
+        self.switch_arm = rospy.get_param(str(rospy.get_name()) + "/switch_arm")
 
         self.path = rospkg.RosPack().get_path("cob_grasping") + "/config/scene_config.yaml"
 
@@ -160,11 +160,8 @@ class SetTargets(smach.State):
         self.server = InteractiveMarkerServer("grasping_targets")
         self.menu_handler = MenuHandler()
 
-        self.ids = []
-        self.environment = {}
-
-        for x in id_list:
-            self.ids.append(x)
+        # Load environment values
+        self.environment = self.load_environment(self.path)
 
         # ---- BUILD MENU ----
         self.menu_handler.insert("Start execution", callback=self.start_planning)
@@ -173,12 +170,16 @@ class SetTargets(smach.State):
         # --- ENVIRONMENT MENU ---
         env_entry = self.menu_handler.insert("Environment")
 
-        self.menu_handler.setCheckState(self.menu_handler.insert(env_list[0].title(), callback=self.change_environment,
-                                                                 parent=env_entry), MenuHandler.CHECKED)
-        self.menu_handler.setCheckState(self.menu_handler.insert(env_list[1].title(), callback=self.change_environment,
-                                                                 parent=env_entry), MenuHandler.UNCHECKED)
-        self.menu_handler.setCheckState(self.menu_handler.insert(env_list[2].title(), callback=self.change_environment,
-                                                                 parent=env_entry), MenuHandler.UNCHECKED)
+        env_menu_id = 4
+        for item in sorted(self.environment):
+            if item == self.scenario:
+                self.menu_handler.setCheckState(self.menu_handler.insert(item, callback=self.change_environment,
+                                                                         parent=env_entry), MenuHandler.CHECKED)
+                self.last_env = env_menu_id
+            else:
+                self.menu_handler.setCheckState(self.menu_handler.insert(item, callback=self.change_environment,
+                                                                         parent=env_entry), MenuHandler.UNCHECKED)
+            env_menu_id += 1
 
         # --- WAYPOINT MENU ---
         wp_entry = self.menu_handler.insert("Waypoints")
@@ -196,7 +197,6 @@ class SetTargets(smach.State):
         self.start_manipulation = threading.Event()
 
     def execute(self, userdata):
-        self.environment = userdata.environment
         self.spawn_environment()
         rospy.loginfo("Click start to continue...")
         self.start_manipulation.wait()
@@ -227,45 +227,53 @@ class SetTargets(smach.State):
         with open(filename, 'r') as stream:
             doc = yaml.load(stream)
 
-        data[0] = Point(doc[self.scenario]["start_r"][0],
-                        doc[self.scenario]["start_r"][1],
-                        doc[self.scenario]["start_r"][2])
-        data[1] = Point(doc[self.scenario]["goal_r"][0],
-                        doc[self.scenario]["goal_r"][1],
-                        doc[self.scenario]["goal_r"][2])
-        data[2] = Point(doc[self.scenario]["goal_l"][0],
-                        doc[self.scenario]["goal_l"][1],
-                        doc[self.scenario]["goal_l"][2])
+        data[0] = Point(doc[self.scenario]["positions"]["start_r"][0],
+                        doc[self.scenario]["positions"]["start_r"][1],
+                        doc[self.scenario]["positions"]["start_r"][2])
+        data[1] = Point(doc[self.scenario]["positions"]["goal_r"][0],
+                        doc[self.scenario]["positions"]["goal_r"][1],
+                        doc[self.scenario]["positions"]["goal_r"][2])
+        data[2] = Point(doc[self.scenario]["positions"]["goal_l"][0],
+                        doc[self.scenario]["positions"]["goal_l"][1],
+                        doc[self.scenario]["positions"]["goal_l"][2])
 
-        if len(doc[self.scenario]["waypoints_r"]) != 0:
-            for i in xrange(0, len(doc[self.scenario]["waypoints_r"]), 1):
-                data[3].append(Point(doc[self.scenario]["waypoints_r"][i][0],
-                                     doc[self.scenario]["waypoints_r"][i][1],
-                                     doc[self.scenario]["waypoints_r"][i][2]))
+        if len(doc[self.scenario]["positions"]["waypoints_r"]) != 0:
+            for i in xrange(0, len(doc[self.scenario]["positions"]["waypoints_r"]), 1):
+                data[3].append(Point(doc[self.scenario]["positions"]["waypoints_r"][i][0],
+                                     doc[self.scenario]["positions"]["waypoints_r"][i][1],
+                                     doc[self.scenario]["positions"]["waypoints_r"][i][2]))
 
-        if len(doc[self.scenario]["waypoints_l"]) != 0:
-            for i in xrange(0, len(doc[self.scenario]["waypoints_l"])):
-                data[4].append(Point(doc[self.scenario]["waypoints_l"][i][0],
-                                     doc[self.scenario]["waypoints_l"][i][1],
-                                     doc[self.scenario]["waypoints_l"][i][2]))
+        if len(doc[self.scenario]["positions"]["waypoints_l"]) != 0:
+            for i in xrange(0, len(doc[self.scenario]["positions"]["waypoints_l"])):
+                data[4].append(Point(doc[self.scenario]["positions"]["waypoints_l"][i][0],
+                                     doc[self.scenario]["positions"]["waypoints_l"][i][1],
+                                     doc[self.scenario]["positions"]["waypoints_l"][i][2]))
 
         return data
+
+    @staticmethod
+    def load_environment(filename):
+        rospy.loginfo("Reading environments from yaml file...")
+
+        with open(filename, 'r') as stream:
+            doc = yaml.load(stream)
+        return doc
 
     def save_positions(self, filename):
         rospy.loginfo("Writing positions to yaml file...")
         with open(filename, 'r') as stream:
             doc = yaml.load(stream)
-        self.set_in_dict(doc, [self.scenario, "start_r"], [round(self.start_r.x, 3),
-                                                           round(self.start_r.y, 3),
-                                                           round(self.start_r.z, 3)])
+        self.set_in_dict(doc, [self.scenario, "positions", "start_r"], [round(self.start_r.x, 3),
+                                                                        round(self.start_r.y, 3),
+                                                                        round(self.start_r.z, 3)])
 
-        self.set_in_dict(doc, [self.scenario, "goal_r"], [round(self.goal_r.x, 3),
-                                                          round(self.goal_r.y, 3),
-                                                          round(self.goal_r.z, 3)])
+        self.set_in_dict(doc, [self.scenario, "positions", "goal_r"], [round(self.goal_r.x, 3),
+                                                                       round(self.goal_r.y, 3),
+                                                                       round(self.goal_r.z, 3)])
 
-        self.set_in_dict(doc, [self.scenario, "goal_l"], [round(self.goal_l.x, 3),
-                                                          round(self.goal_l.y, 3),
-                                                          round(self.goal_l.z, 3)])
+        self.set_in_dict(doc, [self.scenario, "positions", "goal_l"], [round(self.goal_l.x, 3),
+                                                                       round(self.goal_l.y, 3),
+                                                                       round(self.goal_l.z, 3)])
 
         if len(self.waypoints_r) != 0:
             values_r = []
@@ -273,7 +281,7 @@ class SetTargets(smach.State):
                 values_r.append([round(self.waypoints_r[i].x, 3),
                                  round(self.waypoints_r[i].y, 3),
                                  round(self.waypoints_r[i].z, 3)])
-            self.set_in_dict(doc, [self.scenario, "waypoints_r"], values_r)
+            self.set_in_dict(doc, [self.scenario, "positions", "waypoints_r"], values_r)
 
         if len(self.waypoints_l) != 0:
             values_l = []
@@ -281,7 +289,7 @@ class SetTargets(smach.State):
                 values_l.append([round(self.waypoints_l[i].x, 3),
                                  round(self.waypoints_l[i].y, 3),
                                  round(self.waypoints_l[i].z, 3)])
-            self.set_in_dict(doc, [self.scenario, "waypoints_l"], values_l)
+            self.set_in_dict(doc, [self.scenario, "positions", "waypoints_l"], values_l)
 
         stream = file(filename, 'w')
         yaml.dump(doc, stream)
@@ -485,12 +493,9 @@ class SetTargets(smach.State):
 
     def change_environment(self, feedback):
         if self.menu_handler.getCheckState(feedback.menu_entry_id) == MenuHandler.UNCHECKED:
-            for env_id in self.ids:
-                if env_id == feedback.menu_entry_id:
-                    self.menu_handler.setCheckState(env_id, MenuHandler.CHECKED)
-                else:
-                    self.menu_handler.setCheckState(env_id, MenuHandler.UNCHECKED)
-
+            self.menu_handler.setCheckState(self.last_env, MenuHandler.UNCHECKED)
+            self.menu_handler.setCheckState(feedback.menu_entry_id, MenuHandler.CHECKED)
+            self.last_env = feedback.menu_entry_id
             self.menu_handler.reApply(self.server)
             self.server.applyChanges()
 
@@ -498,7 +503,7 @@ class SetTargets(smach.State):
             self.save_positions(self.path)
 
             # Set new scenario
-            self.scenario = id_list[feedback.menu_entry_id]
+            self.scenario = self.menu_handler.getTitle(feedback.menu_entry_id)
 
             # Spawn new environment
             self.spawn_environment()
@@ -514,26 +519,36 @@ class SetTargets(smach.State):
         environment.id = self.scenario
         environment.header.stamp = rospy.Time.now()
         environment.header.frame_id = "base_link"
-        filename = self.environment[self.scenario]["path"]
-        scale = self.environment[self.scenario]["scale"]
+        filename = rospkg.RosPack().get_path("cob_grasping") + self.environment[self.scenario]["environment"]["mesh"]
+        scale = self.environment[self.scenario]["environment"]["scaling"]
         environment.meshes.append(self.load_mesh(filename, scale))
-        add_remove_object("add", copy(environment), self.environment[self.scenario]["position"], "mesh")
+        q = quaternion_from_euler(self.environment[self.scenario]["environment"]["orientation"][0]/180.0 * math.pi,
+                                  self.environment[self.scenario]["environment"]["orientation"][1]/180.0 * math.pi,
+                                  self.environment[self.scenario]["environment"]["orientation"][2]/180.0 * math.pi)
+        position = [self.environment[self.scenario]["environment"]["position"][0],
+                    self.environment[self.scenario]["environment"]["position"][1],
+                    self.environment[self.scenario]["environment"]["position"][2],
+                    q[0], q[1], q[2], q[3]]
+        add_remove_object("add", copy(environment), position, "mesh")
 
-        if "add_objects" in self.environment[self.scenario]:
-            for i in xrange(0, len(self.environment[self.scenario]["add_objects"]), 1):
+        if len(self.environment[self.scenario]["environment"]["additional_obstacles"]) != 0:
+            for item in self.environment[self.scenario]["environment"]["additional_obstacles"]:
 
                 collision_object = CollisionObject()
                 collision_object.header.stamp = rospy.Time.now()
                 collision_object.header.frame_id = "base_link"
-                collision_object.id = self.environment[self.scenario]["add_objects"][i]["id"]
+                collision_object.id = item["id"]
                 object_shape = SolidPrimitive()
                 object_shape.type = object_shape.BOX
-                object_shape.dimensions.append(self.environment[self.scenario]["add_objects"][i]["size"][0])  # X
-                object_shape.dimensions.append(self.environment[self.scenario]["add_objects"][i]["size"][1])  # Y
-                object_shape.dimensions.append(self.environment[self.scenario]["add_objects"][i]["size"][2])  # Z
+                object_shape.dimensions.append(item["size"][0])  # X
+                object_shape.dimensions.append(item["size"][1])  # Y
+                object_shape.dimensions.append(item["size"][2])  # Z
                 collision_object.primitives.append(object_shape)
-                add_remove_object("add", collision_object,
-                                  self.environment[self.scenario]["add_objects"][i]["position"], "primitive")
+                q = quaternion_from_euler(item["orientation"][0]/180.0 * math.pi,
+                                          item["orientation"][1]/180.0 * math.pi,
+                                          item["orientation"][2]/180.0 * math.pi)
+                position = [item["position"][0], item["position"][1], item["position"][2], q[0], q[1], q[2], q[3]]
+                add_remove_object("add", collision_object, position, "primitive")
 
         self.spawn_marker()
 
@@ -542,9 +557,9 @@ class SetTargets(smach.State):
         for i in self.environment:
             co_object.id = i
             add_remove_object("remove", copy(co_object), "", "")
-            if "add_objects" in self.environment[i]:
-                for x in xrange(0, len(self.environment[i]["add_objects"]), 1):
-                    co_object.id = self.environment[i]["add_objects"][x]["id"]
+            if len(self.environment[i]["environment"]["additional_obstacles"]) != 0:
+                for item in self.environment[i]["environment"]["additional_obstacles"]:
+                    co_object.id = item["id"]
                     add_remove_object("remove", copy(co_object), "", "")
 
         co_object.id = "object"
@@ -1228,7 +1243,7 @@ class SM(smach.StateMachine):
 
         smach.StateMachine.__init__(self, outcomes=['ended'])
 
-        global object_dim, env_list, id_list, error_counter
+        global object_dim, env_list, error_counter
         object_dim = [0.02, 0.02, 0.1]
 
         self.userdata.active_arm = "right"
@@ -1261,49 +1276,6 @@ class SM(smach.StateMachine):
         # ---- OBJECT DIMENSIONS ----
         self.userdata.object = [object_dim[0], object_dim[1], object_dim[2]]  # diameter in x, diameter in y, height
 
-        # ---- INIT ENVIRONMENT ----
-        env_list = ["table", "rack", "shelf"]
-        id_list = {4: "table", 5: "rack", 6: "shelf"}
-
-        # --- PATH ---
-        path = [rospkg.RosPack().get_path("cob_grasping") + "/files/table.stl",
-                rospkg.RosPack().get_path("cob_grasping") + "/files/rack.stl",
-                rospkg.RosPack().get_path("cob_grasping") + "/files/shelf_unit.stl"]
-
-        # --- SCALE ---
-        scale = [1.0, 0.002, 0.01]
-
-        # --- POSITION ---
-        position = [[0.0]*7]*3
-        q = quaternion_from_euler(0.0, 0.0, 0.0)
-        position[0] = [0.56, 0.0, 0.61, q[0], q[1], q[2], q[3]]
-
-        q = quaternion_from_euler(0.5*math.pi, 0.0, 0.5*math.pi)
-        position[1] = [0.56, -0.64, 0.0, q[0], q[1], q[2], q[3]]
-        position[2] = [0.67, -0.12, 0.16, q[0], q[1], q[2], q[3]]
-
-        # --- ENVIRONMENT ---
-        self.userdata.environment = {}
-
-        # -- ADDITIONAL OBJECTS --
-        add_objects = [{"id": "wall_r",
-                        "size": [0.48, 0.05, 0.5],
-                        "position": [0.8, -0.15, 0.86, 0.0, 0.0, 0.0, 1.0]},
-                       {"id": "wall_l",
-                        "size": [0.48, 0.05, 0.5],
-                        "position": [0.8, 0.15, 0.86, 0.0, 0.0, 0.0, 1.0]}]
-
-        for i in xrange(0, len(env_list), 1):
-            if env_list[i] == "table":
-                self.userdata.environment[env_list[i]] = {"path": path[i],
-                                                          "scale": scale[i],
-                                                          "position": position[i],
-                                                          "add_objects": add_objects}
-            else:
-                self.userdata.environment[env_list[i]] = {"path": path[i],
-                                                          "scale": scale[i],
-                                                          "position": position[i]}
-
         # ---- TF BROADCASTER ----
         self.tf_listener = tf.TransformListener()
         self.br = tf.TransformBroadcaster()
@@ -1314,7 +1286,7 @@ class SM(smach.StateMachine):
 
         with self:
 
-            smach.StateMachine.add('SET_TARGETS', SetTargets(),
+            smach.StateMachine.add('SCENE_MANAGER', SceneManager(),
                                    transitions={'succeeded': 'START_POSITION'})
 
             smach.StateMachine.add('START_POSITION', StartPosition(),
@@ -1341,7 +1313,7 @@ class SM(smach.StateMachine):
                                    transitions={'succeeded': 'START_POSITION'})
 
             smach.StateMachine.add('ERROR', Error(),
-                                   transitions={'finished': 'SET_TARGETS'})
+                                   transitions={'finished': 'SCENE_MANAGER'})
 
     def dynreccallback(self, config, level):
         self.userdata.error_max = [config["error_plan_max"], config["error_tf_max"]]

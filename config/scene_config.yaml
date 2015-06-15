@@ -1,32 +1,64 @@
 rack:
-  goal_l: [0.594, 0.15, 1.082]
-  goal_r: [0.564, 0.162, 0.841]
-  start_r: [0.596, -0.332, 0.854]
-  waypoints_l:
-  - [0.403, 0.166, 0.843]
-  - [0.41, 0.165, 1.067]
-  waypoints_r:
-  - [0.419, -0.17, 0.858]
-  - [0.428, 0.071, 0.856]
+  environment:
+    additional_obstacles: []
+    mesh: /files/rack.stl
+    object_dimensions: [0.02, 0.02, 0.1]
+    orientation: [90.0, 0.0, 90.0]
+    position: [0.56, -0.64, 0.0]
+    scaling: 0.002
+  positions:
+    goal_l: [0.594, 0.15, 1.082]
+    goal_r: [0.564, 0.162, 0.841]
+    start_r: [0.596, -0.332, 0.854]
+    waypoints_l:
+    - [0.403, 0.166, 0.843]
+    - [0.41, 0.165, 1.067]
+    waypoints_r:
+    - [0.419, -0.17, 0.858]
+    - [0.428, 0.071, 0.856]
 shelf:
-  goal_l: [0.545, 0.021, 1.053]
-  goal_r: [0.563, 0.027, 0.786]
-  start_r: [0.569, -0.248, 0.789]
-  waypoints_l:
-  - [0.38, 0.01, 0.853]
-  - [0.386, 0.01, 1.08]
-  waypoints_r:
-  - [0.416, -0.238, 0.784]
-  - [0.428, 0.006, 0.775]
+  environment:
+    additional_obstacles: []
+    mesh: /files/shelf_unit.stl
+    object_dimensions: [0.02, 0.02, 0.1]
+    orientation: [90.0, 0.0, 90.0]
+    position: [0.67, -0.12, 0.16]
+    scaling: 0.01
+  positions:
+    goal_l: [0.545, 0.021, 1.053]
+    goal_r: [0.563, 0.027, 0.786]
+    start_r: [0.569, -0.248, 0.789]
+    waypoints_l:
+    - [0.38, 0.01, 0.853]
+    - [0.386, 0.01, 1.08]
+    waypoints_r:
+    - [0.416, -0.238, 0.784]
+    - [0.428, 0.006, 0.775]
 table:
-  goal_l: [0.639, 0.314, 0.791]
-  goal_r: [0.64, -0.002, 0.797]
-  start_r: [0.633, -0.301, 0.787]
-  waypoints_l:
-  - [0.475, 0.028, 1.096]
-  - [0.418, 0.161, 1.107]
-  - [0.474, 0.294, 1.097]
-  waypoints_r:
-  - [0.482, -0.258, 1.092]
-  - [0.426, -0.152, 1.105]
-  - [0.476, -0.033, 1.096]
+  environment:
+    additional_obstacles:
+    - id: wall_r
+      orientation: [0.0, 0.0, 0.0]
+      position: [0.8, -0.15, 0.86]
+      size: [0.48, 0.05, 0.5]
+    - id: wall_l
+      orientation: [0.0, 0.0, 0.0]
+      position: [0.8, 0.15, 0.86]
+      size: [0.48, 0.05, 0.5]
+    mesh: /files/table.stl
+    object_dimensions: [0.02, 0.02, 0.1]
+    orientation: [0.0, 0.0, 0.0]
+    position: [0.56, 0.0, 0.61]
+    scaling: 1.0
+  positions:
+    goal_l: [0.639, 0.314, 0.791]
+    goal_r: [0.64, -0.001, 0.797]
+    start_r: [0.633, -0.301, 0.787]
+    waypoints_l:
+    - [0.472, 0.02, 0.802]
+    - [0.421, 0.166, 0.8]
+    - [0.471, 0.294, 0.799]
+    waypoints_r:
+    - [0.475, -0.262, 0.802]
+    - [0.428, -0.155, 0.782]
+    - [0.47, -0.05, 0.813]
