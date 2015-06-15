@@ -148,7 +148,7 @@ class SetTargets(smach.State):
         self.scenario = "table"
 
         rospy.loginfo("Reading positions from yaml file...")
-        self.path = rospkg.RosPack().get_path("cob_grasping") + "/config/positions.yaml"
+        self.path = rospkg.RosPack().get_path("cob_grasping") + "/config/scene_config.yaml"
         data = self.load_positions(self.path)
 
         self.start_r = data[0]
@@ -1108,7 +1108,7 @@ class SM(smach.StateMachine):
 
         self.userdata.cs_orientation = [0.0,  # roll (x)
                                         0.0,  # pitch (y)
-                                        0.0 * math.pi,  # yaw (z)
+                                        0.0,  # yaw (z)
                                         1.0]  # direction for rotation
 
         # ---- ARM-POSITIONS ----
