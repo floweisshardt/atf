@@ -30,6 +30,8 @@ planning_scene.is_diff = True
 planning_scene_interface = PlanningSceneInterface()
 pub_planning_scene = rospy.Publisher("planning_scene", PlanningScene, queue_size=1)
 
+abort_execution = False
+
 
 def smooth_cartesian_path(traj):
 
@@ -144,7 +146,7 @@ def add_remove_object(co_operation, co_object, co_position, co_type):
 class SceneManager(smach.State):
     def __init__(self):
         smach.State.__init__(self,
-                             outcomes=['succeeded'],
+                             outcomes=['succeeded', 'exit'],
                              input_keys=['active_arm', 'arm_positions'],
                              output_keys=['arm_positions', 'switch_arm', 'object'])
 
@@ -199,7 +201,11 @@ class SceneManager(smach.State):
             self.menu_handler.setCheckState(self.menu_handler.insert("Switch arm", callback=self.switch_arm_callback),
                                             MenuHandler.UNCHECKED)
 
+        # --- EXIT ---
+        self.menu_handler.insert("Exit", callback=self.exit_program)
+
         self.start_manipulation = threading.Event()
+        self.exit = False
 
     def execute(self, userdata):
         self.spawn_environment()
@@ -207,6 +213,9 @@ class SceneManager(smach.State):
         if self.wait_for_user:
             self.start_manipulation.wait()
             self.start_manipulation.clear()
+
+        if self.exit:
+            return "exit"
 
         # Position for right arm
         waypoints_r = []
@@ -452,10 +461,14 @@ class SceneManager(smach.State):
     def start_planning(self, feedback):
         self.start_manipulation.set()
 
-    @staticmethod
-    def stop_planning(feedback):
-        error_counter[0] = 999
-        error_counter[1] = 999
+    def stop_planning(self, feedback):
+        self.wait_for_user = True
+        global abort_execution
+        abort_execution = True
+
+    def exit_program(self, feedback):
+        self.exit = True
+        self.start_manipulation.set()
 
     def switch_arm_callback(self, feedback):
         if self.menu_handler.getCheckState(feedback.menu_entry_id) == MenuHandler.UNCHECKED:
@@ -591,8 +604,8 @@ class StartPosition(smach.State):
     def __init__(self):
         smach.State.__init__(self,
                              outcomes=['succeeded', 'failed', 'error'],
-                             input_keys=['active_arm', 'error_max'],
-                             output_keys=['error_message'])
+                             input_keys=['active_arm', 'error_max', 'error_counter'],
+                             output_keys=['error_message', 'error_counter'])
 
         self.traj_name = "pre_grasp"
 
@@ -601,21 +614,24 @@ class StartPosition(smach.State):
             self.planer = mgc_left
         elif userdata.active_arm == "right":
             self.planer = mgc_right
-        else:
-            userdata.error_message = "Invalid arm"
-            return "failed"
+
+        global abort_execution
+
+        if abort_execution:
+            abort_execution = False
+            userdata.error_message = "Execution aborted by user"
+            return "error"
 
         try:
             traj = plan_movement(self.planer, userdata.active_arm, self.traj_name)
         except (ValueError, IndexError):
-            if error_counter[0] >= userdata.error_max[0]:
-                error_counter[0] = 0
-                error_counter[1] = 0
-                userdata.error_message = "Unabled to plan " + self.traj_name + " trajectory for " + userdata.active_arm\
+            if userdata.error_counter >= userdata.error_max:
+                userdata.error_counter = 0
+                userdata.error_message = "Unabled to plan " + self.traj_name + " trajectory for " + userdata.active_arm \
                                          + " arm"
                 return "error"
 
-            error_counter[0] += 1
+            userdata.error_counter += 1
             return "failed"
         else:
             self.planer.execute(traj)
@@ -626,8 +642,8 @@ class EndPosition(smach.State):
     def __init__(self):
         smach.State.__init__(self,
                              outcomes=['succeeded', 'failed', 'error'],
-                             input_keys=['active_arm', 'error_max', 'arm_positions', 'object'],
-                             output_keys=['error_message'])
+                             input_keys=['active_arm', 'error_max', 'arm_positions', 'object', 'error_counter'],
+                             output_keys=['error_message', 'error_counter'])
 
         self.traj_name = "retreat"
 
@@ -636,9 +652,6 @@ class EndPosition(smach.State):
             self.planer = mgc_left
         elif userdata.active_arm == "right":
             self.planer = mgc_right
-        else:
-            userdata.error_message = "Invalid arm"
-            return "error"
 
         # ----------- SPAWN OBJECT ------------
         collision_object = CollisionObject()
@@ -657,17 +670,23 @@ class EndPosition(smach.State):
                     0.0, 0.0, 0.0, 1.0]
         add_remove_object("add", copy(collision_object), position, "primitive")
 
+        global abort_execution
+
+        if abort_execution:
+            abort_execution = False
+            userdata.error_message = "Execution aborted by user"
+            return "error"
+
         try:
             traj = plan_movement(self.planer, userdata.active_arm, self.traj_name)
         except (ValueError, IndexError):
-            if error_counter[0] >= userdata.error_max[0]:
-                error_counter[0] = 0
-                error_counter[1] = 0
+            if userdata.error_counter >= userdata.error_max:
+                userdata.error_counter = 0
                 userdata.error_message = "Unabled to plan " + self.traj_name + " trajectory for " + userdata.active_arm\
                                          + " arm"
                 return "error"
 
-            error_counter[0] += 1
+            userdata.error_counter += 1
             return "failed"
         else:
             self.planer.execute(traj)
@@ -682,14 +701,17 @@ class PlanningAndExecution(smach.State):
         smach.State.__init__(self,
                              outcomes=['succeeded', 'failed', 'error'],
                              input_keys=['active_arm', 'cs_orientation', 'computed_trajectories', 'error_max',
-                                         'error_message', 'object', 'manipulation_options', 'arm_positions'],
-                             output_keys=['cs_position', 'cs_orientation', 'computed_trajectories', 'error_message'])
+                                         'error_message', 'object', 'manipulation_options', 'arm_positions', 'error_counter'],
+                             output_keys=['cs_position', 'cs_orientation', 'computed_trajectories', 'error_message',
+                                          'error_counter'])
 
         self.tf_listener = tf.TransformListener()
 
         self.eef_step = rospy.get_param(str(rospy.get_name()) + "/eef_step")
         self.jump_threshold = rospy.get_param(str(rospy.get_name()) + "/jump_threshold")
         self.planer_id = rospy.get_param(str(rospy.get_name()) + "/planer_id")
+
+        rospy.loginfo("Set planer to: '" + str(self.planer_id) + "'")
 
         self.traj_name = ""
 
@@ -712,17 +734,16 @@ class PlanningAndExecution(smach.State):
         elif userdata.active_arm == "right":
             userdata.cs_orientation[0] = 0.0
 
+        global abort_execution
+
+        if abort_execution:
+            abort_execution = False
+            userdata.error_message = "Execution aborted by user"
+            return "error"
+
         if not self.plan_and_move(userdata):
-            if error_counter[0] >= userdata.error_max[0]:
-                error_counter[0] = 0
-                error_counter[1] = 0
-                userdata.computed_trajectories[:] = []
-                userdata.computed_trajectories = [False]*6
-                userdata.cs_position = "start"
-                return "error"
-            elif error_counter[1] >= userdata.error_max[1]:
-                error_counter[0] = 0
-                error_counter[1] = 0
+            if userdata.error_counter >= userdata.error_max:
+                userdata.error_counter = 0
                 userdata.computed_trajectories[:] = []
                 userdata.computed_trajectories = [False]*6
                 userdata.cs_position = "start"
@@ -730,8 +751,7 @@ class PlanningAndExecution(smach.State):
             else:
                 return "failed"
 
-        error_counter[0] = 0
-        error_counter[1] = 0
+        userdata.error_counter = 0
         return "succeeded"
 
     def plan_and_move(self, userdata):
@@ -773,8 +793,7 @@ class PlanningAndExecution(smach.State):
             except Exception, e:
                 userdata.error_message = "Could not transform pose. Exception: " + str(e)
                 self.tf_listener.clear()
-                print str(e)
-                error_counter[1] += 1
+                userdata.error_counter += 1
                 return False
 
             (traj_approach, frac_approach) = self.planer.compute_cartesian_path([approach_pose.pose], self.eef_step,
@@ -789,7 +808,7 @@ class PlanningAndExecution(smach.State):
 
             if not (frac_approach == 1.0):
                 userdata.error_message = "Unable to plan " + self.traj_name + " trajectory"
-                error_counter[0] += 1
+                userdata.error_counter += 1
                 return False
 
             userdata.computed_trajectories[0] = traj_approach
@@ -813,8 +832,7 @@ class PlanningAndExecution(smach.State):
             except Exception, e:
                 userdata.error_message = "Could not transform pose. Exception: " + str(e)
                 self.tf_listener.clear()
-                print str(e)
-                error_counter[1] += 1
+                userdata.error_counter += 1
                 return False
 
             (traj_grasp, frac_grasp) = self.planer.compute_cartesian_path([grasp_pose.pose], self.eef_step,
@@ -829,7 +847,7 @@ class PlanningAndExecution(smach.State):
 
             if not (frac_grasp == 1.0):
                 userdata.error_message = "Unable to plan " + self.traj_name + " trajectory"
-                error_counter[0] += 1
+                userdata.error_counter += 1
                 return False
 
             userdata.computed_trajectories[1] = traj_grasp
@@ -886,8 +904,7 @@ class PlanningAndExecution(smach.State):
             except Exception, e:
                 userdata.error_message = "Could not transform pose. Exception: " + str(e)
                 self.tf_listener.clear()
-                print str(e)
-                error_counter[1] += 1
+                userdata.error_counter += 1
                 return False
 
             (traj_lift, frac_lift) = self.planer.compute_cartesian_path([lift_pose.pose], self.eef_step,
@@ -902,14 +919,13 @@ class PlanningAndExecution(smach.State):
 
             if not (frac_lift == 1.0):
                 userdata.error_message = "Unable to plan " + self.traj_name + " trajectory"
-                error_counter[0] += 1
+                userdata.error_counter += 1
                 return False
 
             userdata.computed_trajectories[2] = traj_lift
 
             userdata.cs_position = "goal"
-            error_counter[0] = 0
-            error_counter[1] = 0
+            userdata.error_counter = 0
             rospy.loginfo("Pick planning complete")
             return False
 
@@ -923,7 +939,7 @@ class PlanningAndExecution(smach.State):
                 userdata.computed_trajectories[:] = []
                 userdata.computed_trajectories = [False]*6
                 userdata.error_message = "Error: " + str(AttributeError)
-                error_counter[0] += 1
+                userdata.error_counter += 1
                 return False
 
             start_state = RobotState()
@@ -946,7 +962,7 @@ class PlanningAndExecution(smach.State):
                 move_pose = self.tf_listener.transformPose("base_link", move_pose_offset)
             except Exception, e:
                 userdata.error_message = "Could not transform pose. Exception: " + str(e)
-                error_counter[1] += 1
+                userdata.error_counter += 1
                 return False
 
             way_move = []
@@ -962,7 +978,7 @@ class PlanningAndExecution(smach.State):
                         wpose = self.tf_listener.transformPose("base_link", wpose_offset)
                     except Exception, e:
                         userdata.error_message = "Could not transform pose. Exception: " + str(e)
-                        error_counter[1] += 1
+                        userdata.error_counter += 1
                         return False
 
                     wpose.pose.position = item
@@ -982,12 +998,12 @@ class PlanningAndExecution(smach.State):
 
             if not (frac_move == 1.0):
                 userdata.error_message = "Unable to plan " + self.traj_name + " trajectory"
-                error_counter[0] += 1
+                userdata.error_counter += 1
                 return False
 
             if len(traj_move.joint_trajectory.points) < 15:
                 rospy.logerr("Computed trajectory is too short. Replanning...")
-                error_counter[0] += 1
+                userdata.error_counter += 1
                 return False
 
             userdata.computed_trajectories[3] = traj_move
@@ -1008,7 +1024,7 @@ class PlanningAndExecution(smach.State):
                 drop_pose = self.tf_listener.transformPose("base_link", drop_pose_offset)
             except Exception, e:
                 userdata.error_message = "Could not transform pose. Exception: " + str(e)
-                error_counter[1] += 1
+                userdata.error_counter += 1
                 return False
 
             (traj_drop, frac_drop) = self.planer.compute_cartesian_path([drop_pose.pose], self.eef_step,
@@ -1023,7 +1039,7 @@ class PlanningAndExecution(smach.State):
 
             if not (frac_drop == 1.0):
                 userdata.error_message = "Unable to plan " + self.traj_name + " trajectory"
-                error_counter[0] += 1
+                userdata.error_counter += 1
                 return False
 
             userdata.computed_trajectories[4] = traj_drop
@@ -1047,7 +1063,7 @@ class PlanningAndExecution(smach.State):
                 retreat_pose = self.tf_listener.transformPose("base_link", retreat_pose_offset)
             except Exception, e:
                 userdata.error_message = "Could not transform pose. Exception: " + str(e)
-                error_counter[1] += 1
+                userdata.error_counter += 1
                 return False
 
             (traj_retreat, frac_retreat) = self.planer.compute_cartesian_path([retreat_pose.pose], self.eef_step,
@@ -1062,7 +1078,7 @@ class PlanningAndExecution(smach.State):
 
             if not (frac_retreat == 1.0):
                 userdata.error_message = "Unable to plan " + self.traj_name + " trajectory"
-                error_counter[0] += 1
+                userdata.error_counter += 1
                 return False
 
             userdata.computed_trajectories[5] = traj_retreat
@@ -1079,7 +1095,7 @@ class PlanningAndExecution(smach.State):
             userdata.computed_trajectories[:] = []
             userdata.computed_trajectories = [False]*6
             userdata.error_message = "Error: " + str(AttributeError)
-            error_counter[0] += 1
+            userdata.error_counter += 1
             return False
 
         # ----------- EXECUTE -----------
@@ -1115,12 +1131,12 @@ class PlanningAndExecution(smach.State):
         error_code = -1
         counter = 0
         while not rospy.is_shutdown() and error_code != 0:
-            print "Trying to move", component_name, "to", pos, "retries: ", counter
+            rospy.loginfo("Trying to move " + str(component_name) + " to " + str(pos) + " retries: " + str(counter))
             handle = sss.move(component_name, pos)
             handle.wait()
             error_code = handle.get_error_code()
             if counter > 100:
-                rospy.logerr(component_name + "does not work any more. retries: " + str(counter) +
+                rospy.logerr(component_name + "does not work any more. Retries: " + str(counter) +
                              ". Please reset USB connection and press <ENTER>.")
                 sss.wait_for_input()
                 return False
@@ -1214,8 +1230,6 @@ class SM(smach.StateMachine):
 
         smach.StateMachine.__init__(self, outcomes=['ended'])
 
-        global error_counter
-
         self.userdata.active_arm = "right"
         self.userdata.switch_arm = bool
         self.userdata.cs_position = "start"
@@ -1241,7 +1255,7 @@ class SM(smach.StateMachine):
 
         # ---- ERROR MESSAGE / COUNTER ----
         self.userdata.error_message = ""
-        error_counter = [0]*2
+        self.userdata.error_counter = 0
 
         # ---- OBJECT DIMENSIONS ----
         self.userdata.object = [float]*3  # diameter in x, diameter in y, height
@@ -1257,7 +1271,8 @@ class SM(smach.StateMachine):
         with self:
 
             smach.StateMachine.add('SCENE_MANAGER', SceneManager(),
-                                   transitions={'succeeded': 'START_POSITION'})
+                                   transitions={'succeeded': 'START_POSITION',
+                                                'exit': 'ended'})
 
             smach.StateMachine.add('START_POSITION', StartPosition(),
                                    transitions={'succeeded': 'PLANNINGANDEXECUTION',
@@ -1286,13 +1301,13 @@ class SM(smach.StateMachine):
                                    transitions={'finished': 'SCENE_MANAGER'})
 
     def dynrec_callback(self, config, level):
-        self.userdata.error_max = [config["error_plan_max"], config["error_tf_max"]]
+        self.userdata.error_max = config["error_max"]
         self.userdata.manipulation_options = {"lift_height": config["lift_height"],
                                               "approach_dist": config["approach_dist"],
                                               "repeats": config["manipulation_repeats"]}
-        rospy.loginfo("Reconfigure: " + str(self.userdata.error_max[0]) + " | " + str(self.userdata.error_max[1])
-                      + " | " + str(self.userdata.manipulation_options["lift_height"]) + " | "
-                      + str(self.userdata.manipulation_options["approach_dist"]) + " | "
+        rospy.loginfo("Dynamic reconfigure: 'error_max': " + str(self.userdata.error_max) + " | 'lift_height': "
+                      + str(self.userdata.manipulation_options["lift_height"]) + " | 'approach_dist': "
+                      + str(self.userdata.manipulation_options["approach_dist"]) + " | 'manipulation_repeats': "
                       + str(self.userdata.manipulation_options["repeats"]))
 
         return config
