@@ -4,6 +4,13 @@
     <node name="grasping_test" pkg="cob_grasping" type="grasping_test.py" output="screen">
         <param name="scene" value="table" />
         <param name="switch_arm" value="True" />
+        <param name="wait_for_user" value="True" />
+        <rosparam param="object_dimensions">
+            [0.02, 0.02, 0.1]
+        </rosparam>
+        <param name="eef_step" value="0.01" />
+        <param name="jump_threshold" value="2" />
+        <param name="planer_id" value="LBKPIECEkConfigDefault" />
     </node>
 
 </launch>
