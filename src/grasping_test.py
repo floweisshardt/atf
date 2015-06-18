@@ -156,8 +156,14 @@ class SceneManager(smach.State):
         self.wait_for_user = rospy.get_param(str(rospy.get_name()) + "/wait_for_user")
         self.object_dimensions = rospy.get_param(str(rospy.get_name()) + "/object_dimensions")
         self.spawn_obstacles = rospy.get_param(str(rospy.get_name()) + "/load_obstacles")
+        self.planning_method = rospy.get_param(str(rospy.get_name()) + "/planning_method")
 
         self.path = rospkg.RosPack().get_path("cob_grasping") + "/config/scene_config.yaml"
+
+        if rospy.get_param(str(rospy.get_name()) + "/planning_method") == "cartesian_linear":
+            self.use_waypoints = True
+        else:
+            self.use_waypoints = False
 
         self.server = InteractiveMarkerServer("grasping_targets")
         self.menu_handler = MenuHandler()
@@ -186,13 +192,14 @@ class SceneManager(smach.State):
             env_menu_id += 1
 
         # --- WAYPOINT MENU ---
-        wp_entry = self.menu_handler.insert("Waypoints")
-        self.menu_handler.insert("Delete waypoint", parent=wp_entry, callback=self.delete_waypoint)
-        self.wp_arm_right = self.menu_handler.insert("Arm right", parent=wp_entry)
-        self.menu_handler.insert("Add waypoint", parent=self.wp_arm_right, callback=self.add_waypoint_right)
+        if self.use_waypoints:
+            wp_entry = self.menu_handler.insert("Waypoints")
+            self.menu_handler.insert("Delete waypoint", parent=wp_entry, callback=self.delete_waypoint)
+            self.wp_arm_right = self.menu_handler.insert("Arm right", parent=wp_entry)
+            self.menu_handler.insert("Add waypoint", parent=self.wp_arm_right, callback=self.add_waypoint_right)
 
-        self.wp_arm_left = self.menu_handler.insert("Arm left", parent=wp_entry)
-        self.menu_handler.insert("Add waypoint", parent=self.wp_arm_left, callback=self.add_waypoint_left)
+            self.wp_arm_left = self.menu_handler.insert("Arm left", parent=wp_entry)
+            self.menu_handler.insert("Add waypoint", parent=self.wp_arm_left, callback=self.add_waypoint_left)
 
         # --- SWITCH ARM ---
         if self.switch_arm:
@@ -218,31 +225,46 @@ class SceneManager(smach.State):
         if self.exit:
             return "exit"
 
-        # ---- POSITIONS FOR RIGHT ARM ----
-        waypoints_r = []
-        if len(self.data[self.scenario]["positions"]["waypoints_r"]) != 0:
-            for item in self.data[self.scenario]["positions"]["waypoints_r"]:
-                waypoints_r.append(Point(item[0], item[1], item[2]))
-        userdata.arm_positions["right"] = {"start": Point(self.data[self.scenario]["positions"]["start_r"][0],
-                                                          self.data[self.scenario]["positions"]["start_r"][1],
-                                                          self.data[self.scenario]["positions"]["start_r"][2]),
-                                           "waypoints": waypoints_r,
-                                           "goal": Point(self.data[self.scenario]["positions"]["goal_r"][0],
-                                                         self.data[self.scenario]["positions"]["goal_r"][1],
-                                                         self.data[self.scenario]["positions"]["goal_r"][2])}
+        if self.planning_method != "joint":
+            # ---- POSITIONS FOR RIGHT ARM ----
+            waypoints_r = []
+            if len(self.data[self.scenario]["positions"]["waypoints_r"]) != 0:
+                for item in self.data[self.scenario]["positions"]["waypoints_r"]:
+                    waypoints_r.append(Point(item[0], item[1], item[2]))
+            userdata.arm_positions["right"] = {"start": Point(self.data[self.scenario]["positions"]["start_r"][0],
+                                                              self.data[self.scenario]["positions"]["start_r"][1],
+                                                              self.data[self.scenario]["positions"]["start_r"][2]),
+                                               "waypoints": waypoints_r,
+                                               "goal": Point(self.data[self.scenario]["positions"]["goal_r"][0],
+                                                             self.data[self.scenario]["positions"]["goal_r"][1],
+                                                             self.data[self.scenario]["positions"]["goal_r"][2])}
 
-        # ---- POSITIONS FOR LEFT ARM ----
-        waypoints_l = []
-        if len(self.data[self.scenario]["positions"]["waypoints_l"]) != 0:
-            for item in self.data[self.scenario]["positions"]["waypoints_l"]:
-                waypoints_l.append(Point(item[0], item[1], item[2]))
-        userdata.arm_positions["left"] = {"start": Point(self.data[self.scenario]["positions"]["goal_r"][0],
-                                                         self.data[self.scenario]["positions"]["goal_r"][1],
-                                                         self.data[self.scenario]["positions"]["goal_r"][2]),
-                                          "waypoints": waypoints_l,
-                                          "goal": Point(self.data[self.scenario]["positions"]["goal_l"][0],
-                                                        self.data[self.scenario]["positions"]["goal_l"][1],
-                                                        self.data[self.scenario]["positions"]["goal_l"][2])}
+            # ---- POSITIONS FOR LEFT ARM ----
+            waypoints_l = []
+            if len(self.data[self.scenario]["positions"]["waypoints_l"]) != 0:
+                for item in self.data[self.scenario]["positions"]["waypoints_l"]:
+                    waypoints_l.append(Point(item[0], item[1], item[2]))
+            userdata.arm_positions["left"] = {"start": Point(self.data[self.scenario]["positions"]["goal_r"][0],
+                                                             self.data[self.scenario]["positions"]["goal_r"][1],
+                                                             self.data[self.scenario]["positions"]["goal_r"][2]),
+                                              "waypoints": waypoints_l,
+                                              "goal": Point(self.data[self.scenario]["positions"]["goal_l"][0],
+                                                            self.data[self.scenario]["positions"]["goal_l"][1],
+                                                            self.data[self.scenario]["positions"]["goal_l"][2])}
+        else:
+            # ---- POSITIONS FOR RIGHT ARM ----
+            joints_r = []
+            if len(self.data[self.scenario]["joints"]["right"]) != 0:
+                for item in self.data[self.scenario]["joints"]["right"]:
+                    joints_r.append(item)
+            userdata.arm_positions["right"] = {"joints": joints_r}
+
+            # ---- POSITIONS FOR LEFT ARM ----
+            joints_l = []
+            if len(self.data[self.scenario]["joints"]["left"]) != 0:
+                for item in self.data[self.scenario]["joints"]["left"]:
+                    joints_l.append(item)
+            userdata.arm_positions["left"] = {"joints": joints_l}
 
         # ---- SWITCH ARM ----
         userdata.switch_arm = self.switch_arm
@@ -590,25 +612,25 @@ class SceneManager(smach.State):
                                self.data[self.scenario]["positions"]["goal_l"][1],
                                self.data[self.scenario]["positions"]["goal_l"][2]))
 
-        color.r = 0.0
-        color.b = 1.0
-
         # ---- BUILD WAYPOINT MARKER ----
-        if len(self.data[self.scenario]["positions"]["waypoints_r"]) != 0:
-            for i in xrange(0, len(self.data[self.scenario]["positions"]["waypoints_r"])):
-                self.make_marker("waypoint_r" + str(i + 1), color, InteractiveMarkerControl.MOVE_3D,
-                                 Point(self.data[self.scenario]["positions"]["waypoints_r"][i][0],
-                                       self.data[self.scenario]["positions"]["waypoints_r"][i][1],
-                                       self.data[self.scenario]["positions"]["waypoints_r"][i][2]))
+        if self.use_waypoints:
+            color.r = 0.0
+            color.b = 1.0
+            if len(self.data[self.scenario]["positions"]["waypoints_r"]) != 0:
+                for i in xrange(0, len(self.data[self.scenario]["positions"]["waypoints_r"])):
+                    self.make_marker("waypoint_r" + str(i + 1), color, InteractiveMarkerControl.MOVE_3D,
+                                     Point(self.data[self.scenario]["positions"]["waypoints_r"][i][0],
+                                           self.data[self.scenario]["positions"]["waypoints_r"][i][1],
+                                           self.data[self.scenario]["positions"]["waypoints_r"][i][2]))
 
-        if len(self.data[self.scenario]["positions"]["waypoints_l"]) != 0:
-            for i in xrange(0, len(self.data[self.scenario]["positions"]["waypoints_l"])):
-                self.make_marker("waypoint_l" + str(i + 1), color, InteractiveMarkerControl.MOVE_3D,
-                                 Point(self.data[self.scenario]["positions"]["waypoints_l"][i][0],
-                                       self.data[self.scenario]["positions"]["waypoints_l"][i][1],
-                                       self.data[self.scenario]["positions"]["waypoints_l"][i][2]))
+            if len(self.data[self.scenario]["positions"]["waypoints_l"]) != 0:
+                for i in xrange(0, len(self.data[self.scenario]["positions"]["waypoints_l"])):
+                    self.make_marker("waypoint_l" + str(i + 1), color, InteractiveMarkerControl.MOVE_3D,
+                                     Point(self.data[self.scenario]["positions"]["waypoints_l"][i][0],
+                                           self.data[self.scenario]["positions"]["waypoints_l"][i][1],
+                                           self.data[self.scenario]["positions"]["waypoints_l"][i][2]))
 
-        self.server.applyChanges()
+            self.server.applyChanges()
 
         # ---- APPLY MENU TO MARKER ----
         self.menu_handler.apply(self.server, "right_arm_start")
@@ -660,7 +682,8 @@ class EndPosition(smach.State):
     def __init__(self):
         smach.State.__init__(self,
                              outcomes=['succeeded', 'failed', 'error'],
-                             input_keys=['active_arm', 'error_max', 'arm_positions', 'object', 'error_counter'],
+                             input_keys=['active_arm', 'error_max', 'arm_positions', 'object', 'error_counter',
+                                         'planning_method'],
                              output_keys=['error_message', 'error_counter'])
 
         self.traj_name = "retreat"
@@ -671,22 +694,23 @@ class EndPosition(smach.State):
         elif userdata.active_arm == "right":
             self.planer = mgc_right
 
-        # ----------- SPAWN OBJECT ------------
-        collision_object = CollisionObject()
-        collision_object.header.stamp = rospy.Time.now()
-        collision_object.header.frame_id = "base_link"
-        collision_object.id = "object"
-        object_shape = SolidPrimitive()
-        object_shape.type = object_shape.CYLINDER
-        object_shape.dimensions.append(userdata.object[2])  # Height
-        object_shape.dimensions.append(userdata.object[0]*0.5)  # Radius
-        collision_object.primitives.append(object_shape)
-        add_remove_object("remove", copy(collision_object), "", "")
-        position = [userdata.arm_positions[userdata.active_arm]["goal"].x,
-                    userdata.arm_positions[userdata.active_arm]["goal"].y,
-                    userdata.arm_positions[userdata.active_arm]["goal"].z,
-                    0.0, 0.0, 0.0, 1.0]
-        add_remove_object("add", copy(collision_object), position, "primitive")
+        if userdata.planning_method != "joint":
+            # ----------- SPAWN OBJECT ------------
+            collision_object = CollisionObject()
+            collision_object.header.stamp = rospy.Time.now()
+            collision_object.header.frame_id = "base_link"
+            collision_object.id = "object"
+            object_shape = SolidPrimitive()
+            object_shape.type = object_shape.CYLINDER
+            object_shape.dimensions.append(userdata.object[2])  # Height
+            object_shape.dimensions.append(userdata.object[0]*0.5)  # Radius
+            collision_object.primitives.append(object_shape)
+            add_remove_object("remove", copy(collision_object), "", "")
+            position = [userdata.arm_positions[userdata.active_arm]["goal"].x,
+                        userdata.arm_positions[userdata.active_arm]["goal"].y,
+                        userdata.arm_positions[userdata.active_arm]["goal"].z,
+                        0.0, 0.0, 0.0, 1.0]
+            add_remove_object("add", copy(collision_object), position, "primitive")
 
         global abort_execution
 
@@ -709,8 +733,9 @@ class EndPosition(smach.State):
         else:
             self.planer.execute(traj)
 
-            # ----------- REMOVE OBJECT ------------
-            add_remove_object("remove", collision_object, "", "")
+            if userdata.planning_method != "joint":
+                # ----------- REMOVE OBJECT ------------
+                add_remove_object("remove", collision_object, "", "")
             return "succeeded"
 
 
@@ -718,8 +743,8 @@ class PlanningAndExecution(smach.State):
     def __init__(self):
         smach.State.__init__(self,
                              outcomes=['succeeded', 'failed', 'error'],
-                             input_keys=['active_arm', 'cs_orientation', 'error_max',
-                                         'error_message', 'object', 'manipulation_options', 'arm_positions', 'error_counter'],
+                             input_keys=['active_arm', 'cs_orientation', 'error_max', 'error_message', 'object',
+                                         'manipulation_options', 'arm_positions', 'error_counter', 'planning_method'],
                              output_keys=['cs_position', 'cs_orientation', 'error_message',
                                           'error_counter'])
 
@@ -728,18 +753,19 @@ class PlanningAndExecution(smach.State):
         self.eef_step = rospy.get_param(str(rospy.get_name()) + "/eef_step")
         self.jump_threshold = rospy.get_param(str(rospy.get_name()) + "/jump_threshold")
         self.planer_id = rospy.get_param(str(rospy.get_name()) + "/planer_id")
-        self.planning_method = rospy.get_param(str(rospy.get_name()) + "/planning_method")
 
         rospy.loginfo("Set planer to: '" + str(self.planer_id) + "'")
 
         self.traj_name = ""
         self.traj_pick = []
         self.traj_place = []
+        self.plan_list = []
 
         self.joint_names = {"right": rospy.get_param("/arm_right/joint_names"),
                             "left": rospy.get_param("/arm_left/joint_names")}
 
         self.cs_ready = False
+        self.state = 0
 
     def execute(self, userdata):
 
@@ -774,7 +800,7 @@ class PlanningAndExecution(smach.State):
             userdata.cs_position = "start"
             return "error"
 
-        if self.planning_method != "joint":
+        if userdata.planning_method != "joint":
             execution = self.plan_and_move_cartesian(userdata)
         else:
             execution = self.plan_and_move_joint(userdata)
@@ -819,12 +845,11 @@ class PlanningAndExecution(smach.State):
                 approach_pose = self.tf_listener.transformPose("base_link", approach_pose_offset)
             except Exception, e:
                 userdata.error_message = "Could not transform pose. Exception: " + str(e)
-                self.tf_listener.clear()
                 userdata.error_counter += 1
                 self.traj_pick[:] = []
                 return False
 
-            if self.planning_method == "cartesian_linear":
+            if userdata.planning_method == "cartesian_linear":
 
                 (traj_approach, frac_approach) = self.planer.compute_cartesian_path([approach_pose.pose], self.eef_step,
                                                                                     self.jump_threshold, True)
@@ -842,7 +867,7 @@ class PlanningAndExecution(smach.State):
                     self.traj_pick[:] = []
                     return False
 
-            elif self.planning_method == "cartesian" or self.planning_method == "cartesian_mixed":
+            elif userdata.planning_method == "cartesian" or userdata.planning_method == "cartesian_mixed":
 
                 self.planer.clear_pose_targets()
                 self.planer.set_pose_target(approach_pose.pose, self.planer.get_end_effector_link())
@@ -883,12 +908,11 @@ class PlanningAndExecution(smach.State):
                 grasp_pose = self.tf_listener.transformPose("base_link", grasp_pose_offset)
             except Exception, e:
                 userdata.error_message = "Could not transform pose. Exception: " + str(e)
-                self.tf_listener.clear()
                 userdata.error_counter += 1
                 self.traj_pick[:] = []
                 return False
 
-            if self.planning_method == "cartesian_linear":
+            if userdata.planning_method == "cartesian_linear" or userdata.planning_method == "cartesian_mixed":
                 (traj_grasp, frac_grasp) = self.planer.compute_cartesian_path([grasp_pose.pose], self.eef_step,
                                                                               self.jump_threshold, True)
 
@@ -904,7 +928,8 @@ class PlanningAndExecution(smach.State):
                     userdata.error_counter += 1
                     self.traj_pick[:] = []
                     return False
-            elif self.planning_method == "cartesian" or self.planning_method == "cartesian_mixed":
+
+            elif userdata.planning_method == "cartesian":
 
                 self.planer.clear_pose_targets()
                 self.planer.set_pose_target(grasp_pose.pose, self.planer.get_end_effector_link())
@@ -977,12 +1002,11 @@ class PlanningAndExecution(smach.State):
                 lift_pose = self.tf_listener.transformPose("base_link", lift_pose_offset)
             except Exception, e:
                 userdata.error_message = "Could not transform pose. Exception: " + str(e)
-                self.tf_listener.clear()
                 userdata.error_counter += 1
                 self.traj_pick[:] = []
                 return False
 
-            if self.planning_method == "cartesian_linear" or self.planning_method == "cartesian_mixed":
+            if userdata.planning_method == "cartesian_linear" or userdata.planning_method == "cartesian_mixed":
 
                 (traj_lift, frac_lift) = self.planer.compute_cartesian_path([lift_pose.pose], self.eef_step,
                                                                             self.jump_threshold, True)
@@ -999,7 +1023,8 @@ class PlanningAndExecution(smach.State):
                     userdata.error_counter += 1
                     self.traj_pick[:] = []
                     return False
-            elif self.planning_method == "cartesian":
+
+            elif userdata.planning_method == "cartesian":
 
                 self.planer.clear_pose_targets()
                 self.planer.set_pose_target(lift_pose.pose, self.planer.get_end_effector_link())
@@ -1021,6 +1046,8 @@ class PlanningAndExecution(smach.State):
 
             userdata.cs_position = "goal"
             userdata.error_counter = 0
+            userdata.cs_orientation[2] = 0.0
+
             rospy.loginfo("Pick planning complete")
             return False
 
@@ -1029,6 +1056,7 @@ class PlanningAndExecution(smach.State):
             if not self.cs_ready:
                 rospy.logwarn("Target coordinate system not ready")
                 self.cs_ready = True
+                rospy.sleep(0.05)
                 return False
 
             # -------------------- PLACE --------------------
@@ -1099,7 +1127,7 @@ class PlanningAndExecution(smach.State):
                 self.traj_place[:] = []
                 return False
 
-            if self.planning_method == "cartesian_linear":
+            if userdata.planning_method == "cartesian_linear":
 
                 way_move = []
 
@@ -1138,7 +1166,8 @@ class PlanningAndExecution(smach.State):
                     userdata.error_counter += 1
                     self.traj_place[:] = []
                     return False
-            elif self.planning_method == "cartesian" or self.planning_method == "cartesian_mixed":
+
+            elif userdata.planning_method == "cartesian" or userdata.planning_method == "cartesian_mixed":
                 self.planer.clear_pose_targets()
                 self.planer.set_pose_target(move_pose.pose, self.planer.get_end_effector_link())
 
@@ -1208,7 +1237,7 @@ class PlanningAndExecution(smach.State):
                 self.traj_place[:] = []
                 return False
 
-            if self.planning_method == "cartesian_linear" or self.planning_method == "cartesian_mixed":
+            if userdata.planning_method == "cartesian_linear" or userdata.planning_method == "cartesian_mixed":
 
                 (traj_drop, frac_drop) = self.planer.compute_cartesian_path([drop_pose.pose], self.eef_step,
                                                                             self.jump_threshold, True)
@@ -1225,7 +1254,8 @@ class PlanningAndExecution(smach.State):
                     userdata.error_counter += 1
                     self.traj_place[:] = []
                     return False
-            elif self.planning_method == "cartesian":
+
+            elif userdata.planning_method == "cartesian":
 
                 self.planer.clear_pose_targets()
                 self.planer.set_pose_target(drop_pose.pose, self.planer.get_end_effector_link())
@@ -1271,7 +1301,7 @@ class PlanningAndExecution(smach.State):
                 self.traj_place[:] = []
                 return False
 
-            if self.planning_method == "cartesian_linear" or self.planning_method == "cartesian_mixed":
+            if userdata.planning_method == "cartesian_linear" or userdata.planning_method == "cartesian_mixed":
 
                 (traj_retreat, frac_retreat) = self.planer.compute_cartesian_path([retreat_pose.pose], self.eef_step,
                                                                                   self.jump_threshold, True)
@@ -1288,7 +1318,8 @@ class PlanningAndExecution(smach.State):
                     userdata.error_counter += 1
                     self.traj_place[:] = []
                     return False
-            elif self.planning_method == "cartesian":
+
+            elif userdata.planning_method == "cartesian":
 
                 self.planer.clear_pose_targets()
                 self.planer.set_pose_target(retreat_pose.pose, self.planer.get_end_effector_link())
@@ -1329,23 +1360,23 @@ class PlanningAndExecution(smach.State):
 
         # ----------- EXECUTE -----------
         rospy.loginfo("---- Start execution ----")
-        rospy.loginfo("-- Approach --")
+        rospy.loginfo("------- Approach -------")
         self.planer.execute(computed_trajectories[0])
         # self.move_gripper("gripper_" + userdata.active_arm, "open")
-        rospy.loginfo("-- Grasp --")
+        rospy.loginfo("-------- Grasp --------")
         self.planer.execute(computed_trajectories[1])
         # self.move_gripper("gripper_" + userdata.active_arm, "close")
-        rospy.loginfo("-- Lift --")
+        rospy.loginfo("-------- Lift --------")
         self.planer.execute(computed_trajectories[2])
-        rospy.loginfo("-- Move --")
+        rospy.loginfo("-------- Move --------")
         self.planer.execute(computed_trajectories[3])
-        rospy.loginfo("-- Drop --")
+        rospy.loginfo("-------- Drop --------")
         self.planer.execute(computed_trajectories[4])
         # self.move_gripper("gripper_" + userdata.active_arm, "open")
-        rospy.loginfo("-- Retreat --")
+        rospy.loginfo("------- Retreat -------")
         self.planer.execute(computed_trajectories[5])
         # self.move_gripper("gripper_" + userdata.active_arm, "close")
-        rospy.loginfo("---- Execution finished ----")
+        rospy.loginfo("- Execution finished -")
 
         # ----------- CLEAR TRAJECTORY LIST -----------
         computed_trajectories[:] = []
@@ -1358,6 +1389,73 @@ class PlanningAndExecution(smach.State):
         return True
 
     def plan_and_move_joint(self, userdata):
+
+        # -------------------- PICK --------------------
+        # ----------- APPROACH -----------
+        self.traj_name = "approach"
+        traj_approach = RobotTrajectory()
+        start_state = RobotState()
+
+        start_state.joint_state.name = self.joint_names[userdata.active_arm]
+        start_state.joint_state.position = self.planer.get_current_joint_values()
+        start_state.attached_collision_objects[:] = []
+        start_state.is_diff = True
+        self.planer.set_start_state(start_state)
+
+        self.planer.clear_pose_targets()
+        self.planer.set_joint_value_target(userdata.arm_positions[userdata.active_arm]["joints"][0])
+
+        try:
+            plan = self.planer.plan()
+            plan = smooth_cartesian_path(plan)
+            plan = fix_velocities(plan)
+        except (ValueError, IndexError, AttributeError):
+            userdata.error_message = "Error: " + str(AttributeError)
+            userdata.error_counter += 1
+            return False
+
+        for i in xrange(self.state, len(userdata.arm_positions[userdata.active_arm]["joints"])):
+            self.planer.set_start_state_to_current_state()
+            self.planer.clear_pose_targets()
+            self.planer.set_joint_value_target(userdata.arm_positions[userdata.active_arm]["joints"][i])
+
+            try:
+                plan = self.planer.plan()
+                plan = smooth_cartesian_path(plan)
+                plan = fix_velocities(plan)
+            except (ValueError, IndexError, AttributeError):
+                userdata.error_message = "Error: " + str(AttributeError)
+                userdata.error_counter += 1
+                self.state = i
+                return False
+
+            else:
+                self.plan_list.append(plan)
+
+        # ----------- EXECUTE -----------
+        rospy.loginfo("---- Start execution ----")
+        rospy.loginfo("------- Approach -------")
+        self.planer.execute(self.plan_list[0])
+        # self.move_gripper("gripper_" + userdata.active_arm, "open")
+        rospy.loginfo("-------- Grasp --------")
+        self.planer.execute(self.plan_list[1])
+        # self.move_gripper("gripper_" + userdata.active_arm, "close")
+        rospy.loginfo("-------- Lift --------")
+        self.planer.execute(self.plan_list[2])
+        rospy.loginfo("-------- Move --------")
+        self.planer.execute(self.plan_list[3])
+        rospy.loginfo("-------- Drop --------")
+        self.planer.execute(self.plan_list[4])
+        # self.move_gripper("gripper_" + userdata.active_arm, "open")
+        rospy.loginfo("------- Retreat -------")
+        self.planer.execute(self.plan_list[5])
+        # self.move_gripper("gripper_" + userdata.active_arm, "close")
+        rospy.loginfo("- Execution finished -")
+
+        # ----------- CLEAR TRAJECTORY LIST -----------
+        self.plan_list[:] = []
+        self.state = 0
+
         return True
 
     @staticmethod
@@ -1408,10 +1506,12 @@ class SwitchArm(smach.State):
             if userdata.active_arm == "left":
                 userdata.active_arm = "right"
                 userdata.cs_orientation[3] = 1.0
+                userdata.cs_orientation[0] = 0.0
 
             elif userdata.active_arm == "right":
                 userdata.active_arm = "left"
                 userdata.cs_orientation[3] = -1.0
+                userdata.cs_orientation[0] = math.pi
 
             userdata.cs_position = "start"
             userdata.cs_orientation[2] = 0.0
@@ -1423,21 +1523,27 @@ class SwitchTargets(smach.State):
     def __init__(self):
         smach.State.__init__(self,
                              outcomes=['succeeded'],
-                             input_keys=['arm_positions', 'active_arm'],
+                             input_keys=['arm_positions', 'active_arm', 'planning_method'],
                              output_keys=['arm_positions'])
 
     def execute(self, userdata):
-        (userdata.arm_positions["right"]["start"], userdata.arm_positions["right"]["goal"]) =\
-            self.switch_values(userdata.arm_positions["right"]["start"],
-                               userdata.arm_positions["right"]["goal"])
-        (userdata.arm_positions["left"]["start"], userdata.arm_positions["left"]["goal"]) =\
-            self.switch_values(userdata.arm_positions["left"]["start"],
-                               userdata.arm_positions["left"]["goal"])
+        if userdata.planning_method != "joint":
+            (userdata.arm_positions["right"]["start"], userdata.arm_positions["right"]["goal"]) =\
+                self.switch_values(userdata.arm_positions["right"]["start"],
+                                   userdata.arm_positions["right"]["goal"])
+            (userdata.arm_positions["left"]["start"], userdata.arm_positions["left"]["goal"]) =\
+                self.switch_values(userdata.arm_positions["left"]["start"],
+                                   userdata.arm_positions["left"]["goal"])
 
-        userdata.arm_positions["right"]["waypoints"] = \
-            list(reversed(sorted(userdata.arm_positions["right"]["waypoints"])))
-        userdata.arm_positions["left"]["waypoints"] = \
-            list(reversed(sorted(userdata.arm_positions["left"]["waypoints"])))
+            userdata.arm_positions["right"]["waypoints"] = \
+                list(reversed(sorted(userdata.arm_positions["right"]["waypoints"])))
+            userdata.arm_positions["left"]["waypoints"] = \
+                list(reversed(sorted(userdata.arm_positions["left"]["waypoints"])))
+        else:
+            userdata.arm_positions["right"]["joints"] = \
+                list(reversed(sorted(userdata.arm_positions["right"]["joints"])))
+            userdata.arm_positions["left"]["joints"] = \
+                list(reversed(sorted(userdata.arm_positions["left"]["joints"])))
         return "succeeded"
 
     @staticmethod
@@ -1465,6 +1571,7 @@ class SM(smach.StateMachine):
         smach.StateMachine.__init__(self, outcomes=['ended'])
 
         self.userdata.active_arm = rospy.get_param(str(rospy.get_name()) + "/arm")
+        self.userdata.planning_method = rospy.get_param(str(rospy.get_name()) + "/planning_method")
         self.userdata.switch_arm = bool
         self.userdata.cs_position = "start"
         self.userdata.manipulation_options = {"lift_height": float,
@@ -1491,10 +1598,11 @@ class SM(smach.StateMachine):
         # ---- OBJECT DIMENSIONS ----
         self.userdata.object = [float]*3  # Diameter in x, diameter in y, height
 
-        # ---- TF BROADCASTER ----
-        self.tf_listener = tf.TransformListener()
-        self.br = tf.TransformBroadcaster()
-        rospy.Timer(rospy.Duration.from_sec(0.01), self.broadcast_tf)
+        if self.userdata.planning_method != "joint":
+            # ---- TF BROADCASTER ----
+            self.tf_listener = tf.TransformListener()
+            self.br = tf.TransformBroadcaster()
+            rospy.Timer(rospy.Duration.from_sec(0.01), self.broadcast_tf)
 
         # ---- DYNAMIC RECONFIGURE SERVER ---
         Server(parameterConfig, self.dynrec_callback)
