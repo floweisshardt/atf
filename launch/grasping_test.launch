@@ -3,14 +3,19 @@
 
     <node name="grasping_test" pkg="cob_grasping" type="grasping_test.py" output="screen">
         <param name="scene" value="table" />
+        <param name="arm" value="right" />
         <param name="switch_arm" value="True" />
         <param name="wait_for_user" value="True" />
         <rosparam param="object_dimensions">
             [0.02, 0.02, 0.1]
         </rosparam>
+        <!-- <param name="load_obstacles" value="all, none, wall_r, wall_l" /> -->
+        <param name="load_obstacles" value="wall_r" />
         <param name="eef_step" value="0.01" />
         <param name="jump_threshold" value="2" />
         <param name="planer_id" value="LBKPIECEkConfigDefault" />
+        <!-- <param name="planning_method" value="cartesian_linear, cartesian_mixed, cartesian, joint" /> -->
+        <param name="planning_method" value="cartesian" />
     </node>
 
 </launch>

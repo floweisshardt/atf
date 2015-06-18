@@ -155,6 +155,7 @@ class SceneManager(smach.State):
         self.switch_arm = rospy.get_param(str(rospy.get_name()) + "/switch_arm")
         self.wait_for_user = rospy.get_param(str(rospy.get_name()) + "/wait_for_user")
         self.object_dimensions = rospy.get_param(str(rospy.get_name()) + "/object_dimensions")
+        self.spawn_obstacles = rospy.get_param(str(rospy.get_name()) + "/load_obstacles")
 
         self.path = rospkg.RosPack().get_path("cob_grasping") + "/config/scene_config.yaml"
 
@@ -518,24 +519,41 @@ class SceneManager(smach.State):
                     q[0], q[1], q[2], q[3]]
         add_remove_object("add", copy(environment), position, "mesh")
 
-        if len(self.data[self.scenario]["environment"]["additional_obstacles"]) != 0:
+        if len(self.data[self.scenario]["environment"]["additional_obstacles"]) != 0 and self.spawn_obstacles != "none":
             for item in self.data[self.scenario]["environment"]["additional_obstacles"]:
-
-                collision_object = CollisionObject()
-                collision_object.header.stamp = rospy.Time.now()
-                collision_object.header.frame_id = "base_link"
-                collision_object.id = item["id"]
-                object_shape = SolidPrimitive()
-                object_shape.type = object_shape.BOX
-                object_shape.dimensions.append(item["size"][0])  # X
-                object_shape.dimensions.append(item["size"][1])  # Y
-                object_shape.dimensions.append(item["size"][2])  # Z
-                collision_object.primitives.append(object_shape)
-                q = quaternion_from_euler(item["orientation"][0]/180.0 * math.pi,
-                                          item["orientation"][1]/180.0 * math.pi,
-                                          item["orientation"][2]/180.0 * math.pi)
-                position = [item["position"][0], item["position"][1], item["position"][2], q[0], q[1], q[2], q[3]]
-                add_remove_object("add", collision_object, position, "primitive")
+                if self.spawn_obstacles == "all":
+                    collision_object = CollisionObject()
+                    collision_object.header.stamp = rospy.Time.now()
+                    collision_object.header.frame_id = "base_link"
+                    collision_object.id = item["id"]
+                    object_shape = SolidPrimitive()
+                    object_shape.type = object_shape.BOX
+                    object_shape.dimensions.append(item["size"][0])  # X
+                    object_shape.dimensions.append(item["size"][1])  # Y
+                    object_shape.dimensions.append(item["size"][2])  # Z
+                    collision_object.primitives.append(object_shape)
+                    q = quaternion_from_euler(item["orientation"][0]/180.0 * math.pi,
+                                              item["orientation"][1]/180.0 * math.pi,
+                                              item["orientation"][2]/180.0 * math.pi)
+                    position = [item["position"][0], item["position"][1], item["position"][2], q[0], q[1], q[2], q[3]]
+                    add_remove_object("add", collision_object, position, "primitive")
+                elif item["id"] == self.spawn_obstacles:
+                    collision_object = CollisionObject()
+                    collision_object.header.stamp = rospy.Time.now()
+                    collision_object.header.frame_id = "base_link"
+                    collision_object.id = item["id"]
+                    object_shape = SolidPrimitive()
+                    object_shape.type = object_shape.BOX
+                    object_shape.dimensions.append(item["size"][0])  # X
+                    object_shape.dimensions.append(item["size"][1])  # Y
+                    object_shape.dimensions.append(item["size"][2])  # Z
+                    collision_object.primitives.append(object_shape)
+                    q = quaternion_from_euler(item["orientation"][0]/180.0 * math.pi,
+                                              item["orientation"][1]/180.0 * math.pi,
+                                              item["orientation"][2]/180.0 * math.pi)
+                    position = [item["position"][0], item["position"][1], item["position"][2], q[0], q[1], q[2], q[3]]
+                    add_remove_object("add", collision_object, position, "primitive")
+                    break
 
         self.spawn_marker()
 
@@ -710,6 +728,7 @@ class PlanningAndExecution(smach.State):
         self.eef_step = rospy.get_param(str(rospy.get_name()) + "/eef_step")
         self.jump_threshold = rospy.get_param(str(rospy.get_name()) + "/jump_threshold")
         self.planer_id = rospy.get_param(str(rospy.get_name()) + "/planer_id")
+        self.planning_method = rospy.get_param(str(rospy.get_name()) + "/planning_method")
 
         rospy.loginfo("Set planer to: '" + str(self.planer_id) + "'")
 
@@ -717,7 +736,18 @@ class PlanningAndExecution(smach.State):
         self.traj_pick = []
         self.traj_place = []
 
+        self.joint_names = {"right": rospy.get_param("/arm_right/joint_names"),
+                            "left": rospy.get_param("/arm_left/joint_names")}
+
+        self.cs_ready = False
+
     def execute(self, userdata):
+
+        if userdata.active_arm == "left":
+            self.planer = mgc_left
+        elif userdata.active_arm == "right":
+            self.planer = mgc_right
+        self.planer.set_planner_id(self.planer_id)
 
         if userdata.cs_orientation[2] >= 0.5 * math.pi:
             # Rotate clockwise
@@ -744,12 +774,18 @@ class PlanningAndExecution(smach.State):
             userdata.cs_position = "start"
             return "error"
 
-        if not self.plan_and_move(userdata):
+        if self.planning_method != "joint":
+            execution = self.plan_and_move_cartesian(userdata)
+        else:
+            execution = self.plan_and_move_joint(userdata)
+
+        if not execution:
             if userdata.error_counter >= userdata.error_max:
                 userdata.error_counter = 0
                 self.traj_pick[:] = []
                 self.traj_place[:] = []
                 userdata.cs_position = "start"
+                userdata.cs_orientation[2] = 0.0
                 return "error"
             else:
                 return "failed"
@@ -757,28 +793,19 @@ class PlanningAndExecution(smach.State):
         userdata.error_counter = 0
         return "succeeded"
 
-    def plan_and_move(self, userdata):
-        if userdata.active_arm == "left":
-            self.planer = mgc_left
-            self.planer.set_planner_id(self.planer_id)
-        elif userdata.active_arm == "right":
-            self.planer = mgc_right
-            self.planer.set_planner_id(self.planer_id)
-
-        # ----------- LOAD CONFIG -----------
-        (config, error_code) = sss.compose_trajectory("arm_" + userdata.active_arm, "pre_grasp")
-        if error_code != 0:
-            userdata.error_message = "Unable to parse pre_grasp configuration"
-            return "error"
+    def plan_and_move_cartesian(self, userdata):
 
         if len(self.traj_pick) < 3:
 
             # -------------------- PICK --------------------
             # ----------- APPROACH -----------
             self.traj_name = "approach"
+            traj_approach = RobotTrajectory()
             start_state = RobotState()
-            start_state.joint_state.name = config.joint_names
-            start_state.joint_state.position = config.points[0].positions
+
+            start_state.joint_state.name = self.joint_names[userdata.active_arm]
+            start_state.joint_state.position = self.planer.get_current_joint_values()
+            start_state.attached_collision_objects[:] = []
             start_state.is_diff = True
             self.planer.set_start_state(start_state)
 
@@ -787,6 +814,7 @@ class PlanningAndExecution(smach.State):
             approach_pose_offset.header.stamp = rospy.Time(0)
             approach_pose_offset.pose.position.x = -userdata.manipulation_options["approach_dist"]
             approach_pose_offset.pose.orientation.w = 1
+
             try:
                 approach_pose = self.tf_listener.transformPose("base_link", approach_pose_offset)
             except Exception, e:
@@ -796,30 +824,53 @@ class PlanningAndExecution(smach.State):
                 self.traj_pick[:] = []
                 return False
 
-            (traj_approach, frac_approach) = self.planer.compute_cartesian_path([approach_pose.pose], self.eef_step,
-                                                                                self.jump_threshold, True)
+            if self.planning_method == "cartesian_linear":
 
-            if frac_approach < 0.5:
-                rospy.logerr("Plan " + self.traj_name + ": " + str(round(frac_approach * 100, 2)) + "%")
-            elif 0.5 <= frac_approach < 1.0:
-                rospy.logwarn("Plan " + self.traj_name + ": " + str(round(frac_approach * 100, 2)) + "%")
-            else:
-                rospy.loginfo("Plan " + self.traj_name + ": " + str(round(frac_approach * 100, 2)) + "%")
+                (traj_approach, frac_approach) = self.planer.compute_cartesian_path([approach_pose.pose], self.eef_step,
+                                                                                    self.jump_threshold, True)
 
-            if not (frac_approach == 1.0):
-                userdata.error_message = "Unable to plan " + self.traj_name + " trajectory"
-                userdata.error_counter += 1
-                self.traj_pick[:] = []
-                return False
+                if frac_approach < 0.5:
+                    rospy.logerr("Plan " + self.traj_name + ": " + str(round(frac_approach * 100, 2)) + "%")
+                elif 0.5 <= frac_approach < 1.0:
+                    rospy.logwarn("Plan " + self.traj_name + ": " + str(round(frac_approach * 100, 2)) + "%")
+                else:
+                    rospy.loginfo("Plan " + self.traj_name + ": " + str(round(frac_approach * 100, 2)) + "%")
+
+                if frac_approach != 1.0:
+                    userdata.error_message = "Unable to plan " + self.traj_name + " trajectory"
+                    userdata.error_counter += 1
+                    self.traj_pick[:] = []
+                    return False
+
+            elif self.planning_method == "cartesian" or self.planning_method == "cartesian_mixed":
+
+                self.planer.clear_pose_targets()
+                self.planer.set_pose_target(approach_pose.pose, self.planer.get_end_effector_link())
+
+                try:
+                    traj_approach = self.planer.plan()
+                    traj_approach = smooth_cartesian_path(traj_approach)
+                    traj_approach = scale_joint_trajectory_speed(traj_approach, 0.3)
+                except (ValueError, IndexError):
+                    rospy.loginfo("Plan " + self.traj_name + ": failed")
+                    userdata.error_message = "Unable to plan " + self.traj_name + " trajectory"
+                    userdata.error_counter += 1
+                    self.traj_pick[:] = []
+                    return False
+                else:
+                    rospy.loginfo("Plan " + self.traj_name + ": succeeded")
 
             self.traj_pick.append(traj_approach)
 
             # ----------- GRASP -----------
             self.traj_name = "grasp"
-            traj_approach_endpoint = traj_approach.joint_trajectory.points[-1]
+            traj_grasp = RobotTrajectory()
             start_state = RobotState()
+
+            traj_approach_endpoint = traj_approach.joint_trajectory.points[-1]
             start_state.joint_state.name = traj_approach.joint_trajectory.joint_names
             start_state.joint_state.position = traj_approach_endpoint.positions
+            start_state.attached_collision_objects[:] = []
             start_state.is_diff = True
             self.planer.set_start_state(start_state)
 
@@ -837,28 +888,48 @@ class PlanningAndExecution(smach.State):
                 self.traj_pick[:] = []
                 return False
 
-            (traj_grasp, frac_grasp) = self.planer.compute_cartesian_path([grasp_pose.pose], self.eef_step,
-                                                                          self.jump_threshold, True)
+            if self.planning_method == "cartesian_linear":
+                (traj_grasp, frac_grasp) = self.planer.compute_cartesian_path([grasp_pose.pose], self.eef_step,
+                                                                              self.jump_threshold, True)
 
-            if frac_grasp < 0.5:
-                rospy.logerr("Plan " + self.traj_name + ": " + str(round(frac_grasp * 100, 2)) + "%")
-            elif 0.5 <= frac_grasp < 1.0:
-                rospy.logwarn("Plan " + self.traj_name + ": " + str(round(frac_grasp * 100, 2)) + "%")
-            else:
-                rospy.loginfo("Plan " + self.traj_name + ": " + str(round(frac_grasp * 100, 2)) + "%")
+                if frac_grasp < 0.5:
+                    rospy.logerr("Plan " + self.traj_name + ": " + str(round(frac_grasp * 100, 2)) + "%")
+                elif 0.5 <= frac_grasp < 1.0:
+                    rospy.logwarn("Plan " + self.traj_name + ": " + str(round(frac_grasp * 100, 2)) + "%")
+                else:
+                    rospy.loginfo("Plan " + self.traj_name + ": " + str(round(frac_grasp * 100, 2)) + "%")
 
-            if not (frac_grasp == 1.0):
-                userdata.error_message = "Unable to plan " + self.traj_name + " trajectory"
-                userdata.error_counter += 1
-                self.traj_pick[:] = []
-                return False
+                if frac_grasp != 1.0:
+                    userdata.error_message = "Unable to plan " + self.traj_name + " trajectory"
+                    userdata.error_counter += 1
+                    self.traj_pick[:] = []
+                    return False
+            elif self.planning_method == "cartesian" or self.planning_method == "cartesian_mixed":
+
+                self.planer.clear_pose_targets()
+                self.planer.set_pose_target(grasp_pose.pose, self.planer.get_end_effector_link())
+
+                try:
+                    traj_grasp = self.planer.plan()
+                    traj_grasp = smooth_cartesian_path(traj_grasp)
+                    traj_grasp = scale_joint_trajectory_speed(traj_grasp, 0.3)
+                except (ValueError, IndexError):
+                    rospy.loginfo("Plan " + self.traj_name + ": failed")
+                    userdata.error_message = "Unable to plan " + self.traj_name + " trajectory"
+                    userdata.error_counter += 1
+                    self.traj_pick[:] = []
+                    return False
+                else:
+                    rospy.loginfo("Plan " + self.traj_name + ": succeeded")
 
             self.traj_pick.append(traj_grasp)
 
             # ----------- LIFT -----------
             self.traj_name = "lift"
-            traj_grasp_endpoint = traj_grasp.joint_trajectory.points[-1]
+            traj_lift = RobotTrajectory()
             start_state = RobotState()
+
+            traj_grasp_endpoint = traj_grasp.joint_trajectory.points[-1]
             start_state.joint_state.name = traj_grasp.joint_trajectory.joint_names
             start_state.joint_state.position = traj_grasp_endpoint.positions
 
@@ -911,21 +982,40 @@ class PlanningAndExecution(smach.State):
                 self.traj_pick[:] = []
                 return False
 
-            (traj_lift, frac_lift) = self.planer.compute_cartesian_path([lift_pose.pose], self.eef_step,
-                                                                        self.jump_threshold, True)
+            if self.planning_method == "cartesian_linear" or self.planning_method == "cartesian_mixed":
 
-            if frac_lift < 0.5:
-                rospy.logerr("Plan " + self.traj_name + ": " + str(round(frac_lift * 100, 2)) + "%")
-            elif 0.5 <= frac_lift < 1.0:
-                rospy.logwarn("Plan " + self.traj_name + ": " + str(round(frac_lift * 100, 2)) + "%")
-            else:
-                rospy.loginfo("Plan " + self.traj_name + ": " + str(round(frac_lift * 100, 2)) + "%")
+                (traj_lift, frac_lift) = self.planer.compute_cartesian_path([lift_pose.pose], self.eef_step,
+                                                                            self.jump_threshold, True)
 
-            if not (frac_lift == 1.0):
-                userdata.error_message = "Unable to plan " + self.traj_name + " trajectory"
-                userdata.error_counter += 1
-                self.traj_pick[:] = []
-                return False
+                if frac_lift < 0.5:
+                    rospy.logerr("Plan " + self.traj_name + ": " + str(round(frac_lift * 100, 2)) + "%")
+                elif 0.5 <= frac_lift < 1.0:
+                    rospy.logwarn("Plan " + self.traj_name + ": " + str(round(frac_lift * 100, 2)) + "%")
+                else:
+                    rospy.loginfo("Plan " + self.traj_name + ": " + str(round(frac_lift * 100, 2)) + "%")
+
+                if frac_lift != 1.0:
+                    userdata.error_message = "Unable to plan " + self.traj_name + " trajectory"
+                    userdata.error_counter += 1
+                    self.traj_pick[:] = []
+                    return False
+            elif self.planning_method == "cartesian":
+
+                self.planer.clear_pose_targets()
+                self.planer.set_pose_target(lift_pose.pose, self.planer.get_end_effector_link())
+
+                try:
+                    traj_lift = self.planer.plan()
+                    traj_lift = smooth_cartesian_path(traj_lift)
+                    traj_lift = scale_joint_trajectory_speed(traj_lift, 0.3)
+                except (ValueError, IndexError):
+                    rospy.loginfo("Plan " + self.traj_name + ": failed")
+                    userdata.error_message = "Unable to plan " + self.traj_name + " trajectory"
+                    userdata.error_counter += 1
+                    self.traj_pick[:] = []
+                    return False
+                else:
+                    rospy.loginfo("Plan " + self.traj_name + ": succeeded")
 
             self.traj_pick.append(traj_lift)
 
@@ -935,14 +1025,23 @@ class PlanningAndExecution(smach.State):
             return False
 
         else:
+
+            if not self.cs_ready:
+                rospy.logwarn("Target coordinate system not ready")
+                self.cs_ready = True
+                return False
+
             # -------------------- PLACE --------------------
             # ----------- MOVE -----------
             self.traj_name = "move"
+            traj_move = RobotTrajectory()
+
             try:
                 traj_lift_endpoint = self.traj_pick[2].joint_trajectory.points[-1]
             except AttributeError:
                 self.traj_pick[:] = []
                 self.traj_place[:] = []
+                userdata.cs_position = "start"
                 userdata.error_message = "Error: " + str(AttributeError)
                 userdata.error_counter += 1
                 return False
@@ -950,6 +1049,35 @@ class PlanningAndExecution(smach.State):
             start_state = RobotState()
             start_state.joint_state.name = self.traj_pick[2].joint_trajectory.joint_names
             start_state.joint_state.position = traj_lift_endpoint.positions
+
+            # Attach object
+            object_shape = SolidPrimitive()
+            object_shape.type = object_shape.CYLINDER
+            object_shape.dimensions.append(userdata.object[2])  # Height
+            object_shape.dimensions.append(userdata.object[0]*0.5)  # Radius
+
+            object_pose = Pose()
+            object_pose.orientation.w = 1.0
+
+            object_collision = CollisionObject()
+            object_collision.header.frame_id = "gripper_" + userdata.active_arm + "_grasp_link"
+            object_collision.id = "object"
+            object_collision.primitives.append(object_shape)
+            object_collision.primitive_poses.append(object_pose)
+            object_collision.operation = CollisionObject.ADD
+
+            object_attached = AttachedCollisionObject()
+            object_attached.link_name = "gripper_" + userdata.active_arm + "_grasp_link"
+            object_attached.object = object_collision
+            object_attached.touch_links = ["gripper_" + userdata.active_arm + "_base_link",
+                                           "gripper_" + userdata.active_arm + "_camera_link",
+                                           "gripper_" + userdata.active_arm + "_finger_1_link",
+                                           "gripper_" + userdata.active_arm + "_finger_2_link",
+                                           "gripper_" + userdata.active_arm + "_grasp_link",
+                                           "gripper_" + userdata.active_arm + "_palm_link"]
+
+            start_state.attached_collision_objects.append(object_attached)
+
             start_state.is_diff = True
             self.planer.set_start_state(start_state)
 
@@ -971,58 +1099,101 @@ class PlanningAndExecution(smach.State):
                 self.traj_place[:] = []
                 return False
 
-            way_move = []
+            if self.planning_method == "cartesian_linear":
 
-            if len(userdata.arm_positions[userdata.active_arm]["waypoints"]) != 0:
-                for item in userdata.arm_positions[userdata.active_arm]["waypoints"]:
-                    wpose_offset = PoseStamped()
-                    wpose_offset.header.frame_id = "current_object"
-                    wpose_offset.header.stamp = rospy.Time(0)
-                    wpose_offset.pose.orientation.w = 1
+                way_move = []
 
-                    try:
-                        wpose = self.tf_listener.transformPose("base_link", wpose_offset)
-                    except Exception, e:
-                        userdata.error_message = "Could not transform pose. Exception: " + str(e)
-                        userdata.error_counter += 1
-                        self.traj_place[:] = []
-                        return False
+                if len(userdata.arm_positions[userdata.active_arm]["waypoints"]) != 0:
+                    for item in userdata.arm_positions[userdata.active_arm]["waypoints"]:
+                        wpose_offset = PoseStamped()
+                        wpose_offset.header.frame_id = "current_object"
+                        wpose_offset.header.stamp = rospy.Time(0)
+                        wpose_offset.pose.orientation.w = 1
 
-                    wpose.pose.position = item
-                    way_move.append(wpose.pose)
+                        try:
+                            wpose = self.tf_listener.transformPose("base_link", wpose_offset)
+                        except Exception, e:
+                            userdata.error_message = "Could not transform pose. Exception: " + str(e)
+                            userdata.error_counter += 1
+                            self.traj_place[:] = []
+                            return False
 
-            way_move.append(move_pose.pose)
+                        wpose.pose.position = item
+                        way_move.append(wpose.pose)
 
-            (traj_move, frac_move) = self.planer.compute_cartesian_path(way_move, self.eef_step, self.jump_threshold,
-                                                                        True)
+                way_move.append(move_pose.pose)
 
-            if frac_move < 0.5:
-                rospy.logerr("Plan " + self.traj_name + ": " + str(round(frac_move * 100, 2)) + "%")
-            elif 0.5 <= frac_move < 1.0:
-                rospy.logwarn("Plan " + self.traj_name + ": " + str(round(frac_move * 100, 2)) + "%")
-            else:
-                rospy.loginfo("Plan " + self.traj_name + ": " + str(round(frac_move * 100, 2)) + "%")
+                (traj_move, frac_move) = self.planer.compute_cartesian_path(way_move, self.eef_step,
+                                                                            self.jump_threshold, True)
 
-            if not (frac_move == 1.0):
-                userdata.error_message = "Unable to plan " + self.traj_name + " trajectory"
-                userdata.error_counter += 1
-                self.traj_place[:] = []
-                return False
+                if frac_move < 0.5:
+                    rospy.logerr("Plan " + self.traj_name + ": " + str(round(frac_move * 100, 2)) + "%")
+                elif 0.5 <= frac_move < 1.0:
+                    rospy.logwarn("Plan " + self.traj_name + ": " + str(round(frac_move * 100, 2)) + "%")
+                else:
+                    rospy.loginfo("Plan " + self.traj_name + ": " + str(round(frac_move * 100, 2)) + "%")
 
-            if len(traj_move.joint_trajectory.points) < 15:
-                rospy.logerr("Computed trajectory is too short. Replanning...")
-                userdata.error_counter += 1
-                self.traj_place[:] = []
-                return False
+                if frac_move != 1.0:
+                    userdata.error_message = "Unable to plan " + self.traj_name + " trajectory"
+                    userdata.error_counter += 1
+                    self.traj_place[:] = []
+                    return False
+            elif self.planning_method == "cartesian" or self.planning_method == "cartesian_mixed":
+                self.planer.clear_pose_targets()
+                self.planer.set_pose_target(move_pose.pose, self.planer.get_end_effector_link())
+
+                try:
+                    traj_move = self.planer.plan()
+                    traj_move = smooth_cartesian_path(traj_move)
+                    traj_move = scale_joint_trajectory_speed(traj_move, 0.3)
+                except (ValueError, IndexError):
+                    rospy.loginfo("Plan " + self.traj_name + ": failed")
+                    userdata.error_message = "Unable to plan " + self.traj_name + " trajectory"
+                    userdata.error_counter += 1
+                    self.traj_place[:] = []
+                    return False
+                else:
+                    rospy.loginfo("Plan " + self.traj_name + ": succeeded")
 
             self.traj_place.append(traj_move)
 
             # ----------- DROP -----------
             self.traj_name = "drop"
-            traj_move_endpoint = traj_move.joint_trajectory.points[-1]
+            traj_drop = RobotTrajectory()
             start_state = RobotState()
+
+            traj_move_endpoint = traj_move.joint_trajectory.points[-1]
             start_state.joint_state.name = traj_move.joint_trajectory.joint_names
             start_state.joint_state.position = traj_move_endpoint.positions
+
+            # Attach object
+            object_shape = SolidPrimitive()
+            object_shape.type = object_shape.CYLINDER
+            object_shape.dimensions.append(userdata.object[2])  # Height
+            object_shape.dimensions.append(userdata.object[0]*0.5)  # Radius
+
+            object_pose = Pose()
+            object_pose.orientation.w = 1.0
+
+            object_collision = CollisionObject()
+            object_collision.header.frame_id = "gripper_" + userdata.active_arm + "_grasp_link"
+            object_collision.id = "object"
+            object_collision.primitives.append(object_shape)
+            object_collision.primitive_poses.append(object_pose)
+            object_collision.operation = CollisionObject.ADD
+
+            object_attached = AttachedCollisionObject()
+            object_attached.link_name = "gripper_" + userdata.active_arm + "_grasp_link"
+            object_attached.object = object_collision
+            object_attached.touch_links = ["gripper_" + userdata.active_arm + "_base_link",
+                                           "gripper_" + userdata.active_arm + "_camera_link",
+                                           "gripper_" + userdata.active_arm + "_finger_1_link",
+                                           "gripper_" + userdata.active_arm + "_finger_2_link",
+                                           "gripper_" + userdata.active_arm + "_grasp_link",
+                                           "gripper_" + userdata.active_arm + "_palm_link"]
+
+            start_state.attached_collision_objects.append(object_attached)
+
             start_state.is_diff = True
             self.planer.set_start_state(start_state)
 
@@ -1037,28 +1208,49 @@ class PlanningAndExecution(smach.State):
                 self.traj_place[:] = []
                 return False
 
-            (traj_drop, frac_drop) = self.planer.compute_cartesian_path([drop_pose.pose], self.eef_step,
-                                                                        self.jump_threshold, True)
+            if self.planning_method == "cartesian_linear" or self.planning_method == "cartesian_mixed":
 
-            if frac_drop < 0.5:
-                rospy.logerr("Plan " + self.traj_name + ": " + str(round(frac_drop * 100, 2)) + "%")
-            elif 0.5 <= frac_drop < 1.0:
-                rospy.logwarn("Plan " + self.traj_name + ": " + str(round(frac_drop * 100, 2)) + "%")
-            else:
-                rospy.loginfo("Plan " + self.traj_name + ": " + str(round(frac_drop * 100, 2)) + "%")
+                (traj_drop, frac_drop) = self.planer.compute_cartesian_path([drop_pose.pose], self.eef_step,
+                                                                            self.jump_threshold, True)
 
-            if not (frac_drop == 1.0):
-                userdata.error_message = "Unable to plan " + self.traj_name + " trajectory"
-                userdata.error_counter += 1
-                self.traj_place[:] = []
-                return False
+                if frac_drop < 0.5:
+                    rospy.logerr("Plan " + self.traj_name + ": " + str(round(frac_drop * 100, 2)) + "%")
+                elif 0.5 <= frac_drop < 1.0:
+                    rospy.logwarn("Plan " + self.traj_name + ": " + str(round(frac_drop * 100, 2)) + "%")
+                else:
+                    rospy.loginfo("Plan " + self.traj_name + ": " + str(round(frac_drop * 100, 2)) + "%")
+
+                if frac_drop != 1.0:
+                    userdata.error_message = "Unable to plan " + self.traj_name + " trajectory"
+                    userdata.error_counter += 1
+                    self.traj_place[:] = []
+                    return False
+            elif self.planning_method == "cartesian":
+
+                self.planer.clear_pose_targets()
+                self.planer.set_pose_target(drop_pose.pose, self.planer.get_end_effector_link())
+
+                try:
+                    traj_drop = self.planer.plan()
+                    traj_drop = smooth_cartesian_path(traj_drop)
+                    traj_drop = scale_joint_trajectory_speed(traj_drop, 0.3)
+                except (ValueError, IndexError):
+                    rospy.loginfo("Plan " + self.traj_name + ": failed")
+                    userdata.error_message = "Unable to plan " + self.traj_name + " trajectory"
+                    userdata.error_counter += 1
+                    self.traj_place[:] = []
+                    return False
+                else:
+                    rospy.loginfo("Plan " + self.traj_name + ": succeeded")
 
             self.traj_place.append(traj_drop)
 
             # ----------- RETREAT -----------
             self.traj_name = "retreat"
-            traj_drop_endpoint = traj_drop.joint_trajectory.points[-1]
+            traj_retreat = RobotTrajectory()
             start_state = RobotState()
+
+            traj_drop_endpoint = traj_drop.joint_trajectory.points[-1]
             start_state.joint_state.name = traj_drop.joint_trajectory.joint_names
             start_state.joint_state.position = traj_drop_endpoint.positions
             start_state.attached_collision_objects[:] = []
@@ -1070,6 +1262,7 @@ class PlanningAndExecution(smach.State):
             retreat_pose_offset.header.stamp = rospy.Time(0)
             retreat_pose_offset.pose.position.x = -userdata.manipulation_options["approach_dist"]
             retreat_pose_offset.pose.orientation.w = 1
+
             try:
                 retreat_pose = self.tf_listener.transformPose("base_link", retreat_pose_offset)
             except Exception, e:
@@ -1078,21 +1271,40 @@ class PlanningAndExecution(smach.State):
                 self.traj_place[:] = []
                 return False
 
-            (traj_retreat, frac_retreat) = self.planer.compute_cartesian_path([retreat_pose.pose], self.eef_step,
-                                                                              self.jump_threshold, True)
+            if self.planning_method == "cartesian_linear" or self.planning_method == "cartesian_mixed":
 
-            if frac_retreat < 0.5:
-                rospy.logerr("Plan " + self.traj_name + ": " + str(round(frac_retreat * 100, 2)) + "%")
-            elif 0.5 <= frac_retreat < 1.0:
-                rospy.logwarn("Plan " + self.traj_name + ": " + str(round(frac_retreat * 100, 2)) + "%")
-            else:
-                rospy.loginfo("Plan " + self.traj_name + ": " + str(round(frac_retreat * 100, 2)) + "%")
+                (traj_retreat, frac_retreat) = self.planer.compute_cartesian_path([retreat_pose.pose], self.eef_step,
+                                                                                  self.jump_threshold, True)
 
-            if not (frac_retreat == 1.0):
-                userdata.error_message = "Unable to plan " + self.traj_name + " trajectory"
-                userdata.error_counter += 1
-                self.traj_place[:] = []
-                return False
+                if frac_retreat < 0.5:
+                    rospy.logerr("Plan " + self.traj_name + ": " + str(round(frac_retreat * 100, 2)) + "%")
+                elif 0.5 <= frac_retreat < 1.0:
+                    rospy.logwarn("Plan " + self.traj_name + ": " + str(round(frac_retreat * 100, 2)) + "%")
+                else:
+                    rospy.loginfo("Plan " + self.traj_name + ": " + str(round(frac_retreat * 100, 2)) + "%")
+
+                if frac_retreat != 1.0:
+                    userdata.error_message = "Unable to plan " + self.traj_name + " trajectory"
+                    userdata.error_counter += 1
+                    self.traj_place[:] = []
+                    return False
+            elif self.planning_method == "cartesian":
+
+                self.planer.clear_pose_targets()
+                self.planer.set_pose_target(retreat_pose.pose, self.planer.get_end_effector_link())
+
+                try:
+                    traj_retreat = self.planer.plan()
+                    traj_retreat = smooth_cartesian_path(traj_retreat)
+                    traj_retreat = scale_joint_trajectory_speed(traj_retreat, 0.3)
+                except (ValueError, IndexError):
+                    rospy.loginfo("Plan " + self.traj_name + ": failed")
+                    userdata.error_message = "Unable to plan " + self.traj_name + " trajectory"
+                    userdata.error_counter += 1
+                    self.traj_place[:] = []
+                    return False
+                else:
+                    rospy.loginfo("Plan " + self.traj_name + ": succeeded")
 
             self.traj_place.append(traj_retreat)
 
@@ -1117,20 +1329,20 @@ class PlanningAndExecution(smach.State):
 
         # ----------- EXECUTE -----------
         rospy.loginfo("---- Start execution ----")
-        rospy.loginfo("Approach")
+        rospy.loginfo("-- Approach --")
         self.planer.execute(computed_trajectories[0])
         # self.move_gripper("gripper_" + userdata.active_arm, "open")
-        rospy.loginfo("Grasp")
+        rospy.loginfo("-- Grasp --")
         self.planer.execute(computed_trajectories[1])
         # self.move_gripper("gripper_" + userdata.active_arm, "close")
-        rospy.loginfo("Lift")
+        rospy.loginfo("-- Lift --")
         self.planer.execute(computed_trajectories[2])
-        rospy.loginfo("Move")
+        rospy.loginfo("-- Move --")
         self.planer.execute(computed_trajectories[3])
-        rospy.loginfo("Drop")
+        rospy.loginfo("-- Drop --")
         self.planer.execute(computed_trajectories[4])
         # self.move_gripper("gripper_" + userdata.active_arm, "open")
-        rospy.loginfo("Retreat")
+        rospy.loginfo("-- Retreat --")
         self.planer.execute(computed_trajectories[5])
         # self.move_gripper("gripper_" + userdata.active_arm, "close")
         rospy.loginfo("---- Execution finished ----")
@@ -1141,7 +1353,11 @@ class PlanningAndExecution(smach.State):
         self.traj_place[:] = []
 
         userdata.cs_position = "start"
+        self.cs_ready = False
 
+        return True
+
+    def plan_and_move_joint(self, userdata):
         return True
 
     @staticmethod
@@ -1248,17 +1464,17 @@ class SM(smach.StateMachine):
 
         smach.StateMachine.__init__(self, outcomes=['ended'])
 
-        self.userdata.active_arm = "right"
+        self.userdata.active_arm = rospy.get_param(str(rospy.get_name()) + "/arm")
         self.userdata.switch_arm = bool
         self.userdata.cs_position = "start"
         self.userdata.manipulation_options = {"lift_height": float,
                                               "approach_dist": float,
                                               "repeats": int}
 
-        self.userdata.cs_orientation = [0.0,  # roll (x)
-                                        0.0,  # pitch (y)
-                                        0.0,  # yaw (z)
-                                        1.0]  # direction for rotation
+        self.userdata.cs_orientation = [0.0,  # Roll (x)
+                                        0.0,  # Pitch (y)
+                                        0.0,  # Yaw (z)
+                                        1.0]  # Direction for rotation
 
         # ---- ARM-POSITIONS ----
         self.userdata.arm_positions = {"right": {"start": Point(),
@@ -1273,7 +1489,7 @@ class SM(smach.StateMachine):
         self.userdata.error_counter = 0
 
         # ---- OBJECT DIMENSIONS ----
-        self.userdata.object = [float]*3  # diameter in x, diameter in y, height
+        self.userdata.object = [float]*3  # Diameter in x, diameter in y, height
 
         # ---- TF BROADCASTER ----
         self.tf_listener = tf.TransformListener()
