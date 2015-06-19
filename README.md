@@ -12,17 +12,18 @@ Various options are available via rosparam in grasping_test.launch:
 - eef_step: Sets the step width for the endefector in motion planning
 - jump_threshold: Sets the jump threshold in motion planning
 - planer_id: Sets the id of the planer witch will be used for motion planning.
-             Options: - SBLkConfigDefault
-                      - ESTkConfigDefault
-                      - LBKPIECEkConfigDefault
-                      - BKPIECEkConfigDefault
-                      - KPIECEkConfigDefault
-                      - RRTkConfigDefault
-                      - RRTConnectkConfigDefault
-                      - RRTstarkConfigDefault
-                      - TRRTkConfigDefault
-                      - PRMkConfigDefault
-                      - PRMstarkConfigDefault
+  Options:
+    - SBLkConfigDefault
+    - ESTkConfigDefault
+    - LBKPIECEkConfigDefault
+    - BKPIECEkConfigDefault
+    - KPIECEkConfigDefault
+    - RRTkConfigDefault
+    - RRTConnectkConfigDefault
+    - RRTstarkConfigDefault
+    - TRRTkConfigDefault
+    - PRMkConfigDefault
+    - PRMstarkConfigDefault
 - planning_method: Sets the planning method for the targets. Options: "cartesian_linear, cartesian_mixed, cartesian, joint"
 - joint_trajectory_speed: Sets the endeffector speed for joint trajectories
 - max_error: Defines how many errors can be raised untill the program stops
