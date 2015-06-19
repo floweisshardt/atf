@@ -12,8 +12,7 @@ Various options are available via rosparam in grasping_test.launch:
 - wait_for_user: Defines if the program should wait for the user to start the manipulation or not. Options:
   - True
   - False
-- object_dimensions: Sets the dimensions of the object which should be manipulated
-                     Use: [diameter in x, diameter in y, height]
+- object_dimensions: Sets the dimensions of the object which should be manipulated. Use: [diameter in x, diameter in y, height]
 - load_obstacles: If additionl objects are defined in the scene_config.yaml file they can be loaded explicitly. Options:
   - all
   - none
