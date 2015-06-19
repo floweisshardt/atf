@@ -15,8 +15,6 @@ from shape_msgs.msg import MeshTriangle, Mesh, SolidPrimitive
 from interactive_markers.interactive_marker_server import *
 from interactive_markers.menu_handler import *
 from visualization_msgs.msg import InteractiveMarkerControl, Marker
-from dynamic_reconfigure.server import Server
-from cob_grasping.cfg import parameterConfig
 
 from simple_script_server import *
 
@@ -171,7 +169,6 @@ class SceneManager(smach.State):
         # ---- LOAD SCENE DATA ----
         self.data = self.load_data(self.path)
         self.positions_changed = False
-        self.environment_changed = False
 
         # ---- BUILD MENU ----
         self.menu_handler.insert("Start execution", callback=self.start_planning)
@@ -194,12 +191,9 @@ class SceneManager(smach.State):
         # --- WAYPOINT MENU ---
         if self.use_waypoints:
             wp_entry = self.menu_handler.insert("Waypoints")
-            self.menu_handler.insert("Delete waypoint", parent=wp_entry, callback=self.delete_waypoint)
-            self.wp_arm_right = self.menu_handler.insert("Arm right", parent=wp_entry)
-            self.menu_handler.insert("Add waypoint", parent=self.wp_arm_right, callback=self.add_waypoint_right)
-
-            self.wp_arm_left = self.menu_handler.insert("Arm left", parent=wp_entry)
-            self.menu_handler.insert("Add waypoint", parent=self.wp_arm_left, callback=self.add_waypoint_left)
+            self.menu_handler.insert("Add waypoint for right arm", parent=wp_entry, callback=self.add_waypoint)
+            self.menu_handler.insert("Add waypoint for left arm", parent=wp_entry, callback=self.add_waypoint)
+            self.menu_handler.insert("Delete selected waypoint", parent=wp_entry, callback=self.delete_waypoint)
 
         # --- SWITCH ARM ---
         if self.switch_arm:
@@ -231,6 +225,7 @@ class SceneManager(smach.State):
             if len(self.data[self.scenario]["positions"]["waypoints_r"]) != 0:
                 for item in self.data[self.scenario]["positions"]["waypoints_r"]:
                     waypoints_r.append(Point(item[0], item[1], item[2]))
+
             userdata.arm_positions["right"] = {"start": Point(self.data[self.scenario]["positions"]["start_r"][0],
                                                               self.data[self.scenario]["positions"]["start_r"][1],
                                                               self.data[self.scenario]["positions"]["start_r"][2]),
@@ -244,6 +239,7 @@ class SceneManager(smach.State):
             if len(self.data[self.scenario]["positions"]["waypoints_l"]) != 0:
                 for item in self.data[self.scenario]["positions"]["waypoints_l"]:
                     waypoints_l.append(Point(item[0], item[1], item[2]))
+
             userdata.arm_positions["left"] = {"start": Point(self.data[self.scenario]["positions"]["goal_r"][0],
                                                              self.data[self.scenario]["positions"]["goal_r"][1],
                                                              self.data[self.scenario]["positions"]["goal_r"][2]),
@@ -270,10 +266,9 @@ class SceneManager(smach.State):
         userdata.switch_arm = self.switch_arm
 
         # ---- SAVE POSITIONS ----
-        if self.positions_changed or self.environment_changed:
+        if self.positions_changed:
             self.save_data(self.path)
             self.positions_changed = False
-            self.environment_changed = False
 
         # ---- OBJECT DIMENSIONS ----
         userdata.object = self.object_dimensions
@@ -369,6 +364,7 @@ class SceneManager(smach.State):
                 numbers = []
                 for s in feedback.marker_name:
                     numbers = findall("[-+]?\d+[\.]?\d*", s)
+
                 number = int(numbers[0]) - 1
                 self.data[self.scenario]["positions"]["waypoints_r"][number] = [feedback.pose.position.x,
                                                                                 feedback.pose.position.y,
@@ -377,6 +373,7 @@ class SceneManager(smach.State):
                 numbers = []
                 for s in feedback.marker_name:
                     numbers = findall("[-+]?\d+[\.]?\d*", s)
+
                 number = int(numbers[0]) - 1
                 self.data[self.scenario]["positions"]["waypoints_l"][number] = [feedback.pose.position.x,
                                                                                 feedback.pose.position.y,
@@ -388,13 +385,18 @@ class SceneManager(smach.State):
 
             self.positions_changed = True
 
-    def add_waypoint_right(self, feedback):
-        name = "waypoint_r" + str(len(self.data[self.scenario]["positions"]["waypoints_r"]) + 1)
-        position = Point(1.0, 0.0, 1.0)
-
+    def add_waypoint(self, feedback):
+        position = Point(feedback.pose.position.x, feedback.pose.position.y - 0.05, feedback.pose.position.z)
         color = ColorRGBA(0.0, 0.0, 1.0, 1.0)
+        name = ""
 
-        self.data[self.scenario]["positions"]["waypoints_r"].append(position)
+        if "right" in self.menu_handler.getTitle(feedback.menu_entry_id):
+            name = "waypoint_r" + str(len(self.data[self.scenario]["positions"]["waypoints_r"]) + 1)
+            self.data[self.scenario]["positions"]["waypoints_r"].append(position)
+
+        elif "left" in self.menu_handler.getTitle(feedback.menu_entry_id):
+            name = "waypoint_l" + str(len(self.data[self.scenario]["positions"]["waypoints_l"]) + 1)
+            self.data[self.scenario]["positions"]["waypoints_l"].append(position)
 
         # Add marker to scene
         self.make_marker(name, color, InteractiveMarkerControl.MOVE_3D, position)
@@ -402,22 +404,7 @@ class SceneManager(smach.State):
         self.menu_handler.reApply(self.server)
         self.server.applyChanges()
 
-        rospy.loginfo("Added waypoint '" + str(name) + "' at position: x: " + str(position.x) + " | y: "
-                      + str(position.y) + " | z: " + str(position.z))
-
-    def add_waypoint_left(self, feedback):
-        name = "waypoint_l" + str(len(self.data[self.scenario]["positions"]["waypoints_l"]) + 1)
-        position = Point(1.0, 0.0, 1.0)
-
-        color = ColorRGBA(0.0, 0.0, 1.0, 1.0)
-
-        self.data[self.scenario]["positions"]["waypoints_l"].append(position)
-
-        # Add marker to scene
-        self.make_marker(name, color, InteractiveMarkerControl.MOVE_3D, position)
-
-        self.menu_handler.reApply(self.server)
-        self.server.applyChanges()
+        self.positions_changed = True
 
         rospy.loginfo("Added waypoint '" + str(name) + "' at position: x: " + str(position.x) + " | y: "
                       + str(position.y) + " | z: " + str(position.z))
@@ -451,7 +438,10 @@ class SceneManager(smach.State):
             self.menu_handler.reApply(self.server)
             self.server.applyChanges()
 
+            self.positions_changed = True
+
             rospy.loginfo("Deleted waypoint '" + str(name) + "'")
+
         elif "waypoint_l" in name:
 
             # Delete all waypoints
@@ -476,6 +466,8 @@ class SceneManager(smach.State):
 
             self.menu_handler.reApply(self.server)
             self.server.applyChanges()
+
+            self.positions_changed = True
 
             rospy.loginfo("Deleted waypoint '" + str(name) + "'")
         else:
@@ -509,6 +501,7 @@ class SceneManager(smach.State):
             self.menu_handler.setCheckState(self.last_env, MenuHandler.UNCHECKED)
             self.menu_handler.setCheckState(feedback.menu_entry_id, MenuHandler.CHECKED)
             self.last_env = feedback.menu_entry_id
+
             self.menu_handler.reApply(self.server)
             self.server.applyChanges()
 
@@ -532,13 +525,16 @@ class SceneManager(smach.State):
         filename = rospkg.RosPack().get_path("cob_grasping") + self.data[self.scenario]["environment"]["mesh"]
         scale = self.data[self.scenario]["environment"]["scaling"]
         environment.meshes.append(self.load_mesh(filename, scale))
+
         q = quaternion_from_euler(self.data[self.scenario]["environment"]["orientation"][0]/180.0 * math.pi,
                                   self.data[self.scenario]["environment"]["orientation"][1]/180.0 * math.pi,
                                   self.data[self.scenario]["environment"]["orientation"][2]/180.0 * math.pi)
+
         position = [self.data[self.scenario]["environment"]["position"][0],
                     self.data[self.scenario]["environment"]["position"][1],
                     self.data[self.scenario]["environment"]["position"][2],
                     q[0], q[1], q[2], q[3]]
+
         add_remove_object("add", copy(environment), position, "mesh")
 
         if len(self.data[self.scenario]["environment"]["additional_obstacles"]) != 0 and self.spawn_obstacles != "none":
@@ -554,11 +550,14 @@ class SceneManager(smach.State):
                     object_shape.dimensions.append(item["size"][1])  # Y
                     object_shape.dimensions.append(item["size"][2])  # Z
                     collision_object.primitives.append(object_shape)
+
                     q = quaternion_from_euler(item["orientation"][0]/180.0 * math.pi,
                                               item["orientation"][1]/180.0 * math.pi,
                                               item["orientation"][2]/180.0 * math.pi)
+
                     position = [item["position"][0], item["position"][1], item["position"][2], q[0], q[1], q[2], q[3]]
                     add_remove_object("add", collision_object, position, "primitive")
+
                 elif item["id"] == self.spawn_obstacles:
                     collision_object = CollisionObject()
                     collision_object.header.stamp = rospy.Time.now()
@@ -570,9 +569,11 @@ class SceneManager(smach.State):
                     object_shape.dimensions.append(item["size"][1])  # Y
                     object_shape.dimensions.append(item["size"][2])  # Z
                     collision_object.primitives.append(object_shape)
+
                     q = quaternion_from_euler(item["orientation"][0]/180.0 * math.pi,
                                               item["orientation"][1]/180.0 * math.pi,
                                               item["orientation"][2]/180.0 * math.pi)
+
                     position = [item["position"][0], item["position"][1], item["position"][2], q[0], q[1], q[2], q[3]]
                     add_remove_object("add", collision_object, position, "primitive")
                     break
@@ -616,6 +617,7 @@ class SceneManager(smach.State):
         if self.use_waypoints:
             color.r = 0.0
             color.b = 1.0
+
             if len(self.data[self.scenario]["positions"]["waypoints_r"]) != 0:
                 for i in xrange(0, len(self.data[self.scenario]["positions"]["waypoints_r"])):
                     self.make_marker("waypoint_r" + str(i + 1), color, InteractiveMarkerControl.MOVE_3D,
@@ -651,9 +653,9 @@ class StartPosition(smach.State):
 
     def execute(self, userdata):
         if userdata.active_arm == "left":
-            self.planer = mgc_left
-        elif userdata.active_arm == "right":
-            self.planer = mgc_right
+            planer = mgc_left
+        else:
+            planer = mgc_right
 
         global abort_execution
 
@@ -663,7 +665,7 @@ class StartPosition(smach.State):
             return "error"
 
         try:
-            traj = plan_movement(self.planer, userdata.active_arm, self.traj_name, userdata.joint_trajectory_speed)
+            traj = plan_movement(planer, userdata.active_arm, self.traj_name, userdata.joint_trajectory_speed)
         except (ValueError, IndexError):
             if userdata.error_counter >= userdata.error_max:
                 userdata.error_counter = 0
@@ -674,7 +676,7 @@ class StartPosition(smach.State):
             userdata.error_counter += 1
             return "failed"
         else:
-            self.planer.execute(traj)
+            planer.execute(traj)
             return "succeeded"
 
 
@@ -683,34 +685,42 @@ class EndPosition(smach.State):
         smach.State.__init__(self,
                              outcomes=['succeeded', 'failed', 'error'],
                              input_keys=['active_arm', 'error_max', 'arm_positions', 'object', 'error_counter',
-                                         'planning_method', 'joint_trajectory_speed'],
+                                         'planning_method', 'joint_trajectory_speed', 'joint_goal_position'],
                              output_keys=['error_message', 'error_counter'])
 
         self.traj_name = "retreat"
 
     def execute(self, userdata):
         if userdata.active_arm == "left":
-            self.planer = mgc_left
-        elif userdata.active_arm == "right":
-            self.planer = mgc_right
+            planer = mgc_left
+        else:
+            planer = mgc_right
+
+        # ----------- SPAWN OBJECT ------------
+        collision_object = CollisionObject()
+        collision_object.header.stamp = rospy.Time.now()
+        collision_object.header.frame_id = "base_link"
+        collision_object.id = "object"
+        object_shape = SolidPrimitive()
+        object_shape.type = object_shape.CYLINDER
+        object_shape.dimensions.append(userdata.object[2])  # Height
+        object_shape.dimensions.append(userdata.object[0]*0.5)  # Radius
+        collision_object.primitives.append(object_shape)
+        add_remove_object("remove", copy(collision_object), "", "")
 
         if userdata.planning_method != "joint":
-            # ----------- SPAWN OBJECT ------------
-            collision_object = CollisionObject()
-            collision_object.header.stamp = rospy.Time.now()
-            collision_object.header.frame_id = "base_link"
-            collision_object.id = "object"
-            object_shape = SolidPrimitive()
-            object_shape.type = object_shape.CYLINDER
-            object_shape.dimensions.append(userdata.object[2])  # Height
-            object_shape.dimensions.append(userdata.object[0]*0.5)  # Radius
-            collision_object.primitives.append(object_shape)
-            add_remove_object("remove", copy(collision_object), "", "")
+
             position = [userdata.arm_positions[userdata.active_arm]["goal"].x,
                         userdata.arm_positions[userdata.active_arm]["goal"].y,
                         userdata.arm_positions[userdata.active_arm]["goal"].z,
                         0.0, 0.0, 0.0, 1.0]
-            add_remove_object("add", copy(collision_object), position, "primitive")
+        else:
+            position = [userdata.joint_goal_position.x,
+                        userdata.joint_goal_position.y,
+                        userdata.joint_goal_position.z,
+                        0.0, 0.0, 0.0, 1.0]
+
+        add_remove_object("add", copy(collision_object), position, "primitive")
 
         global abort_execution
 
@@ -720,7 +730,7 @@ class EndPosition(smach.State):
             return "error"
 
         try:
-            traj = plan_movement(self.planer, userdata.active_arm, self.traj_name, userdata.joint_trajectory_speed)
+            traj = plan_movement(planer, userdata.active_arm, self.traj_name, userdata.joint_trajectory_speed)
         except (ValueError, IndexError):
             if userdata.error_counter >= userdata.error_max:
                 userdata.error_counter = 0
@@ -731,11 +741,10 @@ class EndPosition(smach.State):
             userdata.error_counter += 1
             return "failed"
         else:
-            self.planer.execute(traj)
+            planer.execute(traj)
 
-            if userdata.planning_method != "joint":
-                # ----------- REMOVE OBJECT ------------
-                add_remove_object("remove", collision_object, "", "")
+            # ----------- REMOVE OBJECT ------------
+            add_remove_object("remove", collision_object, "", "")
             return "succeeded"
 
 
@@ -747,9 +756,10 @@ class PlanningAndExecution(smach.State):
                                          'manipulation_options', 'arm_positions', 'error_counter', 'planning_method',
                                          'joint_trajectory_speed'],
                              output_keys=['cs_position', 'cs_orientation', 'error_message',
-                                          'error_counter'])
+                                          'error_counter', 'joint_goal_position'])
 
         self.tf_listener = tf.TransformListener()
+        self.planer = mgc_right
 
         self.eef_step = rospy.get_param(str(rospy.get_name()) + "/eef_step")
         self.jump_threshold = rospy.get_param(str(rospy.get_name()) + "/jump_threshold")
@@ -1468,6 +1478,7 @@ class PlanningAndExecution(smach.State):
         rospy.loginfo("-------- Drop --------")
         self.planer.execute(self.plan_list[4])
         # self.move_gripper("gripper_" + userdata.active_arm, "open")
+        userdata.joint_goal_position = self.planer.get_current_pose(self.planer.get_end_effector_link()).pose.position
         rospy.loginfo("------- Retreat -------")
         self.planer.execute(self.plan_list[5])
         # self.move_gripper("gripper_" + userdata.active_arm, "close")
@@ -1616,6 +1627,7 @@ class SM(smach.StateMachine):
                                        "left": {"start": Point(),
                                                 "waypoints": [],
                                                 "goal": Point()}}
+        self.userdata.joint_goal_position = Point()
 
         # ---- ERROR MESSAGE / COUNTER ----
         self.userdata.error_message = ""
