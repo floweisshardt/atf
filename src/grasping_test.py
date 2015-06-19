@@ -94,7 +94,7 @@ def scale_joint_trajectory_speed(traj, scale):
     return new_traj
 
 
-def plan_movement(planer, arm, pose):
+def plan_movement(planer, arm, pose, speed):
         (config, error_code) = sss.compose_trajectory("arm_" + arm, pose)
         if error_code != 0:
             rospy.logerr("Unable to parse " + pose + " configuration")
@@ -111,7 +111,7 @@ def plan_movement(planer, arm, pose):
         plan = planer.plan()
 
         plan = smooth_cartesian_path(plan)
-        plan = scale_joint_trajectory_speed(plan, 0.3)
+        plan = scale_joint_trajectory_speed(plan, speed)
         return plan
 
 
@@ -644,7 +644,7 @@ class StartPosition(smach.State):
     def __init__(self):
         smach.State.__init__(self,
                              outcomes=['succeeded', 'failed', 'error'],
-                             input_keys=['active_arm', 'error_max', 'error_counter'],
+                             input_keys=['active_arm', 'error_max', 'error_counter', 'joint_trajectory_speed'],
                              output_keys=['error_message', 'error_counter'])
 
         self.traj_name = "pre_grasp"
@@ -663,7 +663,7 @@ class StartPosition(smach.State):
             return "error"
 
         try:
-            traj = plan_movement(self.planer, userdata.active_arm, self.traj_name)
+            traj = plan_movement(self.planer, userdata.active_arm, self.traj_name, userdata.joint_trajectory_speed)
         except (ValueError, IndexError):
             if userdata.error_counter >= userdata.error_max:
                 userdata.error_counter = 0
@@ -683,7 +683,7 @@ class EndPosition(smach.State):
         smach.State.__init__(self,
                              outcomes=['succeeded', 'failed', 'error'],
                              input_keys=['active_arm', 'error_max', 'arm_positions', 'object', 'error_counter',
-                                         'planning_method'],
+                                         'planning_method', 'joint_trajectory_speed'],
                              output_keys=['error_message', 'error_counter'])
 
         self.traj_name = "retreat"
@@ -720,7 +720,7 @@ class EndPosition(smach.State):
             return "error"
 
         try:
-            traj = plan_movement(self.planer, userdata.active_arm, self.traj_name)
+            traj = plan_movement(self.planer, userdata.active_arm, self.traj_name, userdata.joint_trajectory_speed)
         except (ValueError, IndexError):
             if userdata.error_counter >= userdata.error_max:
                 userdata.error_counter = 0
@@ -744,7 +744,8 @@ class PlanningAndExecution(smach.State):
         smach.State.__init__(self,
                              outcomes=['succeeded', 'failed', 'error'],
                              input_keys=['active_arm', 'cs_orientation', 'error_max', 'error_message', 'object',
-                                         'manipulation_options', 'arm_positions', 'error_counter', 'planning_method'],
+                                         'manipulation_options', 'arm_positions', 'error_counter', 'planning_method',
+                                         'joint_trajectory_speed'],
                              output_keys=['cs_position', 'cs_orientation', 'error_message',
                                           'error_counter'])
 
@@ -765,7 +766,7 @@ class PlanningAndExecution(smach.State):
                             "left": rospy.get_param("/arm_left/joint_names")}
 
         self.cs_ready = False
-        self.state = 0
+        self.last_state = 0
 
     def execute(self, userdata):
 
@@ -875,7 +876,7 @@ class PlanningAndExecution(smach.State):
                 try:
                     traj_approach = self.planer.plan()
                     traj_approach = smooth_cartesian_path(traj_approach)
-                    traj_approach = scale_joint_trajectory_speed(traj_approach, 0.3)
+                    traj_approach = scale_joint_trajectory_speed(traj_approach, userdata.joint_trajectory_speed)
                 except (ValueError, IndexError):
                     rospy.loginfo("Plan " + self.traj_name + ": failed")
                     userdata.error_message = "Unable to plan " + self.traj_name + " trajectory"
@@ -937,7 +938,7 @@ class PlanningAndExecution(smach.State):
                 try:
                     traj_grasp = self.planer.plan()
                     traj_grasp = smooth_cartesian_path(traj_grasp)
-                    traj_grasp = scale_joint_trajectory_speed(traj_grasp, 0.3)
+                    traj_grasp = scale_joint_trajectory_speed(traj_grasp, userdata.joint_trajectory_speed)
                 except (ValueError, IndexError):
                     rospy.loginfo("Plan " + self.traj_name + ": failed")
                     userdata.error_message = "Unable to plan " + self.traj_name + " trajectory"
@@ -1032,7 +1033,7 @@ class PlanningAndExecution(smach.State):
                 try:
                     traj_lift = self.planer.plan()
                     traj_lift = smooth_cartesian_path(traj_lift)
-                    traj_lift = scale_joint_trajectory_speed(traj_lift, 0.3)
+                    traj_lift = scale_joint_trajectory_speed(traj_lift, userdata.joint_trajectory_speed)
                 except (ValueError, IndexError):
                     rospy.loginfo("Plan " + self.traj_name + ": failed")
                     userdata.error_message = "Unable to plan " + self.traj_name + " trajectory"
@@ -1174,7 +1175,7 @@ class PlanningAndExecution(smach.State):
                 try:
                     traj_move = self.planer.plan()
                     traj_move = smooth_cartesian_path(traj_move)
-                    traj_move = scale_joint_trajectory_speed(traj_move, 0.3)
+                    traj_move = scale_joint_trajectory_speed(traj_move, userdata.joint_trajectory_speed)
                 except (ValueError, IndexError):
                     rospy.loginfo("Plan " + self.traj_name + ": failed")
                     userdata.error_message = "Unable to plan " + self.traj_name + " trajectory"
@@ -1263,7 +1264,7 @@ class PlanningAndExecution(smach.State):
                 try:
                     traj_drop = self.planer.plan()
                     traj_drop = smooth_cartesian_path(traj_drop)
-                    traj_drop = scale_joint_trajectory_speed(traj_drop, 0.3)
+                    traj_drop = scale_joint_trajectory_speed(traj_drop, userdata.joint_trajectory_speed)
                 except (ValueError, IndexError):
                     rospy.loginfo("Plan " + self.traj_name + ": failed")
                     userdata.error_message = "Unable to plan " + self.traj_name + " trajectory"
@@ -1327,7 +1328,7 @@ class PlanningAndExecution(smach.State):
                 try:
                     traj_retreat = self.planer.plan()
                     traj_retreat = smooth_cartesian_path(traj_retreat)
-                    traj_retreat = scale_joint_trajectory_speed(traj_retreat, 0.3)
+                    traj_retreat = scale_joint_trajectory_speed(traj_retreat, userdata.joint_trajectory_speed)
                 except (ValueError, IndexError):
                     rospy.loginfo("Plan " + self.traj_name + ": failed")
                     userdata.error_message = "Unable to plan " + self.traj_name + " trajectory"
@@ -1390,46 +1391,33 @@ class PlanningAndExecution(smach.State):
 
     def plan_and_move_joint(self, userdata):
 
-        # -------------------- PICK --------------------
-        # ----------- APPROACH -----------
-        self.traj_name = "approach"
-        traj_approach = RobotTrajectory()
-        start_state = RobotState()
+        for i in xrange(self.last_state, len(userdata.arm_positions[userdata.active_arm]["joints"])):
+            start_state = RobotState()
+            start_state.joint_state.name = self.joint_names[userdata.active_arm]
 
-        start_state.joint_state.name = self.joint_names[userdata.active_arm]
-        start_state.joint_state.position = self.planer.get_current_joint_values()
-        start_state.attached_collision_objects[:] = []
-        start_state.is_diff = True
-        self.planer.set_start_state(start_state)
+            if i == 0:
+                start_state.joint_state.position = self.planer.get_current_joint_values()
+            else:
+                start_state.joint_state.position = self.plan_list[i - 1].joint_trajectory.points[-1].positions
+            start_state.is_diff = True
+            self.planer.set_start_state(start_state)
 
-        self.planer.clear_pose_targets()
-        self.planer.set_joint_value_target(userdata.arm_positions[userdata.active_arm]["joints"][0])
-
-        try:
-            plan = self.planer.plan()
-            plan = smooth_cartesian_path(plan)
-            plan = fix_velocities(plan)
-        except (ValueError, IndexError, AttributeError):
-            userdata.error_message = "Error: " + str(AttributeError)
-            userdata.error_counter += 1
-            return False
-
-        for i in xrange(self.state, len(userdata.arm_positions[userdata.active_arm]["joints"])):
-            self.planer.set_start_state_to_current_state()
             self.planer.clear_pose_targets()
             self.planer.set_joint_value_target(userdata.arm_positions[userdata.active_arm]["joints"][i])
 
             try:
                 plan = self.planer.plan()
                 plan = smooth_cartesian_path(plan)
-                plan = fix_velocities(plan)
+                plan = scale_joint_trajectory_speed(plan, userdata.joint_trajectory_speed)
             except (ValueError, IndexError, AttributeError):
+                rospy.logerr("Planning trajectory " + str(i + 1) + " failed")
                 userdata.error_message = "Error: " + str(AttributeError)
                 userdata.error_counter += 1
-                self.state = i
+                self.last_state = i
                 return False
 
             else:
+                rospy.loginfo("Planned trajectory " + str(i + 1) + " successfully")
                 self.plan_list.append(plan)
 
         # ----------- EXECUTE -----------
@@ -1454,7 +1442,7 @@ class PlanningAndExecution(smach.State):
 
         # ----------- CLEAR TRAJECTORY LIST -----------
         self.plan_list[:] = []
-        self.state = 0
+        self.last_state = 0
 
         return True
 
@@ -1541,9 +1529,9 @@ class SwitchTargets(smach.State):
                 list(reversed(sorted(userdata.arm_positions["left"]["waypoints"])))
         else:
             userdata.arm_positions["right"]["joints"] = \
-                list(reversed(sorted(userdata.arm_positions["right"]["joints"])))
+                list(reversed(userdata.arm_positions["right"]["joints"]))
             userdata.arm_positions["left"]["joints"] = \
-                list(reversed(sorted(userdata.arm_positions["left"]["joints"])))
+                list(reversed(userdata.arm_positions["left"]["joints"]))
         return "succeeded"
 
     @staticmethod
@@ -1572,11 +1560,16 @@ class SM(smach.StateMachine):
 
         self.userdata.active_arm = rospy.get_param(str(rospy.get_name()) + "/arm")
         self.userdata.planning_method = rospy.get_param(str(rospy.get_name()) + "/planning_method")
+        self.userdata.joint_trajectory_speed = rospy.get_param(str(rospy.get_name()) + "/joint_trajectory_speed")
         self.userdata.switch_arm = bool
         self.userdata.cs_position = "start"
-        self.userdata.manipulation_options = {"lift_height": float,
-                                              "approach_dist": float,
-                                              "repeats": int}
+
+        self.userdata.error_max = rospy.get_param(str(rospy.get_name()) + "/max_error")
+        self.userdata.manipulation_options = {"lift_height": rospy.get_param(str(rospy.get_name()) + "/lift_height"),
+                                              "approach_dist": rospy.get_param(str(rospy.get_name())
+                                                                               + "/approach_distance"),
+                                              "repeats": rospy.get_param(str(rospy.get_name())
+                                                                         + "/manipulation_repeats")}
 
         self.userdata.cs_orientation = [0.0,  # Roll (x)
                                         0.0,  # Pitch (y)
@@ -1603,9 +1596,10 @@ class SM(smach.StateMachine):
             self.tf_listener = tf.TransformListener()
             self.br = tf.TransformBroadcaster()
             rospy.Timer(rospy.Duration.from_sec(0.01), self.broadcast_tf)
-
+        '''
         # ---- DYNAMIC RECONFIGURE SERVER ---
         Server(parameterConfig, self.dynrec_callback)
+        '''
 
         with self:
 
