@@ -19,7 +19,7 @@ rack:
 shelf:
   environment:
     additional_obstacles: []
-    mesh: /files/shelf_unit.stl
+    mesh: /files/shelf.stl
     object_dimensions: [0.02, 0.02, 0.1]
     orientation: [90.0, 0.0, 90.0]
     position: [0.67, -0.12, 0.16]

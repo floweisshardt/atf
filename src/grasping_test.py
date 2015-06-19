@@ -1400,6 +1400,39 @@ class PlanningAndExecution(smach.State):
             else:
                 start_state.joint_state.position = self.plan_list[i - 1].joint_trajectory.points[-1].positions
             start_state.is_diff = True
+
+            if 2 <= i <= 4:
+                # Attach object
+                object_shape = SolidPrimitive()
+                object_shape.type = object_shape.CYLINDER
+                object_shape.dimensions.append(userdata.object[2])  # Height
+                object_shape.dimensions.append(userdata.object[0]*0.5)  # Radius
+
+                object_pose = Pose()
+                object_pose.orientation.w = 1.0
+
+                object_collision = CollisionObject()
+                object_collision.header.frame_id = "gripper_" + userdata.active_arm + "_grasp_link"
+                object_collision.id = "object"
+                object_collision.primitives.append(object_shape)
+                object_collision.primitive_poses.append(object_pose)
+                object_collision.operation = CollisionObject.ADD
+
+                object_attached = AttachedCollisionObject()
+                object_attached.link_name = "gripper_" + userdata.active_arm + "_grasp_link"
+                object_attached.object = object_collision
+                object_attached.touch_links = ["gripper_" + userdata.active_arm + "_base_link",
+                                               "gripper_" + userdata.active_arm + "_camera_link",
+                                               "gripper_" + userdata.active_arm + "_finger_1_link",
+                                               "gripper_" + userdata.active_arm + "_finger_2_link",
+                                               "gripper_" + userdata.active_arm + "_grasp_link",
+                                               "gripper_" + userdata.active_arm + "_palm_link"]
+
+                start_state.attached_collision_objects.append(object_attached)
+
+            else:
+                start_state.attached_collision_objects[:] = []
+
             self.planer.set_start_state(start_state)
 
             self.planer.clear_pose_targets()
