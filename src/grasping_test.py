@@ -1589,17 +1589,13 @@ class SM(smach.StateMachine):
         self.userdata.error_counter = 0
 
         # ---- OBJECT DIMENSIONS ----
-        self.userdata.object = [float]*3  # Diameter in x, diameter in y, height
+        self.userdata.object = [float]*3
 
         if self.userdata.planning_method != "joint":
             # ---- TF BROADCASTER ----
             self.tf_listener = tf.TransformListener()
             self.br = tf.TransformBroadcaster()
             rospy.Timer(rospy.Duration.from_sec(0.01), self.broadcast_tf)
-        '''
-        # ---- DYNAMIC RECONFIGURE SERVER ---
-        Server(parameterConfig, self.dynrec_callback)
-        '''
 
         with self:
 
@@ -1633,18 +1629,6 @@ class SM(smach.StateMachine):
             smach.StateMachine.add('ERROR', Error(),
                                    transitions={'finished': 'SCENE_MANAGER'})
 
-    def dynrec_callback(self, config, level):
-        self.userdata.error_max = config["error_max"]
-        self.userdata.manipulation_options = {"lift_height": config["lift_height"],
-                                              "approach_dist": config["approach_dist"],
-                                              "repeats": config["manipulation_repeats"]}
-        rospy.loginfo("Dynamic reconfigure: 'error_max': " + str(self.userdata.error_max) + " | 'lift_height': "
-                      + str(self.userdata.manipulation_options["lift_height"]) + " | 'approach_dist': "
-                      + str(self.userdata.manipulation_options["approach_dist"]) + " | 'manipulation_repeats': "
-                      + str(self.userdata.manipulation_options["repeats"]))
-
-        return config
-
     def broadcast_tf(self, event):
         self.br.sendTransform(
             (self.userdata.arm_positions[self.userdata.active_arm][self.userdata.cs_position].x,
@@ -1663,5 +1647,4 @@ if __name__ == '__main__':
     sis = smach_ros.IntrospectionServer('sm', sm, 'SM')
     sis.start()
     outcome = sm.execute()
-    # rospy.spin()
     sis.stop()

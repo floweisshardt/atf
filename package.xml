@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <package>
     <name>cob_grasping</name>
-    <version>0.8.0</version>
+    <version>0.8.2</version>
     <description>Grasping application for the Care-O-bot 4</description>
 
     <!-- One maintainer tag required, multiple allowed, one person per tag -->
@@ -16,10 +16,8 @@
 
     <buildtool_depend>catkin</buildtool_depend>
     <build_depend>rospy</build_depend>
-    <build_depend>dynamic_reconfigure</build_depend>
 
     <run_depend>rospy</run_depend>
-    <run_depend>dynamic_reconfigure</run_depend>
     
     <!-- The export tag contains other, unspecified, tags -->
     <export>

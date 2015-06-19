@@ -6,7 +6,6 @@ project(cob_grasping)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
   rospy
-  dynamic_reconfigure
 )
 
 ## System dependencies are found with CMake's conventions
@@ -17,9 +16,9 @@ find_package(catkin REQUIRED COMPONENTS
 ## See http://ros.org/doc/api/catkin/html/user_guide/setup_dot_py.html
 catkin_python_setup()
 
-generate_dynamic_reconfigure_options(
-  cfg/parameter.cfg
-)
+##generate_dynamic_reconfigure_options(
+##  cfg/parameter.cfg
+##)
 
 ###################################
 ## catkin specific configuration ##
