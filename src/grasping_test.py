@@ -15,6 +15,7 @@ from shape_msgs.msg import MeshTriangle, Mesh, SolidPrimitive
 from interactive_markers.interactive_marker_server import *
 from interactive_markers.menu_handler import *
 from visualization_msgs.msg import InteractiveMarkerControl, Marker
+from cob_grasping.msg import RecordingAction, RecordingGoal
 
 from simple_script_server import *
 
@@ -27,6 +28,8 @@ planning_scene.is_diff = True
 
 planning_scene_interface = PlanningSceneInterface()
 pub_planning_scene = rospy.Publisher("planning_scene", PlanningScene, queue_size=1)
+
+recording_client = actionlib.SimpleActionClient('Manipulation Recorder', RecordingAction)
 
 abort_execution = False
 

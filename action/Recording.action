@@ -1,0 +1,8 @@
+# Define the goal
+string order #  Defines the order for the recording server node
+---
+# Define the result
+bool response
+---
+# Define the feedback
+string feedback

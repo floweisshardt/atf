@@ -4,9 +4,8 @@ project(cob_grasping)
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
-find_package(catkin REQUIRED COMPONENTS
-  rospy
-)
+find_package(catkin REQUIRED COMPONENTS rospy)
+find_package(catkin REQUIRED genmsg actionlib_msgs actionlib)
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS thread)
@@ -29,6 +28,9 @@ catkin_python_setup()
 ## LIBRARIES: libraries you create in this project that dependent projects also need
 ## CATKIN_DEPENDS: catkin_packages dependent projects also need
 ## DEPENDS: system dependencies of this project that dependent projects also need
+
+add_action_files(DIRECTORY action FILES Recording.action)
+generate_messages(DEPENDENCIES actionlib_msgs)
 catkin_package()
 
 ###########
