@@ -276,6 +276,14 @@ class SceneManager(smach.State):
         # ---- OBJECT DIMENSIONS ----
         userdata.object = self.object_dimensions
 
+        rospy.loginfo("Waiting for manipulation recorder...")
+        # recording_client.wait_for_server()
+        goal = "start recording"
+        recording_client.send_goal_and_wait(goal, rospy.Duration.from_sec(1.0))
+        if not recording_client.get_result():
+            rospy.logerr("Manipulation recorder reported an error or not on time")
+            return "exit"
+
         return "succeeded"
 
     @staticmethod
@@ -680,6 +688,13 @@ class StartPosition(smach.State):
             return "failed"
         else:
             planer.execute(traj)
+            goal = "start planning timer"
+            recording_client.send_goal_and_wait(goal, rospy.Duration.from_sec(1.0))
+            if not recording_client.get_result():
+                userdata.error_message = "Manipulation recorder reported an error or not on time"
+                userdata.error_counter = 999
+                return False
+
             return "succeeded"
 
 
@@ -1355,52 +1370,73 @@ class PlanningAndExecution(smach.State):
 
             rospy.loginfo("Place planning complete")
 
-        # ----------- TRAJECTORY OPERATIONS -----------
-        computed_trajectories = self.traj_pick + self.traj_place
+            # ----------- TRAJECTORY OPERATIONS -----------
+            computed_trajectories = self.traj_pick + self.traj_place
 
-        rospy.loginfo("Smooth trajectories and fix velocities")
-        try:
-            for i in xrange(0, len(computed_trajectories)):
-                computed_trajectories[i] = smooth_cartesian_path(computed_trajectories[i])
-                computed_trajectories[i] = fix_velocities(computed_trajectories[i])
-        except (ValueError, IndexError, AttributeError):
+            rospy.loginfo("Smooth trajectories and fix velocities")
+            try:
+                for i in xrange(0, len(computed_trajectories)):
+                    computed_trajectories[i] = smooth_cartesian_path(computed_trajectories[i])
+                    computed_trajectories[i] = fix_velocities(computed_trajectories[i])
+            except (ValueError, IndexError, AttributeError):
+                computed_trajectories[:] = []
+                self.traj_pick[:] = []
+                self.traj_place[:] = []
+                userdata.cs_position = "start"
+                userdata.error_message = "Error: " + str(AttributeError)
+                userdata.error_counter += 1
+                return False
+
+            goal = "stop planning timer"
+            recording_client.send_goal_and_wait(goal, rospy.Duration.from_sec(1.0))
+            if not recording_client.get_result():
+                userdata.error_message = "Manipulation recorder reported an error or not on time"
+                userdata.error_counter = 999
+                return False
+
+            goal = "start execution timer"
+            recording_client.send_goal_and_wait(goal, rospy.Duration.from_sec(1.0))
+            if not recording_client.get_result():
+                userdata.error_message = "Manipulation recorder reported an error or not on time"
+                userdata.error_counter = 999
+                return False
+
+            # ----------- EXECUTE -----------
+            rospy.loginfo("---- Start execution ----")
+            rospy.loginfo("------- Approach -------")
+            self.planer.execute(computed_trajectories[0])
+            # self.move_gripper("gripper_" + userdata.active_arm, "open")
+            rospy.loginfo("-------- Grasp --------")
+            self.planer.execute(computed_trajectories[1])
+            # self.move_gripper("gripper_" + userdata.active_arm, "close")
+            rospy.loginfo("-------- Lift --------")
+            self.planer.execute(computed_trajectories[2])
+            rospy.loginfo("-------- Move --------")
+            self.planer.execute(computed_trajectories[3])
+            rospy.loginfo("-------- Drop --------")
+            self.planer.execute(computed_trajectories[4])
+            # self.move_gripper("gripper_" + userdata.active_arm, "open")
+            rospy.loginfo("------- Retreat -------")
+            self.planer.execute(computed_trajectories[5])
+            # self.move_gripper("gripper_" + userdata.active_arm, "close")
+            rospy.loginfo("- Execution finished -")
+
+            goal = "stop execution timer"
+            recording_client.send_goal_and_wait(goal, rospy.Duration.from_sec(1.0))
+            if not recording_client.get_result():
+                userdata.error_message = "Manipulation recorder reported an error or not on time"
+                userdata.error_counter = 999
+                return False
+
+            # ----------- CLEAR TRAJECTORY LIST -----------
             computed_trajectories[:] = []
             self.traj_pick[:] = []
             self.traj_place[:] = []
+
             userdata.cs_position = "start"
-            userdata.error_message = "Error: " + str(AttributeError)
-            userdata.error_counter += 1
-            return False
+            self.cs_ready = False
 
-        # ----------- EXECUTE -----------
-        rospy.loginfo("---- Start execution ----")
-        rospy.loginfo("------- Approach -------")
-        self.planer.execute(computed_trajectories[0])
-        # self.move_gripper("gripper_" + userdata.active_arm, "open")
-        rospy.loginfo("-------- Grasp --------")
-        self.planer.execute(computed_trajectories[1])
-        # self.move_gripper("gripper_" + userdata.active_arm, "close")
-        rospy.loginfo("-------- Lift --------")
-        self.planer.execute(computed_trajectories[2])
-        rospy.loginfo("-------- Move --------")
-        self.planer.execute(computed_trajectories[3])
-        rospy.loginfo("-------- Drop --------")
-        self.planer.execute(computed_trajectories[4])
-        # self.move_gripper("gripper_" + userdata.active_arm, "open")
-        rospy.loginfo("------- Retreat -------")
-        self.planer.execute(computed_trajectories[5])
-        # self.move_gripper("gripper_" + userdata.active_arm, "close")
-        rospy.loginfo("- Execution finished -")
-
-        # ----------- CLEAR TRAJECTORY LIST -----------
-        computed_trajectories[:] = []
-        self.traj_pick[:] = []
-        self.traj_place[:] = []
-
-        userdata.cs_position = "start"
-        self.cs_ready = False
-
-        return True
+            return True
 
     def plan_and_move_joint(self, userdata):
 
@@ -1466,6 +1502,20 @@ class PlanningAndExecution(smach.State):
                 rospy.loginfo("Planned trajectory " + str(i + 1) + " successfully")
                 self.plan_list.append(plan)
 
+        goal = "stop planning timer"
+        recording_client.send_goal_and_wait(goal, rospy.Duration.from_sec(1.0))
+        if not recording_client.get_result():
+            userdata.error_message = "Manipulation recorder reported an error or not on time"
+            userdata.error_counter = 999
+            return False
+
+        goal = "start execution timer"
+        recording_client.send_goal_and_wait(goal, rospy.Duration.from_sec(1.0))
+        if not recording_client.get_result():
+            userdata.error_message = "Manipulation recorder reported an error or not on time"
+            userdata.error_counter = 999
+            return False
+
         # ----------- EXECUTE -----------
         rospy.loginfo("---- Start execution ----")
         rospy.loginfo("------- Approach -------")
@@ -1486,6 +1536,13 @@ class PlanningAndExecution(smach.State):
         self.planer.execute(self.plan_list[5])
         # self.move_gripper("gripper_" + userdata.active_arm, "close")
         rospy.loginfo("- Execution finished -")
+
+        goal = "stop execution timer"
+        recording_client.send_goal_and_wait(goal, rospy.Duration.from_sec(1.0))
+        if not recording_client.get_result():
+            userdata.error_message = "Manipulation recorder reported an error or not on time"
+            userdata.error_counter = 999
+            return False
 
         # ----------- CLEAR TRAJECTORY LIST -----------
         self.plan_list[:] = []
