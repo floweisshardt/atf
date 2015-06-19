@@ -3,10 +3,10 @@ Pick &amp; place application for the Care-O-Bot 4
 Various options are available via rosparam in grasping_test.launch:
 
 - scene: Defines which scene to use. All available scenes are stored in the scene_config.yaml file
-- arm:  Defines the arm for the manipulation task
-        Options:
-            - left
-            - right
+- arm: Defines the arm for the manipulation task
+       Options:
+         - left
+         - right
 - switch_arm:   Defines if the arm should switch to the other after a successful manipulation
                 Options: 
                     - True
