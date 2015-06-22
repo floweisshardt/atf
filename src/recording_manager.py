@@ -76,16 +76,13 @@ class RecordingManager:
         return dic
 
     @staticmethod
-    def load_data(filename):
-        with open(filename, 'r') as stream:
-            doc = yaml.load(stream)
-
-        return doc
-
-    @staticmethod
     def save_data(filename, data):
-        stream = file(filename, 'a')
-        yaml.dump(data, stream)
+        try:
+            stream = file(filename, 'a')
+        except IOError:
+            yaml.dump(data, filename)
+        else:
+            yaml.dump(data, stream)
 
 if __name__ == '__main__':
     rospy.init_node('recording_manager')
