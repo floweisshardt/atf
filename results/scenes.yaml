@@ -1,6 +1,0 @@
-test_1: {additional_obstacles: none, arm: right, eef_step: '0.01', execution_time: 39.56801700592041,
-  jump_threshold: '2', planer_id: LBKPIECEkConfigDefault, planning_failed: false,
-  planning_method: cartesian_linear, planning_time: 1.7072720527648926, scene: table}
-test_2: {additional_obstacles: none, arm: right, eef_step: '0.01', execution_time: 23.28802800178528,
-  jump_threshold: '2', planer_id: LBKPIECEkConfigDefault, planning_failed: false,
-  planning_method: joint, planning_time: 22.49286413192749, scene: table}
