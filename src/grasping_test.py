@@ -12,10 +12,10 @@ from moveit_commander import MoveGroupCommander, PlanningSceneInterface
 from moveit_msgs.msg import RobotState, AttachedCollisionObject, CollisionObject, PlanningScene
 from moveit_msgs.msg import RobotTrajectory
 from shape_msgs.msg import MeshTriangle, Mesh, SolidPrimitive
+from std_msgs.msg import Bool
 from interactive_markers.interactive_marker_server import *
 from interactive_markers.menu_handler import *
 from visualization_msgs.msg import InteractiveMarkerControl, Marker
-from cob_grasping.msg import RecordingAction, RecordingGoal
 
 from simple_script_server import *
 
@@ -29,9 +29,12 @@ planning_scene.is_diff = True
 planning_scene_interface = PlanningSceneInterface()
 pub_planning_scene = rospy.Publisher("planning_scene", PlanningScene, queue_size=1)
 
-recording_client = actionlib.SimpleActionClient('Manipulation Recorder', RecordingAction)
+pub_planning_timer = rospy.Publisher("Recording_Manager/planning_timer", Bool, queue_size=1)
+pub_execution_timer = rospy.Publisher("Recording_Manager/execution_timer", Bool, queue_size=1)
 
 abort_execution = False
+
+start = rospy.Time()
 
 
 def smooth_cartesian_path(traj):
@@ -275,14 +278,6 @@ class SceneManager(smach.State):
 
         # ---- OBJECT DIMENSIONS ----
         userdata.object = self.object_dimensions
-
-        rospy.loginfo("Waiting for manipulation recorder...")
-        # recording_client.wait_for_server()
-        goal = "start recording"
-        recording_client.send_goal_and_wait(goal, rospy.Duration.from_sec(1.0))
-        if not recording_client.get_result():
-            rospy.logerr("Manipulation recorder reported an error or not on time")
-            return "exit"
 
         return "succeeded"
 
@@ -688,13 +683,6 @@ class StartPosition(smach.State):
             return "failed"
         else:
             planer.execute(traj)
-            goal = "start planning timer"
-            recording_client.send_goal_and_wait(goal, rospy.Duration.from_sec(1.0))
-            if not recording_client.get_result():
-                userdata.error_message = "Manipulation recorder reported an error or not on time"
-                userdata.error_counter = 999
-                return False
-
             return "succeeded"
 
 
@@ -766,15 +754,39 @@ class EndPosition(smach.State):
             return "succeeded"
 
 
-class PlanningAndExecution(smach.State):
+class StartPlanningTimer(smach.State):
+    def __init__(self):
+        smach.State.__init__(self,
+                             outcomes=['succeeded'])
+
+    def execute(self, userdata):
+        # -- START PLANNING TIMER --
+        pub_planning_timer.publish(True)
+
+        return "succeeded"
+
+
+class StopPlanningTimer(smach.State):
+    def __init__(self):
+        smach.State.__init__(self,
+                             outcomes=['succeeded'])
+
+    def execute(self, userdata):
+        # -- STOP PLANNING TIMER --
+        pub_planning_timer.publish(False)
+
+        return "succeeded"
+
+
+class Planning(smach.State):
     def __init__(self):
         smach.State.__init__(self,
                              outcomes=['succeeded', 'failed', 'error'],
-                             input_keys=['active_arm', 'cs_orientation', 'error_max', 'error_message', 'object',
-                                         'manipulation_options', 'arm_positions', 'error_counter', 'planning_method',
-                                         'joint_trajectory_speed'],
-                             output_keys=['cs_position', 'cs_orientation', 'error_message',
-                                          'error_counter', 'joint_goal_position'])
+                             input_keys=['active_arm', 'cs_orientation', 'error_max', 'object', 'manipulation_options',
+                                         'arm_positions', 'error_counter', 'planning_method', 'joint_trajectory_speed',
+                                         'computed_trajectories'],
+                             output_keys=['cs_position', 'cs_orientation', 'error_message', 'error_counter',
+                                          'joint_goal_position', 'computed_trajectories'])
 
         self.tf_listener = tf.TransformListener()
         self.planer = mgc_right
@@ -783,12 +795,11 @@ class PlanningAndExecution(smach.State):
         self.jump_threshold = rospy.get_param(str(rospy.get_name()) + "/jump_threshold")
         self.planer_id = rospy.get_param(str(rospy.get_name()) + "/planer_id")
 
-        rospy.loginfo("Set planer to: '" + str(self.planer_id) + "'")
+        rospy.loginfo("Using planer: '" + str(self.planer_id) + "'")
 
         self.traj_name = ""
         self.traj_pick = []
         self.traj_place = []
-        self.plan_list = []
 
         self.joint_names = {"right": rospy.get_param("/arm_right/joint_names"),
                             "left": rospy.get_param("/arm_left/joint_names")}
@@ -830,9 +841,9 @@ class PlanningAndExecution(smach.State):
             return "error"
 
         if userdata.planning_method != "joint":
-            execution = self.plan_and_move_cartesian(userdata)
+            execution = self.plan_cartesian(userdata)
         else:
-            execution = self.plan_and_move_joint(userdata)
+            execution = self.plan_joint(userdata)
 
         if not execution:
             if userdata.error_counter >= userdata.error_max:
@@ -848,7 +859,7 @@ class PlanningAndExecution(smach.State):
         userdata.error_counter = 0
         return "succeeded"
 
-    def plan_and_move_cartesian(self, userdata):
+    def plan_cartesian(self, userdata):
 
         if len(self.traj_pick) < 3:
 
@@ -1371,15 +1382,16 @@ class PlanningAndExecution(smach.State):
             rospy.loginfo("Place planning complete")
 
             # ----------- TRAJECTORY OPERATIONS -----------
-            computed_trajectories = self.traj_pick + self.traj_place
+            userdata.computed_trajectories = self.traj_pick + self.traj_place
 
             rospy.loginfo("Smooth trajectories and fix velocities")
+
             try:
-                for i in xrange(0, len(computed_trajectories)):
-                    computed_trajectories[i] = smooth_cartesian_path(computed_trajectories[i])
-                    computed_trajectories[i] = fix_velocities(computed_trajectories[i])
+                for i in xrange(0, len(userdata.computed_trajectories)):
+                    userdata.computed_trajectories[i] = smooth_cartesian_path(userdata.computed_trajectories[i])
+                    userdata.computed_trajectories[i] = fix_velocities(userdata.computed_trajectories[i])
             except (ValueError, IndexError, AttributeError):
-                computed_trajectories[:] = []
+                userdata.computed_trajectories[:] = []
                 self.traj_pick[:] = []
                 self.traj_place[:] = []
                 userdata.cs_position = "start"
@@ -1387,58 +1399,14 @@ class PlanningAndExecution(smach.State):
                 userdata.error_counter += 1
                 return False
 
-            goal = "stop planning timer"
-            recording_client.send_goal_and_wait(goal, rospy.Duration.from_sec(1.0))
-            if not recording_client.get_result():
-                userdata.error_message = "Manipulation recorder reported an error or not on time"
-                userdata.error_counter = 999
-                return False
-
-            goal = "start execution timer"
-            recording_client.send_goal_and_wait(goal, rospy.Duration.from_sec(1.0))
-            if not recording_client.get_result():
-                userdata.error_message = "Manipulation recorder reported an error or not on time"
-                userdata.error_counter = 999
-                return False
-
-            # ----------- EXECUTE -----------
-            rospy.loginfo("---- Start execution ----")
-            rospy.loginfo("------- Approach -------")
-            self.planer.execute(computed_trajectories[0])
-            # self.move_gripper("gripper_" + userdata.active_arm, "open")
-            rospy.loginfo("-------- Grasp --------")
-            self.planer.execute(computed_trajectories[1])
-            # self.move_gripper("gripper_" + userdata.active_arm, "close")
-            rospy.loginfo("-------- Lift --------")
-            self.planer.execute(computed_trajectories[2])
-            rospy.loginfo("-------- Move --------")
-            self.planer.execute(computed_trajectories[3])
-            rospy.loginfo("-------- Drop --------")
-            self.planer.execute(computed_trajectories[4])
-            # self.move_gripper("gripper_" + userdata.active_arm, "open")
-            rospy.loginfo("------- Retreat -------")
-            self.planer.execute(computed_trajectories[5])
-            # self.move_gripper("gripper_" + userdata.active_arm, "close")
-            rospy.loginfo("- Execution finished -")
-
-            goal = "stop execution timer"
-            recording_client.send_goal_and_wait(goal, rospy.Duration.from_sec(1.0))
-            if not recording_client.get_result():
-                userdata.error_message = "Manipulation recorder reported an error or not on time"
-                userdata.error_counter = 999
-                return False
-
-            # ----------- CLEAR TRAJECTORY LIST -----------
-            computed_trajectories[:] = []
+            userdata.cs_position = "start"
+            self.cs_ready = False
             self.traj_pick[:] = []
             self.traj_place[:] = []
 
-            userdata.cs_position = "start"
-            self.cs_ready = False
-
             return True
 
-    def plan_and_move_joint(self, userdata):
+    def plan_joint(self, userdata):
 
         for i in xrange(self.last_state, len(userdata.arm_positions[userdata.active_arm]["joints"])):
             start_state = RobotState()
@@ -1447,7 +1415,8 @@ class PlanningAndExecution(smach.State):
             if i == 0:
                 start_state.joint_state.position = self.planer.get_current_joint_values()
             else:
-                start_state.joint_state.position = self.plan_list[i - 1].joint_trajectory.points[-1].positions
+                start_state.joint_state.position =\
+                    userdata.computed_trajectories[i - 1].joint_trajectory.points[-1].positions
             start_state.is_diff = True
 
             if 2 <= i <= 4:
@@ -1500,58 +1469,73 @@ class PlanningAndExecution(smach.State):
 
             else:
                 rospy.loginfo("Planned trajectory " + str(i + 1) + " successfully")
-                self.plan_list.append(plan)
+                userdata.computed_trajectories.append(plan)
 
-        goal = "stop planning timer"
-        recording_client.send_goal_and_wait(goal, rospy.Duration.from_sec(1.0))
-        if not recording_client.get_result():
-            userdata.error_message = "Manipulation recorder reported an error or not on time"
-            userdata.error_counter = 999
-            return False
-
-        goal = "start execution timer"
-        recording_client.send_goal_and_wait(goal, rospy.Duration.from_sec(1.0))
-        if not recording_client.get_result():
-            userdata.error_message = "Manipulation recorder reported an error or not on time"
-            userdata.error_counter = 999
-            return False
-
-        # ----------- EXECUTE -----------
-        rospy.loginfo("---- Start execution ----")
-        rospy.loginfo("------- Approach -------")
-        self.planer.execute(self.plan_list[0])
-        # self.move_gripper("gripper_" + userdata.active_arm, "open")
-        rospy.loginfo("-------- Grasp --------")
-        self.planer.execute(self.plan_list[1])
-        # self.move_gripper("gripper_" + userdata.active_arm, "close")
-        rospy.loginfo("-------- Lift --------")
-        self.planer.execute(self.plan_list[2])
-        rospy.loginfo("-------- Move --------")
-        self.planer.execute(self.plan_list[3])
-        rospy.loginfo("-------- Drop --------")
-        self.planer.execute(self.plan_list[4])
-        # self.move_gripper("gripper_" + userdata.active_arm, "open")
-        userdata.joint_goal_position = self.planer.get_current_pose(self.planer.get_end_effector_link()).pose.position
-        rospy.loginfo("------- Retreat -------")
-        self.planer.execute(self.plan_list[5])
-        # self.move_gripper("gripper_" + userdata.active_arm, "close")
-        rospy.loginfo("- Execution finished -")
-
-        goal = "stop execution timer"
-        recording_client.send_goal_and_wait(goal, rospy.Duration.from_sec(1.0))
-        if not recording_client.get_result():
-            userdata.error_message = "Manipulation recorder reported an error or not on time"
-            userdata.error_counter = 999
-            return False
-
-        # ----------- CLEAR TRAJECTORY LIST -----------
-        self.plan_list[:] = []
         self.last_state = 0
 
         return True
 
+
+class Execution(smach.State):
+    def __init__(self):
+        smach.State.__init__(self,
+                             outcomes=['succeeded', 'error'],
+                             input_keys=['active_arm', 'planning_method', 'computed_trajectories'],
+                             output_keys=['error_message', 'joint_goal_position', 'computed_trajectories'])
+
+        self.planer = mgc_right
+
+    def execute(self, userdata):
+
+        if userdata.active_arm == "left":
+            self.planer = mgc_left
+        elif userdata.active_arm == "right":
+            self.planer = mgc_right
+
+        global abort_execution
+
+        if abort_execution:
+            abort_execution = False
+            userdata.error_message = "Execution aborted by user"
+            userdata.cs_position = "start"
+            return "error"
+
+        # --- START EXECUTION TIMER ---
+        pub_execution_timer.publish(True)
+
+        # ----------- EXECUTE -----------
+        rospy.loginfo("---- Start execution ----")
+        rospy.loginfo("------- Approach -------")
+        self.planer.execute(userdata.computed_trajectories[0])
+        # self.move_gripper(userdata, "gripper_" + userdata.active_arm, "open")
+        rospy.loginfo("-------- Grasp --------")
+        self.planer.execute(userdata.computed_trajectories[1])
+        # self.move_gripper(userdata, "gripper_" + userdata.active_arm, "close")
+        rospy.loginfo("-------- Lift --------")
+        self.planer.execute(userdata.computed_trajectories[2])
+        rospy.loginfo("-------- Move --------")
+        self.planer.execute(userdata.computed_trajectories[3])
+        rospy.loginfo("-------- Drop --------")
+        self.planer.execute(userdata.computed_trajectories[4])
+        # self.move_gripper(userdata, "gripper_" + userdata.active_arm, "open")
+        if userdata.planning_method == "joint":
+            userdata.joint_goal_position =\
+                self.planer.get_current_pose(self.planer.get_end_effector_link()).pose.position
+        rospy.loginfo("------- Retreat -------")
+        self.planer.execute(userdata.computed_trajectories[5])
+        # self.move_gripper(userdata, "gripper_" + userdata.active_arm, "close")
+        rospy.loginfo("- Execution finished -")
+
+        # --- STOP EXECUTION TIMER ---
+        pub_execution_timer.publish(False)
+
+        # ----------- CLEAR TRAJECTORY LIST -----------
+        userdata.computed_trajectories[:] = []
+
+        return "succeeded"
+
     @staticmethod
-    def move_gripper(component_name, pos):
+    def move_gripper(userdata, component_name, pos):
         error_code = -1
         counter = 0
         while not rospy.is_shutdown() and error_code != 0:
@@ -1560,10 +1544,8 @@ class PlanningAndExecution(smach.State):
             handle.wait()
             error_code = handle.get_error_code()
             if counter > 100:
-                rospy.logerr(component_name + "does not work any more. Retries: " + str(counter) +
-                             ". Please reset USB connection and press <ENTER>.")
-                sss.wait_for_input()
-                return False
+                userdata.error_message = component_name + "does not work any more. Retries: " + str(counter)
+                return "error"
             counter += 1
         return True
 
@@ -1687,6 +1669,9 @@ class SM(smach.StateMachine):
                                        "left": {"start": Point(),
                                                 "waypoints": [],
                                                 "goal": Point()}}
+
+        self.userdata.computed_trajectories = []
+
         self.userdata.joint_goal_position = Point()
 
         # ---- ERROR MESSAGE / COUNTER ----
@@ -1702,6 +1687,10 @@ class SM(smach.StateMachine):
             self.br = tf.TransformBroadcaster()
             rospy.Timer(rospy.Duration.from_sec(0.01), self.broadcast_tf)
 
+        # ---- WAITING FOR SUBSCRIBERS ----
+        while pub_planning_timer.get_num_connections() == 0 or pub_execution_timer.get_num_connections() == 0:
+            rospy.sleep(0.5)
+
         with self:
 
             smach.StateMachine.add('SCENE_MANAGER', SceneManager(),
@@ -1709,13 +1698,23 @@ class SM(smach.StateMachine):
                                                 'exit': 'ended'})
 
             smach.StateMachine.add('START_POSITION', StartPosition(),
-                                   transitions={'succeeded': 'PLANNINGANDEXECUTION',
+                                   transitions={'succeeded': 'START_PLANNING_TIMER',
                                                 'failed': 'START_POSITION',
                                                 'error': 'ERROR'})
 
-            smach.StateMachine.add('PLANNINGANDEXECUTION', PlanningAndExecution(),
+            smach.StateMachine.add('START_PLANNING_TIMER', StartPlanningTimer(),
+                                   transitions={'succeeded': 'PLANNING'})
+
+            smach.StateMachine.add('PLANNING', Planning(),
+                                   transitions={'succeeded': 'STOP_PLANNING_TIMER',
+                                                'failed': 'PLANNING',
+                                                'error': 'ERROR'})
+
+            smach.StateMachine.add('STOP_PLANNING_TIMER', StopPlanningTimer(),
+                                   transitions={'succeeded': 'EXECUTION'})
+
+            smach.StateMachine.add('EXECUTION', Execution(),
                                    transitions={'succeeded': 'END_POSITION',
-                                                'failed': 'PLANNINGANDEXECUTION',
                                                 'error': 'ERROR'})
 
             smach.StateMachine.add('END_POSITION', EndPosition(),
