@@ -31,6 +31,8 @@ pub_planning_scene = rospy.Publisher("planning_scene", PlanningScene, queue_size
 
 pub_planning_timer = rospy.Publisher("Recording_Manager/planning_timer", Bool, queue_size=1)
 pub_execution_timer = rospy.Publisher("Recording_Manager/execution_timer", Bool, queue_size=1)
+pub_planning_error = rospy.Publisher("Recording_Manager/planning_error", Bool, queue_size=1)
+pub_current_scene = rospy.Publisher("Recording_Manager/scene_informations", String, queue_size=1)
 
 abort_execution = False
 
@@ -279,7 +281,23 @@ class SceneManager(smach.State):
         # ---- OBJECT DIMENSIONS ----
         userdata.object = self.object_dimensions
 
+        msg = self.generate_scene_infos(userdata)
+        pub_current_scene.publish(msg)
+
         return "succeeded"
+
+    def generate_scene_infos(self, userdata):
+        dic = {"scene": self.scenario,
+               "additional_obstacles": self.spawn_obstacles,
+               "arm": userdata.active_arm,
+               "planning_method": self.planning_method,
+               "planer_id": rospy.get_param(str(rospy.get_name()) + "/planer_id"),
+               "eef_step": rospy.get_param(str(rospy.get_name()) + "/eef_step"),
+               "jump_threshold": rospy.get_param(str(rospy.get_name()) + "/jump_threshold")}
+        string = ""
+        for item1, item2 in dic.items():
+            string += "%s:%s;" % (item1, item2)
+        return string
 
     @staticmethod
     def load_data(filename):
@@ -1558,6 +1576,11 @@ class SwitchArm(smach.State):
                                          'switch_arm'],
                              output_keys=['active_arm', 'cs_orientation', 'arm_positions', 'cs_position'])
 
+        # ---- GET PARAMETER FROM SERVER ----
+        self.scenario = rospy.get_param(str(rospy.get_name()) + "/scene")
+        self.spawn_obstacles = rospy.get_param(str(rospy.get_name()) + "/load_obstacles")
+        self.planning_method = rospy.get_param(str(rospy.get_name()) + "/planning_method")
+
         self.counter = 1
 
     def execute(self, userdata):
@@ -1590,7 +1613,26 @@ class SwitchArm(smach.State):
             userdata.cs_position = "start"
             userdata.cs_orientation[2] = 0.0
             self.counter += 1.0
-            return "succeeded"
+
+            # --- PUBLISH CHANGED SCENE FOR RECORDING ---
+            msg = self.generate_scene_infos(userdata)
+            pub_current_scene.publish(msg)
+
+        return "succeeded"
+
+    def generate_scene_infos(self, userdata):
+        dic = {"scene": self.scenario,
+               "additional_obstacles": self.spawn_obstacles,
+               "arm": userdata.active_arm,
+               "planning_method": self.planning_method,
+               "planer_id": rospy.get_param(str(rospy.get_name()) + "/planer_id"),
+               "eef_step": rospy.get_param(str(rospy.get_name()) + "/eef_step"),
+               "jump_threshold": rospy.get_param(str(rospy.get_name()) + "/jump_threshold")}
+        string = ""
+        for item1, item2 in dic.items():
+            string += "%s:%s;" % (item1, item2)
+        return string
+
 
 
 class SwitchTargets(smach.State):
