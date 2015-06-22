@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
 <package>
-  <name>cob_recording_manager</name>
+  <name>cob_benchmarking</name>
   <version>0.1.0</version>
-  <description>Recording manager for the Care-O-Bot 4</description>
+  <description>Benchmarking application for the Care-O-Bot 4</description>
 
   <!-- One maintainer tag required, multiple allowed, one person per tag --> 
   <!-- Example:  -->
