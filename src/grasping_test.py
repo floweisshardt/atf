@@ -1677,6 +1677,7 @@ class Error(smach.State):
                              input_keys=['error_message'])
 
     def execute(self, userdata):
+        pub_planning_error.publish(True)
         rospy.logerr(userdata.error_message)
         return "finished"
 
