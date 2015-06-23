@@ -8,7 +8,7 @@ import time
 
 class RecordingManager:
     def __init__(self):
-        rospy.Subscriber("Recording_Manager/planning_timer", Bool, self.planning_timer)
+        sub_grasping_app = rospy.Subscriber("Recording_Manager/planning_timer", Bool, self.planning_timer)
         rospy.Subscriber("Recording_Manager/execution_timer", Bool, self.execution_timer)
         rospy.Subscriber("Recording_Manager/scene_informations", String, self.get_scene_infos)
         rospy.Subscriber("Recording_Manager/planning_error", Bool, self.error)
@@ -23,6 +23,9 @@ class RecordingManager:
         self.scene_id = 0
         self.error_b = False
 
+        while sub_grasping_app.get_num_connections() == 0:
+            rospy.spin()
+
     def planning_timer(self, data):
         if data.data:
             self.time_start_planning = time.time()
@@ -36,6 +39,7 @@ class RecordingManager:
         elif not data.data:
             self.time_execution = time.time() - self.time_start_execution
             print "Execution time: " + str(self.time_execution)
+
             self.write_results()
 
     def get_scene_infos(self, data):
@@ -56,6 +60,8 @@ class RecordingManager:
                        "planning_failed": self.error_b}}
 
         self.save_data(self.path, data)
+        self.error_b = False
+        self.scene_informations = {}
 
     def error(self, data):
         if data.data:
