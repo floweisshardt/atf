@@ -15,7 +15,7 @@ find_package(catkin REQUIRED COMPONENTS rospy)
 catkin_python_setup()
 
 ##generate_dynamic_reconfigure_options(
-##  cfg/parameter.cfg
+##    cfg/parameter.cfg
 ##)
 
 ###################################
@@ -37,7 +37,7 @@ catkin_package()
 ## Your package locations should be listed before other locations
 # include_directories(include)
 include_directories(
-  ${catkin_INCLUDE_DIRS}
+    ${catkin_INCLUDE_DIRS}
 )
 
 #############
@@ -50,6 +50,6 @@ include_directories(
 ## Mark executable scripts (Python etc.) for installation
 ## in contrast to setup.py, you can choose the destination
 install(PROGRAMS
-   src/grasping_test.py
-   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+    src/grasping_test.py
+    DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )

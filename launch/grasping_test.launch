@@ -4,7 +4,7 @@
         <param name="scene" value="table" />
         <param name="arm" value="right" />
         <param name="switch_arm" value="True" />
-        <param name="wait_for_user" value="False" />
+        <param name="wait_for_user" value="True" />
         <rosparam param="object_dimensions">
             [0.02, 0.02, 0.1]
         </rosparam>
