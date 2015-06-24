@@ -1,9 +1,6 @@
 #!/usr/bin/python
 import rospy
-import rospkg
-import yaml
 from std_msgs.msg import Bool, String
-import time
 import psutil
 
 
