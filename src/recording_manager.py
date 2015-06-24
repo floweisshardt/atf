@@ -2,7 +2,7 @@
 import rospy
 import rospkg
 import yaml
-from std_msgs.msg import Bool, String, Int32
+from std_msgs.msg import Bool, String
 import time
 import rosbag
 from threading import Lock
