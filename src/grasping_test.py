@@ -33,10 +33,9 @@ pub_planning_timer = rospy.Publisher("Recording_Manager/planning_timer", Bool, q
 pub_execution_timer = rospy.Publisher("Recording_Manager/execution_timer", Bool, queue_size=1)
 pub_planning_error = rospy.Publisher("Recording_Manager/planning_error", Bool, queue_size=1)
 pub_current_scene = rospy.Publisher("Recording_Manager/scene_informations", String, queue_size=1)
+pub_recording = rospy.Publisher("Recording_Manager/manage_recording", Bool, queue_size=1)
 
 abort_execution = False
-
-start = rospy.Time()
 
 
 def smooth_cartesian_path(traj):
@@ -1731,7 +1730,8 @@ class SM(smach.StateMachine):
             rospy.Timer(rospy.Duration.from_sec(0.01), self.broadcast_tf)
 
         # ---- WAITING FOR SUBSCRIBERS ----
-        while pub_planning_timer.get_num_connections() == 0 or pub_execution_timer.get_num_connections() == 0:
+        while (pub_planning_timer.get_num_connections() == 0 or pub_execution_timer.get_num_connections() == 0)\
+                and not rospy.is_shutdown():
             rospy.sleep(0.5)
 
         with self:
