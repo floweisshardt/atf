@@ -4,7 +4,7 @@ project(cob_benchmarking)
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
-find_package(catkin REQUIRED COMPONENTS rospy)
+find_package(catkin REQUIRED COMPONENTS rospy message_generation std_msgs)
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
@@ -13,6 +13,16 @@ find_package(catkin REQUIRED COMPONENTS rospy)
 ## modules and global scripts declared therein get installed
 ## See http://ros.org/doc/api/catkin/html/user_guide/setup_dot_py.html
 catkin_python_setup()
+
+add_message_files(
+    FILES
+    Feedback.msg
+)
+
+generate_messages(
+   DEPENDENCIES
+   std_msgs
+)
 
 ###################################
 ## catkin specific configuration ##
@@ -26,7 +36,7 @@ catkin_python_setup()
 catkin_package(
 #  INCLUDE_DIRS include
 #  LIBRARIES cob_recording_manager
-#  CATKIN_DEPENDS rospy
+CATKIN_DEPENDS message_runtime
 #  DEPENDS system_lib
 )
 
