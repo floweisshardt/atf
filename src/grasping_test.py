@@ -16,6 +16,7 @@ from std_msgs.msg import Bool
 from interactive_markers.interactive_marker_server import *
 from interactive_markers.menu_handler import *
 from visualization_msgs.msg import InteractiveMarkerControl, Marker
+from cob_benchmarking.msg import Feedback
 
 from simple_script_server import *
 
@@ -31,6 +32,9 @@ pub_planning_scene = rospy.Publisher("planning_scene", PlanningScene, queue_size
 
 pub_planning_timer = rospy.Publisher("Recording_Manager/planning_timer", Bool, queue_size=1)
 pub_execution_timer = rospy.Publisher("Recording_Manager/execution_timer", Bool, queue_size=1)
+
+pub_timer_feedback = rospy.Publisher("Recording_Manager/timer_feedback", Feedback, queue_size=1)
+
 pub_planning_error = rospy.Publisher("Recording_Manager/planning_error", Bool, queue_size=1)
 pub_current_scene = rospy.Publisher("Recording_Manager/scene_informations", String, queue_size=1)
 pub_recording = rospy.Publisher("Recording_Manager/manage_recording", Bool, queue_size=1)
