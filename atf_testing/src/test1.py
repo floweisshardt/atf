@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+import sys
 import math
 
 import rospy
@@ -24,6 +25,10 @@ if __name__ == '__main__':
     
     # initialize atf with metrics
     atf = ATF([TTf1, TTf2, TTf3, TTf4])
+        
+    if atf.get_state() != Status.FINISHED:
+        print "an error occured during analysis, no useful results available. state was", atf.get_state()
+        sys.exit()
     
     # print results
     print TTf1.get_path_length()

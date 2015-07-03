@@ -17,8 +17,8 @@ class ATF():
         self.m.add_state(Status.PURGED, self.purged_state)
         self.m.add_state(Status.ACTIVE, self.active_state)
         self.m.add_state(Status.PAUSED, self.paused_state)
-        self.m.add_state(Status.FINISHED, None, end_state=1)
-        self.m.add_state(Status.ERROR, None, end_state=1)
+        self.m.add_state(Status.FINISHED, self.finished_state, end_state=True)
+        self.m.add_state(Status.ERROR, self.error_state, end_state=True)
         self.m.set_start(Status.PURGED)
 
         self.m.run()
@@ -43,6 +43,9 @@ class ATF():
     def stop(self):
         for metric in self.metrics:
             metric.stop()
+    
+    def get_state(self):
+        return self.m.get_current_state()
 
     def purged_state(self):
         while not rospy.is_shutdown() and self.transition == None:
@@ -111,6 +114,12 @@ class ATF():
             newState = Status.ERROR
         self.transition = None
         return newState
+
+    def finished_state(self):
+        pass
+
+    def error_state(self):
+        pass
 
 if __name__== "__main__":
     rospy.init_node("atf")

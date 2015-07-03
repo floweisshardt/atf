@@ -15,16 +15,20 @@ class TestingTf():
         self.active = False
         self.root_frame = root_frame
         self.measured_frame = measured_frame
+        self.path_length = 0
+        self.current_pose = PoseStamped()
+        self.tf_sampling_time = 0.01 # sec
+        self.time_old = rospy.Time(0)
         
         self.listener = tf.TransformListener()
-        
-        self.tf_sampling_time = 0.1 # sec
-        self.listener.waitForTransform(self.measured_frame, self.root_frame, rospy.Time(0), rospy.Duration(3.0))
-        rospy.Timer(rospy.Duration(self.tf_sampling_time), self.record_tf)
-        self.current_pose = PoseStamped()
-        self.path_length = 0
 
-            
+        # wait for tf listener to be connected
+        self.listener.waitForTransform(self.measured_frame, self.root_frame, rospy.Time(0), rospy.Duration(3.0))
+        (self.trans_old, self.rot_old) = self.listener.lookupTransform(self.root_frame, self.measured_frame, rospy.Time(0))
+        
+        # call tf recording cyclically
+        rospy.Timer(rospy.Duration(self.tf_sampling_time), self.record_tf)
+
     def start(self):
         self.active = True
         print "start ttf for transfromation", self.root_frame, "--->", self.measured_frame
@@ -35,19 +39,34 @@ class TestingTf():
 
     def record_tf(self, event):
         try:
-            now = rospy.Time.now() - rospy.Duration(self.tf_sampling_time)
+            now = rospy.Time.now()
+            if (now - self.time_old).to_sec() > 2*self.tf_sampling_time:
+                #print "get new transform as old transform"
+                # get initial or new transform as old transfrom
+                self.listener.waitForTransform("base_laser_front_link", "reference1", now, rospy.Duration(2.0 * self.tf_sampling_time))
+                (self.trans_old, self.rot_old) = self.listener.lookupTransform(self.root_frame, self.measured_frame, now)
+                self.time_old = now
+                return
+
             #self.listener.waitForTransform("base_laser_front_link", "reference", now, rospy.Duration(2.0 * self.tf_sampling_time))
-            (trans_old, rot_old) = self.listener.lookupTransform(self.root_frame, self.measured_frame, now)
             (trans, rot) = self.listener.lookupTransform(self.root_frame, self.measured_frame, rospy.Time(0))
 
-            path_increment = math.sqrt((trans[0] - trans_old[0])**2 + (trans[1] - trans_old[1])**2 + (trans[2] - trans_old[2])**2)
+            path_increment = math.sqrt((trans[0] - self.trans_old[0])**2 + (trans[1] - self.trans_old[1])**2 + (trans[2] - self.trans_old[2])**2)
             
             if self.active:
                 self.path_length += path_increment
 
+            self.trans_old = trans
+            self.rot_old = rot
+            self.time_old = now
+
         except (tf.Exception, tf.LookupException, tf.ConnectivityException) as e:
             print e
 
+    def get_path_length(self):
+        return self.path_length
+
+"""
     def tf_distance(self):
         print "tf distance"
         
@@ -71,10 +90,7 @@ class TestingTf():
         
         trans_diff = math.sqrt(pose_diff.pose.position.x**2 + pose_diff.pose.position.y**2 + pose_diff.pose.position.z**2)
         print "trans_diff =", trans_diff
-
-    def get_path_length(self):
-        return self.path_length
-
+"""
 
 if __name__ == '__main__':
     TTf = TestingTf()
