@@ -5,12 +5,14 @@ import tf
 import math
 
 from geometry_msgs.msg import PoseStamped
+from atf_msgs.msg import Trigger
 
 class PublishTf():
     def __init__(self, *args):
         rospy.init_node("broadcaster")
         self.listener = tf.TransformListener()
         self.br = tf.TransformBroadcaster()
+        self.trigger = rospy.Publisher('trigger', Trigger)
         self.pub_freq = 100.0
         self.parent_frame_id = "base_laser_front_link"
         self.child1_frame_id = "reference1"
@@ -21,6 +23,9 @@ class PublishTf():
         rospy.Timer(rospy.Duration(1/self.pub_freq), self.reference3)
         rospy.Timer(rospy.Duration(1/self.pub_freq), self.reference4)
         rospy.sleep(1)
+
+    def pub_trigger(self, trigger):
+        self.trigger.publish(trigger)
 
     def reference2(self, event):
         self.pub_tf(self.child1_frame_id, self.child2_frame_id, [1, 0, 0])
@@ -84,8 +89,13 @@ class PublishTf():
 if __name__ == '__main__':
     PTf = PublishTf()
     
-    while not rospy.is_shutdown():
-        PTf.pub_line(length = -1, time = 2.5)
-        PTf.pub_quadrat(length = 2, time = 10)
-        PTf.pub_circ(radius = 2, time = 10)
+#    while not rospy.is_shutdown():
+    PTf.pub_line(length = -1, time = 2.5)
+    
+    PTf.pub_trigger(Trigger(1))
+    PTf.pub_quadrat(length = 2, time = 10)
+    PTf.pub_trigger(Trigger(2))
+    
+    PTf.pub_circ(radius = 2, time = 10)
 
+    PTf.pub_trigger(Trigger(3))
