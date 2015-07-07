@@ -12,11 +12,10 @@ from moveit_commander import MoveGroupCommander, PlanningSceneInterface
 from moveit_msgs.msg import RobotState, AttachedCollisionObject, CollisionObject, PlanningScene
 from moveit_msgs.msg import RobotTrajectory
 from shape_msgs.msg import MeshTriangle, Mesh, SolidPrimitive
-from std_msgs.msg import Bool
 from interactive_markers.interactive_marker_server import *
 from interactive_markers.menu_handler import *
 from visualization_msgs.msg import InteractiveMarkerControl, Marker
-from cob_benchmarking.msg import Feedback
+from cob_benchmarking.msg import RecordingManagerData
 
 from simple_script_server import *
 
@@ -30,14 +29,7 @@ planning_scene.is_diff = True
 planning_scene_interface = PlanningSceneInterface()
 pub_planning_scene = rospy.Publisher("planning_scene", PlanningScene, queue_size=1)
 
-pub_planning_timer = rospy.Publisher("Recording_Manager/planning_timer", Bool, queue_size=1)
-pub_execution_timer = rospy.Publisher("Recording_Manager/execution_timer", Bool, queue_size=1)
-
-pub_timer_feedback = rospy.Publisher("Recording_Manager/timer_feedback", Feedback, queue_size=1)
-
-pub_planning_error = rospy.Publisher("Recording_Manager/planning_error", Bool, queue_size=1)
-pub_current_scene = rospy.Publisher("Recording_Manager/scene_informations", String, queue_size=1)
-pub_recording = rospy.Publisher("Recording_Manager/manage_recording", Bool, queue_size=1)
+pub_recording_manager_data = rospy.Publisher("recording_manager_data", RecordingManagerData, queue_size=10)
 
 abort_execution = False
 
@@ -284,8 +276,11 @@ class SceneManager(smach.State):
         # ---- OBJECT DIMENSIONS ----
         userdata.object = self.object_dimensions
 
-        msg = self.generate_scene_infos(userdata)
-        pub_current_scene.publish(msg)
+        msg = RecordingManagerData()
+        msg.id.data = "scene_informations"
+        msg.timestamp.data = rospy.Time.from_sec(time.time())
+        msg.data.data = self.generate_scene_infos(userdata)
+        pub_recording_manager_data.publish(msg)
 
         return "succeeded"
 
@@ -782,7 +777,11 @@ class StartPlanningTimer(smach.State):
 
     def execute(self, userdata):
         # -- START PLANNING TIMER --
-        pub_planning_timer.publish(True)
+        msg = RecordingManagerData()
+        msg.id.data = "planning_timer"
+        msg.timestamp.data = rospy.Time.from_sec(time.time())
+        msg.status.data = True
+        pub_recording_manager_data.publish(msg)
 
         return "succeeded"
 
@@ -794,7 +793,11 @@ class StopPlanningTimer(smach.State):
 
     def execute(self, userdata):
         # -- STOP PLANNING TIMER --
-        pub_planning_timer.publish(False)
+        msg = RecordingManagerData()
+        msg.id.data = "planning_timer"
+        msg.timestamp.data = rospy.Time.from_sec(time.time())
+        msg.status.data = False
+        pub_recording_manager_data.publish(msg)
 
         return "succeeded"
 
@@ -1522,7 +1525,11 @@ class Execution(smach.State):
             return "error"
 
         # --- START EXECUTION TIMER ---
-        pub_execution_timer.publish(True)
+        msg = RecordingManagerData()
+        msg.id.data = "execution_timer"
+        msg.timestamp.data = rospy.Time.from_sec(time.time())
+        msg.status.data = True
+        pub_recording_manager_data.publish(msg)
 
         # ----------- EXECUTE -----------
         rospy.loginfo("---- Start execution ----")
@@ -1548,7 +1555,11 @@ class Execution(smach.State):
         rospy.loginfo("- Execution finished -")
 
         # --- STOP EXECUTION TIMER ---
-        pub_execution_timer.publish(False)
+        msg = RecordingManagerData()
+        msg.id.data = "execution_timer"
+        msg.timestamp.data = rospy.Time.from_sec(time.time())
+        msg.status.data = False
+        pub_recording_manager_data.publish(msg)
 
         # ----------- CLEAR TRAJECTORY LIST -----------
         userdata.computed_trajectories[:] = []
@@ -1618,8 +1629,11 @@ class SwitchArm(smach.State):
             self.counter += 1.0
 
             # --- PUBLISH CHANGED SCENE FOR RECORDING ---
-            msg = self.generate_scene_infos(userdata)
-            pub_current_scene.publish(msg)
+            msg = RecordingManagerData()
+            msg.id.data = "scene_informations"
+            msg.timestamp.data = rospy.Time.from_sec(time.time())
+            msg.data.data = self.generate_scene_infos(userdata)
+            pub_recording_manager_data.publish(msg)
 
         return "succeeded"
 
@@ -1680,7 +1694,10 @@ class Error(smach.State):
                              input_keys=['error_message'])
 
     def execute(self, userdata):
-        pub_planning_error.publish(True)
+        msg = RecordingManagerData()
+        msg.id.data = "planning_error"
+        msg.timestamp.data = rospy.Time.from_sec(time.time())
+        msg.status.data = True
         rospy.logerr(userdata.error_message)
         return "finished"
 
@@ -1734,9 +1751,8 @@ class SM(smach.StateMachine):
             rospy.Timer(rospy.Duration.from_sec(0.01), self.broadcast_tf)
 
         # ---- WAITING FOR SUBSCRIBERS ----
-        while (pub_planning_timer.get_num_connections() == 0 or pub_execution_timer.get_num_connections() == 0)\
-                and not rospy.is_shutdown():
-            rospy.sleep(0.5)
+        while pub_recording_manager_data.get_num_connections() == 0 and not rospy.is_shutdown():
+            rospy.sleep(1.0)
 
         with self:
 
