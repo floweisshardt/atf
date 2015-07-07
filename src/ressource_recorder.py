@@ -1,39 +1,41 @@
 #!/usr/bin/python
 import rospy
-from std_msgs.msg import Bool, String
 import psutil
+import time
+from cob_benchmarking.msg import RecordingManagerData
 
 
 class RessourceRecorder:
     def __init__(self):
-        sub_check_manipulation_app = rospy.Subscriber("Recording_Manager/planning_timer", Bool)
-        self.pub_ressource_data = rospy.Publisher("Recording_Manager/ressource_data", String, queue_size=1)
+
+        self.pub_recording_manager_data = rospy.Publisher("recording_manager_data", RecordingManagerData, queue_size=10)
+
+        self.node_names = ["grasping_test", "move_group"]
+
         rospy.Timer(rospy.Duration.from_sec(0.1), self.collect_ressource_data)
 
-        node_names = ["grasping_test", "move_group"]
-
-        # while sub_check_manipulation_app.get_num_connections() == 0:
-            # rospy.spin()
-
-        self.pids = []
-        for name in node_names:
-            self.pids.append(self.get_pid(name))
-        '''
-        while not rospy.is_shutdown():
-            for pid in self.pids:
-                print "Process '" + str(psutil.Process(pid).name()) + "': " + str(psutil.Process(pid).connections())
-        '''
-
     def collect_ressource_data(self, event):
-        msg = ""
-        for pid in self.pids:
-            msg += str(psutil.Process(pid).name().split(".")[0]) + ";"
-            msg += str(psutil.Process(pid).cpu_percent(interval=0.1)) + ";"
-            msg += str(psutil.Process(pid).memory_percent()) + ";"
-            msg += str(psutil.Process(pid).io_counters()) + ";"
-            msg += str(psutil.net_io_counters()) + "|"
+        msg = RecordingManagerData()
+        msg.id.data = "ressource_data"
+        msg.timestamp.data = rospy.Time.from_sec(time.time())
+        msg_data = ""
 
-        self.pub_ressource_data.publish(msg)
+        pids = []
+        try:
+            for name in self.node_names:
+                pids.append(self.get_pid(name))
+        except IndexError:
+            rospy.sleep(0.1)
+        else:
+            for pid in pids:
+                msg_data += str(psutil.Process(pid).name().split(".")[0]) + ";"
+                msg_data += str(psutil.Process(pid).cpu_percent(interval=0.1)) + ";"
+                msg_data += str(psutil.Process(pid).memory_percent()) + ";"
+                msg_data += str(psutil.Process(pid).io_counters()) + ";"
+                msg_data += str(psutil.net_io_counters()) + "|"
+            msg.data.data = msg_data
+
+            self.pub_recording_manager_data.publish(msg)
 
     @staticmethod
     def get_pid(name):
@@ -42,7 +44,7 @@ class RessourceRecorder:
 
 if __name__ == '__main__':
     rospy.init_node('ressource_recorder')
-    rospy.loginfo("Starting 'Ressource recorder'")
+    rospy.loginfo("Starting 'Ressource recorder'...")
     RessourceRecorder()
     while not rospy.is_shutdown():
         rospy.spin()

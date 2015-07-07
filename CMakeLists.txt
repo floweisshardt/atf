@@ -16,7 +16,7 @@ catkin_python_setup()
 
 add_message_files(
     FILES
-    RecorderData.msg
+    RecordingManagerData.msg
 )
 
 generate_messages(
