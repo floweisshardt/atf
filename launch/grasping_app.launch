@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <launch>
-    <node name="grasping_test" pkg="cob_grasping" type="grasping_test.py" output="screen">
+    <node name="grasping_app" pkg="cob_grasping" type="grasping_app.py" output="screen">
         <param name="scene" value="table" />
         <param name="arm" value="right" />
         <param name="switch_arm" value="True" />

@@ -1847,7 +1847,7 @@ class SM(smach.StateMachine):
 
 
 if __name__ == '__main__':
-    rospy.init_node('grasping_test')
+    rospy.init_node('grasping_app')
     sm = SM()
     sis = smach_ros.IntrospectionServer('sm', sm, 'SM')
     sis.start()
