@@ -16,6 +16,7 @@ from interactive_markers.interactive_marker_server import *
 from interactive_markers.menu_handler import *
 from visualization_msgs.msg import InteractiveMarkerControl, Marker
 from cob_benchmarking.msg import RecordingManagerData
+import atf_msgs.msg
 
 from simple_script_server import *
 
@@ -781,7 +782,7 @@ class StartPlanningTimer(smach.State):
         msg = RecordingManagerData()
         msg.id.data = "planning_timer"
         msg.timestamp.data = rospy.Time.from_sec(time.time())
-        msg.status.data = True
+        msg.trigger.trigger = atf_msgs.msg.Trigger.ACTIVATE
         pub_recording_manager_data.publish(msg)
 
         return "succeeded"
@@ -797,7 +798,7 @@ class StopPlanningTimer(smach.State):
         msg = RecordingManagerData()
         msg.id.data = "planning_timer"
         msg.timestamp.data = rospy.Time.from_sec(time.time())
-        msg.status.data = False
+        msg.trigger.trigger = atf_msgs.msg.Trigger.PAUSE
         pub_recording_manager_data.publish(msg)
 
         return "succeeded"
@@ -1511,7 +1512,7 @@ class StartExecutionTimer(smach.State):
         msg = RecordingManagerData()
         msg.id.data = "execution_timer"
         msg.timestamp.data = rospy.Time.from_sec(time.time())
-        msg.status.data = True
+        msg.trigger.trigger = atf_msgs.msg.Trigger.ACTIVATE
         pub_recording_manager_data.publish(msg)
 
         return "succeeded"
@@ -1527,7 +1528,7 @@ class StopExecutionTimer(smach.State):
         msg = RecordingManagerData()
         msg.id.data = "execution_timer"
         msg.timestamp.data = rospy.Time.from_sec(time.time())
-        msg.status.data = False
+        msg.trigger.trigger = atf_msgs.msg.Trigger.FINISH
         pub_recording_manager_data.publish(msg)
 
         return "succeeded"
@@ -1728,7 +1729,7 @@ class Error(smach.State):
         msg = RecordingManagerData()
         msg.id.data = "planning_error"
         msg.timestamp.data = rospy.Time.from_sec(time.time())
-        msg.status.data = True
+        msg.trigger.trigger = atf_msgs.msg.Trigger.FINISH
         pub_recording_manager_data.publish(msg)
         rospy.logerr(userdata.error_message)
         return "finished"
