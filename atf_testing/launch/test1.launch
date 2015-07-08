@@ -1,0 +1,12 @@
+<?xml version="1.0"?>
+<launch>
+
+	<!-- play recordings -->
+	<node pkg="atf_testing" type="tf_broadcaster.py" name="node_under_test" respawn="false" output="screen" >
+	</node>
+
+	<!-- analysis node -->
+	<node pkg="atf_testing" type="test1.py" name="test1" respawn="false" output="screen" >
+	</node>
+
+</launch>
