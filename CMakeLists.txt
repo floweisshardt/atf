@@ -80,5 +80,6 @@ include_directories(
 install(PROGRAMS
     src/recording_manager.py
     src/ressource_recorder.py
+    src/evaluation_program.py
     DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
