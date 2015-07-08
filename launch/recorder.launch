@@ -1,0 +1,9 @@
+<?xml version="1.0"?>
+<launch>
+    <node name="ressource_recorder" pkg="cob_benchmarking" type="ressource_recorder.py" output="screen">
+        <rosparam param="node_names">
+            ["grasping_app", "move_group"]
+        </rosparam>
+    </node>
+    <node name="recording_manager" pkg="cob_benchmarking" type="recording_manager.py" output="screen" />
+</launch>

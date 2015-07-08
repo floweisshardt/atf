@@ -21,17 +21,7 @@ class RecordingManager:
         self.bag = rosbag.Bag(rospkg.RosPack().get_path("cob_benchmarking") + "/results/init.bag", 'w')
         self.bag.close()
         self.run_once = False
-        '''
-        bag = rosbag.Bag(self.path_rb)
-        self.planning = [msg for (topic, msg, t) in bag.read_messages(topics=['planning_timer'])]
-        self.execution = [msg for (topic, msg, t) in bag.read_messages(topics=['execution_timer'])]
-        self.scene_infos = [msg for (topic, msg, t)
-                            in bag.read_messages(topics=['scene_informations'])]
-        self.ressource_info = [msg for (topic, msg, t)
-                               in bag.read_messages(topics=['ressource_data'])]
-        self.tf_data = [msg for (topic, msg, t) in bag.read_messages(topics=['tf'])]
-        bag.close()
-        '''
+
         rospy.Subscriber("recording_manager/data", RecordingManagerData, self.data_callback, queue_size=1)
         rospy.Subscriber("recording_manager/ressources", RecordingManagerData, self.ressources_callback, queue_size=1)
         rospy.Subscriber("tf", TFMessage, self.tf_callback, queue_size=1)

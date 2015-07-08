@@ -11,7 +11,7 @@ class RessourceRecorder:
         self.pub_recording_manager_data = rospy.Publisher("recording_manager/ressources",
                                                           RecordingManagerData, queue_size=1)
 
-        self.node_names = ["grasping_test", "move_group"]
+        self.node_names = rospy.get_param(str(rospy.get_name()) + "/node_names")
 
         rospy.Timer(rospy.Duration.from_sec(0.1), self.collect_ressource_data)
 
