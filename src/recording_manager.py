@@ -15,12 +15,11 @@ class RecordingManager:
         self.record_ressources = False
         self.lock = Lock()
 
-        self.scene = "scene " + str(datetime.datetime.now()) + ".bag"
-        self.scene = self.scene.replace(" ", "_")
-        self.path_rb = rospkg.RosPack().get_path("cob_benchmarking") + "/results/"
-        self.path_rb += self.scene
-        self.bag = rosbag.Bag(self.path_rb, 'w')
-
+        self.scene = ""
+        self.path_rb = ""
+        self.bag = rosbag.Bag(rospkg.RosPack().get_path("cob_benchmarking") + "/results/init.bag", 'w')
+        self.bag.close()
+        self.run_once = False
         '''
         bag = rosbag.Bag(self.path_rb)
         self.planning = [msg for (topic, msg, t) in bag.read_messages(topics=['planning_timer'])]
@@ -32,29 +31,34 @@ class RecordingManager:
         self.tf_data = [msg for (topic, msg, t) in bag.read_messages(topics=['tf'])]
         bag.close()
         '''
-        rospy.Subscriber("recording_manager_data", RecordingManagerData, self.data_callback, queue_size=10)
-        rospy.Subscriber("tf", TFMessage, self.current_tf_infos, queue_size=10)
+        rospy.Subscriber("recording_manager/data", RecordingManagerData, self.data_callback, queue_size=1)
+        rospy.Subscriber("recording_manager/ressources", RecordingManagerData, self.ressources_callback, queue_size=1)
+        rospy.Subscriber("tf", TFMessage, self.tf_callback, queue_size=1)
 
     def data_callback(self, msg):
 
-        if msg.id.data != "ressource_data":
-            self.lock.acquire()
-            self.bag.write(msg.id.data, msg)
-            self.lock.release()
-        elif self.record_ressources:
-            self.lock.acquire()
-            self.bag.write(msg.id.data, msg)
-            self.lock.release()
+        if not self.run_once:
+            # Create RosBag
+            self.scene = ("scene " + str(datetime.datetime.now()) + ".bag").replace(" ", "_")
+            self.path_rb = rospkg.RosPack().get_path("cob_benchmarking") + "/results/" + self.scene
+            self.bag = rosbag.Bag(self.path_rb, 'w')
+            self.run_once = True
+
+        self.lock.acquire()
+        self.bag.write(msg.id.data, msg)
+        self.lock.release()
 
         if msg.id.data == "planning_timer" and msg.status.data:
             self.record_ressources = True
             rospy.loginfo("Planning started")
 
         elif msg.id.data == "planning_timer" and not msg.status.data:
+            self.record_ressources = False
             rospy.loginfo("Planning stopped")
 
-        if msg.id.data == "execution_timer" and msg.status.data:
+        elif msg.id.data == "execution_timer" and msg.status.data:
             self.record_tf = True
+            self.record_ressources = True
             rospy.loginfo("Execution started")
 
         elif (msg.id.data == "execution_timer" and not msg.status.data) or msg.id.data == "planning_error":
@@ -62,32 +66,22 @@ class RecordingManager:
             self.record_tf = False
             rospy.loginfo("Execution stopped")
 
-            self.bag.close()
-
-            self.scene = "scene " + str(datetime.datetime.now()) + ".bag"
-            self.scene = self.scene.replace(" ", "_")
-            self.path_rb = rospkg.RosPack().get_path("cob_benchmarking") + "/results/"
-            self.path_rb += self.scene
-            self.bag = rosbag.Bag(self.path_rb, 'w')
-
-    def current_tf_infos(self, data):
-        if self.record_tf:
             self.lock.acquire()
-            self.bag.write("tf", data)
+            self.bag.close()
+            self.lock.release()
+            self.run_once = False
+
+    def ressources_callback(self, msg):
+        if self.record_ressources:
+            self.lock.acquire()
+            self.bag.write(msg.id.data, msg)
             self.lock.release()
 
-    @staticmethod
-    def create_dict(msg):
-        values = msg.split(";")
-        dic = {}
-        i = 0
-        for item in values:
-            i += 1
-            if i == len(values):
-                break
-            temp = item.split(":")
-            dic[temp[0]] = temp[1]
-        return dic
+    def tf_callback(self, msg):
+        if self.record_tf:
+            self.lock.acquire()
+            self.bag.write("tf", msg)
+            self.lock.release()
 
 if __name__ == '__main__':
     rospy.init_node('recording_manager')
