@@ -29,7 +29,7 @@ planning_scene.is_diff = True
 planning_scene_interface = PlanningSceneInterface()
 pub_planning_scene = rospy.Publisher("planning_scene", PlanningScene, queue_size=1)
 
-pub_recording_manager_data = rospy.Publisher("recording_manager_data", RecordingManagerData, queue_size=10)
+pub_recording_manager_data = rospy.Publisher("recording_manager/data", RecordingManagerData, queue_size=1)
 
 abort_execution = False
 
@@ -1500,6 +1500,38 @@ class Planning(smach.State):
         return True
 
 
+class StartExecutionTimer(smach.State):
+    def __init__(self):
+        smach.State.__init__(self,
+                             outcomes=['succeeded'])
+
+    def execute(self, userdata):
+        # --- START EXECUTION TIMER ---
+        msg = RecordingManagerData()
+        msg.id.data = "execution_timer"
+        msg.timestamp.data = rospy.Time.from_sec(time.time())
+        msg.status.data = True
+        pub_recording_manager_data.publish(msg)
+
+        return "succeeded"
+
+
+class StopExecutionTimer(smach.State):
+    def __init__(self):
+        smach.State.__init__(self,
+                             outcomes=['succeeded'])
+
+    def execute(self, userdata):
+        # --- STOP EXECUTION TIMER ---
+        msg = RecordingManagerData()
+        msg.id.data = "execution_timer"
+        msg.timestamp.data = rospy.Time.from_sec(time.time())
+        msg.status.data = False
+        pub_recording_manager_data.publish(msg)
+
+        return "succeeded"
+
+
 class Execution(smach.State):
     def __init__(self):
         smach.State.__init__(self,
@@ -1524,13 +1556,6 @@ class Execution(smach.State):
             userdata.cs_position = "start"
             return "error"
 
-        # --- START EXECUTION TIMER ---
-        msg = RecordingManagerData()
-        msg.id.data = "execution_timer"
-        msg.timestamp.data = rospy.Time.from_sec(time.time())
-        msg.status.data = True
-        pub_recording_manager_data.publish(msg)
-
         # ----------- EXECUTE -----------
         rospy.loginfo("---- Start execution ----")
         rospy.loginfo("------- Approach -------")
@@ -1553,13 +1578,6 @@ class Execution(smach.State):
         self.planer.execute(userdata.computed_trajectories[5])
         # self.move_gripper(userdata, "gripper_" + userdata.active_arm, "close")
         rospy.loginfo("- Execution finished -")
-
-        # --- STOP EXECUTION TIMER ---
-        msg = RecordingManagerData()
-        msg.id.data = "execution_timer"
-        msg.timestamp.data = rospy.Time.from_sec(time.time())
-        msg.status.data = False
-        pub_recording_manager_data.publish(msg)
 
         # ----------- CLEAR TRAJECTORY LIST -----------
         userdata.computed_trajectories[:] = []
@@ -1605,6 +1623,10 @@ class SwitchArm(smach.State):
             userdata.cs_position = "start"
             userdata.cs_orientation[2] = 0.0
             self.counter += 1.0
+
+            # --- PUBLISH CHANGED SCENE FOR RECORDING ---
+            self.publish_scene_info(userdata)
+
             return "switch_targets"
 
         elif userdata.switch_arm:
@@ -1612,6 +1634,10 @@ class SwitchArm(smach.State):
                 userdata.cs_position = "start"
                 userdata.cs_orientation[2] = 0.0
                 self.counter += 1.0
+
+                # --- PUBLISH CHANGED SCENE FOR RECORDING ---
+                self.publish_scene_info(userdata)
+
                 return "switch_targets"
 
             if userdata.active_arm == "left":
@@ -1629,13 +1655,16 @@ class SwitchArm(smach.State):
             self.counter += 1.0
 
             # --- PUBLISH CHANGED SCENE FOR RECORDING ---
-            msg = RecordingManagerData()
-            msg.id.data = "scene_informations"
-            msg.timestamp.data = rospy.Time.from_sec(time.time())
-            msg.data.data = self.generate_scene_infos(userdata)
-            pub_recording_manager_data.publish(msg)
+            self.publish_scene_info(userdata)
 
         return "succeeded"
+
+    def publish_scene_info(self, userdata):
+        msg = RecordingManagerData()
+        msg.id.data = "scene_informations"
+        msg.timestamp.data = rospy.Time.from_sec(time.time())
+        msg.data.data = self.generate_scene_infos(userdata)
+        pub_recording_manager_data.publish(msg)
 
     def generate_scene_infos(self, userdata):
         dic = {"scene": self.scenario,
@@ -1677,6 +1706,7 @@ class SwitchTargets(smach.State):
                 list(reversed(userdata.arm_positions["right"]["joints"]))
             userdata.arm_positions["left"]["joints"] = \
                 list(reversed(userdata.arm_positions["left"]["joints"]))
+
         return "succeeded"
 
     @staticmethod
@@ -1698,6 +1728,7 @@ class Error(smach.State):
         msg.id.data = "planning_error"
         msg.timestamp.data = rospy.Time.from_sec(time.time())
         msg.status.data = True
+        pub_recording_manager_data.publish(msg)
         rospy.logerr(userdata.error_message)
         return "finished"
 
@@ -1774,11 +1805,17 @@ class SM(smach.StateMachine):
                                                 'error': 'ERROR'})
 
             smach.StateMachine.add('STOP_PLANNING_TIMER', StopPlanningTimer(),
+                                   transitions={'succeeded': 'START_EXECUTION_TIMER'})
+
+            smach.StateMachine.add('START_EXECUTION_TIMER', StartExecutionTimer(),
                                    transitions={'succeeded': 'EXECUTION'})
 
             smach.StateMachine.add('EXECUTION', Execution(),
-                                   transitions={'succeeded': 'END_POSITION',
+                                   transitions={'succeeded': 'STOP_EXECUTION_TIMER',
                                                 'error': 'ERROR'})
+
+            smach.StateMachine.add('STOP_EXECUTION_TIMER', StopExecutionTimer(),
+                                   transitions={'succeeded': 'END_POSITION'})
 
             smach.StateMachine.add('END_POSITION', EndPosition(),
                                    transitions={'succeeded': 'SWITCH_ARM',
