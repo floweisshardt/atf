@@ -1,10 +1,11 @@
 #!/usr/bin/python
 import rospy
 import rospkg
-from cob_benchmarking.msg import RecordingManagerData
+import os
 import datetime
 import rosbag
 from threading import Lock
+from cob_benchmarking.msg import RecordingManagerData
 from tf2_msgs.msg import TFMessage
 
 
@@ -34,6 +35,10 @@ class RecordingManager:
         rospy.Subscriber("recording_manager/data", RecordingManagerData, self.data_callback, queue_size=1)
         rospy.Subscriber("recording_manager/ressources", RecordingManagerData, self.ressources_callback, queue_size=1)
         rospy.Subscriber("tf", TFMessage, self.tf_callback, queue_size=1)
+
+    def __del__(self):
+
+        os.remove(rospkg.RosPack().get_path("cob_benchmarking") + "/results/init.bag")
 
     def data_callback(self, msg):
 
