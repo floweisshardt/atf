@@ -505,6 +505,7 @@ class SceneManager(smach.State):
 
     def exit_program(self, feedback):
         self.exit = True
+        rospy.logwarn("Program terminated by user")
         self.start_manipulation.set()
 
     def switch_arm_callback(self, feedback):
