@@ -23,3 +23,4 @@ srv_gen
 *Result.msg
 *Result.py
 *.pyc
+/.idea/*
