@@ -744,6 +744,8 @@ Visualization Manager:
           Value: false
         column:
           Value: false
+        current_object:
+          Value: true
         door_00:
           Value: false
         door_01:
@@ -973,6 +975,8 @@ Visualization Manager:
               br_caster_rotation_link:
                 br_caster_r_wheel_link:
                   {}
+              current_object:
+                {}
               fl_caster_rotation_link:
                 fl_caster_r_wheel_link:
                   {}
@@ -1338,7 +1342,7 @@ Visualization Manager:
       Enabled: true
       Name: InteractiveMarkers
       Show Axes: false
-      Show Descriptions: true
+      Show Descriptions: false
       Show Visual Aids: false
       Update Topic: /grasping_targets/update
       Value: true
