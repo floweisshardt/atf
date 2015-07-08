@@ -16,10 +16,9 @@ class EvaluationProgram:
         bag = rosbag.Bag(self.path_rb)
         planning = [msg for (topic, msg, t) in bag.read_messages(topics=['planning_timer'])]
         execution = [msg for (topic, msg, t) in bag.read_messages(topics=['execution_timer'])]
-        scene_infos = [msg for (topic, msg, t)
-                       in bag.read_messages(topics=['scene_informations'])]
-        ressource_info = [msg for (topic, msg, t)
-                          in bag.read_messages(topics=['ressource_data'])]
+        scene_infos = [msg for (topic, msg, t) in bag.read_messages(topics=['scene_informations'])]
+        ressource_info = [msg for (topic, msg, t) in bag.read_messages(topics=['ressource_data'])]
+        planning_error = [msg for (topic, msg, t) in bag.read_messages(topics=['planning_error'])]
         tf_data = [msg for (topic, msg, t) in bag.read_messages(topics=['tf'])]
         bag.close()
 

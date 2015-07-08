@@ -7,6 +7,7 @@ import rosbag
 from threading import Lock
 from cob_benchmarking.msg import RecordingManagerData
 from tf2_msgs.msg import TFMessage
+from atf_msgs.msg import Trigger
 
 
 class RecordingManager:
@@ -43,20 +44,31 @@ class RecordingManager:
         self.bag.write(msg.id.data, msg)
         self.lock.release()
 
-        if msg.id.data == "planning_timer" and msg.status.data:
+        if msg.id.data == "planning_timer" and msg.trigger.trigger == Trigger.ACTIVATE:
             self.record_ressources = True
             rospy.loginfo("Planning started")
 
-        elif msg.id.data == "planning_timer" and not msg.status.data:
+        elif msg.id.data == "planning_timer" and msg.trigger.trigger == Trigger.PAUSE:
             self.record_ressources = False
             rospy.loginfo("Planning stopped")
 
-        elif msg.id.data == "execution_timer" and msg.status.data:
+        elif msg.id.data == "execution_timer" and msg.trigger.trigger == Trigger.ACTIVATE:
             self.record_tf = True
+
+            self.lock.acquire()
+            self.bag.write("trigger", msg.trigger)
+            self.lock.release()
+
             self.record_ressources = True
             rospy.loginfo("Execution started")
 
-        elif (msg.id.data == "execution_timer" and not msg.status.data) or msg.id.data == "planning_error":
+        elif (msg.id.data == "execution_timer" and msg.trigger.trigger == Trigger.FINISH)\
+                or msg.id.data == "planning_error":
+
+            self.lock.acquire()
+            self.bag.write("trigger", msg.trigger)
+            self.lock.release()
+
             self.record_ressources = False
             self.record_tf = False
             rospy.loginfo("Execution stopped")

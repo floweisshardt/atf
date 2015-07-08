@@ -4,7 +4,7 @@ project(cob_benchmarking)
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
-find_package(catkin REQUIRED COMPONENTS rospy message_generation std_msgs)
+find_package(catkin REQUIRED COMPONENTS rospy message_generation std_msgs atf_msgs)
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
@@ -22,6 +22,7 @@ add_message_files(
 generate_messages(
    DEPENDENCIES
    std_msgs
+   atf_msgs
 )
 
 ###################################

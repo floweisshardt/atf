@@ -1,4 +1,4 @@
 std_msgs/String id
 std_msgs/Time timestamp
-std_msgs/Bool status
+atf_msgs/Trigger trigger
 std_msgs/String data
