@@ -26,7 +26,7 @@ class RessourceRecorder:
             for name in self.node_names:
                 pids.append(self.get_pid(name))
         except IndexError:
-            rospy.sleep(0.001)
+            pass
         else:
             try:
                 for pid in pids:
@@ -37,7 +37,7 @@ class RessourceRecorder:
                     msg_data += str(psutil.net_io_counters()) + "|"
                 msg.data.data = msg_data
             except (psutil.NoSuchProcess, psutil.AccessDenied):
-                rospy.sleep(0.001)
+                pass
             else:
                 self.pub_recording_manager_data.publish(msg)
 
