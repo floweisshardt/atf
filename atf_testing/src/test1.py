@@ -18,6 +18,7 @@ if __name__ == '__main__':
     
     ### define metrics
     # define one test for tf path length
+    # TTf1 = TestingTf("base_laser_front_link", "gripper_right_grasp_link")
     TTf1 = TestingTf("base_laser_front_link", "reference1")
     TTf2 = TestingTf("base_laser_front_link", "reference2")
     TTf3 = TestingTf("base_laser_front_link", "reference3")
@@ -25,6 +26,7 @@ if __name__ == '__main__':
     
     # initialize atf with metrics
     atf = ATF([TTf1, TTf2, TTf3, TTf4])
+    # atf = ATF([TTf1])
         
     if atf.get_state() != Status.FINISHED:
         print "an error occured during analysis, no useful results available. state was", atf.get_state()
@@ -35,4 +37,3 @@ if __name__ == '__main__':
     print TTf2.get_path_length()
     print TTf3.get_path_length()
     print TTf4.get_path_length()
-

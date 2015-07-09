@@ -92,10 +92,10 @@ if __name__ == '__main__':
 #    while not rospy.is_shutdown():
     PTf.pub_line(length = -1, time = 2.5)
     
-    PTf.pub_trigger(Trigger(1))
+    PTf.pub_trigger(Trigger(Trigger.ACTIVATE))
     PTf.pub_quadrat(length = 2, time = 10)
-    PTf.pub_trigger(Trigger(2))
+    PTf.pub_trigger(Trigger(Trigger.PAUSE))
     
     PTf.pub_circ(radius = 2, time = 10)
 
-    PTf.pub_trigger(Trigger(3))
+    PTf.pub_trigger(Trigger(Trigger.FINISH))

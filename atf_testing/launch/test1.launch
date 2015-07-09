@@ -1,12 +1,11 @@
 <?xml version="1.0"?>
 <launch>
 
-	<!-- play recordings -->
-	<node pkg="atf_testing" type="tf_broadcaster.py" name="node_under_test" respawn="false" output="screen" >
-	</node>
+    <!-- play recordings -->
+    <!-- <node pkg="rosbag" type="play" name="player" output="screen" args="-clock $(find cob_benchmarking)/results/scene_2015-07-09_13:58:41.474319.bag" />-->
+    <node pkg="atf_testing" type="tf_broadcaster.py" name="node_under_test" respawn="false" output="screen" />
 
-	<!-- analysis node -->
-	<node pkg="atf_testing" type="test1.py" name="test1" respawn="false" output="screen" >
-	</node>
+    <!-- analysis node -->
+    <node pkg="atf_testing" type="test1.py" name="test1" respawn="false" output="screen" />
 
 </launch>
