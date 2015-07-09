@@ -6,7 +6,7 @@ import datetime
 import rosbag
 from threading import Lock
 from cob_benchmarking.msg import RecordingManagerData
-from tf2_msgs.msg import TFMessage
+import rostopic
 from atf_msgs.msg import Trigger
 
 
@@ -25,7 +25,8 @@ class RecordingManager:
 
         rospy.Subscriber("recording_manager/data", RecordingManagerData, self.data_callback, queue_size=1)
         rospy.Subscriber("recording_manager/ressources", RecordingManagerData, self.ressources_callback, queue_size=1)
-        rospy.Subscriber("tf", TFMessage, self.tf_callback, queue_size=1)
+        msg_type = rostopic.get_topic_class("/tf", blocking=True)[0]
+        rospy.Subscriber("/tf", msg_type, self.tf_callback, queue_size=1)
 
     def __del__(self):
 
@@ -39,9 +40,10 @@ class RecordingManager:
             self.path_rb = rospkg.RosPack().get_path("cob_benchmarking") + "/results/" + self.scene
             self.bag = rosbag.Bag(self.path_rb, 'w')
             self.run_once = True
+            self.record_tf = True
 
         self.lock.acquire()
-        self.bag.write(msg.id.data, msg)
+        self.bag.write(msg.id.data, msg, rospy.Time.now())
         self.lock.release()
 
         if msg.id.data == "planning_timer" and msg.trigger.trigger == Trigger.ACTIVATE:
@@ -56,7 +58,7 @@ class RecordingManager:
             self.record_tf = True
 
             self.lock.acquire()
-            self.bag.write("trigger", msg.trigger)
+            self.bag.write("trigger", msg.trigger, rospy.Time.now())
             self.lock.release()
 
             self.record_ressources = True
@@ -66,7 +68,7 @@ class RecordingManager:
                 or msg.id.data == "planning_error":
 
             self.lock.acquire()
-            self.bag.write("trigger", msg.trigger)
+            self.bag.write("trigger", msg.trigger, rospy.Time.now())
             self.lock.release()
 
             self.record_ressources = False
@@ -81,13 +83,13 @@ class RecordingManager:
     def ressources_callback(self, msg):
         if self.record_ressources:
             self.lock.acquire()
-            self.bag.write(msg.id.data, msg)
+            self.bag.write(msg.id.data, msg, rospy.Time.now())
             self.lock.release()
 
     def tf_callback(self, msg):
         if self.record_tf:
             self.lock.acquire()
-            self.bag.write("tf", msg)
+            self.bag.write("tf", msg, rospy.Time.now())
             self.lock.release()
 
 if __name__ == '__main__':
