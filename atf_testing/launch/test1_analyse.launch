@@ -2,7 +2,7 @@
 <launch>
 
 	<!-- play recordings -->
-	<node pkg="atf_testing" type="tf_broadcaster.py" name="node_under_test" respawn="false" output="screen" >
+	<node pkg="rosbag" type="play" name="player" args="/home/fmw/test1.bag" respawn="false" output="screen" >
 	</node>
 
 	<!-- analysis node -->
