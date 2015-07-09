@@ -31,6 +31,7 @@ planning_scene_interface = PlanningSceneInterface()
 pub_planning_scene = rospy.Publisher("planning_scene", PlanningScene, queue_size=1)
 
 pub_recording_manager_data = rospy.Publisher("recording_manager/data", RecordingManagerData, queue_size=1)
+pub_trigger = rospy.Publisher("trigger", atf_msgs.msg.Trigger, queue_size=1)
 
 abort_execution = False
 
@@ -1509,11 +1510,18 @@ class StartExecutionTimer(smach.State):
 
     def execute(self, userdata):
         # --- START EXECUTION TIMER ---
+        '''
+        import ATF_***
+        atf_execution = ATF_Recorder("execution")
+
+        atf_execution.start()
+        '''
         msg = RecordingManagerData()
         msg.id.data = "execution_timer"
         msg.timestamp.data = rospy.Time.from_sec(time.time())
         msg.trigger.trigger = atf_msgs.msg.Trigger.ACTIVATE
         pub_recording_manager_data.publish(msg)
+        pub_trigger.publish(atf_msgs.msg.Trigger.ACTIVATE)
 
         return "succeeded"
 
@@ -1530,6 +1538,7 @@ class StopExecutionTimer(smach.State):
         msg.timestamp.data = rospy.Time.from_sec(time.time())
         msg.trigger.trigger = atf_msgs.msg.Trigger.FINISH
         pub_recording_manager_data.publish(msg)
+        pub_trigger.publish(atf_msgs.msg.Trigger.FINISH)
 
         return "succeeded"
 
