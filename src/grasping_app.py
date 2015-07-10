@@ -170,7 +170,7 @@ class SceneManager(smach.State):
         self.server = InteractiveMarkerServer("grasping_targets")
         self.menu_handler = MenuHandler()
 
-        # ---- LOAD SCENE DATA ----
+        # ---- LOAD DATA ----
         self.data = self.load_data(self.path)
         self.positions_changed = False
 
@@ -275,7 +275,7 @@ class SceneManager(smach.State):
             self.positions_changed = False
 
         # ---- OBJECT INFORMATIONS ----
-        userdata.object = self.data[self.scenario]["object"]["dimension"]
+        userdata.object = self.data[self.scenario]["object"]
 
         msg = RecordingManagerData()
         msg.id = "scene_informations"
@@ -339,7 +339,7 @@ class SceneManager(smach.State):
     def make_box(self, color):
         marker = Marker()
 
-        marker.type = Marker.CYLINDER
+        marker.type = self.data[self.scenario]["object"]["shape"]
         marker.scale.x = self.data[self.scenario]["object"]["dimension"][0]  # Diameter in x
         marker.scale.y = self.data[self.scenario]["object"]["dimension"][1]  # Diameter in y
         marker.scale.z = self.data[self.scenario]["object"]["dimension"][2]  # Height
@@ -569,7 +569,7 @@ class SceneManager(smach.State):
                     collision_object.header.frame_id = "base_link"
                     collision_object.id = item["id"]
                     object_shape = SolidPrimitive()
-                    object_shape.type = object_shape.BOX
+                    object_shape.type = item["shape"]
                     object_shape.dimensions.append(item["size"][0])  # X
                     object_shape.dimensions.append(item["size"][1])  # Y
                     object_shape.dimensions.append(item["size"][2])  # Z
@@ -588,7 +588,7 @@ class SceneManager(smach.State):
                     collision_object.header.frame_id = "base_link"
                     collision_object.id = item["id"]
                     object_shape = SolidPrimitive()
-                    object_shape.type = object_shape.BOX
+                    object_shape.type = item["shape"]
                     object_shape.dimensions.append(item["size"][0])  # X
                     object_shape.dimensions.append(item["size"][1])  # Y
                     object_shape.dimensions.append(item["size"][2])  # Z
@@ -726,9 +726,9 @@ class EndPosition(smach.State):
         collision_object.header.frame_id = "base_link"
         collision_object.id = "object"
         object_shape = SolidPrimitive()
-        object_shape.type = object_shape.CYLINDER
-        object_shape.dimensions.append(userdata.object[2])  # Height
-        object_shape.dimensions.append(userdata.object[0]*0.5)  # Radius
+        object_shape.type = userdata.object["shape"]
+        object_shape.dimensions.append(userdata.object["dimension"][2])  # Height
+        object_shape.dimensions.append(userdata.object["dimension"][0]*0.5)  # Radius
         collision_object.primitives.append(object_shape)
         add_remove_object("remove", copy(collision_object), "", "")
 
@@ -1026,9 +1026,9 @@ class Planning(smach.State):
 
             # Attach object
             object_shape = SolidPrimitive()
-            object_shape.type = object_shape.CYLINDER
-            object_shape.dimensions.append(userdata.object[2])  # Height
-            object_shape.dimensions.append(userdata.object[0]*0.5)  # Radius
+            object_shape.type = userdata.object["shape"]
+            object_shape.dimensions.append(userdata.object["dimension"][2])  # Height
+            object_shape.dimensions.append(userdata.object["dimension"][0]*0.5)  # Radius
 
             object_pose = Pose()
             object_pose.orientation.w = 1.0
@@ -1146,9 +1146,9 @@ class Planning(smach.State):
 
             # Attach object
             object_shape = SolidPrimitive()
-            object_shape.type = object_shape.CYLINDER
-            object_shape.dimensions.append(userdata.object[2])  # Height
-            object_shape.dimensions.append(userdata.object[0]*0.5)  # Radius
+            object_shape.type = userdata.object["shape"]
+            object_shape.dimensions.append(userdata.object["dimension"][2])  # Height
+            object_shape.dimensions.append(userdata.object["dimension"][0]*0.5)  # Radius
 
             object_pose = Pose()
             object_pose.orientation.w = 1.0
@@ -1263,9 +1263,9 @@ class Planning(smach.State):
 
             # Attach object
             object_shape = SolidPrimitive()
-            object_shape.type = object_shape.CYLINDER
-            object_shape.dimensions.append(userdata.object[2])  # Height
-            object_shape.dimensions.append(userdata.object[0]*0.5)  # Radius
+            object_shape.type = userdata.object["shape"]
+            object_shape.dimensions.append(userdata.object["dimension"][2])  # Height
+            object_shape.dimensions.append(userdata.object["dimension"][0]*0.5)  # Radius
 
             object_pose = Pose()
             object_pose.orientation.w = 1.0
@@ -1448,9 +1448,9 @@ class Planning(smach.State):
             if 2 <= i <= 4:
                 # Attach object
                 object_shape = SolidPrimitive()
-                object_shape.type = object_shape.CYLINDER
-                object_shape.dimensions.append(userdata.object[2])  # Height
-                object_shape.dimensions.append(userdata.object[0]*0.5)  # Radius
+                object_shape.type = userdata.object["shape"]
+                object_shape.dimensions.append(userdata.object["dimension"][2])  # Height
+                object_shape.dimensions.append(userdata.object["dimension"][0]*0.5)  # Radius
 
                 object_pose = Pose()
                 object_pose.orientation.w = 1.0
@@ -1735,8 +1735,8 @@ class Error(smach.State):
 
     def execute(self, userdata):
         msg = RecordingManagerData()
-        msg.id.data = "planning_error"
-        msg.timestamp.data = rospy.Time.from_sec(time.time())
+        msg.id = "planning_error"
+        msg.timestamp = rospy.Time.from_sec(time.time())
         msg.trigger.trigger = atf_msgs.msg.Trigger.FINISH
         pub_recording_manager_data.publish(msg)
         rospy.logerr(userdata.error_message)
@@ -1783,7 +1783,7 @@ class SM(smach.StateMachine):
         self.userdata.error_counter = 0
 
         # ---- OBJECT DIMENSIONS ----
-        self.userdata.object = [float]*3
+        self.userdata.object = {}
 
         if self.userdata.planning_method != "joint":
             # ---- TF BROADCASTER ----

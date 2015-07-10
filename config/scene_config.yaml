@@ -6,6 +6,7 @@ rack:
     position: [0.56, -0.64, 0.0]
     scaling: 0.002
   object:
+    shape: 3
     dimension: [0.02, 0.02, 0.1]
   positions:
     goal_l: [0.594, 0.15, 1.082]
@@ -25,6 +26,7 @@ shelf:
     position: [0.67, -0.12, 0.16]
     scaling: 0.01
   object:
+    shape: 3
     dimension: [0.02, 0.02, 0.1]
   positions:
     goal_l: [0.545, 0.021, 1.053]
@@ -40,10 +42,12 @@ table:
   environment:
     additional_obstacles:
     - id: wall_r
+      shape: 1
       orientation: [0.0, 0.0, 0.0]
       position: [0.8, -0.15, 0.86]
       size: [0.48, 0.05, 0.5]
     - id: wall_l
+      shape: 1
       orientation: [0.0, 0.0, 0.0]
       position: [0.8, 0.15, 0.86]
       size: [0.48, 0.05, 0.5]
@@ -52,6 +56,7 @@ table:
     position: [0.56, 0.0, 0.61]
     scaling: 1.0
   object:
+    shape: 3
     dimension: [0.02, 0.02, 0.1]
   joints:
     left:
