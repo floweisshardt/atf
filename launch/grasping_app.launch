@@ -5,9 +5,6 @@
         <param name="arm" value="right" />
         <param name="switch_arm" value="True" />
         <param name="wait_for_user" value="False" />
-        <rosparam param="object_dimensions">
-            [0.02, 0.02, 0.1]
-        </rosparam>
         <param name="load_obstacles" value="none" />
         <param name="eef_step" value="0.01" />
         <param name="jump_threshold" value="2" />

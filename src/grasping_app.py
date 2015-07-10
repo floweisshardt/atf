@@ -157,7 +157,6 @@ class SceneManager(smach.State):
         self.scenario = rospy.get_param(str(rospy.get_name()) + "/scene")
         self.switch_arm = rospy.get_param(str(rospy.get_name()) + "/switch_arm")
         self.wait_for_user = rospy.get_param(str(rospy.get_name()) + "/wait_for_user")
-        self.object_dimensions = rospy.get_param(str(rospy.get_name()) + "/object_dimensions")
         self.spawn_obstacles = rospy.get_param(str(rospy.get_name()) + "/load_obstacles")
         self.planning_method = rospy.get_param(str(rospy.get_name()) + "/planning_method")
 
@@ -275,13 +274,13 @@ class SceneManager(smach.State):
             self.save_data(self.path)
             self.positions_changed = False
 
-        # ---- OBJECT DIMENSIONS ----
-        userdata.object = self.object_dimensions
+        # ---- OBJECT INFORMATIONS ----
+        userdata.object = self.data[self.scenario]["object"]["dimension"]
 
         msg = RecordingManagerData()
-        msg.id.data = "scene_informations"
-        msg.timestamp.data = rospy.Time.from_sec(time.time())
-        msg.data.data = self.generate_scene_infos(userdata)
+        msg.id = "scene_informations"
+        msg.timestamp = rospy.Time.from_sec(time.time())
+        msg.data = self.generate_scene_infos(userdata)
         pub_recording_manager_data.publish(msg)
 
         return "succeeded"
@@ -341,9 +340,9 @@ class SceneManager(smach.State):
         marker = Marker()
 
         marker.type = Marker.CYLINDER
-        marker.scale.x = self.object_dimensions[0]  # Diameter in x
-        marker.scale.y = self.object_dimensions[1]  # Diameter in y
-        marker.scale.z = self.object_dimensions[2]  # Height
+        marker.scale.x = self.data[self.scenario]["object"]["dimension"][0]  # Diameter in x
+        marker.scale.y = self.data[self.scenario]["object"]["dimension"][1]  # Diameter in y
+        marker.scale.z = self.data[self.scenario]["object"]["dimension"][2]  # Height
         marker.color = color
 
         return marker
@@ -781,8 +780,8 @@ class StartPlanningTimer(smach.State):
     def execute(self, userdata):
         # -- START PLANNING TIMER --
         msg = RecordingManagerData()
-        msg.id.data = "planning_timer"
-        msg.timestamp.data = rospy.Time.from_sec(time.time())
+        msg.id = "planning_timer"
+        msg.timestamp = rospy.Time.from_sec(time.time())
         msg.trigger.trigger = atf_msgs.msg.Trigger.ACTIVATE
         pub_recording_manager_data.publish(msg)
 
@@ -797,8 +796,8 @@ class StopPlanningTimer(smach.State):
     def execute(self, userdata):
         # -- STOP PLANNING TIMER --
         msg = RecordingManagerData()
-        msg.id.data = "planning_timer"
-        msg.timestamp.data = rospy.Time.from_sec(time.time())
+        msg.id = "planning_timer"
+        msg.timestamp = rospy.Time.from_sec(time.time())
         msg.trigger.trigger = atf_msgs.msg.Trigger.PAUSE
         pub_recording_manager_data.publish(msg)
 
@@ -1517,8 +1516,8 @@ class StartExecutionTimer(smach.State):
         atf_execution.start()
         '''
         msg = RecordingManagerData()
-        msg.id.data = "execution_timer"
-        msg.timestamp.data = rospy.Time.from_sec(time.time())
+        msg.id = "execution_timer"
+        msg.timestamp = rospy.Time.from_sec(time.time())
         msg.trigger.trigger = atf_msgs.msg.Trigger.ACTIVATE
         pub_recording_manager_data.publish(msg)
         pub_trigger.publish(atf_msgs.msg.Trigger.ACTIVATE)
@@ -1534,8 +1533,8 @@ class StopExecutionTimer(smach.State):
     def execute(self, userdata):
         # --- STOP EXECUTION TIMER ---
         msg = RecordingManagerData()
-        msg.id.data = "execution_timer"
-        msg.timestamp.data = rospy.Time.from_sec(time.time())
+        msg.id = "execution_timer"
+        msg.timestamp = rospy.Time.from_sec(time.time())
         msg.trigger.trigger = atf_msgs.msg.Trigger.FINISH
         pub_recording_manager_data.publish(msg)
         pub_trigger.publish(atf_msgs.msg.Trigger.FINISH)
@@ -1672,9 +1671,9 @@ class SwitchArm(smach.State):
 
     def publish_scene_info(self, userdata):
         msg = RecordingManagerData()
-        msg.id.data = "scene_informations"
-        msg.timestamp.data = rospy.Time.from_sec(time.time())
-        msg.data.data = self.generate_scene_infos(userdata)
+        msg.id = "scene_informations"
+        msg.timestamp = rospy.Time.from_sec(time.time())
+        msg.data = self.generate_scene_infos(userdata)
         pub_recording_manager_data.publish(msg)
 
     def generate_scene_infos(self, userdata):

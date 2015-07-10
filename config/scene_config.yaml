@@ -2,10 +2,11 @@ rack:
   environment:
     additional_obstacles: []
     mesh: /files/rack.stl
-    object_dimensions: [0.02, 0.02, 0.1]
     orientation: [90.0, 0.0, 90.0]
     position: [0.56, -0.64, 0.0]
     scaling: 0.002
+  object:
+    dimension: [0.02, 0.02, 0.1]
   positions:
     goal_l: [0.594, 0.15, 1.082]
     goal_r: [0.564, 0.162, 0.841]
@@ -20,10 +21,11 @@ shelf:
   environment:
     additional_obstacles: []
     mesh: /files/shelf.stl
-    object_dimensions: [0.02, 0.02, 0.1]
     orientation: [90.0, 0.0, 90.0]
     position: [0.67, -0.12, 0.16]
     scaling: 0.01
+  object:
+    dimension: [0.02, 0.02, 0.1]
   positions:
     goal_l: [0.545, 0.021, 1.053]
     goal_r: [0.563, 0.027, 0.786]
@@ -46,10 +48,11 @@ table:
       position: [0.8, 0.15, 0.86]
       size: [0.48, 0.05, 0.5]
     mesh: /files/table.stl
-    object_dimensions: [0.02, 0.02, 0.1]
     orientation: [0.0, 0.0, 0.0]
     position: [0.56, 0.0, 0.61]
     scaling: 1.0
+  object:
+    dimension: [0.02, 0.02, 0.1]
   joints:
     left:
     - [-2.18, -1.57, 2.56, 1.79, 0.83, -1.19, -0.98]
