@@ -23,8 +23,8 @@ class RecordingManager:
         self.bag.close()
         self.run_once = False
 
-        rospy.Subscriber("recording_manager/data", RecordingManagerData, self.data_callback, queue_size=1)
-        rospy.Subscriber("recording_manager/ressources", RecordingManagerData, self.ressources_callback, queue_size=1)
+        rospy.Subscriber("/recording_manager/data", RecordingManagerData, self.data_callback, queue_size=1)
+        rospy.Subscriber("/recording_manager/ressources", RecordingManagerData, self.ressources_callback, queue_size=1)
         msg_type = rostopic.get_topic_class("/tf", blocking=True)[0]
         rospy.Subscriber("/tf", msg_type, self.tf_callback, queue_size=1)
 
@@ -43,18 +43,18 @@ class RecordingManager:
             self.record_tf = True
 
         self.lock.acquire()
-        self.bag.write(msg.id.data, msg, rospy.Time.now())
+        self.bag.write(msg.id, msg, rospy.Time.now())
         self.lock.release()
 
-        if msg.id.data == "planning_timer" and msg.trigger.trigger == Trigger.ACTIVATE:
+        if msg.id == "planning_timer" and msg.trigger.trigger == Trigger.ACTIVATE:
             self.record_ressources = True
             rospy.loginfo("Planning started")
 
-        elif msg.id.data == "planning_timer" and msg.trigger.trigger == Trigger.PAUSE:
+        elif msg.id == "planning_timer" and msg.trigger.trigger == Trigger.PAUSE:
             self.record_ressources = False
             rospy.loginfo("Planning stopped")
 
-        elif msg.id.data == "execution_timer" and msg.trigger.trigger == Trigger.ACTIVATE:
+        elif msg.id == "execution_timer" and msg.trigger.trigger == Trigger.ACTIVATE:
             self.record_tf = True
 
             self.lock.acquire()
@@ -64,8 +64,7 @@ class RecordingManager:
             self.record_ressources = True
             rospy.loginfo("Execution started")
 
-        elif (msg.id.data == "execution_timer" and msg.trigger.trigger == Trigger.FINISH)\
-                or msg.id.data == "planning_error":
+        elif (msg.id == "execution_timer" and msg.trigger.trigger == Trigger.FINISH) or msg.id == "planning_error":
 
             self.lock.acquire()
             self.bag.write("trigger", msg.trigger, rospy.Time.now())
@@ -83,7 +82,7 @@ class RecordingManager:
     def ressources_callback(self, msg):
         if self.record_ressources:
             self.lock.acquire()
-            self.bag.write(msg.id.data, msg, rospy.Time.now())
+            self.bag.write(msg.id, msg, rospy.Time.now())
             self.lock.release()
 
     def tf_callback(self, msg):

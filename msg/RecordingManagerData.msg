@@ -1,4 +1,4 @@
-std_msgs/String id
-std_msgs/Time timestamp
+string id
+time timestamp
 atf_msgs/Trigger trigger
-std_msgs/String data
+string data

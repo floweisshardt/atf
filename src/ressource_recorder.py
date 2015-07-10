@@ -17,8 +17,8 @@ class RessourceRecorder:
 
     def collect_ressource_data(self, event):
         msg = RecordingManagerData()
-        msg.id.data = "ressource_data"
-        msg.timestamp.data = rospy.Time.from_sec(time.time())
+        msg.id = "ressource_data"
+        msg.timestamp = rospy.Time.from_sec(time.time())
         msg_data = ""
 
         pids = []
@@ -35,7 +35,7 @@ class RessourceRecorder:
                     msg_data += str(psutil.Process(pid).memory_percent()) + ";"
                     msg_data += str(psutil.Process(pid).io_counters()) + ";"
                     msg_data += str(psutil.net_io_counters()) + "|"
-                msg.data.data = msg_data
+                msg.data = msg_data
             except (psutil.NoSuchProcess, psutil.AccessDenied):
                 pass
             else:
