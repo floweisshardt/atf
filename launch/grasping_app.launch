@@ -15,5 +15,6 @@
         <param name="lift_height" value="0.02" />
         <param name="approach_distance" value="0.14" />
         <param name="manipulation_repeats" value="1" />
+        <param name="test_name" value="test_1.1" />
     </node>
 </launch>
