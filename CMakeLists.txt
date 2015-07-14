@@ -16,7 +16,7 @@ catkin_python_setup()
 
 add_message_files(
     FILES
-    RecordingManagerData.msg
+    Recorder.msg
 )
 
 generate_messages(
@@ -80,7 +80,5 @@ include_directories(
 ## in contrast to setup.py, you can choose the destination
 install(PROGRAMS
     src/recording_manager.py
-    src/ressource_recorder.py
-    src/evaluation_program.py
     DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )

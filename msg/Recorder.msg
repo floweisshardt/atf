@@ -1,4 +1,3 @@
-string id
+string name
 time timestamp
 atf_msgs/Trigger trigger
-string data

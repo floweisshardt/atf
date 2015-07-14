@@ -1,99 +1,71 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 import rospy
-import rospkg
-import os
-import datetime
 import rosbag
+import rospkg
+import rosparam
+import time
+
+from cob_benchmarking.msg import Recorder
 from threading import Lock
-from cob_benchmarking.msg import RecordingManagerData
-import rostopic
-from atf_msgs.msg import Trigger
+from atf_msgs.msg import *
+
+bag = rosbag.Bag(rospkg.RosPack().get_path("cob_benchmarking") + "/results/" + rosparam.get_param("/test_name") +
+                 "_trigger.bag", 'w')
+lock = Lock()
 
 
 class RecordingManager:
-    def __init__(self):
+    def __init__(self, name):
 
-        self.record_tf = False
-        self.record_ressources = False
-        self.lock = Lock()
+        self.name = name
 
-        self.scene = ""
-        self.path_rb = ""
-        self.bag = rosbag.Bag(rospkg.RosPack().get_path("cob_benchmarking") + "/results/init.bag", 'w')
-        self.bag.close()
-        self.run_once = False
+        self.topic = "/testing/" + name + "/"
+        self.pub_recorder_commands = rospy.Publisher(self.topic + "recorder_commands", Recorder, queue_size=1)
 
-        rospy.Subscriber("/recording_manager/data", RecordingManagerData, self.data_callback, queue_size=1)
-        rospy.Subscriber("/recording_manager/ressources", RecordingManagerData, self.ressources_callback, queue_size=1)
-        msg_type = rostopic.get_topic_class("/tf", blocking=True)[0]
-        rospy.Subscriber("/tf", msg_type, self.tf_callback, queue_size=1)
+        print self.name + ": init"
+
+    def start(self):
+        global bag, lock
+        print self.name + ": start"
+
+        time_msg = Time()
+        trigger_msg = Trigger()
+        recorder_command = Recorder()
+
+        time_msg.timestamp = rospy.Time.from_sec(time.time())
+        trigger_msg.trigger.trigger = Trigger.ACTIVATE
+        recorder_command.name = self.name
+        recorder_command.timestamp = time_msg.timestamp
+        recorder_command.trigger = trigger_msg.trigger.trigger
+
+        self.pub_recorder_commands.publish(recorder_command)
+
+        lock.acquire()
+        bag.write(self.topic + "Timer", time_msg, rospy.Time.from_sec(time.time()))
+        bag.write(self.topic + "Trigger", trigger_msg, rospy.Time.from_sec(time.time()))
+        lock.release()
+
+    def stop(self):
+        global bag, lock
+        print self.name + ": stop"
+
+        time_msg = Time()
+        trigger_msg = Trigger()
+        recorder_command = Recorder()
+
+        time_msg.timestamp = rospy.Time.from_sec(time.time())
+        trigger_msg.trigger.trigger = Trigger.FINISH
+        recorder_command.name = self.name
+        recorder_command.timestamp = time_msg.timestamp
+        recorder_command.trigger = trigger_msg.trigger.trigger
+
+        self.pub_recorder_commands.publish(recorder_command)
+
+        lock.acquire()
+        bag.write(self.topic + "Timer", time_msg, rospy.Time.from_sec(time.time()))
+        bag.write(self.topic + "Trigger", trigger_msg, rospy.Time.from_sec(time.time()))
+        lock.release()
 
     def __del__(self):
-
-        os.remove(rospkg.RosPack().get_path("cob_benchmarking") + "/results/init.bag")
-
-    def data_callback(self, msg):
-
-        if not self.run_once:
-            # Create RosBag
-            self.scene = ("scene " + str(datetime.datetime.now()) + ".bag").replace(" ", "_")
-            self.path_rb = rospkg.RosPack().get_path("cob_benchmarking") + "/results/" + self.scene
-            self.bag = rosbag.Bag(self.path_rb, 'w')
-            self.run_once = True
-            self.record_tf = True
-
-        self.lock.acquire()
-        self.bag.write(msg.id, msg, rospy.Time.now())
-        self.lock.release()
-
-        if msg.id == "planning_timer" and msg.trigger.trigger == Trigger.ACTIVATE:
-            self.record_ressources = True
-            rospy.loginfo("Planning started")
-
-        elif msg.id == "planning_timer" and msg.trigger.trigger == Trigger.PAUSE:
-            self.record_ressources = False
-            rospy.loginfo("Planning stopped")
-
-        elif msg.id == "execution_timer" and msg.trigger.trigger == Trigger.ACTIVATE:
-            self.record_tf = True
-
-            self.lock.acquire()
-            self.bag.write("trigger", msg.trigger, rospy.Time.now())
-            self.lock.release()
-
-            self.record_ressources = True
-            rospy.loginfo("Execution started")
-
-        elif (msg.id == "execution_timer" and msg.trigger.trigger == Trigger.FINISH) or msg.id == "planning_error":
-
-            self.lock.acquire()
-            self.bag.write("trigger", msg.trigger, rospy.Time.now())
-            self.lock.release()
-
-            self.record_ressources = False
-            self.record_tf = False
-            rospy.loginfo("Execution stopped")
-
-            self.lock.acquire()
-            self.bag.close()
-            self.lock.release()
-            self.run_once = False
-
-    def ressources_callback(self, msg):
-        if self.record_ressources:
-            self.lock.acquire()
-            self.bag.write(msg.id, msg, rospy.Time.now())
-            self.lock.release()
-
-    def tf_callback(self, msg):
-        if self.record_tf:
-            self.lock.acquire()
-            self.bag.write("tf", msg, rospy.Time.now())
-            self.lock.release()
-
-if __name__ == '__main__':
-    rospy.init_node('recording_manager')
-    rospy.loginfo("Starting 'Recording manager'...")
-    RecordingManager()
-    while not rospy.is_shutdown():
-        rospy.spin()
+        global bag
+        bag.close()
