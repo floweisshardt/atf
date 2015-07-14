@@ -80,5 +80,6 @@ include_directories(
 ## in contrast to setup.py, you can choose the destination
 install(PROGRAMS
     src/recording_manager.py
+    src/rosbag_recorder.py
     DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
