@@ -48,6 +48,12 @@ add_message_files(
   FILES
   Status.msg
   Trigger.msg
+  IO.msg
+  Network.msg
+  Resources.msg
+  NodeResources.msg
+  ObstacleDistance.msg
+  Time.msg
 )
 
 ## Generate services in the 'srv' folder
