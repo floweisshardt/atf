@@ -15,10 +15,9 @@ from shape_msgs.msg import MeshTriangle, Mesh, SolidPrimitive
 from interactive_markers.interactive_marker_server import *
 from interactive_markers.menu_handler import *
 from visualization_msgs.msg import InteractiveMarkerControl, Marker
-from cob_benchmarking.msg import RecordingManagerData
-import atf_msgs.msg
 
 from simple_script_server import *
+from cob_benchmarking.recording_manager import RecordingManager
 
 sss = simple_script_server()
 mgc_left = MoveGroupCommander("arm_left")
@@ -30,8 +29,8 @@ planning_scene.is_diff = True
 planning_scene_interface = PlanningSceneInterface()
 pub_planning_scene = rospy.Publisher("planning_scene", PlanningScene, queue_size=1)
 
-pub_recording_manager_data = rospy.Publisher("recording_manager/data", RecordingManagerData, queue_size=1)
-pub_trigger = rospy.Publisher("trigger", atf_msgs.msg.Trigger, queue_size=1)
+planning_recorder = RecordingManager("planning")
+execution_recorder = RecordingManager("execution")
 
 abort_execution = False
 
@@ -277,26 +276,7 @@ class SceneManager(smach.State):
         # ---- OBJECT INFORMATIONS ----
         userdata.object = self.data[self.scenario]["object"]
 
-        msg = RecordingManagerData()
-        msg.id = "scene_informations"
-        msg.timestamp = rospy.Time.from_sec(time.time())
-        msg.data = self.generate_scene_infos(userdata)
-        pub_recording_manager_data.publish(msg)
-
         return "succeeded"
-
-    def generate_scene_infos(self, userdata):
-        dic = {"scene": self.scenario,
-               "additional_obstacles": self.spawn_obstacles,
-               "arm": userdata.active_arm,
-               "planning_method": self.planning_method,
-               "planer_id": rospy.get_param(str(rospy.get_name()) + "/planer_id"),
-               "eef_step": rospy.get_param(str(rospy.get_name()) + "/eef_step"),
-               "jump_threshold": rospy.get_param(str(rospy.get_name()) + "/jump_threshold")}
-        string = ""
-        for item1, item2 in dic.items():
-            string += "%s:%s;" % (item1, item2)
-        return string
 
     @staticmethod
     def load_data(filename):
@@ -772,38 +752,6 @@ class EndPosition(smach.State):
             return "succeeded"
 
 
-class StartPlanningTimer(smach.State):
-    def __init__(self):
-        smach.State.__init__(self,
-                             outcomes=['succeeded'])
-
-    def execute(self, userdata):
-        # -- START PLANNING TIMER --
-        msg = RecordingManagerData()
-        msg.id = "planning_timer"
-        msg.timestamp = rospy.Time.from_sec(time.time())
-        msg.trigger.trigger = atf_msgs.msg.Trigger.ACTIVATE
-        pub_recording_manager_data.publish(msg)
-
-        return "succeeded"
-
-
-class StopPlanningTimer(smach.State):
-    def __init__(self):
-        smach.State.__init__(self,
-                             outcomes=['succeeded'])
-
-    def execute(self, userdata):
-        # -- STOP PLANNING TIMER --
-        msg = RecordingManagerData()
-        msg.id = "planning_timer"
-        msg.timestamp = rospy.Time.from_sec(time.time())
-        msg.trigger.trigger = atf_msgs.msg.Trigger.PAUSE
-        pub_recording_manager_data.publish(msg)
-
-        return "succeeded"
-
-
 class Planning(smach.State):
     def __init__(self):
         smach.State.__init__(self,
@@ -832,6 +780,7 @@ class Planning(smach.State):
 
         self.cs_ready = False
         self.last_state = 0
+        self.planning_timer_started = False
 
     def execute(self, userdata):
 
@@ -871,6 +820,10 @@ class Planning(smach.State):
         else:
             execution = self.plan_joint(userdata)
 
+        if not self.planning_timer_started:
+            planning_recorder.start()
+            self.planning_timer_started = True
+
         if not execution:
             if userdata.error_counter >= userdata.error_max:
                 userdata.error_counter = 0
@@ -878,9 +831,15 @@ class Planning(smach.State):
                 self.traj_place[:] = []
                 userdata.cs_position = "start"
                 userdata.cs_orientation[2] = 0.0
+
+                self.planning_timer_started = False
+                # planning_recorder.error()
                 return "error"
             else:
                 return "failed"
+
+        planning_recorder.stop()
+        self.planning_timer_started = False
 
         userdata.error_counter = 0
         return "succeeded"
@@ -1502,46 +1461,6 @@ class Planning(smach.State):
         return True
 
 
-class StartExecutionTimer(smach.State):
-    def __init__(self):
-        smach.State.__init__(self,
-                             outcomes=['succeeded'])
-
-    def execute(self, userdata):
-        # --- START EXECUTION TIMER ---
-        '''
-        import ATF_***
-        atf_execution = ATF_Recorder("execution")
-
-        atf_execution.start()
-        '''
-        msg = RecordingManagerData()
-        msg.id = "execution_timer"
-        msg.timestamp = rospy.Time.from_sec(time.time())
-        msg.trigger.trigger = atf_msgs.msg.Trigger.ACTIVATE
-        pub_recording_manager_data.publish(msg)
-        pub_trigger.publish(atf_msgs.msg.Trigger.ACTIVATE)
-
-        return "succeeded"
-
-
-class StopExecutionTimer(smach.State):
-    def __init__(self):
-        smach.State.__init__(self,
-                             outcomes=['succeeded'])
-
-    def execute(self, userdata):
-        # --- STOP EXECUTION TIMER ---
-        msg = RecordingManagerData()
-        msg.id = "execution_timer"
-        msg.timestamp = rospy.Time.from_sec(time.time())
-        msg.trigger.trigger = atf_msgs.msg.Trigger.FINISH
-        pub_recording_manager_data.publish(msg)
-        pub_trigger.publish(atf_msgs.msg.Trigger.FINISH)
-
-        return "succeeded"
-
-
 class Execution(smach.State):
     def __init__(self):
         smach.State.__init__(self,
@@ -1566,6 +1485,8 @@ class Execution(smach.State):
             userdata.cs_position = "start"
             return "error"
 
+        execution_recorder.start()
+
         # ----------- EXECUTE -----------
         rospy.loginfo("---- Start execution ----")
         rospy.loginfo("------- Approach -------")
@@ -1588,6 +1509,8 @@ class Execution(smach.State):
         self.planer.execute(userdata.computed_trajectories[5])
         # self.move_gripper(userdata, "gripper_" + userdata.active_arm, "close")
         rospy.loginfo("- Execution finished -")
+
+        execution_recorder.stop()
 
         # ----------- CLEAR TRAJECTORY LIST -----------
         userdata.computed_trajectories[:] = []
@@ -1634,9 +1557,6 @@ class SwitchArm(smach.State):
             userdata.cs_orientation[2] = 0.0
             self.counter += 1.0
 
-            # --- PUBLISH CHANGED SCENE FOR RECORDING ---
-            self.publish_scene_info(userdata)
-
             return "switch_targets"
 
         elif userdata.switch_arm:
@@ -1644,9 +1564,6 @@ class SwitchArm(smach.State):
                 userdata.cs_position = "start"
                 userdata.cs_orientation[2] = 0.0
                 self.counter += 1.0
-
-                # --- PUBLISH CHANGED SCENE FOR RECORDING ---
-                self.publish_scene_info(userdata)
 
                 return "switch_targets"
 
@@ -1664,31 +1581,7 @@ class SwitchArm(smach.State):
             userdata.cs_orientation[2] = 0.0
             self.counter += 1.0
 
-            # --- PUBLISH CHANGED SCENE FOR RECORDING ---
-            self.publish_scene_info(userdata)
-
         return "succeeded"
-
-    def publish_scene_info(self, userdata):
-        msg = RecordingManagerData()
-        msg.id = "scene_informations"
-        msg.timestamp = rospy.Time.from_sec(time.time())
-        msg.data = self.generate_scene_infos(userdata)
-        pub_recording_manager_data.publish(msg)
-
-    def generate_scene_infos(self, userdata):
-        dic = {"scene": self.scenario,
-               "additional_obstacles": self.spawn_obstacles,
-               "arm": userdata.active_arm,
-               "planning_method": self.planning_method,
-               "planer_id": rospy.get_param(str(rospy.get_name()) + "/planer_id"),
-               "eef_step": rospy.get_param(str(rospy.get_name()) + "/eef_step"),
-               "jump_threshold": rospy.get_param(str(rospy.get_name()) + "/jump_threshold")}
-        string = ""
-        for item1, item2 in dic.items():
-            string += "%s:%s;" % (item1, item2)
-        return string
-
 
 
 class SwitchTargets(smach.State):
@@ -1734,11 +1627,7 @@ class Error(smach.State):
                              input_keys=['error_message'])
 
     def execute(self, userdata):
-        msg = RecordingManagerData()
-        msg.id = "planning_error"
-        msg.timestamp = rospy.Time.from_sec(time.time())
-        msg.trigger.trigger = atf_msgs.msg.Trigger.FINISH
-        pub_recording_manager_data.publish(msg)
+
         rospy.logerr(userdata.error_message)
         return "finished"
 
@@ -1786,14 +1675,11 @@ class SM(smach.StateMachine):
         self.userdata.object = {}
 
         if self.userdata.planning_method != "joint":
+
             # ---- TF BROADCASTER ----
             self.tf_listener = tf.TransformListener()
             self.br = tf.TransformBroadcaster()
             rospy.Timer(rospy.Duration.from_sec(0.01), self.broadcast_tf)
-
-        # ---- WAITING FOR SUBSCRIBERS ----
-        while pub_recording_manager_data.get_num_connections() == 0 and not rospy.is_shutdown():
-            rospy.sleep(1.0)
 
         with self:
 
@@ -1802,30 +1688,18 @@ class SM(smach.StateMachine):
                                                 'exit': 'ended'})
 
             smach.StateMachine.add('START_POSITION', StartPosition(),
-                                   transitions={'succeeded': 'START_PLANNING_TIMER',
+                                   transitions={'succeeded': 'PLANNING',
                                                 'failed': 'START_POSITION',
                                                 'error': 'ERROR'})
 
-            smach.StateMachine.add('START_PLANNING_TIMER', StartPlanningTimer(),
-                                   transitions={'succeeded': 'PLANNING'})
-
             smach.StateMachine.add('PLANNING', Planning(),
-                                   transitions={'succeeded': 'STOP_PLANNING_TIMER',
+                                   transitions={'succeeded': 'EXECUTION',
                                                 'failed': 'PLANNING',
                                                 'error': 'ERROR'})
 
-            smach.StateMachine.add('STOP_PLANNING_TIMER', StopPlanningTimer(),
-                                   transitions={'succeeded': 'START_EXECUTION_TIMER'})
-
-            smach.StateMachine.add('START_EXECUTION_TIMER', StartExecutionTimer(),
-                                   transitions={'succeeded': 'EXECUTION'})
-
             smach.StateMachine.add('EXECUTION', Execution(),
-                                   transitions={'succeeded': 'STOP_EXECUTION_TIMER',
+                                   transitions={'succeeded': 'END_POSITION',
                                                 'error': 'ERROR'})
-
-            smach.StateMachine.add('STOP_EXECUTION_TIMER', StopExecutionTimer(),
-                                   transitions={'succeeded': 'END_POSITION'})
 
             smach.StateMachine.add('END_POSITION', EndPosition(),
                                    transitions={'succeeded': 'SWITCH_ARM',

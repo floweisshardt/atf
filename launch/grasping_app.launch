@@ -1,5 +1,9 @@
 <?xml version="1.0"?>
 <launch>
+    <param name="test_name" value="test_1" />
+
+    <node name="rosbag_recorder" pkg="cob_benchmarking" type="rosbag_recorder.py" output="screen" />
+
     <node name="grasping_app" pkg="cob_grasping" type="grasping_app.py" output="screen">
         <param name="scene" value="table" />
         <param name="arm" value="right" />
@@ -15,6 +19,5 @@
         <param name="lift_height" value="0.02" />
         <param name="approach_distance" value="0.14" />
         <param name="manipulation_repeats" value="1" />
-        <param name="test_name" value="test_1.1" />
     </node>
 </launch>

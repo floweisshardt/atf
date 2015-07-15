@@ -1,12 +1,13 @@
-# ! DO NOT MANUALLY INVOKE THIS setup.py, USE CATKIN INSTEAD
+#!/usr/bin/env python
 
 from distutils.core import setup
 from catkin_pkg.python_setup import generate_distutils_setup
 
-# fetch values from package.xml
-setup_args = generate_distutils_setup(
+d = generate_distutils_setup(
+    # #  don't do this unless you want a globally visible script
+    # scripts=['bin/myscript'], 
     packages=['cob_grasping'],
-    package_dir={'': 'src'},
+    package_dir={'': 'src'}
 )
 
-setup(**setup_args)
+setup(**d)
