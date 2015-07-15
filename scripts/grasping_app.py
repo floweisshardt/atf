@@ -29,8 +29,14 @@ planning_scene.is_diff = True
 planning_scene_interface = PlanningSceneInterface()
 pub_planning_scene = rospy.Publisher("planning_scene", PlanningScene, queue_size=1)
 
-planning_recorder = RecordingManager("planning")
-execution_recorder = RecordingManager("execution")
+planning_recorder_all = RecordingManager("planning_all")
+planning_recorder_1 = RecordingManager("planning_1")
+planning_recorder_2 = RecordingManager("planning_2")
+planning_recorder_3 = RecordingManager("planning_3")
+execution_recorder_all = RecordingManager("execution_all")
+execution_recorder_1 = RecordingManager("execution_1")
+execution_recorder_2 = RecordingManager("execution_2")
+execution_recorder_3 = RecordingManager("execution_3")
 
 abort_execution = False
 
@@ -667,6 +673,8 @@ class StartPosition(smach.State):
             abort_execution = False
             userdata.error_message = "Execution aborted by user"
             return "error"
+        planning_recorder_all.start()
+        planning_recorder_1.start()
 
         try:
             traj = plan_movement(planer, userdata.active_arm, self.traj_name, userdata.joint_trajectory_speed)
@@ -680,7 +688,11 @@ class StartPosition(smach.State):
             userdata.error_counter += 1
             return "failed"
         else:
+            planning_recorder_1.stop()
+            execution_recorder_all.start()
+            execution_recorder_1.start()
             planer.execute(traj)
+            execution_recorder_1.stop()
             return "succeeded"
 
 
@@ -732,7 +744,7 @@ class EndPosition(smach.State):
             abort_execution = False
             userdata.error_message = "Execution aborted by user"
             return "error"
-
+        planning_recorder_3.start()
         try:
             traj = plan_movement(planer, userdata.active_arm, self.traj_name, userdata.joint_trajectory_speed)
         except (ValueError, IndexError):
@@ -745,35 +757,16 @@ class EndPosition(smach.State):
             userdata.error_counter += 1
             return "failed"
         else:
+            planning_recorder_3.stop()
+            planning_recorder_all.stop()
+            execution_recorder_3.start()
             planer.execute(traj)
+            execution_recorder_3.stop()
+            execution_recorder_all.stop()
 
             # ----------- REMOVE OBJECT ------------
             add_remove_object("remove", collision_object, "", "")
             return "succeeded"
-
-
-class StartPlanningTimer(smach.State):
-    def __init__(self):
-        smach.State.__init__(self,
-                             outcomes=['succeeded'])
-
-    def execute(self, userdata):
-        # -- START PLANNING TIMER --
-        planning_recorder.start()
-
-        return "succeeded"
-
-
-class StopPlanningTimer(smach.State):
-    def __init__(self):
-        smach.State.__init__(self,
-                             outcomes=['succeeded'])
-
-    def execute(self, userdata):
-        # -- STOP PLANNING TIMER --
-        planning_recorder.stop()
-
-        return "succeeded"
 
 
 class Planning(smach.State):
@@ -804,7 +797,6 @@ class Planning(smach.State):
 
         self.cs_ready = False
         self.last_state = 0
-        # self.planning_timer_started = False
 
     def execute(self, userdata):
 
@@ -839,14 +831,13 @@ class Planning(smach.State):
             userdata.cs_position = "start"
             return "error"
 
+        planning_recorder_2.start()
+
+        # ---- PLANNING ----
         if userdata.planning_method != "joint":
             execution = self.plan_cartesian(userdata)
         else:
             execution = self.plan_joint(userdata)
-
-        # if not self.planning_timer_started:
-        #     planning_recorder.start()
-        #     self.planning_timer_started = True
 
         if not execution:
             if userdata.error_counter >= userdata.error_max:
@@ -856,14 +847,12 @@ class Planning(smach.State):
                 userdata.cs_position = "start"
                 userdata.cs_orientation[2] = 0.0
 
-                # self.planning_timer_started = False
                 # planning_recorder.error()
                 return "error"
             else:
                 return "failed"
 
-        # planning_recorder.stop()
-        # self.planning_timer_started = False
+        planning_recorder_2.stop()
 
         userdata.error_counter = 0
         return "succeeded"
@@ -1485,30 +1474,6 @@ class Planning(smach.State):
         return True
 
 
-class StartExecutionTimer(smach.State):
-    def __init__(self):
-        smach.State.__init__(self,
-                             outcomes=['succeeded'])
-
-    def execute(self, userdata):
-        # --- START EXECUTION TIMER ---
-        execution_recorder.start()
-
-        return "succeeded"
-
-
-class StopExecutionTimer(smach.State):
-    def __init__(self):
-        smach.State.__init__(self,
-                             outcomes=['succeeded'])
-
-    def execute(self, userdata):
-        # --- STOP EXECUTION TIMER ---
-        execution_recorder.stop()
-
-        return "succeeded"
-
-
 class Execution(smach.State):
     def __init__(self):
         smach.State.__init__(self,
@@ -1533,7 +1498,7 @@ class Execution(smach.State):
             userdata.cs_position = "start"
             return "error"
 
-        # execution_recorder.start()
+        execution_recorder_2.start()
 
         # ----------- EXECUTE -----------
         rospy.loginfo("---- Start execution ---")
@@ -1558,7 +1523,7 @@ class Execution(smach.State):
         # self.move_gripper(userdata, "gripper_" + userdata.active_arm, "close")
         rospy.loginfo("-- Execution finished --")
 
-        # execution_recorder.stop()
+        execution_recorder_2.stop()
 
         # ----------- CLEAR TRAJECTORY LIST -----------
         userdata.computed_trajectories[:] = []
@@ -1736,30 +1701,18 @@ class SM(smach.StateMachine):
                                                 'exit': 'ended'})
 
             smach.StateMachine.add('START_POSITION', StartPosition(),
-                                   transitions={'succeeded': 'START_PLANNING_TIMER',
+                                   transitions={'succeeded': 'PLANNING',
                                                 'failed': 'START_POSITION',
                                                 'error': 'ERROR'})
 
-            smach.StateMachine.add('START_PLANNING_TIMER', StartPlanningTimer(),
-                                   transitions={'succeeded': 'PLANNING'})
-
             smach.StateMachine.add('PLANNING', Planning(),
-                                   transitions={'succeeded': 'STOP_PLANNING_TIMER',
+                                   transitions={'succeeded': 'EXECUTION',
                                                 'failed': 'PLANNING',
                                                 'error': 'ERROR'})
 
-            smach.StateMachine.add('STOP_PLANNING_TIMER', StopPlanningTimer(),
-                                   transitions={'succeeded': 'START_EXECUTION_TIMER'})
-
-            smach.StateMachine.add('START_EXECUTION_TIMER', StartExecutionTimer(),
-                                   transitions={'succeeded': 'EXECUTION'})
-
             smach.StateMachine.add('EXECUTION', Execution(),
-                                   transitions={'succeeded': 'STOP_EXECUTION_TIMER',
+                                   transitions={'succeeded': 'END_POSITION',
                                                 'error': 'ERROR'})
-
-            smach.StateMachine.add('STOP_EXECUTION_TIMER', StopExecutionTimer(),
-                                   transitions={'succeeded': 'END_POSITION'})
 
             smach.StateMachine.add('END_POSITION', EndPosition(),
                                    transitions={'succeeded': 'SWITCH_ARM',
