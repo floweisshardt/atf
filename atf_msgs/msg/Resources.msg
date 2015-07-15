@@ -1,1 +1,1 @@
-atf_msgs/NodeResources[] nodes
+NodeResources[] nodes
