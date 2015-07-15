@@ -1,5 +1,13 @@
 test_1:
-  planning:
+  planning_all:
+    time: True
+
+  planning_1:
+    resources:
+      cpu: [move_group]
+      mem: [move_group]
+
+  planning_2:
     time: True
     resources:
       cpu: [grasping_app, move_group]
@@ -7,18 +15,28 @@ test_1:
       io: [move_group]
       network: [move_group]
 
-  execution:
+  planning_3:
+    time:
+
+
+  execution_all:
     time: True
+
+  execution_1:
+    time:
     resources:
-      cpu: [grasping_app, move_group]
+      cpu: [roscore]
       mem: [move_group]
-      network: [grasping_app, move_group]
+
+  execution_2:
+    time: True
     path_length:
-      - [base_link, arm_7]
-      - [arm_left_7, arm_right_7]
-    obstacle_distance:
-      - [arm_7, table]
-      - [arm_7, arm_left_1, arm_left_7]
+
+  execution_3:
+    time:
+    resources:
+      cpu: [grasping_app]
+      mem: [roscore]
 
 test_2:
   planning_1:

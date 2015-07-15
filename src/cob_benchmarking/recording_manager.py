@@ -11,7 +11,8 @@ class RecordingManager:
 
         self.name = name
         self.topic = "/testing/"
-        self.pub_recorder_commands = rospy.Publisher(self.topic + "recorder_commands", Recorder, queue_size=1)
+        self.pub_recorder_commands = rospy.Publisher(self.topic + "recorder_commands", Recorder, queue_size=2)
+        self.timeout = 0.015  # s
 
     def start(self):
 
@@ -25,6 +26,7 @@ class RecordingManager:
         recorder_command.trigger = Trigger(Trigger.ACTIVATE)
 
         self.pub_recorder_commands.publish(recorder_command)
+        rospy.sleep(self.timeout)
 
     def stop(self):
 
@@ -38,6 +40,7 @@ class RecordingManager:
         recorder_command.trigger = Trigger(Trigger.FINISH)
 
         self.pub_recorder_commands.publish(recorder_command)
+        rospy.sleep(self.timeout)
 
     def __del__(self):
         self.pub_recorder_commands.unregister()

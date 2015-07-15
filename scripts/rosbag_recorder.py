@@ -19,7 +19,8 @@ class RosBagRecorder:
         self.topic = "/testing/"
         self.lock_write = Lock()
         self.lock_pipeline = Lock()
-        self.timer_interval = 0.01
+        self.resources_timer_frequency = 100.0  # Hz
+        self.timer_interval = 1/self.resources_timer_frequency
         self.tf_active = False
 
         self.bag = rosbag.Bag(rospkg.RosPack().get_path("cob_benchmarking") + "/results/" +
@@ -30,6 +31,7 @@ class RosBagRecorder:
 
         self.nodes = {}
         self.pipeline = {}
+        self.active_sections = []
         self.requested_nodes = {"cpu": [], "mem": [], "io": [], "network": [], "path_length": []}
 
         rospy.Timer(rospy.Duration.from_sec(self.timer_interval), self.collect_resource_data)
@@ -37,7 +39,7 @@ class RosBagRecorder:
 
         rospy.Subscriber("/tf", msg_type, self.tf_callback, queue_size=1)
         self.sub_recorder_commands = rospy.Subscriber(self.topic + "recorder_commands", Recorder, self.manage_recording,
-                                                      queue_size=1)
+                                                      queue_size=2)
 
         while not rospy.is_shutdown() and self.sub_recorder_commands.get_num_connections() == 0:
             rospy.sleep(0.01)
@@ -62,25 +64,38 @@ class RosBagRecorder:
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
+        self.lock_write.acquire()
         self.bag.close()
+        self.lock_write.release()
 
     def manage_recording(self, msg):
 
+        if (msg.trigger.trigger == Trigger.ACTIVATE and msg.name in self.active_sections) or\
+                (msg.trigger.trigger == Trigger.FINISH and msg.name not in self.active_sections):
+            return
+
+        msg_trigger = Trigger()
+        msg_trigger.trigger = msg.trigger.trigger
+
+        try:
+            self.data[msg.name]["time"]
+        except KeyError:
+            self.write_to_bagfile([[self.topic + msg.name + "/Trigger", msg_trigger]], rospy.Time.now())
+        else:
+            msg_time = Time()
+            msg_time.timestamp = msg.timestamp
+
+            self.write_to_bagfile([[self.topic + msg.name + "/Trigger", msg_trigger],
+                                   [self.topic + msg.name + "/Time", msg_time]], rospy.Time.now())
+
         if msg.trigger.trigger == Trigger.ACTIVATE:
             self.update_requested_nodes(msg.name, "add")
+            self.active_sections.append(msg.name)
             rospy.loginfo("Section '" + msg.name + "': ACTIVATE")
         elif msg.trigger.trigger == Trigger.FINISH:
             self.update_requested_nodes(msg.name, "del")
+            self.active_sections.remove(msg.name)
             rospy.loginfo("Section '" + msg.name + "': FINISH")
-
-        msg_trigger = Trigger()
-        msg_time = Time()
-
-        msg_trigger.trigger = msg.trigger.trigger
-        msg_time.timestamp = msg.timestamp
-
-        self.write_to_bagfile([[self.topic + msg.name + "/Trigger", msg_trigger],
-                               [self.topic + msg.name + "/Time", msg_time]], rospy.Time.now())
 
     def update_requested_nodes(self, name, command):
         try:
