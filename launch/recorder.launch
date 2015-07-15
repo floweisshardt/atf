@@ -1,4 +1,0 @@
-<?xml version="1.0"?>
-<launch>
-    <node name="rosbag_recorder" pkg="cob_benchmarking" type="rosbag_recorder.py" output="screen" />
-</launch>

@@ -1,21 +1,18 @@
 test_1:
-  planning_1:
+  planning:
     time: True
     resources:
-      cpu: [firefox, pycharm]
-      mem: [move_group]
+      cpu: [grasping_app, move_group]
+      mem: [grasping_appmove_group]
       io: [move_group]
       network: [move_group]
 
-  planning_2:
-    time: True
-
-  execution_1:
+  execution:
     time: True
     resources:
-      cpu: [firefox, move_group]
+      cpu: [grasping_app, move_group]
       mem: [move_group]
-      network: [move_group]
+      network: [grasping_app, move_group]
     path_length:
       - [base_link, arm_7]
       - [arm_left_7, arm_right_7]

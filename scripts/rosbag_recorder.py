@@ -17,14 +17,13 @@ class RosBagRecorder:
     def __init__(self):
 
         self.topic = "/testing/"
-        self.node_names = rospy.get_param("/node_names")
         self.lock_write = Lock()
         self.lock_pipeline = Lock()
         self.timer_interval = 0.05
         self.tf_active = False
 
         self.bag = rosbag.Bag(rospkg.RosPack().get_path("cob_benchmarking") + "/results/" +
-                              rosparam.get_param("/test_name") + "_data.bag", 'w')
+                              rosparam.get_param("/test_name") + ".bag", 'w')
 
         self.path = rospkg.RosPack().get_path("cob_benchmarking") + "/tests/test_config.yaml"
         self.data = self.load_data(self.path)[rosparam.get_param("/test_name")]
@@ -60,8 +59,7 @@ class RosBagRecorder:
                                     pass
 
     def __del__(self):
-        trigger_bag = rosbag.Bag(rospkg.RosPack().get_path("cob_benchmarking") + "/results/" +
-                                 rosparam.get_param("/test_name") + "_trigger.bag", 'w')
+        self.bag.close()
 
     @staticmethod
     def read_bagfile(path):
@@ -76,11 +74,15 @@ class RosBagRecorder:
         bag.close()
 
     def manage_recording(self, msg):
-        if msg.trigger.trigger == Trigger.ACTIVATE:
+        if msg.trigger == Trigger.ACTIVATE:
             self.update_requested_nodes(msg.name, "add")
 
-        elif msg.trigger.trigger == Trigger.FINISH:
+        elif msg.trigger == Trigger.FINISH:
             self.update_requested_nodes(msg.name, "del")
+
+        now = rospy.Time.now()
+        self.write_to_bagfile(self.topic + msg.name + "/Trigger", Trigger(msg.trigger), now)
+        self.write_to_bagfile(self.topic + msg.name + "/Time", Time(msg.timestamp), now)
 
     def update_requested_nodes(self, name, command):
         try:
@@ -165,9 +167,7 @@ class RosBagRecorder:
                 except (psutil.NoSuchProcess, psutil.AccessDenied):
                     pass
 
-            self.lock_write.acquire()
-            self.bag.write(topic, msg, event.current_real)
-            self.lock_write.release()
+            self.write_to_bagfile(topic, msg, event.current_real)
 
         self.lock_pipeline.release()
 
@@ -178,9 +178,12 @@ class RosBagRecorder:
 
     def tf_callback(self, msg):
         if self.tf_active:
-            self.lock_write.acquire()
-            self.bag.write(self.topic + "tf", msg, rospy.Time.now())
-            self.lock_write.release()
+            self.write_to_bagfile(self.topic + "tf", msg, rospy.Time.now())
+
+    def write_to_bagfile(self, topic, msg, time):
+        self.lock_write.acquire()
+        self.bag.write(topic, msg, time)
+        self.lock_write.release()
 
 
 if __name__ == "__main__":
