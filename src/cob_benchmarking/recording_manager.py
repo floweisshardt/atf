@@ -15,7 +15,7 @@ class RecordingManager:
 
     def start(self):
 
-        rospy.loginfo(self.name + ": Start")
+        rospy.loginfo("Section '" + self.name + "': Start")
 
         recorder_command = Recorder()
         now = rospy.Time.from_sec(time.time())
@@ -28,7 +28,7 @@ class RecordingManager:
 
     def stop(self):
 
-        rospy.loginfo(self.name + ": Stop")
+        rospy.loginfo("Section '" + self.name + "': Stop")
 
         recorder_command = Recorder()
         now = rospy.Time.from_sec(time.time())
