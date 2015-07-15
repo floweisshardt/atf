@@ -1461,6 +1461,30 @@ class Planning(smach.State):
         return True
 
 
+class StartExecutionTimer(smach.State):
+    def __init__(self):
+        smach.State.__init__(self,
+                             outcomes=['succeeded'])
+
+    def execute(self, userdata):
+        # --- START EXECUTION TIMER ---
+        execution_recorder.start()
+
+        return "succeeded"
+
+
+class StopExecutionTimer(smach.State):
+    def __init__(self):
+        smach.State.__init__(self,
+                             outcomes=['succeeded'])
+
+    def execute(self, userdata):
+        # --- STOP EXECUTION TIMER ---
+        execution_recorder.stop()
+
+        return "succeeded"
+
+
 class Execution(smach.State):
     def __init__(self):
         smach.State.__init__(self,
@@ -1485,7 +1509,7 @@ class Execution(smach.State):
             userdata.cs_position = "start"
             return "error"
 
-        execution_recorder.start()
+        # execution_recorder.start()
 
         # ----------- EXECUTE -----------
         rospy.loginfo("---- Start execution ----")
@@ -1510,7 +1534,7 @@ class Execution(smach.State):
         # self.move_gripper(userdata, "gripper_" + userdata.active_arm, "close")
         rospy.loginfo("- Execution finished -")
 
-        execution_recorder.stop()
+        # execution_recorder.stop()
 
         # ----------- CLEAR TRAJECTORY LIST -----------
         userdata.computed_trajectories[:] = []
@@ -1693,13 +1717,19 @@ class SM(smach.StateMachine):
                                                 'error': 'ERROR'})
 
             smach.StateMachine.add('PLANNING', Planning(),
-                                   transitions={'succeeded': 'EXECUTION',
+                                   transitions={'succeeded': 'START_EXECUTION_TIMER',
                                                 'failed': 'PLANNING',
                                                 'error': 'ERROR'})
 
+            smach.StateMachine.add('START_EXECUTION_TIMER', StartExecutionTimer(),
+                                   transitions={'succeeded': 'EXECUTION'})
+
             smach.StateMachine.add('EXECUTION', Execution(),
-                                   transitions={'succeeded': 'END_POSITION',
+                                   transitions={'succeeded': 'STOP_EXECUTION_TIMER',
                                                 'error': 'ERROR'})
+
+            smach.StateMachine.add('STOP_EXECUTION_TIMER', StopExecutionTimer(),
+                                   transitions={'succeeded': 'END_POSITION'})
 
             smach.StateMachine.add('END_POSITION', EndPosition(),
                                    transitions={'succeeded': 'SWITCH_ARM',
