@@ -9,7 +9,8 @@ catkin_python_setup()
 ## Declare ROS messages and services ##
 #######################################
 
-add_message_files(FILES Recorder.msg)
+# add_message_files(FILES Recorder.msg)
+add_service_files(FILES RecorderCommand.srv)
 
 generate_messages(DEPENDENCIES std_msgs atf_msgs)
 

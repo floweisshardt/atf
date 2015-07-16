@@ -1,8 +1,7 @@
 #!/usr/bin/env python
 import rospy
-import time
 
-from cob_benchmarking.msg import Recorder
+from cob_benchmarking.srv import *
 from atf_msgs.msg import *
 
 
@@ -11,36 +10,23 @@ class RecordingManager:
 
         self.name = name
         self.topic = "/testing/"
-        self.pub_recorder_commands = rospy.Publisher(self.topic + "recorder_commands", Recorder, queue_size=2)
-        self.timeout = 0.015  # s
+        rospy.wait_for_service(self.topic + "recorder_command")
+        self.recorder_command = rospy.ServiceProxy(self.topic + "recorder_command", RecorderCommand)
 
     def start(self):
 
         rospy.loginfo("Section '" + self.name + "': Start")
 
-        recorder_command = Recorder()
-        now = rospy.Time.from_sec(time.time())
-
-        recorder_command.name = self.name
-        recorder_command.timestamp = now
-        recorder_command.trigger = Trigger(Trigger.ACTIVATE)
-
-        self.pub_recorder_commands.publish(recorder_command)
-        rospy.sleep(self.timeout)
+        result = self.recorder_command(self.name, Trigger(Trigger.ACTIVATE))
+        self.recorder_command.wait_for_service()
+        if not result:
+            rospy.logerr("Recorder not ready!")
 
     def stop(self):
 
         rospy.loginfo("Section '" + self.name + "': Stop")
 
-        recorder_command = Recorder()
-        now = rospy.Time.from_sec(time.time())
-
-        recorder_command.name = self.name
-        recorder_command.timestamp = now
-        recorder_command.trigger = Trigger(Trigger.FINISH)
-
-        self.pub_recorder_commands.publish(recorder_command)
-        rospy.sleep(self.timeout)
-
-    def __del__(self):
-        self.pub_recorder_commands.unregister()
+        result = self.recorder_command(self.name, Trigger(Trigger.FINISH))
+        self.recorder_command.wait_for_service()
+        if not result:
+            rospy.logerr("Recorder not ready!")
