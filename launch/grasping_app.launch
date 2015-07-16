@@ -5,7 +5,7 @@
     <node name="rosbag_recorder" pkg="cob_benchmarking" type="rosbag_recorder.py" output="screen" />
 
     <node name="grasping_app" pkg="cob_grasping" type="grasping_app.py" output="screen">
-        <param name="scene" value="table" />
+        <param name="scene" value="scene_3" />
         <param name="arm" value="right" />
         <param name="switch_arm" value="True" />
         <param name="wait_for_user" value="False" />
