@@ -238,7 +238,8 @@ class SceneManager(smach.State):
                                                "goal": Point(self.scene_data[self.scenario]["positions"]["goal_r"][0],
                                                              self.scene_data[self.scenario]["positions"]["goal_r"][1],
                                                              self.scene_data[self.scenario]["positions"]["goal_r"][2]
-                                                             )
+                                                             ),
+                                               "joints": {}
                                                }
 
             # ---- POSITIONS FOR LEFT ARM ----
@@ -253,21 +254,33 @@ class SceneManager(smach.State):
                                               "waypoints": waypoints_l,
                                               "goal": Point(self.scene_data[self.scenario]["positions"]["goal_l"][0],
                                                             self.scene_data[self.scenario]["positions"]["goal_l"][1],
-                                                            self.scene_data[self.scenario]["positions"]["goal_l"][2])}
+                                                            self.scene_data[self.scenario]["positions"]["goal_l"][2]),
+                                              "joints": {}
+                                              }
         else:
-            # ---- JOINTS FOR RIGHT ARM ----
             joints_r = {}
+            joints_l = {}
+
+            # ---- JOINTS FOR RIGHT ARM ----
             if len(self.robot_data["arm_joints"][self.scenario]["right"]) != 0:
                 for item in self.robot_data["arm_joints"][self.scenario]["right"]:
                     joints_r.update({item: self.robot_data["arm_joints"][self.scenario]["right"][item]})
             userdata.arm_positions["right"] = {"joints": joints_r}
+            print userdata.arm_positions["right"]
 
             # ---- JOINTS FOR LEFT ARM ----
-            joints_l = {}
             if len(self.robot_data["arm_joints"][self.scenario]["left"]) != 0:
                 for item in self.robot_data["arm_joints"][self.scenario]["left"]:
                     joints_l.update({item: self.robot_data["arm_joints"][self.scenario]["left"][item]})
             userdata.arm_positions["left"] = {"joints": joints_l}
+
+        userdata.arm_positions["right"]["joints"]["start"] =\
+            self.robot_data["arm_joints"][self.scenario]["right"]["start"]
+        userdata.arm_positions["left"]["joints"]["start"] =\
+            self.robot_data["arm_joints"][self.scenario]["left"]["start"]
+
+        userdata.arm_positions["right"]["joints"]["end"] = self.robot_data["arm_joints"][self.scenario]["right"]["end"]
+        userdata.arm_positions["left"]["joints"]["end"] = self.robot_data["arm_joints"][self.scenario]["left"]["end"]
 
         # ---- SWITCH ARM ----
         userdata.switch_arm = self.switch_arm
@@ -821,6 +834,7 @@ class Planning(smach.State):
         self.last_state = 0
 
         self.joint_order = ["approach", "grasp", "lift", "move", "drop", "retreat"]
+        self.timer_activated = False
 
     def execute(self, userdata):
 
@@ -855,7 +869,9 @@ class Planning(smach.State):
             userdata.cs_position = "start"
             return "error"
 
-        planning_recorder_2.start()
+        if not self.timer_activated:
+            planning_recorder_2.start()
+            self.timer_activated = True
 
         # ---- PLANNING ----
         if userdata.planning_method != "joint":
@@ -870,13 +886,14 @@ class Planning(smach.State):
                 self.traj_place[:] = []
                 userdata.cs_position = "start"
                 userdata.cs_orientation[2] = 0.0
-
+                self.timer_activated = False
                 # planning_recorder.error()
                 return "error"
             else:
                 return "failed"
 
         planning_recorder_2.stop()
+        self.timer_activated = True
 
         userdata.error_counter = 0
         return "succeeded"
@@ -891,7 +908,7 @@ class Planning(smach.State):
             traj_approach = RobotTrajectory()
             start_state = RobotState()
 
-            start_state.joint_state.name = self.joint_names[userdata.active_arm]
+            start_state.joint_state.name = userdata.joint_names[userdata.active_arm]
             start_state.joint_state.position = self.planer.get_current_joint_values()
             start_state.attached_collision_objects[:] = []
             start_state.is_diff = True
@@ -1478,7 +1495,7 @@ class Planning(smach.State):
                                      start_state,
                                      userdata.arm_positions[userdata.active_arm]["joints"][self.joint_order[i]],
                                      userdata.joint_trajectory_speed
-                                 )
+                                     )
             except (ValueError, IndexError, AttributeError):
                 rospy.logerr("Planning trajectory " + self.joint_order[i] + " failed")
                 userdata.error_message = "Error: " + str(AttributeError)
@@ -1639,10 +1656,29 @@ class SwitchTargets(smach.State):
             userdata.arm_positions["left"]["waypoints"] = \
                 list(reversed(sorted(userdata.arm_positions["left"]["waypoints"])))
         else:
-            userdata.arm_positions["right"]["joints"] = \
-                list(reversed(userdata.arm_positions["right"]["joints"]))
-            userdata.arm_positions["left"]["joints"] = \
-                list(reversed(userdata.arm_positions["left"]["joints"]))
+            (userdata.arm_positions["left"]["joints"]["approach"], userdata.arm_positions["left"]["joints"]["retreat"]) =\
+                self.switch_values(userdata.arm_positions["left"]["joints"]["approach"],
+                                   userdata.arm_positions["left"]["joints"]["retreat"])
+
+            (userdata.arm_positions["left"]["joints"]["grasp"], userdata.arm_positions["left"]["joints"]["drop"]) =\
+                self.switch_values(userdata.arm_positions["left"]["joints"]["grasp"],
+                                   userdata.arm_positions["left"]["joints"]["drop"])
+
+            (userdata.arm_positions["right"]["joints"]["approach"], userdata.arm_positions["right"]["joints"]["retreat"]) =\
+                self.switch_values(userdata.arm_positions["right"]["joints"]["approach"],
+                                   userdata.arm_positions["right"]["joints"]["retreat"])
+
+            (userdata.arm_positions["right"]["joints"]["grasp"], userdata.arm_positions["right"]["joints"]["drop"]) =\
+                self.switch_values(userdata.arm_positions["right"]["joints"]["grasp"],
+                                   userdata.arm_positions["right"]["joints"]["drop"])
+
+            (userdata.arm_positions["left"]["joints"]["lift"], userdata.arm_positions["left"]["joints"]["move"]) =\
+                self.switch_values(userdata.arm_positions["left"]["joints"]["lift"],
+                                   userdata.arm_positions["left"]["joints"]["move"])
+
+            (userdata.arm_positions["right"]["joints"]["lift"], userdata.arm_positions["right"]["joints"]["move"]) =\
+                self.switch_values(userdata.arm_positions["right"]["joints"]["lift"],
+                                   userdata.arm_positions["right"]["joints"]["move"])
 
         return "succeeded"
 
@@ -1695,10 +1731,15 @@ class SM(smach.StateMachine):
         # ---- ARM-POSITIONS ----
         self.userdata.arm_positions = {"right": {"start": Point(),
                                                  "waypoints": [],
-                                                 "goal": Point()},
+                                                 "goal": Point(),
+                                                 "joints": {}
+                                                 },
                                        "left": {"start": Point(),
                                                 "waypoints": [],
-                                                "goal": Point()}}
+                                                "goal": Point(),
+                                                "joints": {}
+                                                }
+                                       }
 
         self.userdata.computed_trajectories = []
 
