@@ -87,3 +87,7 @@ qtcreator-*
 .#*
 # Catkin custom files
 CATKIN_IGNORE
+<<<<<<< HEAD
+=======
+/results/
+>>>>>>> e4ffeeef80b4941603c9a75e6884bd299f0adbf6
