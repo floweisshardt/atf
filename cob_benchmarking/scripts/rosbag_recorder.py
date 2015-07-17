@@ -37,7 +37,7 @@ class RosBagRecorder:
         rospy.Timer(rospy.Duration.from_sec(self.timer_interval), self.collect_resource_data)
         msg_type = rostopic.get_topic_class("/tf", blocking=True)[0]
         rospy.Subscriber("/tf", msg_type, self.tf_callback, queue_size=1)
-        rospy.Service(self.topic + "recorder_command", RecorderCommand, self.manage_recording)
+        rospy.Service(self.topic + "recorder_command", RecorderCommand, self.command_callback)
 
         # ---- GET PIDS FOR THE NODES ----
         for section in self.config_data:
@@ -63,7 +63,7 @@ class RosBagRecorder:
         self.bag.close()
         self.lock_write.release()
 
-    def manage_recording(self, msg):
+    def command_callback(self, msg):
 
         if (msg.trigger.trigger == Trigger.ACTIVATE and msg.name in self.active_sections) or\
                 (msg.trigger.trigger == Trigger.FINISH and msg.name not in self.active_sections):
@@ -76,6 +76,7 @@ class RosBagRecorder:
             self.pipeline = {}
             self.tf_active = False
             rospy.loginfo("Section '" + msg.name + "': ERROR")
+
             return RecorderCommandResponse(True)
 
         try:
@@ -85,11 +86,10 @@ class RosBagRecorder:
                                     Trigger(msg.trigger.trigger)]],
                                   rospy.Time.from_sec(time.time()))
         else:
-            msg_time = Time()
-            msg_time.timestamp = rospy.Time.from_sec(time.time())
+            now = rospy.Time.from_sec(time.time())
 
             self.write_to_bagfile([[self.topic + msg.name + "/Trigger", Trigger(msg.trigger.trigger)],
-                                   [self.topic + msg.name + "/Time", msg_time]], msg_time.timestamp)
+                                   [self.topic + msg.name + "/Time", Time(now)]], now)
 
         if msg.trigger.trigger == Trigger.ACTIVATE:
             self.update_requested_nodes(msg.name, "add")

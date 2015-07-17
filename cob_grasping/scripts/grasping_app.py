@@ -17,7 +17,7 @@ from interactive_markers.menu_handler import *
 from visualization_msgs.msg import InteractiveMarkerControl, Marker
 
 from simple_script_server import *
-from recording_manager import *
+from cob_benchmarking.recording_manager import RecordingManager
 
 sss = simple_script_server()
 mgc_left = MoveGroupCommander("arm_left")
@@ -1660,9 +1660,9 @@ class SwitchTargets(smach.State):
                                    userdata.arm_positions["left"]["goal"])
 
             userdata.arm_positions["right"]["waypoints"] = \
-                list(reversed(sorted(userdata.arm_positions["right"]["waypoints"])))
+                list(reversed(userdata.arm_positions["right"]["waypoints"]))
             userdata.arm_positions["left"]["waypoints"] = \
-                list(reversed(sorted(userdata.arm_positions["left"]["waypoints"])))
+                list(reversed(userdata.arm_positions["left"]["waypoints"]))
         else:
             (userdata.arm_positions["left"]["joints"]["approach"], userdata.arm_positions["left"]["joints"]["retreat"]) =\
                 self.switch_values(userdata.arm_positions["left"]["joints"]["approach"],
