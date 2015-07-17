@@ -17,7 +17,7 @@ from interactive_markers.menu_handler import *
 from visualization_msgs.msg import InteractiveMarkerControl, Marker
 
 from simple_script_server import *
-from cob_benchmarking.recording_manager import RecordingManager
+from recording_manager import *
 
 sss = simple_script_server()
 mgc_left = MoveGroupCommander("arm_left")
@@ -895,7 +895,7 @@ class Planning(smach.State):
 
                 self.timer_activated = False
                 planning_recorder_2.error()
-                
+
                 return "error"
             else:
                 return "failed"
