@@ -1,0 +1,23 @@
+<?xml version="1.0"?>
+<launch>
+    <param name="test_name" value="test_1" />
+
+    <node name="rosbag_recorder" pkg="cob_benchmarking" type="rosbag_recorder.py" output="screen" />
+
+    <node name="grasping_app" pkg="cob_grasping" type="grasping_app.py" output="screen">
+        <param name="scene" value="scene_3" />
+        <param name="arm" value="right" />
+        <param name="switch_arm" value="True" />
+        <param name="wait_for_user" value="False" />
+        <param name="load_obstacles" value="none" />
+        <param name="eef_step" value="0.01" />
+        <param name="jump_threshold" value="2" />
+        <param name="planer_id" value="LBKPIECEkConfigDefault" />
+        <param name="planning_method" value="cartesian_linear" />
+        <param name="joint_trajectory_speed" value="0.3" />
+        <param name="max_error" value="50" />
+        <param name="lift_height" value="0.02" />
+        <param name="approach_distance" value="0.14" />
+        <param name="manipulation_repeats" value="1" />
+    </node>
+</launch>

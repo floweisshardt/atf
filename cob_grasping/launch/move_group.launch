@@ -1,0 +1,7 @@
+<?xml version="1.0"?>
+<launch>
+
+    <!-- Move Group -->
+    <include file="$(find cob_moveit_config)/launch/move_group.launch" />
+
+</launch>
