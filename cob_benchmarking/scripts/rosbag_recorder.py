@@ -69,6 +69,15 @@ class RosBagRecorder:
                 (msg.trigger.trigger == Trigger.FINISH and msg.name not in self.active_sections):
             return RecorderCommandResponse(True)
 
+        if msg.trigger.trigger == Trigger.ERROR:
+            self.write_to_bagfile([[self.topic + msg.name + "/Trigger",
+                                    Trigger(msg.trigger.trigger)]],
+                                  rospy.Time.from_sec(time.time()))
+            self.pipeline = {}
+            self.tf_active = False
+            rospy.loginfo("Section '" + msg.name + "': ERROR")
+            return RecorderCommandResponse(True)
+
         try:
             self.config_data[msg.name]["time"]
         except KeyError:

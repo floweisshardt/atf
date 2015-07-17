@@ -705,6 +705,9 @@ class StartPosition(smach.State):
             if userdata.error_counter >= userdata.error_max:
                 userdata.error_counter = 0
                 userdata.error_message = "Unabled to plan 'start trajectory' for " + userdata.active_arm + " arm"
+
+                planning_recorder_1.error()
+
                 return "error"
 
             userdata.error_counter += 1
@@ -787,6 +790,9 @@ class EndPosition(smach.State):
             if userdata.error_counter >= userdata.error_max:
                 userdata.error_counter = 0
                 userdata.error_message = "Unabled to plan 'end trajectory' for " + userdata.active_arm + " arm"
+
+                planning_recorder_3.error()
+
                 return "error"
 
             userdata.error_counter += 1
@@ -886,8 +892,10 @@ class Planning(smach.State):
                 self.traj_place[:] = []
                 userdata.cs_position = "start"
                 userdata.cs_orientation[2] = 0.0
+
                 self.timer_activated = False
-                # planning_recorder.error()
+                planning_recorder_2.error()
+                
                 return "error"
             else:
                 return "failed"
@@ -1793,7 +1801,7 @@ class SM(smach.StateMachine):
                                    transitions={'succeeded': 'START_POSITION'})
 
             smach.StateMachine.add('ERROR', Error(),
-                                   transitions={'finished': 'SCENE_MANAGER'})
+                                   transitions={'finished': 'ended'})
 
     def broadcast_tf(self, event):
         self.br.sendTransform(

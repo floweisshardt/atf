@@ -39,3 +39,12 @@ class RecordingManager:
         self.recorder_command.wait_for_service()
         if not result:
             rospy.logerr("Recorder not ready!")
+
+    def error(self):
+
+        rospy.loginfo("Section '" + self.name + "': Error")
+
+        result = self.recorder_command(self.name, Trigger(Trigger.ERROR))
+        self.recorder_command.wait_for_service()
+        if not result:
+            rospy.logerr("Recorder not ready!")
