@@ -1,6 +1,6 @@
 test_1:
   planning_all:
-    time: True
+    time:
 
   planning_1:
     resources:
@@ -8,7 +8,7 @@ test_1:
       mem: [move_group]
 
   planning_2:
-    time: True
+    time:
     resources:
       cpu: [grasping_app, move_group]
       mem: [grasping_app, move_group]
@@ -20,27 +20,41 @@ test_1:
 
 
   execution_all:
-    time: True
+    time:
 
   execution_1:
     time:
     resources:
       cpu: [roscore]
       mem: [move_group]
+    path_length:
+      - [base_link, arm_7]
+      - [arm_left_7, arm_right_7]
+    obstacle_distance:
+      - [arm_7, table]
+      - [arm_7, arm_left_1, arm_left_7]
 
   execution_2:
-    time: True
+    time:
     path_length:
+      - [base_link, arm_7]
+      - [arm_left_7, arm_right_7]
 
   execution_3:
     time:
     resources:
       cpu: [grasping_app]
       mem: [roscore]
+    path_length:
+      - [base_link, arm_7]
+      - [arm_left_7, arm_right_7]
+    obstacle_distance:
+      - [arm_7, table]
+      - [arm_7, arm_left_1, arm_left_7]
 
 test_2:
   planning_1:
-    time: True
+    time:
 
   execution_1:
     time: True

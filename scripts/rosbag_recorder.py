@@ -69,18 +69,17 @@ class RosBagRecorder:
                 (msg.trigger.trigger == Trigger.FINISH and msg.name not in self.active_sections):
             return RecorderCommandResponse(True)
 
-        msg_trigger = Trigger()
-        msg_trigger.trigger = msg.trigger.trigger
-
         try:
             self.config_data[msg.name]["time"]
         except KeyError:
-            self.write_to_bagfile([[self.topic + msg.name + "/Trigger", msg_trigger]], rospy.Time.from_sec(time.time()))
+            self.write_to_bagfile([[self.topic + msg.name + "/Trigger",
+                                    Trigger(msg.trigger.trigger)]],
+                                  rospy.Time.from_sec(time.time()))
         else:
             msg_time = Time()
             msg_time.timestamp = rospy.Time.from_sec(time.time())
 
-            self.write_to_bagfile([[self.topic + msg.name + "/Trigger", msg_trigger],
+            self.write_to_bagfile([[self.topic + msg.name + "/Trigger", Trigger(msg.trigger.trigger)],
                                    [self.topic + msg.name + "/Time", msg_time]], msg_time.timestamp)
 
         if msg.trigger.trigger == Trigger.ACTIVATE:
@@ -91,7 +90,6 @@ class RosBagRecorder:
             self.update_requested_nodes(msg.name, "del")
             self.active_sections.remove(msg.name)
             rospy.loginfo("Section '" + msg.name + "': FINISH")
-        print Trigger(msg.trigger.trigger)
 
         return RecorderCommandResponse(True)
 
