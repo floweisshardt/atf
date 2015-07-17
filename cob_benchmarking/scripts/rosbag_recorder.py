@@ -26,7 +26,7 @@ class RosBagRecorder:
         self.bag = rosbag.Bag(rospkg.RosPack().get_path("cob_benchmarking") + "/results/" +
                               rosparam.get_param("/test_name") + ".bag", 'w')
 
-        test_config_path = rospkg.RosPack().get_path("cob_benchmarking") + "/tests/test_config.yaml"
+        test_config_path = rospkg.RosPack().get_path("cob_benchmarking") + "/config/test_config.yaml"
         self.config_data = self.load_data(test_config_path)[rosparam.get_param("/test_name")]
 
         self.nodes = {}
