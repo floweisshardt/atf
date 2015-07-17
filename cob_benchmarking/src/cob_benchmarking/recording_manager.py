@@ -22,6 +22,15 @@ class RecordingManager:
         if not result:
             rospy.logerr("Recorder not ready!")
 
+    def pause(self):
+
+        rospy.loginfo("Section '" + self.name + "': Pause")
+
+        result = self.recorder_command(self.name, Trigger(Trigger.PAUSE))
+        self.recorder_command.wait_for_service()
+        if not result:
+            rospy.logerr("Recorder not ready!")
+
     def stop(self):
 
         rospy.loginfo("Section '" + self.name + "': Stop")
