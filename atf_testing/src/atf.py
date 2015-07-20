@@ -121,8 +121,3 @@ class ATF:
 
     def error_state(self):
         pass
-
-if __name__ == "__main__":
-    rospy.init_node("atf")
-    atf = ATF()
-    atf.run()

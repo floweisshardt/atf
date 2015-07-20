@@ -13,7 +13,7 @@ if __name__ == '__main__':
     
     # define metrics
     # define one test for tf path length
-    TTf1 = TestingTf("base_laser_front_link", "gripper_right_grasp_link")
+    TTf1 = TestingTf("base_link", "gripper_right_grasp_link")
     # TTf1 = TestingTf("base_laser_front_link", "reference1")
     # TTf2 = TestingTf("base_laser_front_link", "reference2")
     # TTf3 = TestingTf("base_laser_front_link", "reference3")
