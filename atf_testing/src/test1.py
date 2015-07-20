@@ -6,25 +6,25 @@ import rospy
 from atf_msgs.msg import Status
 
 from atf import ATF
-from testing_tf import TestingTf
+from atf_metrics.calculate_path_length import CalculatePathLength
 
 if __name__ == '__main__':
     rospy.init_node("atf")
     
     # define metrics
     # define one test for tf path length
-    TTf1 = TestingTf("base_link", "gripper_right_grasp_link")
-    # TTf1 = TestingTf("base_laser_front_link", "reference1")
-    # TTf2 = TestingTf("base_laser_front_link", "reference2")
-    # TTf3 = TestingTf("base_laser_front_link", "reference3")
-    # TTf4 = TestingTf("base_laser_front_link", "reference4")
+    TTf1 = CalculatePathLength("base_link", "gripper_right_grasp_link")
+    # TTf1 = CalculatePathLength("base_laser_front_link", "reference1")
+    # TTf2 = CalculatePathLength("base_laser_front_link", "reference2")
+    # TTf3 = CalculatePathLength("base_laser_front_link", "reference3")
+    # TTf4 = CalculatePathLength("base_laser_front_link", "reference4")
     
     # initialize atf with metrics
     # atf = ATF([TTf1, TTf2, TTf3, TTf4])
     atf = ATF([TTf1])
 
     if atf.get_state() != Status.FINISHED:
-        print "an error occured during analysis, no useful results available. state was", atf.get_state()
+        print "An error occured during analysis, no useful results available. State was", atf.get_state()
         sys.exit()
     
     # print results

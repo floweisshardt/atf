@@ -33,7 +33,7 @@ class StateMachine:
         if not self.endStates:
             raise "InitializationError", "at least one state must be an end_state"
 
-        print "sm running..."
+        print "SM running..."
         while not rospy.is_shutdown():
             new_state = self.handler()
             if new_state in self.endStates:
