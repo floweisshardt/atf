@@ -5,7 +5,7 @@ import tf
 
 
 class CalculatePathLength:
-    def __init__(self, root_frame, measured_frame):
+    def __init__(self, name, root_frame, measured_frame):
         
         self.active = False
         self.root_frame = root_frame
@@ -15,19 +15,25 @@ class CalculatePathLength:
         self.first_value = True
         self.trans_old = []
         self.rot_old = []
-        
-        self.listener = tf.TransformListener()
+        self.name = name
+
+        global listener
+        listener = tf.TransformListener
+
+        self.listener = listener
 
         # call tf recording cyclically
-        rospy.Timer(rospy.Duration.from_sec(1/self.tf_sampling_freq), self.record_tf)
+        # rospy.Timer(rospy.Duration.from_sec(1/self.tf_sampling_freq), self.record_tf)
 
     def start(self):
         self.active = True
-        rospy.loginfo("Start measurement for transformation" + self.root_frame + "--->" + self.measured_frame)
+        rospy.loginfo("Start measurement for transformation " + self.root_frame + " ---> " + self.measured_frame +
+                      " in " + self.name)
 
     def stop(self):
         self.active = False
-        rospy.loginfo("Stop measurement for transformation" + self.root_frame + "--->" + self.measured_frame)
+        rospy.loginfo("Stop measurement for transformation " + self.root_frame + " ---> " + self.measured_frame +
+                      " in " + self.name)
 
     def record_tf(self, event):
         if self.active:
@@ -57,3 +63,6 @@ class CalculatePathLength:
 
     def get_path_length(self):
         return self.path_length
+
+    def get_name(self):
+        return self.name

@@ -1,19 +1,19 @@
 #!/usr/bin/env python
-
 from state_machine import StateMachine
-
 import rospy
-
 from atf_msgs.msg import Status, Trigger
 
 
 class ATF:
     def __init__(self, metrics):
-        rospy.Subscriber("trigger", Trigger, self.trigger_callback)
 
-        self.transition = None
+        self.transition = {}
         self.metrics = metrics
-        
+
+        for item in self.metrics:
+            rospy.Subscriber("testing/" + item.get_name() + "/Trigger", Trigger, callback=self.trigger_callback,
+                             queue_size=1, callback_args=item.get_name())
+
         self.m = StateMachine()
         self.m.add_state(Status.PURGED, self.purged_state)
         self.m.add_state(Status.ACTIVE, self.active_state)
@@ -24,16 +24,18 @@ class ATF:
 
         self.m.run()
 
-    def trigger_callback(self, msg):
-        self.transition = msg.trigger
+    def trigger_callback(self, msg, name):
+        self.transition.update({name: msg.trigger})
 
     def purge(self):
         for metric in self.metrics:
             metric.purge()
 
     def activate(self):
+        name = self.transition_name
         for metric in self.metrics:
-            metric.start()
+            if metric.get_name() == name:
+                metric.start()
 
     def pause(self):
         self.stop()
@@ -42,31 +44,34 @@ class ATF:
         self.stop()
 
     def stop(self):
+        name = self.transition_name
         for metric in self.metrics:
-            metric.stop()
-    
+            if metric.get_name() == name:
+                metric.stop()
+
     def get_state(self):
         return self.m.get_current_state()
 
     def purged_state(self):
-        while not rospy.is_shutdown() and self.transition is None:
+        while not rospy.is_shutdown() and len(self.transition) == 0:
             # print "wait for trigger, current_state =", self.m.get_current_state()
             continue
-        if self.transition == Trigger.PURGE:
-            # is already purged
-            new_state = Status.PURGED
-        elif self.transition == Trigger.ACTIVATE:
-            print "activate"
-            self.activate()
-            new_state = Status.ACTIVE
-        elif self.transition == Trigger.PAUSE:
-            new_state = Status.ERROR
-        elif self.transition == Trigger.FINISH:
-            new_state = Status.ERROR
-        else:
-            new_state = Status.ERROR
-        self.transition = None
-        return new_state
+        for item in self.transition:
+            if self.transition[item] == Trigger.PURGE:
+                # is already purged
+                new_state = Status.PURGED
+            elif self.transition == Trigger.ACTIVATE:
+                print "activate"
+                self.activate()
+                new_state = Status.ACTIVE
+            elif self.transition == Trigger.PAUSE:
+                new_state = Status.ERROR
+            elif self.transition == Trigger.FINISH:
+                new_state = Status.ERROR
+            else:
+                new_state = Status.ERROR
+            self.transition = None
+            return new_state
 
     def active_state(self):
         while not rospy.is_shutdown() and self.transition is None:

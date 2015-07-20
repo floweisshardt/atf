@@ -5,7 +5,6 @@
     <!-- play recordings -->
     <node pkg="rosbag" type="play" name="player" output="screen" args="--clock $(find cob_benchmarking)/results/test_1.bag">
         <remap from="/testing/tf" to="/tf" />
-        <remap from="/testing/execution_2/Trigger" to="/trigger" />
     </node>
     <!--<node pkg="atf_testing" type="tf_broadcaster.py" name="node_under_test" respawn="false" output="screen" />-->
 
