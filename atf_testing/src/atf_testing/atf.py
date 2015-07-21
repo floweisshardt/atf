@@ -6,8 +6,10 @@ from atf_msgs.msg import Status, Trigger
 
 
 class ATF:
-    def __init__(self, metrics):
-        rospy.Subscriber("/testing/execution_2/Trigger", Trigger, self.trigger_callback)
+    def __init__(self, testblock, metrics):
+
+        self.testblock = testblock
+        rospy.Subscriber("/testing/" + self.testblock + "/Trigger", Trigger, self.trigger_callback)
 
         self.transition = None
         self.metrics = metrics
