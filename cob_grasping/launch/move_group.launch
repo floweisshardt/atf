@@ -4,4 +4,7 @@
     <!-- Move Group -->
     <include file="$(find cob_moveit_config)/launch/move_group.launch" />
 
+    <!-- Upload Params -->
+    <include file="$(find cob_grasping)/launch/upload_param.launch" />
+
 </launch>

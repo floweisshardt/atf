@@ -17,7 +17,7 @@ from interactive_markers.menu_handler import *
 from visualization_msgs.msg import InteractiveMarkerControl, Marker
 
 from simple_script_server import *
-from cob_benchmarking.recording_manager import RecordingManager
+from cob_benchmarking import RecordingManager
 
 sss = simple_script_server()
 mgc_left = MoveGroupCommander("arm_left")
@@ -171,7 +171,6 @@ class SceneManager(smach.State):
 
         # ---- LOAD DATA ----
         self.scene_data = self.load_data(self.path_scene)
-        self.robot_data = self.load_data(self.path_robot)
         self.positions_changed = False
 
         # ---- BUILD MENU ----
@@ -238,8 +237,7 @@ class SceneManager(smach.State):
                                                "goal": Point(self.scene_data[self.scenario]["positions"]["goal_r"][0],
                                                              self.scene_data[self.scenario]["positions"]["goal_r"][1],
                                                              self.scene_data[self.scenario]["positions"]["goal_r"][2]
-                                                             ),
-                                               "joints": {}
+                                                             )
                                                }
 
             # ---- POSITIONS FOR LEFT ARM ----
@@ -254,33 +252,22 @@ class SceneManager(smach.State):
                                               "waypoints": waypoints_l,
                                               "goal": Point(self.scene_data[self.scenario]["positions"]["goal_l"][0],
                                                             self.scene_data[self.scenario]["positions"]["goal_l"][1],
-                                                            self.scene_data[self.scenario]["positions"]["goal_l"][2]),
-                                              "joints": {}
+                                                            self.scene_data[self.scenario]["positions"]["goal_l"][2]
+                                                            )
                                               }
+
+            userdata.arm_positions["poses"] = [self.scene_data[self.scenario]["poses"]["start"],
+                                               self.scene_data[self.scenario]["poses"]["end"]]
+
         else:
-            joints_r = {}
-            joints_l = {}
-
-            # ---- JOINTS FOR RIGHT ARM ----
-            if len(self.robot_data["arm_joints"][self.scenario]["right"]) != 0:
-                for item in self.robot_data["arm_joints"][self.scenario]["right"]:
-                    joints_r.update({item: self.robot_data["arm_joints"][self.scenario]["right"][item]})
-            userdata.arm_positions["right"] = {"joints": joints_r}
-            print userdata.arm_positions["right"]
-
-            # ---- JOINTS FOR LEFT ARM ----
-            if len(self.robot_data["arm_joints"][self.scenario]["left"]) != 0:
-                for item in self.robot_data["arm_joints"][self.scenario]["left"]:
-                    joints_l.update({item: self.robot_data["arm_joints"][self.scenario]["left"][item]})
-            userdata.arm_positions["left"] = {"joints": joints_l}
-
-        userdata.arm_positions["right"]["joints"]["start"] =\
-            self.robot_data["arm_joints"][self.scenario]["right"]["start"]
-        userdata.arm_positions["left"]["joints"]["start"] =\
-            self.robot_data["arm_joints"][self.scenario]["left"]["start"]
-
-        userdata.arm_positions["right"]["joints"]["end"] = self.robot_data["arm_joints"][self.scenario]["right"]["end"]
-        userdata.arm_positions["left"]["joints"]["end"] = self.robot_data["arm_joints"][self.scenario]["left"]["end"]
+            userdata.arm_positions["poses"] = [self.scene_data[self.scenario]["poses"]["start"],
+                                               self.scene_data[self.scenario]["poses"]["approach"],
+                                               self.scene_data[self.scenario]["poses"]["grasp"],
+                                               self.scene_data[self.scenario]["poses"]["lift"],
+                                               self.scene_data[self.scenario]["poses"]["move"],
+                                               self.scene_data[self.scenario]["poses"]["drop"],
+                                               self.scene_data[self.scenario]["poses"]["retreat"],
+                                               self.scene_data[self.scenario]["poses"]["end"]]
 
         # ---- SWITCH ARM ----
         userdata.switch_arm = self.switch_arm
@@ -669,7 +656,7 @@ class StartPosition(smach.State):
         smach.State.__init__(self,
                              outcomes=['succeeded', 'failed', 'error'],
                              input_keys=['active_arm', 'error_max', 'error_counter', 'joint_trajectory_speed',
-                                         'joint_names', 'arm_positions'],
+                                         'arm_positions'],
                              output_keys=['error_message', 'error_counter'])
 
     def execute(self, userdata):
@@ -688,8 +675,13 @@ class StartPosition(smach.State):
         planning_recorder_all.start()
         planning_recorder_1.start()
 
+        (config, error_code) = sss.compose_trajectory("arm_" + userdata.active_arm, userdata.arm_positions["poses"][0])
+        if error_code != 0:
+            rospy.logerr("unable to parse configuration")
+            return False
+
         start_state = RobotState()
-        start_state.joint_state.name = userdata.joint_names[userdata.active_arm]
+        start_state.joint_state.name = config.joint_names
 
         start_state.joint_state.position = planer.get_current_joint_values()
         start_state.is_diff = True
@@ -697,7 +689,7 @@ class StartPosition(smach.State):
         try:
             traj = plan_movement(planer,
                                  start_state,
-                                 userdata.arm_positions[userdata.active_arm]["joints"]["start"],
+                                 config.points[0].positions,
                                  userdata.joint_trajectory_speed
                                  )
 
@@ -729,8 +721,7 @@ class EndPosition(smach.State):
         smach.State.__init__(self,
                              outcomes=['succeeded', 'failed', 'error'],
                              input_keys=['active_arm', 'error_max', 'arm_positions', 'object', 'error_counter',
-                                         'planning_method', 'joint_trajectory_speed', 'joint_goal_position',
-                                         'joint_names'],
+                                         'planning_method', 'joint_trajectory_speed', 'joint_goal_position'],
                              output_keys=['error_message', 'error_counter'])
 
     def execute(self, userdata):
@@ -774,8 +765,13 @@ class EndPosition(smach.State):
 
         planning_recorder_3.start()
 
+        (config, error_code) = sss.compose_trajectory("arm_" + userdata.active_arm, userdata.arm_positions["poses"][-1])
+        if error_code != 0:
+            rospy.logerr("unable to parse configuration")
+            return False
+
         start_state = RobotState()
-        start_state.joint_state.name = userdata.joint_names[userdata.active_arm]
+        start_state.joint_state.name = config.joint_names
 
         start_state.joint_state.position = planer.get_current_joint_values()
         start_state.is_diff = True
@@ -783,9 +779,10 @@ class EndPosition(smach.State):
         try:
             traj = plan_movement(planer,
                                  start_state,
-                                 userdata.arm_positions[userdata.active_arm]["joints"]["end"],
+                                 config.points[0].positions,
                                  userdata.joint_trajectory_speed
                                  )
+
         except (ValueError, IndexError):
             if userdata.error_counter >= userdata.error_max:
                 userdata.error_counter = 0
@@ -819,7 +816,7 @@ class Planning(smach.State):
                              outcomes=['succeeded', 'failed', 'error'],
                              input_keys=['active_arm', 'cs_orientation', 'error_max', 'object', 'manipulation_options',
                                          'arm_positions', 'error_counter', 'planning_method', 'joint_trajectory_speed',
-                                         'computed_trajectories', 'joint_names'],
+                                         'computed_trajectories'],
                              output_keys=['cs_position', 'cs_orientation', 'error_message', 'error_counter',
                                           'joint_goal_position', 'computed_trajectories'])
 
@@ -916,7 +913,13 @@ class Planning(smach.State):
             traj_approach = RobotTrajectory()
             start_state = RobotState()
 
-            start_state.joint_state.name = userdata.joint_names[userdata.active_arm]
+            (config, error_code) = sss.compose_trajectory("arm_" + userdata.active_arm,
+                                                          userdata.arm_positions["poses"][0])
+            if error_code != 0:
+                rospy.logerr("unable to parse configuration")
+                return False
+
+            start_state.joint_state.name = config.joint_names
             start_state.joint_state.position = self.planer.get_current_joint_values()
             start_state.attached_collision_objects[:] = []
             start_state.is_diff = True
@@ -1455,10 +1458,16 @@ class Planning(smach.State):
 
     def plan_joint(self, userdata):
 
-        for i in xrange(self.last_state, (len(userdata.arm_positions[userdata.active_arm]["joints"]) - 2)):
+        for i in xrange(self.last_state, (len(userdata.arm_positions["poses"]) - 2)):
+
+            (config, error_code) = sss.compose_trajectory("arm_" + userdata.active_arm,
+                                                          userdata.arm_positions["poses"][i+1])
+            if error_code != 0:
+                rospy.logerr("unable to parse configuration")
+                return False
 
             start_state = RobotState()
-            start_state.joint_state.name = userdata.joint_names[userdata.active_arm]
+            start_state.joint_state.name = config.joint_names
 
             if i == 0:
                 start_state.joint_state.position = self.planer.get_current_joint_values()
@@ -1501,7 +1510,7 @@ class Planning(smach.State):
             try:
                 plan = plan_movement(self.planer,
                                      start_state,
-                                     userdata.arm_positions[userdata.active_arm]["joints"][self.joint_order[i]],
+                                     config.points[0].positions,
                                      userdata.joint_trajectory_speed
                                      )
             except (ValueError, IndexError, AttributeError):
@@ -1664,29 +1673,10 @@ class SwitchTargets(smach.State):
             userdata.arm_positions["left"]["waypoints"] = \
                 list(reversed(userdata.arm_positions["left"]["waypoints"]))
         else:
-            (userdata.arm_positions["left"]["joints"]["approach"], userdata.arm_positions["left"]["joints"]["retreat"]) =\
-                self.switch_values(userdata.arm_positions["left"]["joints"]["approach"],
-                                   userdata.arm_positions["left"]["joints"]["retreat"])
-
-            (userdata.arm_positions["left"]["joints"]["grasp"], userdata.arm_positions["left"]["joints"]["drop"]) =\
-                self.switch_values(userdata.arm_positions["left"]["joints"]["grasp"],
-                                   userdata.arm_positions["left"]["joints"]["drop"])
-
-            (userdata.arm_positions["right"]["joints"]["approach"], userdata.arm_positions["right"]["joints"]["retreat"]) =\
-                self.switch_values(userdata.arm_positions["right"]["joints"]["approach"],
-                                   userdata.arm_positions["right"]["joints"]["retreat"])
-
-            (userdata.arm_positions["right"]["joints"]["grasp"], userdata.arm_positions["right"]["joints"]["drop"]) =\
-                self.switch_values(userdata.arm_positions["right"]["joints"]["grasp"],
-                                   userdata.arm_positions["right"]["joints"]["drop"])
-
-            (userdata.arm_positions["left"]["joints"]["lift"], userdata.arm_positions["left"]["joints"]["move"]) =\
-                self.switch_values(userdata.arm_positions["left"]["joints"]["lift"],
-                                   userdata.arm_positions["left"]["joints"]["move"])
-
-            (userdata.arm_positions["right"]["joints"]["lift"], userdata.arm_positions["right"]["joints"]["move"]) =\
-                self.switch_values(userdata.arm_positions["right"]["joints"]["lift"],
-                                   userdata.arm_positions["right"]["joints"]["move"])
+            temp = [userdata.arm_positions["poses"][0], userdata.arm_positions["poses"][-1]]
+            userdata.arm_positions["poses"] = list(reversed(userdata.arm_positions["poses"]))
+            userdata.arm_positions["poses"][0] = temp[0]
+            userdata.arm_positions["poses"][-1] = temp[-1]
 
         return "succeeded"
 
@@ -1721,9 +1711,6 @@ class SM(smach.StateMachine):
         self.userdata.switch_arm = bool
         self.userdata.cs_position = "start"
 
-        self.userdata.joint_names = {"right": rospy.get_param("/arm_right/joint_names"),
-                                     "left": rospy.get_param("/arm_left/joint_names")}
-
         self.userdata.error_max = rospy.get_param(str(rospy.get_name()) + "/max_error")
         self.userdata.manipulation_options = {"lift_height": rospy.get_param(str(rospy.get_name()) + "/lift_height"),
                                               "approach_dist": rospy.get_param(str(rospy.get_name())
@@ -1739,14 +1726,13 @@ class SM(smach.StateMachine):
         # ---- ARM-POSITIONS ----
         self.userdata.arm_positions = {"right": {"start": Point(),
                                                  "waypoints": [],
-                                                 "goal": Point(),
-                                                 "joints": {}
+                                                 "goal": Point()
                                                  },
                                        "left": {"start": Point(),
                                                 "waypoints": [],
-                                                "goal": Point(),
-                                                "joints": {}
-                                                }
+                                                "goal": Point()
+                                                },
+                                       "poses": []
                                        }
 
         self.userdata.computed_trajectories = []
