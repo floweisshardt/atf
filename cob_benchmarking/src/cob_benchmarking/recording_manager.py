@@ -18,7 +18,6 @@ class RecordingManager:
         rospy.loginfo("Section '" + self.name + "': Start")
 
         result = self.recorder_command(self.name, Trigger(Trigger.ACTIVATE))
-        self.recorder_command.wait_for_service()
         if not result:
             rospy.logerr("Recorder not ready!")
 
@@ -27,7 +26,6 @@ class RecordingManager:
         rospy.loginfo("Section '" + self.name + "': Pause")
 
         result = self.recorder_command(self.name, Trigger(Trigger.PAUSE))
-        self.recorder_command.wait_for_service()
         if not result:
             rospy.logerr("Recorder not ready!")
 
@@ -36,7 +34,6 @@ class RecordingManager:
         rospy.loginfo("Section '" + self.name + "': Stop")
 
         result = self.recorder_command(self.name, Trigger(Trigger.FINISH))
-        self.recorder_command.wait_for_service()
         if not result:
             rospy.logerr("Recorder not ready!")
 
@@ -45,6 +42,8 @@ class RecordingManager:
         rospy.loginfo("Section '" + self.name + "': Error")
 
         result = self.recorder_command(self.name, Trigger(Trigger.ERROR))
-        self.recorder_command.wait_for_service()
         if not result:
             rospy.logerr("Recorder not ready!")
+
+    def __del__(self):
+        self.recorder_command.close()
