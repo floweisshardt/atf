@@ -27,6 +27,10 @@ class CalculatePathLength:
     def stop(self):
         self.active = False
 
+    def pause(self):
+        self.active = False
+        self.first_value = True
+
     def record_tf(self, event):
         if self.active:
             try:
