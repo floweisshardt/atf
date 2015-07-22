@@ -27,6 +27,8 @@ class RosBagRecorder:
                               rosparam.get_param("/test_name") + ".bag", 'w')
 
         test_config_path = rospkg.RosPack().get_path("cob_benchmarking") + "/config/test_config.yaml"
+        robot_config_path = rospkg.RosPack().get_path("cob_benchmarking") + "/config/robot_config.yaml"
+        tf_topic = self.load_data(robot_config_path)["topics"]["path"]["tf_topic"][0]
         self.config_data = self.load_data(test_config_path)[rosparam.get_param("/test_name")]
 
         self.nodes = {}
@@ -36,7 +38,7 @@ class RosBagRecorder:
 
         rospy.Timer(rospy.Duration.from_sec(self.timer_interval), self.collect_resource_data)
         msg_type = rostopic.get_topic_class("/tf", blocking=True)[0]
-        rospy.Subscriber("/tf", msg_type, self.tf_callback, queue_size=1)
+        rospy.Subscriber(tf_topic, msg_type, self.tf_callback, queue_size=1)
         rospy.Service(self.topic + "recorder_command", RecorderCommand, self.command_callback)
 
         # ---- GET PIDS FOR THE NODES ----
@@ -69,16 +71,8 @@ class RosBagRecorder:
                 (msg.trigger.trigger == Trigger.FINISH and msg.name not in self.active_sections):
             return RecorderCommandResponse(True)
 
-        try:
-            self.config_data[msg.name]["time"]
-        except KeyError:
-            self.write_to_bagfile([[self.topic + msg.name + "/Trigger", Trigger(msg.trigger.trigger)]],
-                                  rospy.Time.from_sec(time.time()))
-        else:
-            now = rospy.Time.from_sec(time.time())
-
-            self.write_to_bagfile([[self.topic + msg.name + "/Trigger", Trigger(msg.trigger.trigger)],
-                                   [self.topic + msg.name + "/Time", Time(now)]], now)
+        self.write_to_bagfile(self.topic + msg.name + "/Trigger", Trigger(msg.trigger.trigger),
+                              rospy.Time.from_sec(time.time()))
 
         if msg.trigger.trigger == Trigger.ACTIVATE:
             self.update_requested_nodes(msg.name, "add")
@@ -188,7 +182,7 @@ class RosBagRecorder:
                 except (psutil.NoSuchProcess, psutil.AccessDenied):
                     pass
 
-            self.write_to_bagfile([[topic, msg]], rospy.Time.from_sec(time.time()))
+            self.write_to_bagfile(topic, msg, rospy.Time.from_sec(time.time()))
 
     @staticmethod
     def get_pid(name):
@@ -200,12 +194,11 @@ class RosBagRecorder:
             now = rospy.Time.from_sec(time.time())
             for item in msg.transforms:
                 item.header.stamp = now
-            self.write_to_bagfile([[self.topic + "tf", msg]], now)
+            self.write_to_bagfile(self.topic + "tf", msg, now)
 
-    def write_to_bagfile(self, data, set_time):
+    def write_to_bagfile(self, topic, data, set_time):
         self.lock_write.acquire()
-        for value in data:
-            self.bag.write(value[0], value[1], set_time)
+        self.bag.write(topic, data, set_time)
         self.lock_write.release()
 
 
