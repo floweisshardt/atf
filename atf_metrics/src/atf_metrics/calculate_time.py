@@ -10,11 +10,9 @@ class CalculateTime:
 
     def start(self):
         self.start_time = rospy.Time.from_sec(time.time())
-        rospy.loginfo("Start measurement for time")
 
     def stop(self):
         self.stop_time = rospy.Time.from_sec(time.time())
-        rospy.loginfo("Stop measurement for time")
 
     def get_result(self):
         return "Time: " + str(round(self.stop_time.to_sec()-self.start_time.to_sec(), 3)) + "s"

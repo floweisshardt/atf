@@ -17,20 +17,24 @@ class ATF:
             testblocks_temp = copy(_testblocks)
             for item in testblocks_temp:
 
-                if item.get_state() == Status.ERROR:
-                    rospy.loginfo("An error occured during analysis, no useful results available. State was " +
-                                  str(item.get_state()))
-                    self.error = True
-                    break
-                elif item.get_state() == Status.FINISHED:
-                    _testblocks.remove(item)
+                try:
+                    if item.get_state() == Status.ERROR:
+                        rospy.loginfo("An error occured during analysis, no useful results available. State was " +
+                                      str(item.get_state()))
+                        self.error = True
+                        break
+                    elif item.get_state() == Status.FINISHED:
+                        _testblocks.remove(item)
+                except ValueError:
+                    pass
 
             if len(_testblocks) == 0:
                 self.print_results()
                 break
 
     def print_results(self):
-        rospy.loginfo("\n---- RESULTS ----")
+        rospy.loginfo("\n")
+        rospy.loginfo("---- RESULTS ----")
         for item in self.testblocks:
             name = item.testblock
             rospy.loginfo("-- " + name + " --")

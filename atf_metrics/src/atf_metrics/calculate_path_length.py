@@ -15,7 +15,7 @@ class CalculatePathLength:
         self.first_value = True
         self.trans_old = []
         self.rot_old = []
-        
+
         self.listener = tf.TransformListener()
 
         # call tf recording cyclically
@@ -23,11 +23,9 @@ class CalculatePathLength:
 
     def start(self):
         self.active = True
-        rospy.loginfo("Start measurement for transformation " + self.root_frame + " ---> " + self.measured_frame)
 
     def stop(self):
         self.active = False
-        rospy.loginfo("Stop measurement for transformation " + self.root_frame + " ---> " + self.measured_frame)
 
     def record_tf(self, event):
         if self.active:
@@ -39,8 +37,8 @@ class CalculatePathLength:
                                                rospy.Duration.from_sec(2/self.tf_sampling_freq))
                 (trans, rot) = self.listener.lookupTransform(self.root_frame, self.measured_frame, rospy.Time(0))
 
-            except (tf.Exception, tf.LookupException, tf.ConnectivityException), e:
-                rospy.logerr(e)
+            except (tf.Exception, tf.LookupException, tf.ConnectivityException, Exception), e:
+                rospy.logwarn(e)
             else:
                 if self.first_value:
                     self.trans_old = trans
