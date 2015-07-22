@@ -55,5 +55,5 @@ class CalculatePathLength:
                 self.trans_old = trans
                 self.rot_old = rot
 
-    def get_path_length(self):
-        return self.path_length
+    def get_result(self):
+        return "Path length: " + str(round(self.path_length, 3)) + "m"

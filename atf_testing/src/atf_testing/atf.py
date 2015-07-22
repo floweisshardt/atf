@@ -1,121 +1,38 @@
 #!/usr/bin/env python
-from state_machine import StateMachine
 import rospy
+from copy import copy
 
-from atf_msgs.msg import Status, Trigger
+from atf_msgs.msg import Status
 
 
 class ATF:
-    def __init__(self, testblock, metrics):
+    def __init__(self, testblocks):
 
-        self.testblock = testblock
-        rospy.Subscriber("/testing/" + self.testblock + "/Trigger", Trigger, self.trigger_callback)
+        self.testblocks = testblocks
+        self.error = False
 
-        self.transition = None
-        self.metrics = metrics
-        
-        self.m = StateMachine()
-        self.m.add_state(Status.PURGED, self.purged_state)
-        self.m.add_state(Status.ACTIVE, self.active_state)
-        self.m.add_state(Status.PAUSED, self.paused_state)
-        self.m.add_state(Status.FINISHED, self.finished_state, end_state=True)
-        self.m.add_state(Status.ERROR, self.error_state, end_state=True)
-        self.m.set_start(Status.PURGED)
+    def wait_for_end(self):
+        _testblocks = copy(self.testblocks)
+        while not rospy.is_shutdown() and not self.error:
+            testblocks_temp = copy(_testblocks)
+            for item in testblocks_temp:
 
-        self.m.run()
+                if item.get_state() == Status.ERROR:
+                    rospy.loginfo("An error occured during analysis, no useful results available. State was " +
+                                  str(item.get_state()))
+                    self.error = True
+                    break
+                elif item.get_state() == Status.FINISHED:
+                    _testblocks.remove(item)
 
-    def trigger_callback(self, msg):
-        self.transition = msg.trigger
+            if len(_testblocks) == 0:
+                self.print_results()
+                break
 
-    def purge(self):
-        for metric in self.metrics:
-            metric.purge()
-
-    def activate(self):
-        for metric in self.metrics:
-            metric.start()
-
-    def pause(self):
-        self.stop()
-
-    def finish(self):
-        self.stop()
-
-    def stop(self):
-        for metric in self.metrics:
-            metric.stop()
-    
-    def get_state(self):
-        return self.m.get_current_state()
-
-    def purged_state(self):
-        while not rospy.is_shutdown() and self.transition is None:
-            continue
-
-        if self.transition == Trigger.PURGE:
-            # is already purged
-            new_state = Status.PURGED
-        elif self.transition == Trigger.ACTIVATE:
-            print "activate"
-            self.activate()
-            new_state = Status.ACTIVE
-        elif self.transition == Trigger.PAUSE:
-            new_state = Status.ERROR
-        elif self.transition == Trigger.FINISH:
-            new_state = Status.ERROR
-        else:
-            new_state = Status.ERROR
-        self.transition = None
-        return new_state
-
-    def active_state(self):
-        while not rospy.is_shutdown() and self.transition is None:
-            continue
-        if self.transition == Trigger.PURGE:
-            print "purge"
-            self.purge()
-            new_state = Status.PURGED
-        elif self.transition == Trigger.ACTIVATE:
-            # is already active
-            new_state = Status.ACTIVE
-        elif self.transition == Trigger.PAUSE:
-            print "pause"
-            self.pause()
-            new_state = Status.PAUSED
-        elif self.transition == Trigger.FINISH:
-            print "finish"
-            self.finish()
-            new_state = Status.FINISHED
-        else:
-            new_state = Status.ERROR
-        self.transition = None
-        return new_state
-
-    def paused_state(self):
-        while not rospy.is_shutdown() and self.transition is None:
-            continue
-        if self.transition == Trigger.PURGE:
-            print "purge"
-            self.purge()
-            new_state = Status.PURGED
-        elif self.transition == Trigger.ACTIVATE:
-            print "activate"
-            self.activate()
-            new_state = Status.ACTIVE
-        elif self.transition == Trigger.PAUSE:
-            # is already paused
-            new_state = Status.PAUSED
-        elif self.transition == Trigger.FINISH:
-            print "finish"
-            self.finish()
-            new_state = Status.FINISHED
-        else:
-            new_state = Status.ERROR
-        self.transition = None
-        return new_state
-
-    def finished_state(self):
-        pass
-
-    def error_state(self):
-        pass
+    def print_results(self):
+        rospy.loginfo("\n---- RESULTS ----")
+        for item in self.testblocks:
+            name = item.testblock
+            rospy.loginfo("-- " + name + " --")
+            for metric in item.metrics:
+                rospy.loginfo(metric.get_result())
