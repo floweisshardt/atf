@@ -53,7 +53,6 @@ add_message_files(
   Resources.msg
   NodeResources.msg
   ObstacleDistance.msg
-  Time.msg
 )
 
 ## Generate services in the 'srv' folder
