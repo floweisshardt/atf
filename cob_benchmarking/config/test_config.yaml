@@ -3,6 +3,7 @@ test_1:
     time:
 
   planning_1:
+    time:
     resources:
       cpu: [move_group]
       mem: [move_group]
@@ -18,39 +19,28 @@ test_1:
   planning_3:
     time:
 
-
   execution_all:
     time:
+    path_length:
+      - [base_link, gripper_right_grasp_link]
 
   execution_1:
     time:
     resources:
       cpu: [roscore]
       mem: [move_group]
-    path_length:
-      - [base_link, arm_7]
-      - [arm_left_7, arm_right_7]
-    obstacle_distance:
-      - [arm_7, table]
-      - [arm_7, arm_left_1, arm_left_7]
 
   execution_2:
     time:
     path_length:
-      - [base_link, arm_7]
-      - [arm_left_7, arm_right_7]
+      - [base_link, gripper_right_grasp_link]
+      - [base_link, arm_right_3_link]
 
   execution_3:
     time:
     resources:
       cpu: [grasping_app]
       mem: [roscore]
-    path_length:
-      - [base_link, arm_7]
-      - [arm_left_7, arm_right_7]
-    obstacle_distance:
-      - [arm_7, table]
-      - [arm_7, arm_left_1, arm_left_7]
 
 test_2:
   planning_1:
@@ -63,3 +53,6 @@ test_2:
       mem: [move_group]
       io: [move_group]
       network: [move_group]
+    obstacle_distance:
+      - [arm_7, table]
+      - [arm_7, arm_left_1, arm_left_7]
