@@ -2,6 +2,7 @@
 import rospy
 import rostopic
 import psutil
+import xmlrpclib
 import rosbag
 import rospkg
 import rosparam
@@ -19,7 +20,7 @@ class RosBagRecorder:
 
         self.topic = "/testing/"
         self.lock_write = Lock()
-        self.resources_timer_frequency = 100.0  # Hz
+        self.resources_timer_frequency = 5.0  # Hz
         self.timer_interval = 1/self.resources_timer_frequency
         self.tf_active = False
 
