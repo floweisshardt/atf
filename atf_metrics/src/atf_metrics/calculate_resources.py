@@ -82,9 +82,10 @@ class CalculateResources:
             for res in self.node_data[node]:
                 if res == "io" or res == "network":
                     for values in self.node_data[node][res]:
-                        self.average_data[node][res].append(numpy.mean(values))
+                        self.average_data[node][res].append(float(numpy.mean(values)))
                 else:
-                    self.average_data[node][res] = numpy.mean(self.node_data[node][res])
+                    self.average_data[node][res] = float(numpy.mean(self.node_data[node][res]))
 
-        print self.average_data
-        return ""
+        # print self.average_data
+        # return ""
+        return "resources", self.node_data, "average_ressources", self.average_data

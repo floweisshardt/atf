@@ -58,4 +58,5 @@ class CalculatePathLength:
                 self.rot_old = rot
 
     def get_result(self):
-        return "Path length: " + str(round(self.path_length, 3)) + "m"
+        # return "Path length:" + str(round(self.path_length, 3)) + "m"
+        return "path_length " + self.measured_frame + " to " + self.root_frame, self.path_length, None, None
