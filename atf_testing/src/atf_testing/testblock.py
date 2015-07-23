@@ -62,6 +62,8 @@ class Testblock:
             new_state = Status.ERROR
         elif self.transition == Trigger.FINISH:
             new_state = Status.ERROR
+        elif self.transition == Trigger.ERROR:
+            new_state = Status.ERROR
         else:
             new_state = Status.ERROR
         self.transition = None
@@ -82,6 +84,8 @@ class Testblock:
         elif self.transition == Trigger.FINISH:
             self.finish()
             new_state = Status.FINISHED
+        elif self.transition == Trigger.ERROR:
+            new_state = Status.ERROR
         else:
             new_state = Status.ERROR
         self.transition = None
@@ -102,6 +106,8 @@ class Testblock:
         elif self.transition == Trigger.FINISH:
             self.finish()
             new_state = Status.FINISHED
+        elif self.transition == Trigger.ERROR:
+            new_state = Status.ERROR
         else:
             new_state = Status.ERROR
         self.transition = None
