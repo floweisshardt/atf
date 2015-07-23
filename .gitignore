@@ -23,5 +23,6 @@ srv_gen
 *Result.msg
 *Result.py
 *.pyc
-*.idea/*
+.idea/*
 atf_presenter/data/*
+atf_presenter/.idea/*
