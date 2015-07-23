@@ -53,7 +53,7 @@ class RosBagRecorder:
                         for item in resources[res]:
                             if item not in self.nodes:
                                 try:
-                                    self.nodes.update({item: self.get_pid(item)})
+                                    self.nodes[item] = self.get_pid(item)
                                 except IndexError:
                                     pass
 
@@ -98,12 +98,11 @@ class RosBagRecorder:
             pass
         else:
             for res in resources_temp:
-                if not type(resources_temp[res]) == bool:
-                    for item in resources_temp[res]:
-                        if command == "add":
-                            self.requested_nodes[res].append(item)
-                        elif command == "del":
-                            self.requested_nodes[res].remove(item)
+                for item in resources_temp[res]:
+                    if command == "add":
+                        self.requested_nodes[res].append(item)
+                    elif command == "del":
+                        self.requested_nodes[res].remove(item)
             update_pipeline = True
 
         try:
