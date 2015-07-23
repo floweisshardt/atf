@@ -75,6 +75,8 @@ if __name__ == '__main__':
     T7 = CalculateTime()
     T8 = CalculateTime()
     R1 = CalculateResources({"cpu":["move_group"], "mem":["move_group"], "io":["move_group"], "network":["move_group"]})
+
+    D1 = CalculateDistanceToObstacles()
     '''
 
     test_list = create_test_list()
