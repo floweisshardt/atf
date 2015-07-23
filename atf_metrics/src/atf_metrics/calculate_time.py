@@ -20,4 +20,4 @@ class CalculateTime:
 
     def get_result(self):
         # return "Time: " + str(round(self.stop_time.to_sec()-self.start_time.to_sec(), 3)) + "s"
-        return "time", self.stop_time.to_sec()-self.start_time.to_sec(), None, None
+        return ["time"], [self.stop_time.to_sec()-self.start_time.to_sec()]

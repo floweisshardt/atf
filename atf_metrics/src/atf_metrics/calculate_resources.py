@@ -88,4 +88,4 @@ class CalculateResources:
 
         # print self.average_data
         # return ""
-        return "resources", self.node_data, "average_ressources", self.average_data
+        return ["resources", "average_resources"], [self.node_data, self.average_data]

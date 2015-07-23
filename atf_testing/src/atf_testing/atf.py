@@ -52,14 +52,12 @@ class ATF:
         for item in self.testblocks:
             name = item.testblock
             for metric in item.metrics:
-                (m1, data1, m2, data2) = metric.get_result()
+                (m, data) = metric.get_result()
                 if name not in doc:
-                    doc.update({name: {m1: data1}})
-                    if m2 is not None and data2 is not None:
-                        doc.update({name: {m2: data2}})
+                    for i in xrange(0, len(m)):
+                        doc.update({name: {m[i]: data[i]}})
                 else:
-                    doc[name].update({m1: data1})
-                    if m2 is not None and data2 is not None:
-                        doc[name].update({m2: data2})
+                    for i in xrange(0, len(m)):
+                        doc[name].update({m[i]: data[i]})
         stream = file(self.filename, 'w')
         yaml.dump(doc, stream)
