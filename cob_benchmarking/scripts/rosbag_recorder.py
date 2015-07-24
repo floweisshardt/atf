@@ -25,8 +25,10 @@ class RosBagRecorder:
         self.timer_interval = 1/self.resources_timer_frequency
         self.tf_active = False
 
-        self.bag = rosbag.Bag(rospkg.RosPack().get_path("cob_benchmarking") + "/results/" +
-                              rosparam.get_param("/test_name") + ".bag", 'w')
+        bag_name = rosparam.get_param("/suite_name")[0] + rosparam.get_param("/suite_name")[4] + rosparam.get_param(
+            "/suite_name")[-1] + "_" + rosparam.get_param("/test_name")[0] + rosparam.get_param("/test_name")[-1]
+
+        self.bag = rosbag.Bag(rospkg.RosPack().get_path("cob_benchmarking") + "/results/" + bag_name + ".bag", 'w')
 
         test_config_path = rospkg.RosPack().get_path("cob_benchmarking") + "/config/test_config.yaml"
         robot_config_path = rospkg.RosPack().get_path("cob_benchmarking") + "/config/robot_config.yaml"
