@@ -19,27 +19,6 @@ from visualization_msgs.msg import InteractiveMarkerControl, Marker
 from simple_script_server import *
 from cob_benchmarking import RecordingManager
 
-sss = simple_script_server()
-mgc_left = MoveGroupCommander("arm_left")
-mgc_right = MoveGroupCommander("arm_right")
-
-planning_scene = PlanningScene()
-planning_scene.is_diff = True
-
-planning_scene_interface = PlanningSceneInterface()
-pub_planning_scene = rospy.Publisher("planning_scene", PlanningScene, queue_size=1)
-
-planning_recorder_all = RecordingManager("planning_all")
-planning_recorder_1 = RecordingManager("planning_1")
-planning_recorder_2 = RecordingManager("planning_2")
-planning_recorder_3 = RecordingManager("planning_3")
-execution_recorder_all = RecordingManager("execution_all")
-execution_recorder_1 = RecordingManager("execution_1")
-execution_recorder_2 = RecordingManager("execution_2")
-execution_recorder_3 = RecordingManager("execution_3")
-
-abort_execution = False
-
 
 def smooth_cartesian_path(traj):
 
@@ -223,6 +202,7 @@ class SceneManager(smach.State):
             return "exit"
 
         if self.planning_method != "joint":
+
             # ---- POSITIONS FOR RIGHT ARM ----
             waypoints_r = []
             if len(self.scene_data[self.scenario]["positions"]["waypoints_r"]) != 0:
@@ -1705,6 +1685,32 @@ class SM(smach.StateMachine):
 
         smach.StateMachine.__init__(self, outcomes=['ended'])
 
+        # ---- INITIALIZATION ----
+        global sss, mgc_left, mgc_right, planning_scene, planning_scene_interface, pub_planning_scene,\
+            planning_recorder_all, planning_recorder_1, planning_recorder_2, planning_recorder_3,\
+            execution_recorder_all, execution_recorder_1, execution_recorder_2, execution_recorder_3, abort_execution
+        sss = simple_script_server()
+        mgc_left = MoveGroupCommander("arm_left")
+        mgc_right = MoveGroupCommander("arm_right")
+
+        planning_scene = PlanningScene()
+        planning_scene.is_diff = True
+
+        planning_scene_interface = PlanningSceneInterface()
+        pub_planning_scene = rospy.Publisher("planning_scene", PlanningScene, queue_size=1)
+
+        planning_recorder_all = RecordingManager("planning_all")
+        planning_recorder_1 = RecordingManager("planning_1")
+        planning_recorder_2 = RecordingManager("planning_2")
+        planning_recorder_3 = RecordingManager("planning_3")
+        execution_recorder_all = RecordingManager("execution_all")
+        execution_recorder_1 = RecordingManager("execution_1")
+        execution_recorder_2 = RecordingManager("execution_2")
+        execution_recorder_3 = RecordingManager("execution_3")
+
+        abort_execution = False
+
+        # ---- GET PARAMETER ----
         self.userdata.active_arm = rospy.get_param(str(rospy.get_name()) + "/arm")
         self.userdata.planning_method = rospy.get_param(str(rospy.get_name()) + "/planning_method")
         self.userdata.joint_trajectory_speed = rospy.get_param(str(rospy.get_name()) + "/joint_trajectory_speed")
@@ -1723,7 +1729,7 @@ class SM(smach.StateMachine):
                                         0.0,  # Yaw (z)
                                         1.0]  # Direction for rotation
 
-        # ---- ARM-POSITIONS ----
+        # ---- ARM POSITIONS ----
         self.userdata.arm_positions = {"right": {"start": Point(),
                                                  "waypoints": [],
                                                  "goal": Point()
@@ -1755,6 +1761,7 @@ class SM(smach.StateMachine):
 
         with self:
 
+            # ---- STATES ----
             smach.StateMachine.add('SCENE_MANAGER', SceneManager(),
                                    transitions={'succeeded': 'START_POSITION',
                                                 'exit': 'ended'})
