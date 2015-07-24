@@ -3,6 +3,7 @@ import numpy
 import rospy
 from copy import deepcopy
 from atf_msgs.msg import *
+import time
 
 
 class CalculateResources:
@@ -25,6 +26,7 @@ class CalculateResources:
         self.size_io = len(IO.__slots__)
         self.size_network = len(Network.__slots__)
         self.average_data = {}
+        self.activation_time = rospy.Time()
 
         # Sort resources after nodes
         for resource in self.resources:
@@ -40,6 +42,7 @@ class CalculateResources:
 
     def start(self):
         self.active = True
+        self.activation_time = rospy.Time(time.time())
 
     def stop(self):
         self.active = False
@@ -88,4 +91,4 @@ class CalculateResources:
 
         # print self.average_data
         # return ""
-        return ["resources", "average_resources"], [self.node_data, self.average_data]
+        return self.activation_time.to_sec(), ["resources", "average_resources"], [self.node_data, self.average_data]

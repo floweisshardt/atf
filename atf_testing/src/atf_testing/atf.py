@@ -52,11 +52,13 @@ class ATF:
         for item in self.testblocks:
             name = item.testblock
             for metric in item.metrics:
-                (m, data) = metric.get_result()
+                (t, m, data) = metric.get_result()
                 if name not in doc:
+                    doc.update({name: {"timestamp": t}})
                     for i in xrange(0, len(m)):
                         doc.update({name: {m[i]: data[i]}})
                 else:
+                    doc[name].update({"timestamp": t})
                     for i in xrange(0, len(m)):
                         doc[name].update({m[i]: data[i]})
         stream = file(self.filename, 'w')
