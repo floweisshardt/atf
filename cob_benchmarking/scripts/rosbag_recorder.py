@@ -3,6 +3,7 @@ import rospy
 import rostopic
 import psutil
 import xmlrpclib
+import rosnode
 import rosbag
 import rospkg
 import rosparam
@@ -42,6 +43,9 @@ class RosBagRecorder:
         rospy.Subscriber(tf_topic, msg_type, self.tf_callback, queue_size=1)
         rospy.Service(self.topic + "recorder_command", RecorderCommand, self.command_callback)
 
+        # ---- WAIT TILL GRASPING APP STARTED ----
+        rospy.sleep(2.0)
+
         # ---- GET PIDS FOR THE NODES ----
         for section in self.config_data:
             try:
@@ -55,7 +59,7 @@ class RosBagRecorder:
                             if item not in self.nodes:
                                 try:
                                     self.nodes[item] = self.get_pid(item)
-                                except IndexError:
+                                except IOError:
                                     pass
 
     def __enter__(self):
@@ -186,8 +190,10 @@ class RosBagRecorder:
 
     @staticmethod
     def get_pid(name):
-        pid = [p.pid for p in psutil.process_iter() if name in str(p.name)]
-        return pid[0]
+        node_id = '/NODEINFO'
+        node_api = rosnode.get_api_uri(rospy.get_master(), name)
+        code, msg, pid = xmlrpclib.ServerProxy(node_api[2]).getPid(node_id)
+        return pid
 
     def tf_callback(self, msg):
         if self.tf_active:
