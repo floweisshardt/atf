@@ -128,7 +128,7 @@ class SceneManager(smach.State):
         smach.State.__init__(self,
                              outcomes=['succeeded', 'exit'],
                              input_keys=['active_arm', 'arm_positions'],
-                             output_keys=['arm_positions', 'switch_arm', 'object'])
+                             output_keys=['arm_positions', 'switch_arm', 'object', 'active_arm'])
 
         # ---- GET PARAMETER FROM SERVER ----
         self.scenario = rospy.get_param(str(rospy.get_name()) + "/scene")
@@ -200,6 +200,9 @@ class SceneManager(smach.State):
 
         if self.exit:
             return "exit"
+
+        # ---- SET ACTIVE ARM ----
+        userdata.active_arm = self.scene_data[self.scenario]["positions"]["arm"]
 
         if self.planning_method != "joint":
 
@@ -1711,7 +1714,7 @@ class SM(smach.StateMachine):
         abort_execution = False
 
         # ---- GET PARAMETER ----
-        self.userdata.active_arm = rospy.get_param(str(rospy.get_name()) + "/arm")
+        self.userdata.active_arm = "right"
         self.userdata.planning_method = rospy.get_param(str(rospy.get_name()) + "/planning_method")
         self.userdata.joint_trajectory_speed = rospy.get_param(str(rospy.get_name()) + "/joint_trajectory_speed")
         self.userdata.switch_arm = bool
