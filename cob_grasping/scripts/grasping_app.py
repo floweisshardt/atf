@@ -17,7 +17,7 @@ from interactive_markers.menu_handler import *
 from visualization_msgs.msg import InteractiveMarkerControl, Marker
 
 from simple_script_server import *
-from cob_benchmarking import RecordingManager
+from atf_recorder import RecordingManager
 
 
 def smooth_cartesian_path(traj):

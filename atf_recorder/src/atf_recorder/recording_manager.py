@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 import rospy
 
-from cob_benchmarking.srv import *
+from atf_recorder.srv import *
 from atf_msgs.msg import *
 
 

@@ -13,10 +13,10 @@ import time
 from re import findall
 from threading import Lock
 from atf_msgs.msg import *
-from cob_benchmarking.srv import *
+from atf_recorder.srv import *
 
 
-class RosBagRecorder:
+class ATFRecorder:
     def __init__(self):
 
         self.topic = "/testing/"
@@ -28,10 +28,10 @@ class RosBagRecorder:
         bag_name = rosparam.get_param("/suite_name")[0] + rosparam.get_param("/suite_name")[4] + rosparam.get_param(
             "/suite_name")[-1] + "_" + rosparam.get_param("/test_name")[0] + rosparam.get_param("/test_name")[-1]
 
-        self.bag = rosbag.Bag(rospkg.RosPack().get_path("cob_benchmarking") + "/results/" + bag_name + ".bag", 'w')
+        self.bag = rosbag.Bag(rospkg.RosPack().get_path("atf_recorder") + "/results/" + bag_name + ".bag", 'w')
 
-        test_config_path = rospkg.RosPack().get_path("cob_benchmarking") + "/config/test_config.yaml"
-        robot_config_path = rospkg.RosPack().get_path("cob_benchmarking") + "/config/robot_config.yaml"
+        test_config_path = rospkg.RosPack().get_path("atf_recorder") + "/config/test_config.yaml"
+        robot_config_path = rospkg.RosPack().get_path("atf_recorder") + "/config/robot_config.yaml"
         tf_topic = self.load_data(robot_config_path)["topics"]["path"]["tf_topic"][0]
         self.config_data = self.load_data(test_config_path)[rosparam.get_param("/test_name")]
 
@@ -211,7 +211,7 @@ class RosBagRecorder:
 
 
 if __name__ == "__main__":
-    rospy.init_node('rosbag_recorder')
-    with RosBagRecorder():
+    rospy.init_node('atf_recorder')
+    with ATFRecorder():
         while not rospy.is_shutdown():
             rospy.sleep(0.01)

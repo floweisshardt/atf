@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <package>
-    <name>cob_benchmarking</name>
-    <version>0.6.0</version>
+    <name>atf_recorder</name>
+    <version>0.0.0</version>
     <description>Benchmarking application for the Care-O-Bot 4</description>
 
     <!-- One maintainer tag required, multiple allowed, one person per tag -->

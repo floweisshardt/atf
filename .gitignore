@@ -21,16 +21,6 @@
 *.exe
 *.out
 *.app
-# C++ objects and libs
-*.slo
-*.lo
-*.o
-*.a
-*.la
-*.lai
-*.so
-*.dll
-*.dylib
 # Qt-es
 /.qmake.cache
 /.qmake.stash
@@ -87,5 +77,6 @@ qtcreator-*
 .#*
 # Catkin custom files
 CATKIN_IGNORE
-cob_benchmarking/results/
-/.idea
+atf_recorder/results/*
+*.bag
+/.idea/*
