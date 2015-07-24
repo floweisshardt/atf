@@ -7,7 +7,7 @@
     <node pkg="atf_testing" type="test_framework.py" name="test_framework" respawn="false" output="screen" />
 
     <!-- play recordings -->
-    <node pkg="rosbag" type="play" name="player" output="screen" args="--delay=5.0 --clock $(find cob_benchmarking)/results/test_1.bag">
+    <node pkg="rosbag" type="play" name="player" output="screen" args="--delay=5.0 --clock $(find cob_benchmarking)/results/ts1_t1.bag">
         <remap from="/testing/tf" to="/tf" />
     </node>
 

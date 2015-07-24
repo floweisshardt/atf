@@ -13,8 +13,9 @@ class ATF:
 
         self.testblocks = testblocks
         self.error = False
-        test = rosparam.get_param("/test_name")
-        self.filename = rospkg.RosPack().get_path("atf_presenter") + "/data/" + test + ".yaml"
+        test_name = rosparam.get_param("/suite_name")[0] + rosparam.get_param("/suite_name")[4] + rosparam.get_param(
+            "/suite_name")[-1] + "_" + rosparam.get_param("/test_name")[0] + rosparam.get_param("/test_name")[-1]
+        self.filename = rospkg.RosPack().get_path("atf_presenter") + "/data/" + test_name + ".yaml"
 
     def wait_for_end(self):
         _testblocks = copy(self.testblocks)
