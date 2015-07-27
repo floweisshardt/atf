@@ -2,7 +2,7 @@
 import rospy
 import rospkg
 import rosparam
-import yaml
+import json
 from copy import copy
 
 from atf_msgs.msg import Status
@@ -16,7 +16,7 @@ class ATF:
         test_name = rosparam.get_param("/suite_name")[0] + rosparam.get_param("/suite_name")[4] + rosparam.get_param(
             "/suite_name").split("_")[1] + "_" + rosparam.get_param("/test_name")[0] + rosparam.get_param(
             "/test_name").split("_")[1]
-        self.filename = rospkg.RosPack().get_path("atf_presenter") + "/data/" + test_name + ".yaml"
+        self.filename = rospkg.RosPack().get_path("atf_presenter") + "/data/" + test_name + ".json"
 
     def wait_for_end(self):
         _testblocks = copy(self.testblocks)
@@ -37,7 +37,7 @@ class ATF:
 
             if len(_testblocks) == 0:
                 # self.print_results()
-                self.export_to_yaml()
+                self.export_to_file()
                 break
 
     def print_results(self):
@@ -49,20 +49,20 @@ class ATF:
             for metric in item.metrics:
                 rospy.loginfo(metric.get_result())
 
-    def export_to_yaml(self):
+    def export_to_file(self):
         doc = {}
         for item in self.testblocks:
             name = item.testblock
             for metric in item.metrics:
                 (t, m, data) = metric.get_result()
                 if name not in doc:
-                    doc.update({name: {"timestamp": t}})
+                    doc.update({name: {"timestamp": round(t, 3)}})
                     for i in xrange(0, len(m)):
                         doc.update({name: {m[i]: data[i]}})
                 else:
-                    doc[name].update({"timestamp": t})
+                    doc[name].update({"timestamp": round(t, 3)})
                     for i in xrange(0, len(m)):
                         doc[name].update({m[i]: data[i]})
 
         stream = file(self.filename, 'w')
-        yaml.dump(doc, stream)
+        json.dump(doc, stream)
