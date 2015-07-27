@@ -10,13 +10,14 @@ from atf_metrics import CalculatePathLength, CalculateTime, CalculateResources
 
 def create_test_list():
 
-    test_config_path = rospkg.RosPack().get_path("atf_recorder") + "/config/test_config.yaml"
+    test_config_path = rospkg.RosPack().get_path("atf_testing") + "/config/test_config.yaml"
     config_data = load_data(test_config_path)[rosparam.get_param("/test_name")]
 
     test_list_int = []
 
     for testblock in config_data:
         metrics = []
+
         # Time
         try:
             config_data[testblock]["time"]

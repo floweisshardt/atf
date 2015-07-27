@@ -63,5 +63,6 @@ class ATF:
                     doc[name].update({"timestamp": t})
                     for i in xrange(0, len(m)):
                         doc[name].update({m[i]: data[i]})
+
         stream = file(self.filename, 'w')
         yaml.dump(doc, stream)
