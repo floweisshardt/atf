@@ -212,6 +212,11 @@ class ATFRecorder:
 
 if __name__ == "__main__":
     rospy.init_node('atf_recorder')
+    app_name = rosparam.get_param(rospy.get_name() + "/applikation_name")
+    app_is_alive = True
     with ATFRecorder():
-        while not rospy.is_shutdown():
-            rospy.sleep(0.01)
+        while not rospy.is_shutdown() and app_is_alive:
+            try:
+                ATFRecorder.get_pid(app_name)
+            except IOError:
+                app_is_alive = False

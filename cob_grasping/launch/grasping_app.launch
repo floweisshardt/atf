@@ -3,7 +3,9 @@
     <param name="suite_name" value="testsuite_1" />
     <param name="test_name" value="test_1" />
 
-    <node name="atf_recorder" pkg="atf_recorder" type="recorder.py" output="screen" />
+    <node name="atf_recorder" pkg="atf_recorder" type="recorder.py" output="screen">
+        <param name="applikation_name" value="grasping_app" />
+    </node>
 
     <node name="grasping_app" pkg="cob_grasping" type="grasping_app.py" output="screen">
 
