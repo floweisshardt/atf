@@ -1,13 +1,3 @@
-joint_names: ["arm_left_1_joint","arm_left_2_joint","arm_left_3_joint","arm_left_4_joint","arm_left_5_joint","arm_left_6_joint","arm_left_7_joint"]
-action_name: /arm_left/joint_trajectory_controller/follow_joint_trajectory
-service_ns: /arm_left/driver
-default_vel: 0.3
-
-# single positions
-home: [[0,0,0,0,0,0,0]]
-folded: [[0.9599, 1.5708, -0.1200, 1.0000, 1.3800, 0.7500, -1.3600]]
-side: [[-0.9599, -1.6581, 1.0472, 1.6581, 1.0472, 0.6981, -1.0700]]
-
 start_3: [[-0.5647885459453651, -1.2499873569858189, 0.5295852549326394, 2.0909917103518065, 0.540790268730443, 0.5519952825282466, -1.4522710172919617]]
 approach_3: [[-2.18, -1.57, 2.56, 1.79, 0.83, -1.19, -0.98]]
 grasp_3: [[-2.3, -1.58, 2.51, 1.54, 0.78, -1.04, -1.08]]
