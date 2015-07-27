@@ -1,0 +1,39 @@
+ts_1_t1:
+  scene_config: "scene_3"
+  test_config: "test_1"
+  robot: "cob4-2"
+  planer: "SBLkConfigDefault"
+  planning_method: "cartesian_linear"
+  configuration:
+    jump_threshold: 1
+    eef_step: 0.01
+ts_1_t2:
+  scene_config: "scene_3"
+  test_config: "test_1"
+  robot: "cob4-2"
+  planer: "SBLkConfigDefault"
+  planning_method: "cartesian_linear"
+  configuration:
+    jump_threshold: 1
+    eef_step: 0.02
+ts_1_t3:
+  scene_config: "scene_3"
+  test_config: "test_1"
+  robot: "cob4-2"
+  planer: "SBLkConfigDefault"
+  planning_method: "cartesian_linear"
+  configuration:
+    jump_threshold: 1
+    eef_step: 0.03
+ts_1_t4:
+  scene_config: "scene_3"
+  test_config: "test_1"
+  robot: "cob4-2"
+  planer: "SBLkConfigDefault"
+  planning_method: "cartesian_linear"
+  configuration:
+    jump_threshold: 2
+    eef_step: 0.01
+.
+.
+.
