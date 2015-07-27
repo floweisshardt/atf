@@ -137,8 +137,8 @@ class SceneManager(smach.State):
         self.spawn_obstacles = rospy.get_param(str(rospy.get_name()) + "/load_obstacles")
         self.planning_method = rospy.get_param(str(rospy.get_name()) + "/planning_method")
 
-        self.path_scene = rospkg.RosPack().get_path("cob_grasping") + "/config/scene_config.yaml"
-        self.path_robot = rospkg.RosPack().get_path("cob_grasping") + "/config/robot_config.yaml"
+        self.path_scene = rospkg.RosPack().get_path("atf_testing") + "/config/scene_config.yaml"
+        self.path_robot = rospkg.RosPack().get_path("atf_testing") + "/config/robot_config.yaml"
 
         if rospy.get_param(str(rospy.get_name()) + "/planning_method") == "cartesian_linear":
             self.use_waypoints = True

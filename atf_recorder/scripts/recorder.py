@@ -30,8 +30,8 @@ class ATFRecorder:
 
         self.bag = rosbag.Bag(rospkg.RosPack().get_path("atf_recorder") + "/results/" + bag_name + ".bag", 'w')
 
-        test_config_path = rospkg.RosPack().get_path("atf_recorder") + "/config/test_config.yaml"
-        robot_config_path = rospkg.RosPack().get_path("atf_recorder") + "/config/robot_config.yaml"
+        test_config_path = rospkg.RosPack().get_path("atf_testing") + "/config/test_config.yaml"
+        robot_config_path = rospkg.RosPack().get_path("atf_testing") + "/config/robot_config.yaml"
         tf_topic = self.load_data(robot_config_path)["topics"]["path"]["tf_topic"][0]
         self.config_data = self.load_data(test_config_path)[rosparam.get_param("/test_name")]
 
