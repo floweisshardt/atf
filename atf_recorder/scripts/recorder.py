@@ -9,6 +9,7 @@ import rospkg
 import rosparam
 import yaml
 import time
+import os
 
 from re import findall
 from threading import Lock
@@ -26,7 +27,11 @@ class ATFRecorder:
         self.tf_active = False
 
         bag_name = rosparam.get_param("/suite_name")[0] + rosparam.get_param("/suite_name")[4] + rosparam.get_param(
-            "/suite_name")[-1] + "_" + rosparam.get_param("/test_name")[0] + rosparam.get_param("/test_name")[-1]
+            "/suite_name").split("_")[1] + "_" + rosparam.get_param("/test_name")[0] + rosparam.get_param(
+            "/test_name").split("_")[1]
+
+        if not os.path.exists(rospkg.RosPack().get_path("atf_recorder") + "/results/"):
+            os.makedirs(rospkg.RosPack().get_path("atf_recorder") + "/results/")
 
         self.bag = rosbag.Bag(rospkg.RosPack().get_path("atf_recorder") + "/results/" + bag_name + ".bag", 'w')
 
