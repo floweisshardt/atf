@@ -3,6 +3,7 @@ import rospy
 import rospkg
 import rosparam
 import json
+import os
 from copy import copy
 
 from atf_msgs.msg import Status
@@ -16,6 +17,10 @@ class ATF:
         test_name = rosparam.get_param("/suite_name")[0] + rosparam.get_param("/suite_name")[4] + rosparam.get_param(
             "/suite_name").split("_")[1] + "_" + rosparam.get_param("/test_name")[0] + rosparam.get_param(
             "/test_name").split("_")[1]
+
+        if not os.path.exists(rospkg.RosPack().get_path("atf_presenter") + "/data/"):
+            os.makedirs(rospkg.RosPack().get_path("atf_presenter") + "/data/")
+
         self.filename = rospkg.RosPack().get_path("atf_presenter") + "/data/" + test_name + ".json"
 
     def wait_for_end(self):
