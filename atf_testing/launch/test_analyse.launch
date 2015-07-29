@@ -5,7 +5,7 @@
     <param name="test_name" value="test_1" />
 
     <!-- analysis node -->
-    <node pkg="atf_testing" type="test_framework.py" name="test_framework" respawn="false" output="screen" />
+    <node pkg="atf_testing" type="test_builder.py" name="test_builder" respawn="false" output="screen" />
 
     <!-- play recordings -->
     <node pkg="rosbag" type="play" name="player" output="screen" args="--delay=5.0 --clock $(find atf_recorder)/data/ts1_t1.bag">
