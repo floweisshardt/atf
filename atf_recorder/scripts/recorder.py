@@ -50,9 +50,6 @@ class ATFRecorder:
         rospy.Subscriber(tf_topic, msg_type, self.tf_callback, queue_size=1)
         rospy.Service(self.topic + "recorder_command", RecorderCommand, self.command_callback)
 
-        # ---- WAIT TILL GRASPING APP STARTED ----
-        rospy.sleep(2.0)
-
         # ---- GET PIDS FOR THE NODES ----
         for section in self.config_data:
             try:
@@ -64,10 +61,9 @@ class ATFRecorder:
                     if not type(resources[res]) == bool:
                         for item in resources[res]:
                             if item not in self.nodes:
-                                try:
-                                    self.nodes[item] = self.get_pid(item)
-                                except IOError:
+                                while not self.check_node_alive(item):
                                     pass
+                                self.nodes[item] = self.get_pid(item)
 
     def __enter__(self):
         return self
@@ -202,6 +198,14 @@ class ATFRecorder:
         code, msg, pid = xmlrpclib.ServerProxy(node_api[2]).getPid(node_id)
         return pid
 
+    def check_node_alive(self, name):
+        try:
+            self.get_pid(name)
+        except IOError:
+            return False
+        else:
+            return True
+
     def tf_callback(self, msg):
         if self.tf_active:
             now = rospy.Time.from_sec(time.time())
@@ -218,10 +222,6 @@ class ATFRecorder:
 if __name__ == "__main__":
     rospy.init_node('atf_recorder')
     app_name = rosparam.get_param(rospy.get_name() + "/applikation_name")
-    app_is_alive = True
-    with ATFRecorder():
-        while not rospy.is_shutdown() and app_is_alive:
-            try:
-                ATFRecorder.get_pid(app_name)
-            except IOError:
-                app_is_alive = False
+    with ATFRecorder() as atf:
+        while not rospy.is_shutdown() and atf.check_node_alive(app_name):
+            pass
