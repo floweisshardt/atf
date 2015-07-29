@@ -4,12 +4,13 @@ import time
 
 
 class CalculateDistanceToObstacles:
-    def __init__(self):
+    def __init__(self, testblock):
         self.active = False
+        self.testblock = testblock
         self.activation_time = rospy.Time()
         self.distance = 0.0
 
-        rospy.Subscriber("/testing/" )
+        rospy.Subscriber("/testing/" + self.testblock + "/CollisionDistance", float, self.get_distance)
 
     def start(self):
         self.active = True
@@ -18,5 +19,9 @@ class CalculateDistanceToObstacles:
     def stop(self):
         self.active = False
 
+    def get_distance(self, data):
+        if self.active:
+            self.distance = data
+
     def get_result(self):
-        return self.activation_time.to_sec(), ["Distance to obstacles"], [self.distance]
+        return self.activation_time.to_sec(), "Distance to obstacles", self.distance

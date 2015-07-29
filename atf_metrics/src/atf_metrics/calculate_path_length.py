@@ -63,5 +63,5 @@ class CalculatePathLength:
 
     def get_result(self):
         # return "Path length:" + str(round(self.path_length, 3)) + "m"
-        return self.activation_time.to_sec(), ["path_length " + self.root_frame + " to " +
-                                               self.measured_frame], [self.path_length]
+        return self.activation_time.to_sec(), "path_length " + self.root_frame + " to " +\
+               self.measured_frame, self.path_length
