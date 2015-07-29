@@ -131,16 +131,17 @@ class SceneManager(smach.State):
                              output_keys=['arm_positions', 'switch_arm', 'object', 'active_arm'])
 
         # ---- GET PARAMETER FROM SERVER ----
-        self.scenario = rospy.get_param(str(rospy.get_name()) + "/scene")
+        self.scenario = rospy.get_param("/scene_config")
+        self.planning_method = rospy.get_param("/planning_method")
+
         self.switch_arm = rospy.get_param(str(rospy.get_name()) + "/switch_arm")
         self.wait_for_user = rospy.get_param(str(rospy.get_name()) + "/wait_for_user")
         self.spawn_obstacles = rospy.get_param(str(rospy.get_name()) + "/load_obstacles")
-        self.planning_method = rospy.get_param(str(rospy.get_name()) + "/planning_method")
 
         self.path_scene = rospkg.RosPack().get_path("atf_testing") + "/config/scene_config.yaml"
         self.path_robot = rospkg.RosPack().get_path("atf_testing") + "/config/robot_config.yaml"
 
-        if rospy.get_param(str(rospy.get_name()) + "/planning_method") == "cartesian_linear":
+        if self.planning_method == "cartesian_linear":
             self.use_waypoints = True
         else:
             self.use_waypoints = False
@@ -648,6 +649,8 @@ class StartPosition(smach.State):
         else:
             planer = mgc_right
 
+        planer.set_planner_id("LBKPIECEkConfigDefault")
+
         global abort_execution
 
         if abort_execution:
@@ -712,6 +715,8 @@ class EndPosition(smach.State):
             planer = mgc_left
         else:
             planer = mgc_right
+
+        planer.set_planner_id("LBKPIECEkConfigDefault")
 
         # ----------- SPAWN OBJECT ------------
         collision_object = CollisionObject()
@@ -806,9 +811,9 @@ class Planning(smach.State):
         self.tf_listener = tf.TransformListener()
         self.planer = mgc_right
 
-        self.eef_step = rospy.get_param(str(rospy.get_name()) + "/eef_step")
-        self.jump_threshold = rospy.get_param(str(rospy.get_name()) + "/jump_threshold")
-        self.planer_id = rospy.get_param(str(rospy.get_name()) + "/planer_id")
+        self.eef_step = rospy.get_param("/eef_step")
+        self.jump_threshold = rospy.get_param("/jump_threshold")
+        self.planer_id = rospy.get_param("/planer_id")
 
         rospy.loginfo("Using planer: '" + str(self.planer_id) + "'")
 
@@ -1593,9 +1598,9 @@ class SwitchArm(smach.State):
                              output_keys=['active_arm', 'cs_orientation', 'arm_positions', 'cs_position'])
 
         # ---- GET PARAMETER FROM SERVER ----
-        self.scenario = rospy.get_param(str(rospy.get_name()) + "/scene")
+        self.scenario = rospy.get_param("/scene_config")
         self.spawn_obstacles = rospy.get_param(str(rospy.get_name()) + "/load_obstacles")
-        self.planning_method = rospy.get_param(str(rospy.get_name()) + "/planning_method")
+        self.planning_method = rospy.get_param("/planning_method")
 
         self.counter = 1
 
@@ -1715,7 +1720,7 @@ class SM(smach.StateMachine):
 
         # ---- GET PARAMETER ----
         self.userdata.active_arm = "right"
-        self.userdata.planning_method = rospy.get_param(str(rospy.get_name()) + "/planning_method")
+        self.userdata.planning_method = rospy.get_param("/planning_method")
         self.userdata.joint_trajectory_speed = rospy.get_param(str(rospy.get_name()) + "/joint_trajectory_speed")
         self.userdata.switch_arm = bool
         self.userdata.cs_position = "start"
