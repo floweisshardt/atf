@@ -19,5 +19,4 @@ class CalculateTime:
         pass
 
     def get_result(self):
-        # return "Time: " + str(round(self.stop_time.to_sec()-self.start_time.to_sec(), 3)) + "s"
         return self.start_time.to_sec(), "time", round((self.stop_time.to_sec()-self.start_time.to_sec()), 3)

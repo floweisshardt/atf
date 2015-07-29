@@ -41,18 +41,8 @@ class ATF:
                     pass
 
             if len(_testblocks) == 0:
-                # self.print_results()
                 self.export_to_file()
                 break
-
-    def print_results(self):
-        rospy.loginfo("\n")
-        rospy.loginfo("---- RESULTS ----")
-        for item in self.testblocks:
-            name = item.testblock
-            rospy.loginfo("-- " + name + " --")
-            for metric in item.metrics:
-                rospy.loginfo(metric.get_result())
 
     def export_to_file(self):
         doc = {}

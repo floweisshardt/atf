@@ -94,6 +94,4 @@ class CalculateResources:
                     self.node_data[node][res]["min"] = float(round(min(self.node_data[node][res]["data"]), 2))
                     self.node_data[node][res]["max"] = float(round(max(self.node_data[node][res]["data"]), 2))
 
-        # print self.average_data
-        # return ""
         return self.activation_time.to_sec(), "resources", self.node_data
