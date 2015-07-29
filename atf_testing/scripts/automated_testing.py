@@ -3,11 +3,11 @@ import rospy
 import yaml
 import re
 import itertools as it
-import rostopic
 import psutil
-import rosbag
 import rospkg
 import rosparam
+import thread
+import os
 
 from copy import copy
 
@@ -23,9 +23,37 @@ class AutomatedTesting:
         self.generate_test_list()
 
         for test in self.test_list:
-            pass
+
             # Parse rosparams
+            rosparam.set_param("/test_name", test)
+            rosparam.set_param("/test_config", self.test_list[test]["test_config"])
+            rosparam.set_param("/scene_config", self.test_list[test]["scene_config"])
+            rosparam.set_param("/planer_id", self.test_list[test]["planer_id"])
+            rosparam.set_param("/eef_step", str(self.test_list[test]["eef_step"]))
+            rosparam.set_param("/jump_threshold", str(self.test_list[test]["jump_threshold"]))
+            rosparam.set_param("/planning_method", self.test_list[test]["planning_method"])
+            rosparam.set_param("/recorder_finished", "False")
+
             # Start roslaunch
+            thread.start_new_thread(os.system,("roslaunch atf_testing automated_testing.launch",))
+            # os.system("roslaunch atf_testing automated_testing.launch")
+
+            while not rosparam.get_param("recorder_finished"):
+                pass
+            pid = self.get_pid("roslaunch")
+            os.system("kill -15 " + str(pid))
+            try:
+                pid = self.get_pid("gazebo")
+            except IndexError:
+                pass
+            else:
+                os.system("kill -15 " + str(pid))
+            try:
+                pid = self.get_pid("move_group")
+            except IndexError:
+                pass
+            else:
+                os.system("kill -15 " + str(pid))
 
     def generate_test_list(self):
         temp_config = {}
@@ -69,6 +97,11 @@ class AutomatedTesting:
         convert = lambda text: int(text) if text.isdigit() else text.lower()
         alphanum_key = lambda key: [convert(c) for c in re.split('([0-9]+)', key)]
         return sorted(l, key=alphanum_key)
+
+    @staticmethod
+    def get_pid(name):
+        pid = [p.pid for p in psutil.process_iter() if name in str(p.name)]
+        return pid[0]
 
 
 if __name__ == "__main__":
