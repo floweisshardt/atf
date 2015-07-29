@@ -34,7 +34,7 @@ class ATFRecorder:
         self.bag = rosbag.Bag(rospkg.RosPack().get_path("atf_recorder") + "/data/" + bag_name + ".bag", 'w')
 
         test_config_path = rospkg.RosPack().get_path("atf_testing") + "/config/test_config.yaml"
-        robot_config_path = rospkg.RosPack().get_path("atf_testing") + "/config/robot_config.yaml"
+        robot_config_path = rosparam.get_param("/robot_config")
         tf_topic = self.load_data(robot_config_path)["topics"]["path"]["tf_topic"][0]
         self.config_data = self.load_data(test_config_path)[rosparam.get_param("/test_name")]
 
@@ -44,7 +44,7 @@ class ATFRecorder:
         self.requested_nodes = {"cpu": [], "mem": [], "io": [], "network": [], "path_length": []}
 
         rospy.Timer(rospy.Duration.from_sec(self.timer_interval), self.collect_resource_data)
-        msg_type = rostopic.get_topic_class("/tf", blocking=True)[0]
+        msg_type = rostopic.get_topic_class(tf_topic, blocking=True)[0]
         rospy.Subscriber(tf_topic, msg_type, self.tf_callback, queue_size=1)
         rospy.Service(self.topic + "recorder_command", RecorderCommand, self.command_callback)
 
