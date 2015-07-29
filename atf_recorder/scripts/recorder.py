@@ -24,9 +24,7 @@ class ATFRecorder:
         self.timer_interval = 1/self.resources_timer_frequency
         self.tf_active = False
 
-        bag_name = rosparam.get_param("/suite_name")[0] + rosparam.get_param("/suite_name")[4] + rosparam.get_param(
-            "/suite_name").split("_")[1] + "_" + rosparam.get_param("/test_name")[0] + rosparam.get_param(
-            "/test_name").split("_")[1]
+        bag_name = rosparam.get_param("/test_name")
 
         if not os.path.exists(rospkg.RosPack().get_path("atf_recorder") + "/data/"):
             os.makedirs(rospkg.RosPack().get_path("atf_recorder") + "/data/")
@@ -36,7 +34,7 @@ class ATFRecorder:
         test_config_path = rospkg.RosPack().get_path("atf_testing") + "/config/test_config.yaml"
         robot_config_path = rosparam.get_param("/robot_config")
         tf_topic = self.load_data(robot_config_path)["topics"]["path"]["tf_topic"][0]
-        self.config_data = self.load_data(test_config_path)[rosparam.get_param("/test_name")]
+        self.config_data = self.load_data(test_config_path)[rosparam.get_param("/test_config")]
 
         self.nodes = {}
         self.pipeline = {}
@@ -70,6 +68,7 @@ class ATFRecorder:
         self.lock_write.acquire()
         self.bag.close()
         self.lock_write.release()
+        rosparam.set_param("recorder_finished", "True")
 
     def command_callback(self, msg):
 
