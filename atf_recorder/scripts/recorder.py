@@ -2,8 +2,6 @@
 import rospy
 import rostopic
 import psutil
-import xmlrpclib
-import rosnode
 import rosbag
 import rospkg
 import rosparam
@@ -193,15 +191,13 @@ class ATFRecorder:
 
     @staticmethod
     def get_pid(name):
-        node_id = '/NODEINFO'
-        node_api = rosnode.get_api_uri(rospy.get_master(), name)
-        code, msg, pid = xmlrpclib.ServerProxy(node_api[2]).getPid(node_id)
-        return pid
+        pid = [p.pid for p in psutil.process_iter() if name in str(p.name)]
+        return pid[0]
 
     def check_node_alive(self, name):
         try:
             self.get_pid(name)
-        except IOError:
+        except IndexError:
             return False
         else:
             return True
@@ -221,7 +217,7 @@ class ATFRecorder:
 
 if __name__ == "__main__":
     rospy.init_node('atf_recorder')
-    app_name = rosparam.get_param(rospy.get_name() + "/applikation_name")
+    app_name = rosparam.get_param("/applikation_name")
     with ATFRecorder() as atf:
         while not rospy.is_shutdown() and atf.check_node_alive(app_name):
             pass
