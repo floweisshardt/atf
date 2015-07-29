@@ -24,5 +24,5 @@ srv_gen
 *Result.py
 *.pyc
 .idea/*
-atf_presenter/data/*
-atf_presenter/.idea/*
+ts*_t*.yaml
+*/.idea/*
