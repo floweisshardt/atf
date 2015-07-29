@@ -2,6 +2,7 @@
 <launch>
     <param name="suite_name" value="testsuite_1" />
     <param name="test_name" value="test_1" />
+    <param name="applikation_name" value="grasping_app" />
 
     <include file="$(find atf_recorder)/launch/atf_recorder.launch" />
 

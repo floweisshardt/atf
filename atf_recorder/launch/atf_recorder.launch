@@ -1,0 +1,3 @@
+<launch>
+    <node name="atf_recorder" pkg="atf_recorder" type="recorder.py" output="screen" />
+</launch>
