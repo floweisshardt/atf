@@ -11,7 +11,7 @@ from atf_metrics import CalculatePathLength, CalculateTime, CalculateResources
 def create_test_list():
 
     test_config_path = rospkg.RosPack().get_path("atf_testing") + "/config/test_config.yaml"
-    config_data = load_data(test_config_path)[rosparam.get_param("/test_name")]
+    config_data = load_data(test_config_path)[rosparam.get_param("/test_config")]
 
     test_list_int = []
 

@@ -14,9 +14,7 @@ class ATF:
 
         self.testblocks = testblocks
         self.error = False
-        test_name = rosparam.get_param("/suite_name")[0] + rosparam.get_param("/suite_name")[4] + rosparam.get_param(
-            "/suite_name").split("_")[1] + "_" + rosparam.get_param("/test_name")[0] + rosparam.get_param(
-            "/test_name").split("_")[1]
+        test_name = rosparam.get_param("/test_name")
 
         if not os.path.exists(rospkg.RosPack().get_path("atf_presenter") + "/data/"):
             os.makedirs(rospkg.RosPack().get_path("atf_presenter") + "/data/")
