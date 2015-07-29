@@ -25,18 +25,15 @@ class CalculateResources:
         self.node_data = {}
         self.size_io = len(IO.__slots__)
         self.size_network = len(Network.__slots__)
-        self.average_data = {}
         self.activation_time = rospy.Time()
 
         # Sort resources after nodes
         for resource in self.resources:
             for node in self.resources[resource]:
                 if node not in self.node_data:
-                    self.node_data[node] = {resource: []}
+                    self.node_data[node] = {resource: {"data": [], "average": [], "min": [], "max": []}}
                 elif resource not in self.node_data[node]:
-                    self.node_data[node].update({resource: []})
-
-        self.average_data = deepcopy(self.node_data)
+                    self.node_data[node].update({resource: {"data": [], "average": [], "min": [], "max": []}})
 
         rospy.Subscriber("/testing/Resources", Resources, self.process_resource_data, queue_size=1)
 
@@ -53,29 +50,33 @@ class CalculateResources:
                 try:
                     for resource in self.node_data[node.node_name]:
                         if resource == "cpu":
-                            self.node_data[node.node_name][resource].append(round(node.cpu, 2))
+                            self.node_data[node.node_name][resource]["data"].append(round(node.cpu, 2))
                         elif resource == "mem":
-                            self.node_data[node.node_name][resource].append(round(node.memory, 2))
+                            self.node_data[node.node_name][resource]["data"].append(round(node.memory, 2))
                         elif resource == "io":
-                            if len(self.node_data[node.node_name][resource]) == 0:
+                            if len(self.node_data[node.node_name][resource]["data"]) == 0:
                                 for i in xrange(0, self.size_io):
-                                    self.node_data[node.node_name][resource].append([])
-                            self.node_data[node.node_name][resource][0].append(round(node.io.read_count, 2))
-                            self.node_data[node.node_name][resource][1].append(round(node.io.write_count, 2))
-                            self.node_data[node.node_name][resource][2].append(round(node.io.read_bytes, 2))
-                            self.node_data[node.node_name][resource][3].append(round(node.io.write_bytes, 2))
+                                    self.node_data[node.node_name][resource]["data"].append([])
+                            self.node_data[node.node_name][resource]["data"][0].append(round(node.io.read_count, 2))
+                            self.node_data[node.node_name][resource]["data"][1].append(round(node.io.write_count, 2))
+                            self.node_data[node.node_name][resource]["data"][2].append(round(node.io.read_bytes, 2))
+                            self.node_data[node.node_name][resource]["data"][3].append(round(node.io.write_bytes, 2))
                         elif resource == "network":
-                            if len(self.node_data[node.node_name][resource]) == 0:
+                            if len(self.node_data[node.node_name][resource]["data"]) == 0:
                                 for i in xrange(0, self.size_network):
-                                    self.node_data[node.node_name][resource].append([])
-                            self.node_data[node.node_name][resource][0].append(round(node.network.bytes_sent, 2))
-                            self.node_data[node.node_name][resource][1].append(round(node.network.bytes_recv, 2))
-                            self.node_data[node.node_name][resource][2].append(round(node.network.packets_sent, 2))
-                            self.node_data[node.node_name][resource][3].append(round(node.network.packets_recv, 2))
-                            self.node_data[node.node_name][resource][4].append(round(node.network.errin, 2))
-                            self.node_data[node.node_name][resource][5].append(round(node.network.errout, 2))
-                            self.node_data[node.node_name][resource][6].append(round(node.network.dropin, 2))
-                            self.node_data[node.node_name][resource][7].append(round(node.network.dropout, 2))
+                                    self.node_data[node.node_name][resource]["data"].append([])
+                            self.node_data[node.node_name][resource]["data"][0].append(round(node.network.bytes_sent,
+                                                                                             2))
+                            self.node_data[node.node_name][resource]["data"][1].append(round(node.network.bytes_recv,
+                                                                                             2))
+                            self.node_data[node.node_name][resource]["data"][2].append(round(node.network.packets_sent,
+                                                                                             2))
+                            self.node_data[node.node_name][resource]["data"][3].append(round(node.network.packets_recv,
+                                                                                             2))
+                            self.node_data[node.node_name][resource]["data"][4].append(round(node.network.errin, 2))
+                            self.node_data[node.node_name][resource]["data"][5].append(round(node.network.errout, 2))
+                            self.node_data[node.node_name][resource]["data"][6].append(round(node.network.dropin, 2))
+                            self.node_data[node.node_name][resource]["data"][7].append(round(node.network.dropout, 2))
                 except KeyError:
                     pass
 
@@ -84,11 +85,16 @@ class CalculateResources:
         for node in self.node_data:
             for res in self.node_data[node]:
                 if res == "io" or res == "network":
-                    for values in self.node_data[node][res]:
-                        self.average_data[node][res].append(float(round(numpy.mean(values), 2)))
+                    for values in self.node_data[node][res]["data"]:
+                        self.node_data[node][res]["average"].append(float(round(numpy.mean(values), 2)))
+                        self.node_data[node][res]["min"].append(float(round(min(values), 2)))
+                        self.node_data[node][res]["max"].append(float(round(max(values), 2)))
                 else:
-                    self.average_data[node][res] = float(round(numpy.mean(self.node_data[node][res]), 2))
+                    self.node_data[node][res]["average"] = float(round(numpy.mean(self.node_data[node][res]["data"]),
+                                                                       2))
+                    self.node_data[node][res]["min"] = float(round(min(self.node_data[node][res]["data"]), 2))
+                    self.node_data[node][res]["max"] = float(round(max(self.node_data[node][res]["data"]), 2))
 
         # print self.average_data
         # return ""
-        return self.activation_time.to_sec(), ["resources", "average_resources"], [self.node_data, self.average_data]
+        return self.activation_time.to_sec(), "resources", self.node_data
