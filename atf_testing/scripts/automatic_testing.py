@@ -12,7 +12,7 @@ import os
 from copy import copy
 
 
-class AutomatedTesting:
+class AutomaticTesting:
     def __init__(self):
 
         self.test_suites = rospkg.RosPack().get_path("atf_testing") + "/config/test_suite.yaml"
@@ -105,6 +105,6 @@ class AutomatedTesting:
 
 
 if __name__ == "__main__":
-    rospy.init_node("automated_testing")
-    at = AutomatedTesting()
+    rospy.init_node("automatic_testing")
+    at = AutomaticTesting()
     at.start()
