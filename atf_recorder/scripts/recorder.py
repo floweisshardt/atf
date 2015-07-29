@@ -22,7 +22,7 @@ class ATFRecorder:
 
         self.topic = "/testing/"
         self.lock_write = Lock()
-        self.resources_timer_frequency = 5.0  # Hz
+        self.resources_timer_frequency = 4.0  # Hz
         self.timer_interval = 1/self.resources_timer_frequency
         self.tf_active = False
 
@@ -30,10 +30,10 @@ class ATFRecorder:
             "/suite_name").split("_")[1] + "_" + rosparam.get_param("/test_name")[0] + rosparam.get_param(
             "/test_name").split("_")[1]
 
-        if not os.path.exists(rospkg.RosPack().get_path("atf_recorder") + "/results/"):
-            os.makedirs(rospkg.RosPack().get_path("atf_recorder") + "/results/")
+        if not os.path.exists(rospkg.RosPack().get_path("atf_recorder") + "/data/"):
+            os.makedirs(rospkg.RosPack().get_path("atf_recorder") + "/data/")
 
-        self.bag = rosbag.Bag(rospkg.RosPack().get_path("atf_recorder") + "/results/" + bag_name + ".bag", 'w')
+        self.bag = rosbag.Bag(rospkg.RosPack().get_path("atf_recorder") + "/data/" + bag_name + ".bag", 'w')
 
         test_config_path = rospkg.RosPack().get_path("atf_testing") + "/config/test_config.yaml"
         robot_config_path = rospkg.RosPack().get_path("atf_testing") + "/config/robot_config.yaml"
