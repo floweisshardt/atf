@@ -1,0 +1,31 @@
+<launch>
+
+    <param name="suite_name" value="testsuite_1" />
+    <param name="test_name" value="test_1" />
+
+    <arg name="robot" default="$(optenv ROBOT !!NO_ROBOT_SET!!)"/>
+    <param name="robot_config" value="$(find cob_grasping)/config/$(arg robot)/robot_config.yaml" />
+    <param name="applikation_name" value="grasping_app" />
+
+    <!-- User params -->
+    <param name="switch_arm" value="True" />
+    <param name="wait_for_user" value="False" />
+    <param name="joint_trajectory_speed" value="0.3" />
+    <param name="max_error" value="50" />
+    <param name="lift_height" value="0.02" />
+    <param name="approach_distance" value="0.14" />
+    <param name="manipulation_repeats" value="1" />
+    <param name="load_obstacles" value="none" />
+
+    <!-- Testsuite params -->
+    <param name="scene" value="scene_3" />
+    <param name="planer_id" value="LBKPIECEkConfigDefault" />
+    <param name="eef_step" value="0.01" />
+    <param name="jump_threshold" value="2" />
+    <param name="planning_method" value="cartesian_linear" />
+
+    <include file="$(find cob_bringup_sim)/launch/robot.launch" />
+    <include file="$(find cob_grasping)/launch/move_group.launch" />
+    <include file="$(find cob_grasping)/launch/grasping_app.launch" />
+
+</launch>

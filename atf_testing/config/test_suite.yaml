@@ -9,19 +9,19 @@ testsuite_1:
   planning_method:
     - "cartesian_linear"
     - "joint"
-  configuration:
-    jump_threshold:
-      - 1
-      - 2
-      - 3
-    eef_step:
-      - 0.01
-      - 0.02
-      - 0.03
+  jump_threshold:
+    - 1
+    - 2
+    - 3
+  eef_step:
+    - 0.01
+    - 0.02
+    - 0.03
 
 testsuite_2:
-  scene: "scene_2"
+  scene_config: "scene_2"
   test_config: "test_3"
+  robot: "cob4-2"
   planer:
     - "TRRTkConfigDefault"
     - "PRMkConfigDefault"
@@ -29,12 +29,11 @@ testsuite_2:
   planning_method:
     - "cartesian"
     - "cartesian_mixed"
-  configuration:
-    jump_threshold:
-      - 4
-      - 6
-      - 8
-    eef_step:
-      - 0.09
-      - 0.06
-      - 0.03
+  jump_threshold:
+    - 4
+    - 6
+    - 8
+  eef_step:
+    - 0.09
+    - 0.06
+    - 0.03
