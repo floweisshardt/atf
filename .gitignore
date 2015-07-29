@@ -77,6 +77,6 @@ qtcreator-*
 .#*
 # Catkin custom files
 CATKIN_IGNORE
-atf_recorder/results/*
 *.bag
-/.idea/*
+*/.idea/*
+*.idea/*
