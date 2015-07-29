@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 import numpy
 import rospy
-from copy import deepcopy
 from atf_msgs.msg import *
 import time
 
