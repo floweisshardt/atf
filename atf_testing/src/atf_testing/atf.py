@@ -21,7 +21,7 @@ class ATF:
         if not os.path.exists(rospkg.RosPack().get_path("atf_presenter") + "/data/"):
             os.makedirs(rospkg.RosPack().get_path("atf_presenter") + "/data/")
 
-        self.filename = rospkg.RosPack().get_path("atf_presenter") + "/data/" + test_name + ".yaml"
+        self.filename = rospkg.RosPack().get_path("atf_presenter") + "/data/" + test_name + ".json"
 
     def wait_for_end(self):
         _testblocks = copy(self.testblocks)
