@@ -21,7 +21,7 @@ class ATF:
         if not os.path.exists(rospkg.RosPack().get_path("atf_presenter") + "/data/"):
             os.makedirs(rospkg.RosPack().get_path("atf_presenter") + "/data/")
 
-        self.filename = rospkg.RosPack().get_path("atf_presenter") + "/data/" + test_name + ".json"
+        self.filename = rospkg.RosPack().get_path("atf_presenter") + "/data/" + test_name + ".yaml"
 
     def wait_for_end(self):
         _testblocks = copy(self.testblocks)
@@ -62,12 +62,10 @@ class ATF:
                 (t, m, data) = metric.get_result()
                 if name not in doc:
                     doc.update({name: {"timestamp": round(t, 3)}})
-                    for i in xrange(0, len(m)):
-                        doc.update({name: {m[i]: data[i]}})
+                    doc.update({name: {m: data}})
                 else:
                     doc[name].update({"timestamp": round(t, 3)})
-                    for i in xrange(0, len(m)):
-                        doc[name].update({m[i]: data[i]})
+                    doc[name].update({m: data})
 
         stream = file(self.filename, 'w')
         json.dump(doc, stream)
