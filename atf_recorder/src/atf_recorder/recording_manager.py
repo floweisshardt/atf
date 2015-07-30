@@ -15,7 +15,7 @@ class RecordingManager:
 
     def start(self):
 
-        rospy.loginfo("Section '" + self.name + "': Start")
+        # rospy.loginfo("Section '" + self.name + "': Start")
 
         result = self.recorder_command(self.name, Trigger(Trigger.ACTIVATE))
         if not result:
@@ -23,7 +23,7 @@ class RecordingManager:
 
     def pause(self):
 
-        rospy.loginfo("Section '" + self.name + "': Pause")
+        # rospy.loginfo("Section '" + self.name + "': Pause")
 
         result = self.recorder_command(self.name, Trigger(Trigger.PAUSE))
         if not result:
@@ -31,7 +31,7 @@ class RecordingManager:
 
     def stop(self):
 
-        rospy.loginfo("Section '" + self.name + "': Stop")
+        # rospy.loginfo("Section '" + self.name + "': Stop")
 
         result = self.recorder_command(self.name, Trigger(Trigger.FINISH))
         if not result:
@@ -39,7 +39,7 @@ class RecordingManager:
 
     def error(self):
 
-        rospy.loginfo("Section '" + self.name + "': Error")
+        # rospy.loginfo("Section '" + self.name + "': Error")
 
         result = self.recorder_command(self.name, Trigger(Trigger.ERROR))
         if not result:

@@ -78,15 +78,15 @@ class ATFRecorder:
         if msg.trigger.trigger == Trigger.ACTIVATE:
             self.update_requested_nodes(msg.name, "add")
             self.active_sections.append(msg.name)
-            rospy.loginfo("Section '" + msg.name + "': ACTIVATE")
+            # rospy.loginfo("Section '" + msg.name + "': ACTIVATE")
         elif msg.trigger.trigger == Trigger.FINISH:
             self.update_requested_nodes(msg.name, "del")
             self.active_sections.remove(msg.name)
-            rospy.loginfo("Section '" + msg.name + "': FINISH")
+            # rospy.loginfo("Section '" + msg.name + "': FINISH")
         elif msg.trigger.trigger == Trigger.ERROR:
             self.pipeline = {}
             self.tf_active = False
-            rospy.loginfo("Section '" + msg.name + "': ERROR")
+            # rospy.loginfo("Section '" + msg.name + "': ERROR")
 
         self.write_to_bagfile(self.topic + msg.name + "/Trigger", Trigger(msg.trigger.trigger),
                               rospy.Time.from_sec(time.time()))
