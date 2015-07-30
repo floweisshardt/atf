@@ -6,7 +6,6 @@ import itertools as it
 import psutil
 import rospkg
 import rosparam
-import thread
 import os
 
 from copy import copy
@@ -18,13 +17,16 @@ class AutomaticTesting:
         self.test_suites = rospkg.RosPack().get_path("atf_testing") + "/config/test_suite.yaml"
         self.test_list = {}
 
-    def start(self):
-
         self.generate_test_list()
+
+    def start(self):
 
         for test in self.test_list:
 
+            rospy.loginfo("---- Start test '" + test + "' ----")
+
             # Parse rosparams
+            os.environ['ROBOT'] = self.test_list[test]["robot"]
             rosparam.set_param("/test_name", test)
             rosparam.set_param("/test_config", self.test_list[test]["test_config"])
             rosparam.set_param("/scene_config", self.test_list[test]["scene_config"])
@@ -35,25 +37,9 @@ class AutomaticTesting:
             rosparam.set_param("/recorder_finished", "False")
 
             # Start roslaunch
-            thread.start_new_thread(os.system,("roslaunch atf_testing automated_testing.launch",))
-            # os.system("roslaunch atf_testing automated_testing.launch")
+            os.system("roslaunch atf_testing automatic_testing.launch")
 
-            while not rosparam.get_param("recorder_finished"):
-                pass
-            pid = self.get_pid("roslaunch")
-            os.system("kill -15 " + str(pid))
-            try:
-                pid = self.get_pid("gazebo")
-            except IndexError:
-                pass
-            else:
-                os.system("kill -15 " + str(pid))
-            try:
-                pid = self.get_pid("move_group")
-            except IndexError:
-                pass
-            else:
-                os.system("kill -15 " + str(pid))
+            rospy.loginfo("---- Finished test '" + test + "' ----")
 
     def generate_test_list(self):
         temp_config = {}
