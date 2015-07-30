@@ -68,7 +68,6 @@ class ATFRecorder:
         self.lock_write.acquire()
         self.bag.close()
         self.lock_write.release()
-        rosparam.set_param("recorder_finished", "True")
 
     def command_callback(self, msg):
 
@@ -216,7 +215,6 @@ class ATFRecorder:
 
 if __name__ == "__main__":
     rospy.init_node('atf_recorder')
-    app_name = rosparam.get_param("/applikation_name")
-    with ATFRecorder() as atf:
-        while not rospy.is_shutdown() and atf.check_node_alive(app_name):
+    with ATFRecorder():
+        while not rospy.is_shutdown():
             pass
