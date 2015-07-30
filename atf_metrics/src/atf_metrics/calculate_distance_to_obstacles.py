@@ -6,6 +6,7 @@ import time
 class CalculateDistanceToObstacles:
     def __init__(self, testblock):
         self.active = False
+        self.finished = False
         self.testblock = testblock
         self.activation_time = rospy.Time()
         self.distance = 0.0
@@ -18,10 +19,14 @@ class CalculateDistanceToObstacles:
 
     def stop(self):
         self.active = False
+        self.finished = True
 
     def get_distance(self, data):
         if self.active:
             self.distance = data
 
     def get_result(self):
-        return self.activation_time.to_sec(), "Distance to obstacles", self.distance
+        if self.finished:
+            return self.activation_time.to_sec(), "Distance to obstacles", self.distance
+        else:
+            return False

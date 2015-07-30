@@ -17,6 +17,7 @@ class CalculatePathLength:
         self.trans_old = []
         self.rot_old = []
         self.activation_time = rospy.Time()
+        self.finished = False
 
         self.listener = tf.TransformListener()
 
@@ -29,6 +30,7 @@ class CalculatePathLength:
 
     def stop(self):
         self.active = False
+        self.finished = True
 
     def pause(self):
         self.active = False
@@ -62,5 +64,8 @@ class CalculatePathLength:
                 self.rot_old = rot
 
     def get_result(self):
-        return self.activation_time.to_sec(), "path_length " + self.root_frame + " to " +\
-               self.measured_frame, self.path_length
+        if self.finished:
+            return self.activation_time.to_sec(), "path_length " + self.root_frame +\
+                                                  " to " + self.measured_frame, self.path_length
+        else:
+            return False

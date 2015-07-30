@@ -25,6 +25,7 @@ class CalculateResources:
         self.size_io = len(IO.__slots__)
         self.size_network = len(Network.__slots__)
         self.activation_time = rospy.Time()
+        self.finished = False
 
         # Sort resources after nodes
         for resource in self.resources:
@@ -42,6 +43,7 @@ class CalculateResources:
 
     def stop(self):
         self.active = False
+        self.finished = True
 
     def process_resource_data(self, msg):
         if self.active:
@@ -80,18 +82,20 @@ class CalculateResources:
                     pass
 
     def get_result(self):
+        if self.finished:
+            for node in self.node_data:
+                for res in self.node_data[node]:
+                    if res == "io" or res == "network":
+                        for values in self.node_data[node][res]["data"]:
+                            self.node_data[node][res]["average"].append(float(round(numpy.mean(values), 2)))
+                            self.node_data[node][res]["min"].append(float(round(min(values), 2)))
+                            self.node_data[node][res]["max"].append(float(round(max(values), 2)))
+                    else:
+                        self.node_data[node][res]["average"] = float(round(numpy.mean(self.node_data[node][res]
+                                                                                      ["data"]), 2))
+                        self.node_data[node][res]["min"] = float(round(min(self.node_data[node][res]["data"]), 2))
+                        self.node_data[node][res]["max"] = float(round(max(self.node_data[node][res]["data"]), 2))
 
-        for node in self.node_data:
-            for res in self.node_data[node]:
-                if res == "io" or res == "network":
-                    for values in self.node_data[node][res]["data"]:
-                        self.node_data[node][res]["average"].append(float(round(numpy.mean(values), 2)))
-                        self.node_data[node][res]["min"].append(float(round(min(values), 2)))
-                        self.node_data[node][res]["max"].append(float(round(max(values), 2)))
-                else:
-                    self.node_data[node][res]["average"] = float(round(numpy.mean(self.node_data[node][res]["data"]),
-                                                                       2))
-                    self.node_data[node][res]["min"] = float(round(min(self.node_data[node][res]["data"]), 2))
-                    self.node_data[node][res]["max"] = float(round(max(self.node_data[node][res]["data"]), 2))
-
-        return self.activation_time.to_sec(), "resources", self.node_data
+            return self.activation_time.to_sec(), "resources", self.node_data
+        else:
+            return False
