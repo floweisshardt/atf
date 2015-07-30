@@ -4,57 +4,63 @@ import rospkg
 import rosparam
 import json
 import os
-from copy import copy
-
+from threading import Thread
 from atf_msgs.msg import Status
 
 
+def threaded(fn):
+    def wrapper(*args, **kwargs):
+        Thread(target=fn, args=args, kwargs=kwargs).start()
+    return wrapper
+
+
 class ATF:
+    @threaded
     def __init__(self, testblocks):
 
         self.testblocks = testblocks
         self.error = False
-        test_name = rosparam.get_param("/test_name")
+        self.testblock_error = {}
+        self.test_name = rosparam.get_param("/test_name")
 
         if not os.path.exists(rospkg.RosPack().get_path("atf_presenter") + "/data/"):
             os.makedirs(rospkg.RosPack().get_path("atf_presenter") + "/data/")
 
-        self.filename = rospkg.RosPack().get_path("atf_presenter") + "/data/" + test_name + ".json"
-
     def wait_for_end(self):
-        _testblocks = copy(self.testblocks)
         while not rospy.is_shutdown() and not self.error:
-            testblocks_temp = copy(_testblocks)
-            for item in testblocks_temp:
-
+            for testblock in self.testblocks:
                 try:
-                    # TODO fix error handling
-                    if item.get_state() == Status.ERROR:
-                        rospy.loginfo("An error occured during analysis, no useful results available. State was " +
-                                      str(item.get_state()))
+                    if testblock.get_state() == Status.ERROR:
+                        self.testblock_error[testblock.testblock] = Status.ERROR
+                        rospy.loginfo("An error occured during analysis in '" + testblock.testblock + "', no useful " +
+                                      "results available.")
                         self.error = True
                         break
-                    elif item.get_state() == Status.FINISHED:
-                        _testblocks.remove(item)
                 except ValueError:
                     pass
 
-            if len(_testblocks) == 0:
-                self.export_to_file()
-                break
+        self.export_to_file()
 
     def export_to_file(self):
         doc = {}
         for item in self.testblocks:
             name = item.testblock
-            for metric in item.metrics:
-                (t, m, data) = metric.get_result()
-                if name not in doc:
-                    doc.update({name: {"timestamp": round(t, 3)}})
-                    doc.update({name: {m: data}})
-                else:
-                    doc[name].update({"timestamp": round(t, 3)})
-                    doc[name].update({m: data})
+            if name in self.testblock_error:
+                doc.update({name: {"status": "error"}})
+            else:
+                for metric in item.metrics:
+                    if metric.get_result() is not False:
+                        (t, m, data) = metric.get_result()
+                        if name not in doc:
+                            doc.update({name: {"timestamp": round(t, 3)}})
+                            doc.update({name: {m: data}})
+                        else:
+                            doc[name].update({"timestamp": round(t, 3)})
+                            doc[name].update({m: data})
+                    else:
+                        item.exit()
+                        break
 
-        stream = file(self.filename, 'w')
+        filename = rospkg.RosPack().get_path("atf_presenter") + "/data/" + self.test_name + ".json"
+        stream = file(filename, 'w')
         json.dump(doc, stream)
