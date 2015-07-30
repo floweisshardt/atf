@@ -28,6 +28,7 @@ class ATF:
             for item in testblocks_temp:
 
                 try:
+                    # TODO fix error handling
                     if item.get_state() == Status.ERROR:
                         rospy.loginfo("An error occured during analysis, no useful results available. State was " +
                                       str(item.get_state()))
