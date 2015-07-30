@@ -1,9 +1,6 @@
 <?xml version="1.0"?>
 <launch>
 
-    <include file="$(find atf_recorder)/launch/atf_recorder.launch" />
+    <node name="grasping_app" pkg="cob_grasping" type="grasping_app.py" output="screen" required="true" />
 
-    <node name="grasping_app" pkg="cob_grasping" type="grasping_app.py" output="screen">
-
-    </node>
 </launch>
