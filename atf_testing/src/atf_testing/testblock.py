@@ -41,6 +41,9 @@ class Testblock:
     def finish(self):
         self.stop()
 
+    def exit(self):
+        self.transition = Trigger.ERROR
+
     def stop(self):
         for metric in self.metrics:
             metric.stop()
