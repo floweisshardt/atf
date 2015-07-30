@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 import rospy
 import yaml
+import json
 import re
 import itertools as it
 import psutil
@@ -8,7 +9,7 @@ import rospkg
 import rosparam
 import os
 
-from copy import copy
+from copy import deepcopy, copy
 
 
 class AutomaticTesting:
@@ -66,8 +67,11 @@ class AutomaticTesting:
                 self.test_list[test_name] = copy(temp_config)
                 self.test_list[test_name].update(temp[i])
 
-        stream = file(rospkg.RosPack().get_path("atf_presenter") + "/data/test_list.yaml", 'w')
-        yaml.dump(self.list_to_array(), stream)
+        stream = file(rospkg.RosPack().get_path("atf_testing") + "/config/test_list.yaml", 'w')
+        yaml.dump(deepcopy(self.list_to_array()), stream)
+
+        stream = file(rospkg.RosPack().get_path("atf_presenter") + "/data/test_list.json", 'w')
+        json.dump(self.list_to_array(), stream)
 
     def list_to_array(self):
         temp_list = self.natural_sort(copy(self.test_list))

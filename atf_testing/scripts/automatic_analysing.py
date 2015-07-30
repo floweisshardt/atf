@@ -13,7 +13,7 @@ class AutomaticAnalysing:
         self.test_names = []
         self.test_configs = {}
 
-        with open(rospkg.RosPack().get_path("atf_presenter") + "/data/test_list.yaml", 'r') as stream:
+        with open(rospkg.RosPack().get_path("atf_testing") + "/config/test_list.yaml", 'r') as stream:
             self.test_list = yaml.load(stream)
 
         for bagfile in os.listdir(bag_folder):

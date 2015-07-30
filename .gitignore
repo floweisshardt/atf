@@ -25,6 +25,6 @@ srv_gen
 *.pyc
 .idea/*
 */.idea/*
-ts*_t*.yaml
 ts*_t*.json
+test_list.json
 test_list.yaml
