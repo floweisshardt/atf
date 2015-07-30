@@ -48,16 +48,21 @@ test_1:
       cpu: [grasping_app]
 
 test_2:
-  planning_1:
-    time:
-
   execution_1:
-    time: True
+    time:
     resources:
       cpu: [move_group]
       mem: [move_group]
-      io: [move_group]
-      network: [move_group]
-    obstacle_distance:
-      - [arm_7, table]
-      - [arm_7, arm_left_1, arm_left_7]
+
+  execution_2:
+    time:
+    path_length:
+      - [base_link, gripper_right_grasp_link]
+    resources:
+      cpu: [move_group, grasping_app]
+      mem: [move_group, grasping_app]
+
+  execution_3:
+    time:
+    resources:
+      cpu: [grasping_app]
