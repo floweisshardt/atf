@@ -35,7 +35,7 @@ class AutomaticAnalysing:
             rosparam.set_param("/test_name", self.test_names[idx])
 
             # Start roslaunch
-            os.system("roslaunch atf_testing test_analyse.launch")
+            os.system("roslaunch atf_testing automatic_analysing.launch")
 
 if __name__ == "__main__":
     rospy.init_node("automatic_analysing")
