@@ -3,12 +3,19 @@ import rospy
 import rospkg
 import yaml
 import rosparam
+import os
 
 from atf_testing import ATF, Testblock
 from atf_metrics import CalculatePathLength, CalculateTime, CalculateResources
 
 
 def create_test_list():
+
+    if not os.path.exists(rospkg.RosPack().get_path("atf_presenter") + "/data/"):
+        os.makedirs(rospkg.RosPack().get_path("atf_presenter") + "/data/")
+
+    if not os.path.exists(rospkg.RosPack().get_path("atf_testing") + "/results/"):
+        os.makedirs(rospkg.RosPack().get_path("atf_testing") + "/results/")
 
     test_config_path = rospkg.RosPack().get_path("atf_testing") + "/config/test_config.yaml"
     config_data = load_data(test_config_path)[rosparam.get_param("/test_config")]
@@ -93,4 +100,4 @@ if __name__ == '__main__':
                  Testblock("execution_3", [T8])]
     '''
 
-    ATF(test_list).wait_for_end()
+    ATF(test_list).check_states()

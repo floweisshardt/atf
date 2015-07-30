@@ -28,3 +28,4 @@ srv_gen
 ts*_t*.json
 test_list.json
 test_list.yaml
+*/results/*

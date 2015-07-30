@@ -3,19 +3,13 @@ import rospy
 import rospkg
 import rosparam
 import json
-import os
-from threading import Thread
+import yaml
+
 from atf_msgs.msg import Status
-
-
-def threaded(fn):
-    def wrapper(*args, **kwargs):
-        Thread(target=fn, args=args, kwargs=kwargs).start()
-    return wrapper
+from copy import copy
 
 
 class ATF:
-    @threaded
     def __init__(self, testblocks):
 
         self.testblocks = testblocks
@@ -23,10 +17,8 @@ class ATF:
         self.testblock_error = {}
         self.test_name = rosparam.get_param("/test_name")
 
-        if not os.path.exists(rospkg.RosPack().get_path("atf_presenter") + "/data/"):
-            os.makedirs(rospkg.RosPack().get_path("atf_presenter") + "/data/")
-
-    def wait_for_end(self):
+    def check_states(self):
+        running_testblocks = copy(self.testblocks)
         while not rospy.is_shutdown() and not self.error:
             for testblock in self.testblocks:
                 try:
@@ -36,8 +28,12 @@ class ATF:
                                       "results available.")
                         self.error = True
                         break
+                    elif testblock.get_state() == Status.FINISHED:
+                        running_testblocks.remove(testblock)
                 except ValueError:
                     pass
+            if len(running_testblocks) == 0:
+                break
 
         self.export_to_file()
 
@@ -63,4 +59,8 @@ class ATF:
 
         filename = rospkg.RosPack().get_path("atf_presenter") + "/data/" + self.test_name + ".json"
         stream = file(filename, 'w')
-        json.dump(doc, stream)
+        json.dump(copy(doc), stream)
+
+        filename = rospkg.RosPack().get_path("atf_testing") + "/results/" + self.test_name + ".yaml"
+        stream = file(filename, 'w')
+        yaml.dump(doc, stream)
