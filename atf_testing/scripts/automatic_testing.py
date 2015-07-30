@@ -67,6 +67,9 @@ class AutomaticTesting:
                 self.test_list[test_name] = copy(temp_config)
                 self.test_list[test_name].update(temp[i])
 
+        if not os.path.exists(rospkg.RosPack().get_path("atf_presenter") + "/data/"):
+            os.makedirs(rospkg.RosPack().get_path("atf_presenter") + "/data/")
+
         stream = file(rospkg.RosPack().get_path("atf_testing") + "/config/test_list.yaml", 'w')
         yaml.dump(deepcopy(self.list_to_array()), stream)
 
