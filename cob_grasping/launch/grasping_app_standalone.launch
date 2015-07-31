@@ -1,0 +1,31 @@
+<?xml version="1.0"?>
+<launch>
+
+    <arg name="robot" default="$(optenv ROBOT !!NO_ROBOT_SET!!)"/>
+    <param name="robot_config" value="$(find cob_grasping)/config/$(arg robot)/robot_config.yaml" />
+
+    <!-- Testsuite params -->
+    <param name="test_name" value="ts3_t1" />
+    <param name="test_config" value="test_1" />
+    <param name="scene_config" value="scene_3" />
+    <param name="planer_id" value="LBKPIECEkConfigDefault" />
+    <param name="eef_step" value="0.01" />
+    <param name="jump_threshold" value="2" />
+    <param name="planning_method" value="cartesian_linear" />
+
+    <node name="grasping_app" pkg="cob_grasping" type="grasping_app.py" output="screen" required="true">
+
+        <!-- User params -->
+        <param name="switch_arm" value="True" />
+        <param name="wait_for_user" value="True" />
+        <param name="joint_trajectory_speed" value="0.3" />
+        <param name="max_error" value="50" />
+        <param name="lift_height" value="0.02" />
+        <param name="approach_distance" value="0.14" />
+        <param name="manipulation_repeats" value="1" />
+        <param name="load_obstacles" value="none" />
+    </node>
+
+    <node name="atf_recorder" pkg="atf_recorder" type="recorder.py" output="screen" />
+
+</launch>
