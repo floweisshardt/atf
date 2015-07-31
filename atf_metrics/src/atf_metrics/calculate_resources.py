@@ -1,8 +1,9 @@
 #!/usr/bin/env python
 import numpy
 import rospy
-from atf_msgs.msg import *
 import time
+
+from atf_msgs.msg import *
 
 
 class CalculateResources:

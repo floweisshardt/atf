@@ -1,7 +1,7 @@
 #!/usr/bin/env python
-from state_machine import StateMachine
 import rospy
 
+from state_machine import StateMachine
 from atf_msgs.msg import Status, Trigger
 
 
