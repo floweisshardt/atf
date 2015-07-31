@@ -57,9 +57,10 @@ class ATFRecorder:
                     if not type(resources[res]) == bool:
                         for item in resources[res]:
                             if item not in self.nodes:
-                                while not self.check_node_alive(item):
-                                    pass
-                                self.nodes[item] = self.get_pid(item)
+                                try:
+                                    self.nodes[item] = self.get_pid(item)
+                                except IOError:
+                                    rospy.logwarn("Node '" + item + "' does not exist or is not running!")
 
     def __enter__(self):
         return self
@@ -191,14 +192,6 @@ class ATFRecorder:
     def get_pid(name):
         pid = [p.pid for p in psutil.process_iter() if name in str(p.name)]
         return pid[0]
-
-    def check_node_alive(self, name):
-        try:
-            self.get_pid(name)
-        except IndexError:
-            return False
-        else:
-            return True
 
     def tf_callback(self, msg):
         if self.tf_active:
