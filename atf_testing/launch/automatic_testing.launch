@@ -1,24 +1,10 @@
 <launch>
 
-    <arg name="robot" default="$(optenv ROBOT !!NO_ROBOT_SET!!)"/>
-    <param name="robot_config" value="$(find cob_grasping)/config/$(arg robot)/robot_config.yaml" />
-
-    <include file="$(find cob_bringup_sim)/launch/robot.launch">
-        <arg name="gui" value="false"/>
-    </include>
-    <include file="$(find cob_grasping)/launch/move_group.launch" />
-
-    <include file="$(find cob_grasping)/launch/grasping_app.launch">
-        <param name="switch_arm" value="False" />
-        <param name="wait_for_user" value="False" />
-        <param name="joint_trajectory_speed" value="0.3" />
-        <param name="max_error" value="50" />
-        <param name="lift_height" value="0.02" />
-        <param name="approach_distance" value="0.14" />
-        <param name="manipulation_repeats" value="1" />
-        <param name="load_obstacles" value="none" />
-    </include>
-
-    <include file="$(find atf_recorder)/launch/atf_recorder.launch" />
+    <node pkg="atf_testing" type="automatic_testing.py" name="automatic_testing" respawn="false" output="screen">
+        <param name="bagfile_output" value="$(find atf_recorder)/data/" />
+        <param name="test_suite_file" value="$(find atf_testing)/config/test_suite.yaml" />
+        <param name="test_config_file" value="$(find atf_testing)/config/test_config.yaml" />
+        <param name="robot_config_path" value="$(find cob_grasping)/config/" />
+    </node>
 
 </launch>
