@@ -3,6 +3,7 @@ import rospy
 import os
 import rosparam
 import yaml
+import rosgraph
 
 
 class AutomaticAnalysing:
@@ -13,7 +14,12 @@ class AutomaticAnalysing:
         self.test_configs = {}
         self.test_list_file = rosparam.get_param(rospy.get_name() + "/test_list_file")
         self.test_config_file = rosparam.get_param(rospy.get_name() + "/test_config_file")
-        self.yaml_output = rosparam.get_param(rospy.get_name() + "/result_yaml_output")
+        try:
+            self.yaml_output = rosparam.get_param(rospy.get_name() + "/result_yaml_output")
+        except rosgraph.masterapi.MasterError:
+            self.yaml_output = False
+            pass
+
         self.json_output = rosparam.get_param(rospy.get_name() + "/result_json_output")
 
         with open(self.test_list_file, 'r') as stream:
@@ -38,7 +44,8 @@ class AutomaticAnalysing:
             rosparam.set_param("/analysing/test_config", self.test_configs[self.test_names[idx]]["test_config"])
             rosparam.set_param("/analysing/test_name", self.test_names[idx])
             rosparam.set_param("/analysing/test_config_file", self.test_config_file)
-            rosparam.set_param("/analysing/result_yaml_output", self.yaml_output)
+            if self.yaml_output is not False:
+                rosparam.set_param("/analysing/result_yaml_output", self.yaml_output)
             rosparam.set_param("/analysing/result_json_output", self.json_output)
 
             # Start roslaunch
