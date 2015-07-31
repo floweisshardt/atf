@@ -1,24 +1,26 @@
 #!/usr/bin/env python
 import rospy
-import rospkg
 import yaml
 import rosparam
 import os
+import rosgraph
 
 from atf_testing import ATF, Testblock
 from atf_metrics import CalculatePathLength, CalculateTime, CalculateResources
 
 
 def create_test_list():
+    try:
+        if not os.path.exists(rosparam.get_param("/analysing/result_yaml_output")):
+            os.makedirs(rosparam.get_param("/analysing/result_yaml_output"))
+    except rosgraph.masterapi.MasterError:
+        pass
 
-    if not os.path.exists(rospkg.RosPack().get_path("atf_presenter") + "/data/"):
-        os.makedirs(rospkg.RosPack().get_path("atf_presenter") + "/data/")
+    if not os.path.exists(rosparam.get_param("/analysing/result_json_output")):
+        os.makedirs(rosparam.get_param("/analysing/result_json_output"))
 
-    if not os.path.exists(rospkg.RosPack().get_path("atf_testing") + "/results/"):
-        os.makedirs(rospkg.RosPack().get_path("atf_testing") + "/results/")
-
-    test_config_path = rospkg.RosPack().get_path("atf_testing") + "/config/test_config.yaml"
-    config_data = load_data(test_config_path)[rosparam.get_param("/test_config")]
+    test_config_path = rosparam.get_param("/analysing/test_config_file")
+    config_data = load_data(test_config_path)[rosparam.get_param("/analysing/test_config")]
 
     test_list_int = []
 

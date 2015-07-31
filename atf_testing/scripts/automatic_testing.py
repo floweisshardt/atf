@@ -15,7 +15,10 @@ from copy import deepcopy, copy
 class AutomaticTesting:
     def __init__(self):
 
-        self.test_suites = rospkg.RosPack().get_path("atf_testing") + "/config/test_suite.yaml"
+        self.test_suite_file = rosparam.get_param(rospy.get_name() + "/test_suite_file")
+        self.test_config_file = rosparam.get_param(rospy.get_name() + "/test_config_file")
+        self.bagfile_output = rosparam.get_param(rospy.get_name() + "/bagfile_output")
+        self.robot_config_path = rosparam.get_param(rospy.get_name() + "/robot_config_path")
         self.test_list = {}
 
         self.generate_test_list()
@@ -35,17 +38,18 @@ class AutomaticTesting:
             rosparam.set_param("/eef_step", str(self.test_list[test]["eef_step"]))
             rosparam.set_param("/jump_threshold", str(self.test_list[test]["jump_threshold"]))
             rosparam.set_param("/planning_method", self.test_list[test]["planning_method"])
-            rosparam.set_param("/recorder_finished", "False")
+            rosparam.set_param("/recorder/test_config_file", self.test_config_file)
+            rosparam.set_param("/recorder/bagfile_output", self.bagfile_output)
 
             # Start roslaunch
-            os.system("roslaunch atf_testing automatic_testing.launch")
+            os.system("roslaunch atf_testing start_testing.launch rc_path:=" + self.robot_config_path)
 
             rospy.loginfo("---- Finished test '" + test + "' ----")
 
     def generate_test_list(self):
         temp_config = {}
 
-        with open(self.test_suites, 'r') as stream:
+        with open(self.test_suite_file, 'r') as stream:
             test_data = yaml.load(stream)
 
         for suite in test_data:

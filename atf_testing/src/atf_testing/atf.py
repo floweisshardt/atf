@@ -1,9 +1,9 @@
 #!/usr/bin/env python
 import rospy
-import rospkg
 import rosparam
 import json
 import yaml
+import rosgraph
 
 from atf_msgs.msg import Status
 from copy import copy
@@ -15,7 +15,7 @@ class ATF:
         self.testblocks = testblocks
         self.error = False
         self.testblock_error = {}
-        self.test_name = rosparam.get_param("/test_name")
+        self.test_name = rosparam.get_param("/analysing/test_name")
 
     def check_states(self):
         running_testblocks = copy(self.testblocks)
@@ -57,10 +57,13 @@ class ATF:
                         item.exit()
                         break
 
-        filename = rospkg.RosPack().get_path("atf_presenter") + "/data/" + self.test_name + ".json"
+        filename = rosparam.get_param("/analysing/result_json_output") + self.test_name + ".json"
         stream = file(filename, 'w')
         json.dump(copy(doc), stream)
 
-        filename = rospkg.RosPack().get_path("atf_testing") + "/results/" + self.test_name + ".yaml"
-        stream = file(filename, 'w')
-        yaml.dump(doc, stream)
+        try:
+            filename = rosparam.get_param("/analysing/result_yaml_output") + self.test_name + ".yaml"
+            stream = file(filename, 'w')
+            yaml.dump(doc, stream)
+        except rosgraph.masterapi.MasterError:
+            pass

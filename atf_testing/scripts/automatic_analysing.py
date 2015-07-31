@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 import rospy
-import rospkg
 import os
 import rosparam
 import yaml
@@ -8,12 +7,16 @@ import yaml
 
 class AutomaticAnalysing:
     def __init__(self):
-        bag_folder = rospkg.RosPack().get_path("atf_recorder") + "/data/"
+        bag_folder = rosparam.get_param(rospy.get_name() + "/bagfile_input")
         self.bagfile_list = []
         self.test_names = []
         self.test_configs = {}
+        self.test_list_file = rosparam.get_param(rospy.get_name() + "/test_list_file")
+        self.test_config_file = rosparam.get_param(rospy.get_name() + "/test_config_file")
+        self.yaml_output = rosparam.get_param(rospy.get_name() + "/result_yaml_output")
+        self.json_output = rosparam.get_param(rospy.get_name() + "/result_json_output")
 
-        with open(rospkg.RosPack().get_path("atf_testing") + "/config/test_list.yaml", 'r') as stream:
+        with open(self.test_list_file, 'r') as stream:
             self.test_list = yaml.load(stream)
 
         for bagfile in os.listdir(bag_folder):
@@ -29,13 +32,19 @@ class AutomaticAnalysing:
 
         for idx, bagfile in enumerate(self.bagfile_list):
 
+            rospy.loginfo("---- Start test '" + self.test_names[idx] + "' ----")
+
             # Parse rosparams
-            os.environ['BAGFILE'] = bagfile
-            rosparam.set_param("/test_config", self.test_configs[self.test_names[idx]]["test_config"])
-            rosparam.set_param("/test_name", self.test_names[idx])
+            rosparam.set_param("/analysing/test_config", self.test_configs[self.test_names[idx]]["test_config"])
+            rosparam.set_param("/analysing/test_name", self.test_names[idx])
+            rosparam.set_param("/analysing/test_config_file", self.test_config_file)
+            rosparam.set_param("/analysing/result_yaml_output", self.yaml_output)
+            rosparam.set_param("/analysing/result_json_output", self.json_output)
 
             # Start roslaunch
-            os.system("roslaunch atf_testing automatic_analysing.launch")
+            os.system("roslaunch atf_testing start_analysing.launch bagfile:=" + bagfile)
+
+            rospy.loginfo("---- Finished test '" + self.test_names[idx] + "' ----")
 
 if __name__ == "__main__":
     rospy.init_node("automatic_analysing")
