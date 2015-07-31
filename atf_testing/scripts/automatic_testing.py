@@ -27,7 +27,7 @@ class AutomaticTesting:
 
         for test in self.test_list:
 
-            rospy.loginfo("---- Start test '" + test + "' ----")
+            rospy.logerr("---- Start test '" + test + "' ----")
 
             # Parse rosparams
             os.environ['ROBOT'] = self.test_list[test]["robot"]
@@ -44,7 +44,7 @@ class AutomaticTesting:
             # Start roslaunch
             os.system("roslaunch atf_testing start_testing.launch rc_path:=" + self.robot_config_path)
 
-            rospy.loginfo("---- Finished test '" + test + "' ----")
+            rospy.logerr("---- Finished test '" + test + "' ----")
 
     def generate_test_list(self):
         temp_config = {}

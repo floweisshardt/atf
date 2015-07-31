@@ -38,7 +38,7 @@ class AutomaticAnalysing:
 
         for idx, bagfile in enumerate(self.bagfile_list):
 
-            rospy.loginfo("---- Start test '" + self.test_names[idx] + "' ----")
+            rospy.logerr("---- Start test '" + self.test_names[idx] + "' ----")
 
             # Parse rosparams
             rosparam.set_param("/analysing/test_config", self.test_configs[self.test_names[idx]]["test_config"])
@@ -51,7 +51,7 @@ class AutomaticAnalysing:
             # Start roslaunch
             os.system("roslaunch atf_testing start_analysing.launch bagfile:=" + bagfile)
 
-            rospy.loginfo("---- Finished test '" + self.test_names[idx] + "' ----")
+            rospy.logerr("---- Finished test '" + self.test_names[idx] + "' ----")
 
 if __name__ == "__main__":
     rospy.init_node("automatic_analysing")
