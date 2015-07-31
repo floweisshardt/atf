@@ -4,6 +4,7 @@ import smach
 import smach_ros
 import tf
 import yaml
+
 from pyassimp import pyassimp
 from copy import copy
 from re import findall
