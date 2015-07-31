@@ -161,15 +161,14 @@ class SceneManager(smach.State):
         env_entry = self.menu_handler.insert("Environment")
 
         env_menu_id = 4
-        for item in sorted(self.scene_data):
+        for i, item in enumerate(sorted(self.scene_data)):
             if item == self.scenario:
                 self.menu_handler.setCheckState(self.menu_handler.insert(item, callback=self.change_environment,
                                                                          parent=env_entry), MenuHandler.CHECKED)
-                self.last_env = env_menu_id
+                self.last_env = env_menu_id + i
             else:
                 self.menu_handler.setCheckState(self.menu_handler.insert(item, callback=self.change_environment,
                                                                          parent=env_entry), MenuHandler.UNCHECKED)
-            env_menu_id += 1
 
         # --- WAYPOINT MENU ---
         if self.use_waypoints:
@@ -1547,23 +1546,23 @@ class Execution(smach.State):
         rospy.loginfo("---- Start execution ---")
         rospy.loginfo("------- Approach -------")
         self.planer.execute(userdata.computed_trajectories[0])
-        # self.move_gripper(userdata, "gripper_" + userdata.active_arm, "open")
+        self.move_gripper(userdata, "gripper_" + userdata.active_arm, "open")
         rospy.loginfo("--------- Grasp --------")
         self.planer.execute(userdata.computed_trajectories[1])
-        # self.move_gripper(userdata, "gripper_" + userdata.active_arm, "close")
+        self.move_gripper(userdata, "gripper_" + userdata.active_arm, "close")
         rospy.loginfo("--------- Lift ---------")
         self.planer.execute(userdata.computed_trajectories[2])
         rospy.loginfo("--------- Move ---------")
         self.planer.execute(userdata.computed_trajectories[3])
         rospy.loginfo("--------- Drop ---------")
         self.planer.execute(userdata.computed_trajectories[4])
-        # self.move_gripper(userdata, "gripper_" + userdata.active_arm, "open")
+        self.move_gripper(userdata, "gripper_" + userdata.active_arm, "open")
         if userdata.planning_method == "joint":
             userdata.joint_goal_position =\
                 self.planer.get_current_pose(self.planer.get_end_effector_link()).pose.position
         rospy.loginfo("-------- Retreat -------")
         self.planer.execute(userdata.computed_trajectories[5])
-        # self.move_gripper(userdata, "gripper_" + userdata.active_arm, "close")
+        self.move_gripper(userdata, "gripper_" + userdata.active_arm, "close")
         rospy.loginfo("-- Execution finished --")
 
         execution_recorder_2.stop()
