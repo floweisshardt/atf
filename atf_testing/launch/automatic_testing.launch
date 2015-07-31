@@ -7,7 +7,6 @@
         <arg name="gui" value="false"/>
     </include>
     <include file="$(find cob_grasping)/launch/move_group.launch" />
-    <include file="$(find atf_recorder)/launch/atf_recorder.launch" />
 
     <include file="$(find cob_grasping)/launch/grasping_app.launch">
         <param name="switch_arm" value="False" />
@@ -19,5 +18,7 @@
         <param name="manipulation_repeats" value="1" />
         <param name="load_obstacles" value="none" />
     </include>
+
+    <include file="$(find atf_recorder)/launch/atf_recorder.launch" />
 
 </launch>
