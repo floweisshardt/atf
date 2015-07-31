@@ -135,11 +135,11 @@ class SceneManager(smach.State):
         self.scenario = rospy.get_param("/scene_config")
         self.planning_method = rospy.get_param("/planning_method")
 
-        self.switch_arm = rospy.get_param(str(rospy.get_name()) + "/switch_arm")
-        self.wait_for_user = rospy.get_param(str(rospy.get_name()) + "/wait_for_user")
-        self.spawn_obstacles = rospy.get_param(str(rospy.get_name()) + "/load_obstacles")
+        self.switch_arm = rospy.get_param(rospy.get_name() + "/switch_arm")
+        self.wait_for_user = rospy.get_param(rospy.get_name() + "/wait_for_user")
+        self.spawn_obstacles = rospy.get_param(rospy.get_name() + "/load_obstacles")
 
-        self.path_scene = rospkg.RosPack().get_path("cob_grasping") + "/config/scene_config.yaml"
+        self.path_scene = rospy.get_param(rospy.get_name() + "/scene_config_file")
 
         if self.planning_method == "cartesian_linear":
             self.use_waypoints = True
@@ -1577,7 +1577,7 @@ class Execution(smach.State):
         error_code = -1
         counter = 0
         while not rospy.is_shutdown() and error_code != 0:
-            rospy.loginfo("Trying to move " + str(component_name) + " to " + str(pos) + " retries: " + str(counter))
+            rospy.loginfo("-- " + str(pos).title() + " " + str(component_name).title() + " -")
             handle = sss.move(component_name, pos)
             handle.wait()
             error_code = handle.get_error_code()
@@ -1598,7 +1598,7 @@ class SwitchArm(smach.State):
 
         # ---- GET PARAMETER FROM SERVER ----
         self.scenario = rospy.get_param("/scene_config")
-        self.spawn_obstacles = rospy.get_param(str(rospy.get_name()) + "/load_obstacles")
+        self.spawn_obstacles = rospy.get_param(rospy.get_name() + "/load_obstacles")
         self.planning_method = rospy.get_param("/planning_method")
 
         self.counter = 1
@@ -1720,16 +1720,14 @@ class SM(smach.StateMachine):
         # ---- GET PARAMETER ----
         self.userdata.active_arm = "right"
         self.userdata.planning_method = rospy.get_param("/planning_method")
-        self.userdata.joint_trajectory_speed = rospy.get_param(str(rospy.get_name()) + "/joint_trajectory_speed")
+        self.userdata.joint_trajectory_speed = rospy.get_param(rospy.get_name() + "/joint_trajectory_speed")
         self.userdata.switch_arm = bool
         self.userdata.cs_position = "start"
 
-        self.userdata.error_max = rospy.get_param(str(rospy.get_name()) + "/max_error")
-        self.userdata.manipulation_options = {"lift_height": rospy.get_param(str(rospy.get_name()) + "/lift_height"),
-                                              "approach_dist": rospy.get_param(str(rospy.get_name())
-                                                                               + "/approach_distance"),
-                                              "repeats": rospy.get_param(str(rospy.get_name())
-                                                                         + "/manipulation_repeats")}
+        self.userdata.error_max = rospy.get_param(rospy.get_name() + "/max_error")
+        self.userdata.manipulation_options = {"lift_height": rospy.get_param(rospy.get_name() + "/lift_height"),
+                                              "approach_dist": rospy.get_param(rospy.get_name() + "/approach_distance"),
+                                              "repeats": rospy.get_param(rospy.get_name() + "/manipulation_repeats")}
 
         self.userdata.cs_orientation = [0.0,  # Roll (x)
                                         0.0,  # Pitch (y)

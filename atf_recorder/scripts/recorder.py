@@ -3,7 +3,6 @@ import rospy
 import rostopic
 import psutil
 import rosbag
-import rospkg
 import rosparam
 import yaml
 import time
@@ -26,13 +25,13 @@ class ATFRecorder:
 
         bag_name = rosparam.get_param("/test_name")
 
-        if not os.path.exists(rospkg.RosPack().get_path("atf_recorder") + "/data/"):
-            os.makedirs(rospkg.RosPack().get_path("atf_recorder") + "/data/")
+        if not os.path.exists(rosparam.get_param("/recorder/bagfile_output")):
+            os.makedirs(rosparam.get_param("/recorder/bagfile_output"))
 
-        self.bag = rosbag.Bag(rospkg.RosPack().get_path("atf_recorder") + "/data/" + bag_name + ".bag", 'w')
+        self.bag = rosbag.Bag(rosparam.get_param("/recorder/bagfile_output") + bag_name + ".bag", 'w')
 
-        test_config_path = rospkg.RosPack().get_path("atf_testing") + "/config/test_config.yaml"
-        robot_config_path = rosparam.get_param("/robot_config")
+        test_config_path = rosparam.get_param("/recorder/test_config_file")
+        robot_config_path = rosparam.get_param(rospy.get_name() + "/robot_config_file")
         tf_topic = self.load_data(robot_config_path)["topics"]["path"]["tf_topic"][0]
         self.config_data = self.load_data(test_config_path)[rosparam.get_param("/test_config")]
 
