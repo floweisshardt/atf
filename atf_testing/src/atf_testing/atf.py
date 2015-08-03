@@ -63,7 +63,8 @@ class ATF:
 
         try:
             filename = rosparam.get_param("/analysing/result_yaml_output") + self.test_name + ".yaml"
-            stream = file(filename, 'w')
-            yaml.dump(doc, stream)
         except rosgraph.masterapi.MasterError:
             pass
+        else:
+            stream = file(filename, 'w')
+            yaml.dump(doc, stream)
