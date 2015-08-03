@@ -6,7 +6,7 @@ import os
 import rosgraph
 import rospkg
 
-from atf_testing import ATF, Testblock
+from atf_core import ATF, Testblock
 import atf_metrics
 
 

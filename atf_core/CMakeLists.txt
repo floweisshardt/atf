@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 2.8.3)
-project(atf_testing)
+project(atf_core)
 
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
@@ -79,7 +79,7 @@ catkin_python_setup()
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
 #  INCLUDE_DIRS include
-#  LIBRARIES atf_testing
+#  LIBRARIES atf_core
 #  CATKIN_DEPENDS rospy
 #  DEPENDS system_lib
 )
@@ -96,19 +96,19 @@ include_directories(
 )
 
 ## Declare a cpp library
-# add_library(atf_testing
-#   src/${PROJECT_NAME}/atf_testing.cpp
+# add_library(atf_core
+#   src/${PROJECT_NAME}/atf_core.cpp
 # )
 
 ## Declare a cpp executable
-# add_executable(atf_testing_node src/atf_testing_node.cpp)
+# add_executable(atf_core src/atf_core.cpp)
 
 ## Add cmake target dependencies of the executable/library
 ## as an example, message headers may need to be generated before nodes
-# add_dependencies(atf_testing_node atf_testing_generate_messages_cpp)
+# add_dependencies(atf_core_node atf_core_generate_messages_cpp)
 
 ## Specify libraries to link a library or executable target against
-# target_link_libraries(atf_testing_node
+# target_link_libraries(atf_core_node
 #   ${catkin_LIBRARIES}
 # )
 
@@ -129,7 +129,7 @@ install(PROGRAMS
 )
 
 ## Mark executables and/or libraries for installation
-# install(TARGETS atf_testing atf_testing_node
+# install(TARGETS atf_core atf_core_node
 #   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
 #   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
 #   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
@@ -154,7 +154,7 @@ install(PROGRAMS
 #############
 
 ## Add gtest based cpp test target and link libraries
-# catkin_add_gtest(${PROJECT_NAME}-test test/test_atf_testing.cpp)
+# catkin_add_gtest(${PROJECT_NAME}-test test/test_atf_core.cpp)
 # if(TARGET ${PROJECT_NAME}-test)
 #   target_link_libraries(${PROJECT_NAME}-test ${PROJECT_NAME})
 # endif()

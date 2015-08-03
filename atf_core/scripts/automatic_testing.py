@@ -42,7 +42,7 @@ class AutomaticTesting:
             rosparam.set_param("/recorder/bagfile_output", self.bagfile_output)
 
             # Start roslaunch
-            os.system("roslaunch atf_testing start_testing.launch rc_path:=" + self.robot_config_path)
+            os.system("roslaunch atf_core start_testing.launch rc_path:=" + self.robot_config_path)
 
             rospy.logerr("---- Finished test '" + test + "' ----")
 
@@ -74,7 +74,7 @@ class AutomaticTesting:
         if not os.path.exists(rospkg.RosPack().get_path("atf_presenter") + "/data/"):
             os.makedirs(rospkg.RosPack().get_path("atf_presenter") + "/data/")
 
-        stream = file(rospkg.RosPack().get_path("atf_testing") + "/config/test_list.yaml", 'w')
+        stream = file(rospkg.RosPack().get_path("atf_core") + "/config/test_list.yaml", 'w')
         yaml.dump(deepcopy(self.list_to_array()), stream)
 
         stream = file(rospkg.RosPack().get_path("atf_presenter") + "/data/test_list.json", 'w')

@@ -49,7 +49,7 @@ class AutomaticAnalysing:
             rosparam.set_param("/analysing/result_json_output", self.json_output)
 
             # Start roslaunch
-            os.system("roslaunch atf_testing start_analysing.launch bagfile:=" + bagfile)
+            os.system("roslaunch atf_core start_analysing.launch bagfile:=" + bagfile)
 
             rospy.logerr("---- Finished test '" + self.test_names[idx] + "' ----")
 

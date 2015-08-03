@@ -1,0 +1,12 @@
+<?xml version="1.0"?>
+<launch>
+
+    <node pkg="atf_core" type="automatic_analysing.py" name="automatic_analysing" respawn="false" output="screen">
+        <param name="bagfile_input" value="$(find atf_recorder)/data/" />
+        <param name="test_list_file" value="$(find atf_core)/config/test_list.yaml" />
+        <param name="test_config_file" value="$(find atf_core)/config/test_config.yaml" />
+        <!-- <param name="result_yaml_output" value="$(find atf_core)/results/" /> -->
+        <param name="result_json_output" value="$(find atf_presenter)/data/" />
+    </node>
+
+</launch>

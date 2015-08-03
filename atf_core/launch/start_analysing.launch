@@ -3,7 +3,7 @@
     <param name="use_sim_time" value="True" />
     <arg name="bagfile" default=""/>
 
-    <node pkg="atf_testing" type="test_builder.py" name="test_builder" respawn="false" output="screen" />
+    <node pkg="atf_core" type="test_builder.py" name="test_builder" respawn="false" output="screen" />
 
     <node pkg="rosbag" type="play" name="player" output="screen" args="--delay=5.0 --clock $(arg bagfile)">
         <remap from="/testing/tf" to="/tf" />
