@@ -112,6 +112,8 @@ def add_remove_object(co_operation, co_object, co_position, co_type):
                 co_object.mesh_poses.append(pose)
             elif co_type == "primitive":
                 co_object.primitive_poses.append(pose)
+            else:
+                rospy.logerr("Invalid type")
         elif co_operation == "remove":
             co_object.operation = CollisionObject.REMOVE
             planning_scene.world.collision_objects[:] = []
