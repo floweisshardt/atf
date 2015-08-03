@@ -30,7 +30,6 @@ class AutomaticTesting:
             rospy.logerr("---- Start test '" + test + "' ----")
 
             # Parse rosparams
-            os.environ['ROBOT'] = self.test_list[test]["robot"]
             rosparam.set_param("/test_name", test)
             rosparam.set_param("/test_config", self.test_list[test]["test_config"])
             rosparam.set_param("/scene_config", self.test_list[test]["scene_config"])
@@ -42,7 +41,8 @@ class AutomaticTesting:
             rosparam.set_param("/recorder/bagfile_output", self.bagfile_output)
 
             # Start roslaunch
-            os.system("roslaunch atf_core start_testing.launch rc_path:=" + self.robot_config_path)
+            os.system("roslaunch atf_core start_testing.launch rc_path:=" + self.robot_config_path + " robot:=" +
+                      self.test_list[test]["robot"])
 
             rospy.logerr("---- Finished test '" + test + "' ----")
 
