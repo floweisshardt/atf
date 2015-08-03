@@ -60,7 +60,7 @@ class ATFRecorder:
                             if item not in self.nodes:
                                 try:
                                     self.nodes[item] = self.get_pid(item)
-                                except IndexError:
+                                except IOError:
                                     rospy.logwarn("Node '" + item + "' does not exist or is not running!")
 
     def __enter__(self):
