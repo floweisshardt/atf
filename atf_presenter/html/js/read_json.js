@@ -1,17 +1,14 @@
-$(document).ready(function() {
-    $(".content_container").load("pages/home.html");
-});
-
-$(".nav-sidebar li").each(function() {
+$(".nav-sidebar li, .detail_button").each(function() {
     $(this).on("click", function() {
-        $(".content_container").load($(this).attr("data-page"))
+        $(".content_container").load($(this).attr("data-page"));
     });
 });
 
-$(".nav-sidebar li").each(function() {
-    $(this).on("click", function() {
-        $(".content_container").load($(this).attr("data-page"))
-    });
+$("#detail_button").on("click", function(e) {
+        e.stopImmediatePropagation();
+        alert("click");
+        $(".content_container").load($(this).attr("data-page"));
+
 });
 
 $('.sidebar > ul.nav li a').click(function(e) {
