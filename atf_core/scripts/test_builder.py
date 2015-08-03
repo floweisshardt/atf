@@ -26,6 +26,9 @@ def create_test_list():
 
     get_test_list = []
 
+    # TODO: Rewrite metric / testblock construction with Handler
+    # list of RessourceMetrics = CalculateResourcesParamHandler(param)
+
     for testblock in config_data:
         metrics = []
 

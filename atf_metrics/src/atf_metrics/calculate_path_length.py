@@ -4,6 +4,14 @@ import rospy
 import tf
 import time
 
+# TODO: Handler for parameter return
+"""
+class  CalculatePathLengthParamHandler:
+
+
+    def parse_parameter(self, param):
+"""
+
 
 class CalculatePathLength:
     """
