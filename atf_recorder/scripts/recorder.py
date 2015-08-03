@@ -7,6 +7,8 @@ import rosparam
 import yaml
 import time
 import os
+import xmlrpclib
+import rosnode
 
 from re import findall
 from threading import Lock
@@ -189,8 +191,10 @@ class ATFRecorder:
 
     @staticmethod
     def get_pid(name):
-        pid = [p.pid for p in psutil.process_iter() if name in str(p.name)]
-        return pid[0]
+        node_id = '/NODEINFO'
+        node_api = rosnode.get_api_uri(rospy.get_master(), name)
+        code, msg, pid = xmlrpclib.ServerProxy(node_api[2]).getPid(node_id)
+        return pid
 
     def tf_callback(self, msg):
         if self.tf_active:
