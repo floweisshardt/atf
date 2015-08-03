@@ -4,9 +4,10 @@ import yaml
 import rosparam
 import os
 import rosgraph
+import rospkg
 
 from atf_testing import ATF, Testblock
-from atf_metrics import CalculatePathLength, CalculateTime, CalculateResources
+import atf_metrics
 
 
 def create_test_list():
@@ -21,43 +22,28 @@ def create_test_list():
 
     test_config_path = rosparam.get_param("/analysing/test_config_file")
     config_data = load_data(test_config_path)[rosparam.get_param("/analysing/test_config")]
+    metrics_data = load_data(rospkg.RosPack().get_path("atf_metrics") + "/config/metrics.yaml")
 
-    test_list_int = []
+    get_test_list = []
 
     for testblock in config_data:
         metrics = []
 
-        # Time
-        try:
-            config_data[testblock]["time"]
-        except KeyError:
-            pass
-        else:
-            metrics.append(CalculateTime())
+        for metric in config_data[testblock]:
+            try:
+                metrics_data[metric]["argument"]
+            except KeyError:
+                metrics.append(getattr(atf_metrics, metrics_data[metric]["method"])())
+            else:
+                if metrics_data[metric]["method_per_argument"]:
+                    for item in config_data[testblock][metric]:
+                        metrics.append(getattr(atf_metrics, metrics_data[metric]["method"])(item))
+                elif not metrics_data[metric]["method_per_argument"]:
+                    metrics.append(getattr(atf_metrics, metrics_data[metric]["method"])(config_data[testblock][metric]))
 
-        # Path length
-        try:
-            config_data[testblock]["path_length"]
-        except KeyError:
-            pass
-        else:
-            for item in config_data[testblock]["path_length"]:
-                metrics.append(CalculatePathLength(item[0], item[1]))
+        get_test_list.append(Testblock(testblock, metrics))
 
-        # Resources
-        try:
-            config_data[testblock]["resources"]
-        except KeyError:
-            pass
-        else:
-            resource = {}
-            for item in config_data[testblock]["resources"]:
-                resource.update({item: config_data[testblock]["resources"][item]})
-            metrics.append(CalculateResources(resource))
-
-        test_list_int.append(Testblock(testblock, metrics))
-
-    return test_list_int
+    return get_test_list
 
 
 def load_data(filename):
@@ -72,10 +58,10 @@ if __name__ == '__main__':
     
     # Define metrics
     '''
-    L1 = CalculatePathLength("base_link", "gripper_right_grasp_link")
-    L2 = CalculatePathLength("base_link", "arm_right_3_link")
-    L3 = CalculatePathLength("base_link", "gripper_right_grasp_link")
-    L4 = CalculatePathLength("arm_right_1_link", "gripper_right_grasp_link")
+    L1 = CalculatePathLength(["base_link", "gripper_right_grasp_link"])
+    L2 = CalculatePathLength(["base_link", "arm_right_3_link"])
+    L3 = CalculatePathLength(["base_link", "gripper_right_grasp_link"])
+    L4 = CalculatePathLength(["arm_right_1_link", "gripper_right_grasp_link"])
     T1 = CalculateTime()
     T2 = CalculateTime()
     T3 = CalculateTime()

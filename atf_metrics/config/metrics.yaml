@@ -1,0 +1,12 @@
+time:
+  method: CalculateTime
+path_length:
+  method: CalculatePathLength
+  argument:
+  method_per_argument: True
+resources:
+  method: CalculateResources
+  argument:
+  method_per_argument: False
+obstacle_distance:
+  method: CalculateDistanceToObstacles
