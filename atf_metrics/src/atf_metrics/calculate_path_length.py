@@ -6,11 +6,22 @@ import time
 
 
 class CalculatePathLength:
-    def __init__(self, root_frame, measured_frame):
+    """
+    Class for calculating the distance covered by the given frame in relation to a given root frame.
+    The tf data is sent over the topic "/testing/tf".
+    """
+    def __init__(self, frames):
+        """
+        Constructor.
+
+        @param frames: a list which contains the name of the root frame (position 0) and the name of the frame for which
+        you want to measure the distance covered (position 1).
+        @type  frames: list
+        """
         
         self.active = False
-        self.root_frame = root_frame
-        self.measured_frame = measured_frame
+        self.root_frame = frames[0]
+        self.measured_frame = frames[1]
         self.path_length = 0.0
         self.tf_sampling_freq = 100.0  # Hz
         self.first_value = True

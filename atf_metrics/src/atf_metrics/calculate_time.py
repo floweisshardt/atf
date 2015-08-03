@@ -4,7 +4,13 @@ import time
 
 
 class CalculateTime:
+    """
+    Class for calculating the time between the trigger 'ACTIVATE' and 'FINISH' on the topic assigned to the testblock.
+    """
     def __init__(self):
+        """
+        Constructor.
+        """
         self.start_time = rospy.Time()
         self.stop_time = rospy.Time()
         self.finished = False

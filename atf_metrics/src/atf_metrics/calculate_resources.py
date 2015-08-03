@@ -15,8 +15,8 @@ class CalculateResources:
         """
         Constructor.
 
-        @param resources: a list of dictionaries containing the names of the resources and a list with
-        the names of the nodes. Example: {"cpu":[move_group]}
+        @param resources: a dictionary containing the names of the resources and a list with
+        the names of the nodes. Example: {"cpu":[move_group], "mem": [move_group]}
         @type  resources: dict
         """
 
