@@ -1,5 +1,6 @@
 <?xml version="1.0"?>
 <launch>
+    <!-- TODO: Own time server -->
     <param name="use_sim_time" value="true" />
 
     <param name="recorder/test_config_file" value="$(find atf_test)/config/test_config.yaml" />
@@ -7,7 +8,7 @@
     <param name="test_name" value="ts1_t1" />
     <param name="test_config" value="test_1" />
 
-    <node name="atf_test" pkg="atf_test" type="atf_test.py" output="screen" required="true" />
+    <test test-name="atf_test" pkg="atf_test" type="atf_test.py" />
 
     <node name="atf_recorder" pkg="atf_recorder" type="recorder.py" output="screen">
         <param name="robot_config_file" value="$(find atf_test)/config/robot_config.yaml" />

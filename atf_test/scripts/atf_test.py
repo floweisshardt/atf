@@ -3,14 +3,13 @@
 import sys
 import math
 import rospy
-from tf import transformations, TransformListener, TransformBroadcaster
 
+from tf import transformations, TransformListener, TransformBroadcaster
 from atf_recorder import RecordingManager
 
 
 class PublishTf:
     def __init__(self):
-        rospy.init_node("broadcaster")
         self.listener = TransformListener()
         self.br = TransformBroadcaster()
         self.pub_freq = 100.0
@@ -93,7 +92,9 @@ class PublishTf:
             sys.exit()
 
 if __name__ == '__main__':
-    rospy.init_node("atf_test")
+    rospy.init_node('atf_test')
+    rospy.loginfo("Running...")
+
     PTf = PublishTf()
 
     recorder_1 = RecordingManager("test1")
@@ -104,8 +105,11 @@ if __name__ == '__main__':
     PTf.pub_line(length=-1, time=2.5)
     recorder_1.stop()
     recorder_2.start()
-    PTf.pub_quadrat(length=2, time=10)
+    PTf.pub_quadrat(length=2, time=5)
     recorder_2.stop()
     recorder_3.start()
-    PTf.pub_circ(radius=2, time=10)
+    PTf.pub_circ(radius=2, time=5)
     recorder_3.stop()
+
+    rospy.loginfo("Closing...")
+    sys.exit()

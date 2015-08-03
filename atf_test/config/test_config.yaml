@@ -1,0 +1,17 @@
+test_1:
+  test1:
+    time:
+
+  test2:
+    time:
+    resources:
+      cpu: [atf_test]
+      mem: [atf_test]
+
+  test3:
+    time:
+    resources:
+      cpu: [atf_test]
+      mem: [atf_test]
+      io: [atf_test]
+      network: [atf_test]
