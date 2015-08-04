@@ -87,7 +87,6 @@ class TestBuilder:
 
     @staticmethod
     def load_data(filename):
-
-            with open(filename, 'r') as stream:
-                doc = yaml.load(stream)
+        with open(filename, 'r') as stream:
+            doc = yaml.load(stream)
             return doc
