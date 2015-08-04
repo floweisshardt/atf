@@ -1,17 +1,27 @@
 test_1:
+  all:
+    time:
+    path_length:
+      - [world, reference1]
   test1:
     time:
+    path_length:
+      - [world, reference2]
 
   test2:
     time:
     resources:
-      cpu: [atf_test]
-      mem: [atf_test]
+      cpu: [rostest]
+      mem: [rostest]
+    path_length:
+      - [world, reference3]
 
   test3:
     time:
     resources:
-      cpu: [atf_test]
-      mem: [atf_test]
-      io: [atf_test]
-      network: [atf_test]
+      cpu: [rostest]
+      mem: [rostest]
+      io: [rostest]
+      network: [rostest]
+    path_length:
+      - [world, reference4]
