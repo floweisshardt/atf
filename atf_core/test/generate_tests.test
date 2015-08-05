@@ -1,0 +1,12 @@
+<?xml version="1.0"?>
+<launch>
+    <param name="use_sim_time" value="false" />
+
+    <param name="bagfile_output" value="$(find atf_recorder)/data/" />
+    <param name="test_suite_file" value="$(find atf_core)/config/test_suite.yaml" />
+    <param name="test_config_file" value="$(find atf_core)/config/test_config.yaml" />
+    <param name="robot_config_path" value="$(find cob_grasping)/config/" />
+
+    <test test-name="generate_tests" pkg="atf_core" type="generate_tests.py" time-limit="300.0" />
+
+</launch>

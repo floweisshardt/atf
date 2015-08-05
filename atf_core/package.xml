@@ -41,6 +41,7 @@
     <!--   <test_depend>gtest</test_depend> -->
     <buildtool_depend>catkin</buildtool_depend>
     <build_depend>rospy</build_depend>
+    <build_depend>rostest</build_depend>
     <run_depend>rospy</run_depend>
 
 

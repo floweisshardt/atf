@@ -29,3 +29,4 @@ ts*_t*.json
 test_list.json
 test_list.yaml
 */results/*
+*/test/generated/*
