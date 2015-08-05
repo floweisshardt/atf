@@ -1,4 +1,4 @@
-from calculate_path_length import CalculatePathLength
-from calculate_time import CalculateTime
-from calculate_resources import CalculateResources
-from calculate_distance_to_obstacles import CalculateDistanceToObstacles
+from calculate_path_length import CalculatePathLength, CalculatePathLengthParamHandler
+from calculate_time import CalculateTime, CalculateTimeParamHandler
+from calculate_resources import CalculateResources, CalculateResourcesParamHandler
+from calculate_distance_to_obstacles import CalculateDistanceToObstacles, CalculateDistanceToObstaclesParamHandler

@@ -63,23 +63,12 @@ class TestBuilder:
 
         get_test_list = []
 
-        # TODO: Rewrite metric / testblock construction with Handler
-        # list of RessourceMetrics = CalculateResourcesParamHandler(param)
-
         for testblock in config_data:
             metrics = []
 
             for metric in config_data[testblock]:
-                try:
-                    metrics_data[metric]["argument"]
-                except KeyError:
-                    metrics.append(getattr(atf_metrics, metrics_data[metric]["method"])())
-                else:
-                    if metrics_data[metric]["method_per_argument"]:
-                        for item in config_data[testblock][metric]:
-                            metrics.append(getattr(atf_metrics, metrics_data[metric]["method"])(item))
-                    elif not metrics_data[metric]["method_per_argument"]:
-                        metrics.append(getattr(atf_metrics, metrics_data[metric]["method"])(config_data[testblock][metric]))
+                metrics.append(getattr(atf_metrics, metrics_data[metric]["handler"])()
+                               .parse_parameter(config_data[testblock][metric]))
 
             get_test_list.append(Testblock(testblock, metrics))
 

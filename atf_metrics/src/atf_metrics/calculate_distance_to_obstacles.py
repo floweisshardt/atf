@@ -3,6 +3,16 @@ import rospy
 import time
 
 
+class CalculateDistanceToObstaclesParamHandler:
+    def __init__(self):
+        self.params = ""
+
+    @staticmethod
+    def parse_parameter(params):
+
+        return CalculateDistanceToObstacles(params)
+
+
 class CalculateDistanceToObstacles:
     def __init__(self, testblock):
         self.active = False

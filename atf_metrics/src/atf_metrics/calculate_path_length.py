@@ -4,13 +4,18 @@ import rospy
 import tf
 import time
 
-# TODO: Handler for parameter return
-"""
-class  CalculatePathLengthParamHandler:
 
+class CalculatePathLengthParamHandler:
+    def __init__(self):
+        self.params = []
 
-    def parse_parameter(self, param):
-"""
+    def parse_parameter(self, params):
+        self.params = params
+        metrics = []
+
+        for item in params:
+            metrics.append(CalculatePathLength(item[0], item[1]))
+            return (metrics[i] for i in xrange(0, len(metrics)))
 
 
 class CalculatePathLength:
@@ -18,18 +23,19 @@ class CalculatePathLength:
     Class for calculating the distance covered by the given frame in relation to a given root frame.
     The tf data is sent over the topic "/testing/tf".
     """
-    def __init__(self, frames):
+    def __init__(self, root_frame, measured_frame):
         """
         Constructor.
 
-        @param frames: a list which contains the name of the root frame (position 0) and the name of the frame for which
-        you want to measure the distance covered (position 1).
-        @type  frames: list
+        @param root_frame: name of the first frame
+        @type  root_frame: string
+        @param measured_frame: name of the second frame. The distance will be measured in relation to the root_frame.
+        @type  measured_frame: string
         """
         
         self.active = False
-        self.root_frame = frames[0]
-        self.measured_frame = frames[1]
+        self.root_frame = root_frame
+        self.measured_frame = measured_frame
         self.path_length = 0.0
         self.tf_sampling_freq = 100.0  # Hz
         self.first_value = True

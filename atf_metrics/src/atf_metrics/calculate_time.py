@@ -3,6 +3,16 @@ import rospy
 import time
 
 
+class CalculateTimeParamHandler:
+    def __init__(self):
+        self.params = []
+
+    @staticmethod
+    def parse_parameter(params):
+
+        return CalculateTime()
+
+
 class CalculateTime:
     """
     Class for calculating the time between the trigger 'ACTIVATE' and 'FINISH' on the topic assigned to the testblock.

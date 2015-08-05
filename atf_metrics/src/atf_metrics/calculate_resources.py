@@ -6,6 +6,18 @@ import time
 from atf_msgs.msg import *
 
 
+class CalculateResourcesParamHandler:
+    def __init__(self):
+        self.params = []
+
+    def parse_parameter(self, params):
+        self.params = params
+
+        metrics = CalculateResources(self.params)
+
+        return metrics
+
+
 class CalculateResources:
     """
     Class for calculating the average resource workload and writing the current resource data.

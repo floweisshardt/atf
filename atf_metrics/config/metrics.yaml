@@ -1,12 +1,8 @@
 time:
-  method: CalculateTime
+  handler: CalculateTimeParamHandler
 path_length:
-  method: CalculatePathLength
-  argument:
-  method_per_argument: True
+  handler: CalculatePathLengthParamHandler
 resources:
-  method: CalculateResources
-  argument:
-  method_per_argument: False
+  handler: CalculateResourcesParamHandler
 obstacle_distance:
-  method: CalculateDistanceToObstacles
+  handler: CalculateDistanceToObstaclesParamHandler
