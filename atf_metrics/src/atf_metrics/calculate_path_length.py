@@ -13,9 +13,10 @@ class CalculatePathLengthParamHandler:
         self.params = params
         metrics = []
 
-        for item in params:
+        for item in self.params:
             metrics.append(CalculatePathLength(item[0], item[1]))
-            return (metrics[i] for i in xrange(0, len(metrics)))
+
+        return metrics
 
 
 class CalculatePathLength:
@@ -81,7 +82,7 @@ class CalculatePathLength:
                     return
 
                 path_increment = round(math.sqrt((trans[0] - self.trans_old[0])**2 + (trans[1] - self.trans_old[1])**2 +
-                                           (trans[2] - self.trans_old[2])**2), 3)
+                                                 (trans[2] - self.trans_old[2])**2), 3)
                 self.path_length += path_increment
                 self.path_length = round(self.path_length, 3)
 

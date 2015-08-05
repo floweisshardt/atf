@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-import rospy
 import yaml
 import rosparam
 import os
@@ -15,10 +14,10 @@ class TestBuilder:
 
         # Define metrics
         """
-        L1 = CalculatePathLength(["base_link", "gripper_right_grasp_link"])
-        L2 = CalculatePathLength(["base_link", "arm_right_3_link"])
-        L3 = CalculatePathLength(["base_link", "gripper_right_grasp_link"])
-        L4 = CalculatePathLength(["arm_right_1_link", "gripper_right_grasp_link"])
+        L1 = CalculatePathLength("base_link", "gripper_right_grasp_link")
+        L2 = CalculatePathLength("base_link", "arm_right_3_link")
+        L3 = CalculatePathLength("base_link", "gripper_right_grasp_link")
+        L4 = CalculatePathLength("arm_right_1_link", "gripper_right_grasp_link")
         T1 = CalculateTime()
         T2 = CalculateTime()
         T3 = CalculateTime()
@@ -27,7 +26,10 @@ class TestBuilder:
         T6 = CalculateTime()
         T7 = CalculateTime()
         T8 = CalculateTime()
-        R1 = CalculateResources({"cpu":["move_group"], "mem":["move_group"], "io":["move_group"], "network":["move_group"]})
+        R1 = CalculateResources({"cpu":["move_group"],
+                                 "mem":["move_group"],
+                                 "io":["move_group"],
+                                 "network":["move_group"]})
 
         D1 = CalculateDistanceToObstacles()
         """
@@ -61,18 +63,23 @@ class TestBuilder:
         config_data = self.load_data(test_config_path)[rosparam.get_param("/analysing/test_config")]
         metrics_data = self.load_data(rospkg.RosPack().get_path("atf_metrics") + "/config/metrics.yaml")
 
-        get_test_list = []
+        testblock_list = []
 
         for testblock in config_data:
             metrics = []
 
             for metric in config_data[testblock]:
-                metrics.append(getattr(atf_metrics, metrics_data[metric]["handler"])()
-                               .parse_parameter(config_data[testblock][metric]))
+                metric_return = getattr(atf_metrics, metrics_data[metric]["handler"])()\
+                    .parse_parameter(config_data[testblock][metric])
+                if type(metric_return) == list:
+                    for value in metric_return:
+                        metrics.append(value)
+                else:
+                    metrics.append(metric_return)
 
-            get_test_list.append(Testblock(testblock, metrics))
+            testblock_list.append(Testblock(testblock, metrics))
 
-        return get_test_list
+        return testblock_list
 
     @staticmethod
     def load_data(filename):
