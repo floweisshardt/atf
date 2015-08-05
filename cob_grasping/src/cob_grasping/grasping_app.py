@@ -1,7 +1,6 @@
 #!/usr/bin/python
 import rospkg
 import smach
-import smach_ros
 import tf
 import yaml
 
@@ -1814,11 +1813,9 @@ class SM(smach.StateMachine):
             "current_object",
             "base_link")
 
-
+"""
 if __name__ == '__main__':
     rospy.init_node('grasping_app')
     sm = SM()
-    sis = smach_ros.IntrospectionServer('sm', sm, 'SM')
-    sis.start()
     outcome = sm.execute()
-    sis.stop()
+"""
