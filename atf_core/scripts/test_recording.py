@@ -6,12 +6,15 @@ import rostest
 from cob_grasping import SM
 
 
-class RecordManipulation(unittest.TestCase):
+class TestRecording(unittest.TestCase):
 
-    def test_Manipulation(self):
-        sm = SM()
-        sm.execute()
+    def setUp(self):
+        self.sm = SM()
+
+    def test_Recording(self):
+
+        self.sm.execute()
 
 if __name__ == '__main__':
-    rospy.init_node('record_manipulation')
-    rostest.rosrun("atf_core", 'record_manipulation', RecordManipulation, sysargs=None)
+    rospy.init_node('test_recording')
+    rostest.rosrun("atf_core", 'test_recording', TestRecording, sysargs=None)

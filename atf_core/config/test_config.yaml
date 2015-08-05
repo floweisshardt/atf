@@ -39,13 +39,13 @@ test_1:
       - [base_link, gripper_right_grasp_link]
       - [base_link, arm_right_3_link]
     resources:
-      cpu: [move_group, grasping_app]
-      mem: [move_group, grasping_app]
+      cpu: [move_group, rostest]
+      mem: [move_group, rostest]
 
   execution_3:
     time:
     resources:
-      cpu: [grasping_app]
+      cpu: [rostest]
 
 test_2:
   execution_1:
@@ -59,8 +59,8 @@ test_2:
     path_length:
       - [base_link, gripper_right_grasp_link]
     resources:
-      cpu: [move_group, grasping_app]
-      mem: [move_group, grasping_app]
+      cpu: [move_group, rostest]
+      mem: [move_group, rostest]
 
   execution_3:
     time:

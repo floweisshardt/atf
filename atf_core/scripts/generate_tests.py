@@ -68,7 +68,7 @@ class GenerateTests(unittest.TestCase):
                      param(name="approach_distance", value="0.14"),
                      param(name="manipulation_repeats", value="1"),
                      param(name="load_obstacles", value="none"),
-                     test-name="record_manipulation", pkg="atf_core", type="test_recording.py", time-limit="300.0")
+                     test-name="test_recording", pkg="atf_core", type="test_recording.py", time-limit="300.0")
             )
 
             tree = lxml.etree.ElementTree(the_doc)
