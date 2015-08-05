@@ -45,8 +45,9 @@ class ATF:
                 doc.update({name: {"status": "error"}})
             else:
                 for metric in item.metrics:
-                    if metric.get_result() is not False:
-                        (t, m, data) = metric.get_result()
+                    result = metric.get_result()
+                    if result is not False:
+                        (t, m, data) = result
                         if name not in doc:
                             doc.update({name: {"timestamp": round(t, 3)}})
                             doc.update({name: {m: data}})
