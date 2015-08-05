@@ -25,3 +25,4 @@ test_1:
       network: [rostest]
     path_length:
       - [world, reference4]
+      - [reference1, reference4]

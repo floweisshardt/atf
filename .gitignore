@@ -80,3 +80,4 @@ CATKIN_IGNORE
 *.bag
 */.idea/*
 *.idea/*
+*/results
