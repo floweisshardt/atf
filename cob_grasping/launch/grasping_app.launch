@@ -3,7 +3,7 @@
 
     <arg name="robot" default="$(optenv ROBOT !!NO_ROBOT_SET!!)"/>
     <param name="robot_config" value="$(find cob_grasping)/config/$(arg robot)/robot_config.yaml" />
-    <param name="test_config_file" value="$(find atf_testing)/config/test_config.yaml" />
+    <param name="test_config_file" value="$(find atf_core)/config/test_config.yaml" />
 
     <!-- Testsuite params -->
     <param name="test_name" value="ts3_t1" />
@@ -14,7 +14,7 @@
     <param name="jump_threshold" value="2" />
     <param name="planning_method" value="cartesian_linear" />
 
-    <node name="grasping_app" pkg="cob_grasping" type="grasping_app.py" output="screen" required="true">
+    <node name="grasping_app" pkg="cob_grasping" type="start_grasping_app.py" output="screen" required="true">
         <param name="scene_config_file" value="$(find cob_grasping)/config/scene_config.yaml" />
 
         <!-- User params -->
@@ -28,10 +28,10 @@
         <param name="load_obstacles" value="none" />
     </node>
 
-    <node name="atf_recorder" pkg="atf_recorder" type="recorder.py" output="screen">
-        <param name="bagfile_output" value="$(find atf_recorder)/data/" />
-        <param name="robot_config_file" value="$(find cob_grasping)/config/$(arg robot)/robot_config.yaml" />
-        <param name="test_config_file" value="$(find atf_testing)/config/test_config.yaml" />
-    </node>
+    <param name="recorder/bagfile_output" value="$(find atf_recorder)/data/" />
+    <param name="recorder/robot_config_file" value="$(find cob_grasping)/config/$(arg robot)/robot_config.yaml" />
+    <param name="recorder/test_config_file" value="$(find atf_core)/config/test_config.yaml" />
+
+    <node name="atf_recorder" pkg="atf_recorder" type="recorder.py" output="screen" />
 
 </launch>

@@ -16,5 +16,5 @@ catkin_package(CATKIN_DEPENDS rospy)
 
 include_directories(${catkin_INCLUDE_DIRS})
 
-install(PROGRAMS scripts/grasping_app.py
+install(PROGRAMS scripts/start_grasping_app.py
         DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
