@@ -33,19 +33,27 @@ class ATFRecorder:
 
         self.bag = rosbag.Bag(rosparam.get_param("/recorder/bagfile_output") + bag_name + ".bag", 'w')
 
-        test_config_path = rosparam.get_param("/recorder/test_config_file")
-        robot_config_path = rosparam.get_param(rospy.get_name() + "/robot_config_file")
-        tf_topic = self.load_data(robot_config_path)["topics"]["path"]["tf_topic"][0]
-        self.config_data = self.load_data(test_config_path)[rosparam.get_param("/test_config")]
+        self.robot_config_file = self.load_data(rosparam.get_param(rospy.get_name() + "/robot_config_file"))
+        self.config_data = self.load_data(rosparam.get_param("/recorder/test_config_file"))[rosparam.get_param(
+            "/test_config")]
+
+        # TODO: Pipeline for topics. Same style as res_pipeline
+        topics = self.get_topics()
 
         self.nodes = {}
-        self.pipeline = {}
+        self.res_pipeline = {}
+        self.topic_pipeline = {}
         self.active_sections = []
+
+        # TODO: No hardcoded metrics
         self.requested_nodes = {"cpu": [], "mem": [], "io": [], "network": [], "path_length": []}
 
         rospy.Timer(rospy.Duration.from_sec(self.timer_interval), self.collect_resource_data)
-        msg_type = rostopic.get_topic_class(tf_topic, blocking=True)[0]
-        rospy.Subscriber(tf_topic, msg_type, self.tf_callback, queue_size=1)
+
+        for topic in topics:
+            msg_type = rostopic.get_topic_class(topic, blocking=True)[0]
+            rospy.Subscriber(topic, msg_type, self.global_topic_callback, queue_size=5, callback_args=topic)
+
         rospy.Service(self.topic + "recorder_command", RecorderCommand, self.command_callback)
 
         # ---- GET PIDS FOR THE NODES ----
@@ -74,30 +82,45 @@ class ATFRecorder:
 
     def command_callback(self, msg):
 
-        if (msg.trigger.trigger == Trigger.ACTIVATE and msg.name in self.active_sections) or\
-                (msg.trigger.trigger == Trigger.FINISH and msg.name not in self.active_sections):
-            return RecorderCommandResponse(True)
+        if msg.name in self.config_data:
 
-        if msg.trigger.trigger == Trigger.ACTIVATE:
-            self.update_requested_nodes(msg.name, "add")
-            self.active_sections.append(msg.name)
-            # rospy.loginfo("Section '" + msg.name + "': ACTIVATE")
-        elif msg.trigger.trigger == Trigger.FINISH:
-            self.update_requested_nodes(msg.name, "del")
-            self.active_sections.remove(msg.name)
-            # rospy.loginfo("Section '" + msg.name + "': FINISH")
-        elif msg.trigger.trigger == Trigger.ERROR:
-            self.pipeline = {}
-            self.tf_active = False
-            # rospy.loginfo("Section '" + msg.name + "': ERROR")
+            if (msg.trigger.trigger == Trigger.ACTIVATE and msg.name in self.active_sections) or\
+                    (msg.trigger.trigger == Trigger.FINISH and msg.name not in self.active_sections):
+                return RecorderCommandResponse(True)
 
-        self.write_to_bagfile(self.topic + msg.name + "/Trigger", Trigger(msg.trigger.trigger),
-                              rospy.Time.from_sec(time.time()))
+            if msg.trigger.trigger == Trigger.ACTIVATE:
+                self.update_requested_nodes(msg.name, "add")
+                self.active_sections.append(msg.name)
+                # rospy.loginfo("Section '" + msg.name + "': ACTIVATE")
+            elif msg.trigger.trigger == Trigger.FINISH:
+                self.update_requested_nodes(msg.name, "del")
+                self.active_sections.remove(msg.name)
+                # rospy.loginfo("Section '" + msg.name + "': FINISH")
+            elif msg.trigger.trigger == Trigger.ERROR:
+                self.res_pipeline = {}
+                self.tf_active = False
+                # rospy.loginfo("Section '" + msg.name + "': ERROR")
+
+            self.write_to_bagfile(self.topic + msg.name + "/Trigger", Trigger(msg.trigger.trigger),
+                                  rospy.Time.from_sec(time.time()))
 
         return RecorderCommandResponse(True)
 
     def update_requested_nodes(self, name, command):
         update_pipeline = False
+
+        try:
+            self.config_data[name]["path_length"]
+        except KeyError:
+            pass
+        else:
+            if command == "add":
+                self.tf_active = True
+                self.requested_nodes["path_length"].append(True)
+            elif command == "del":
+                self.tf_active = False
+                self.requested_nodes["path_length"].remove(True)
+            update_pipeline = True
 
         try:
             resources_temp = self.config_data[name]["resources"]
@@ -112,30 +135,18 @@ class ATFRecorder:
                         self.requested_nodes[res].remove(item)
             update_pipeline = True
 
-        try:
-            self.config_data[name]["path_length"]
-        except KeyError:
-            pass
-        else:
-            if command == "add":
-                self.requested_nodes["path_length"].append(True)
-            elif command == "del":
-                self.requested_nodes["path_length"].remove(True)
-            update_pipeline = True
-
         if update_pipeline:
-            self.pipeline = {}
-            self.tf_active = False
+            self.res_pipeline = {}
 
             for item in self.requested_nodes:
                 for value in self.requested_nodes[item]:
                     if not type(value) == bool:
-                        if value not in self.pipeline:
-                            self.pipeline[value] = [item]
-                        elif item not in self.pipeline[value]:
-                            self.pipeline[value].append(item)
-                    elif value:
-                            self.tf_active = value
+                        if value not in self.res_pipeline:
+                            self.res_pipeline[value] = [item]
+                        elif item not in self.res_pipeline[value]:
+                            self.res_pipeline[value].append(item)
+                    else:
+                        self.tf_active = value
 
     @staticmethod
     def load_data(filename):
@@ -145,7 +156,7 @@ class ATFRecorder:
         return doc
 
     def collect_resource_data(self, event):
-        pipeline = self.pipeline
+        pipeline = self.res_pipeline
         if not len(pipeline) == 0:
             msg = Resources()
             topic = self.topic + "Resources"
@@ -158,7 +169,7 @@ class ATFRecorder:
                     continue
 
                 try:
-                    msg_data.node_name = str(psutil.Process(pid).name().split(".")[0])
+                    msg_data.node_name = node
 
                     if "cpu" in pipeline[node]:
                         msg_data.cpu = psutil.Process(pid).cpu_percent(interval=self.timer_interval)
@@ -214,17 +225,29 @@ class ATFRecorder:
 
         return False
 
-    def tf_callback(self, msg):
+    def global_topic_callback(self, msg, name):
         if self.tf_active:
             now = rospy.Time.from_sec(time.time())
             for item in msg.transforms:
                 item.header.stamp = now
-            self.write_to_bagfile(self.topic + "tf", msg, now)
+            self.write_to_bagfile(name, msg, now)
 
     def write_to_bagfile(self, topic, data, set_time):
         self.lock_write.acquire()
         self.bag.write(topic, data, set_time)
         self.lock_write.release()
+
+    def get_topics(self):
+        topics = []
+
+        for item in self.config_data:
+            for metric in self.config_data[item]:
+                if metric in self.robot_config_file:
+                    for topic in self.robot_config_file[metric]["topics"]:
+                        if topic not in topics:
+                            topics.append(topic)
+
+        return topics
 
 
 if __name__ == "__main__":
