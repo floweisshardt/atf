@@ -11,7 +11,7 @@ find_package(catkin REQUIRED COMPONENTS rospy
 ## Uncomment this if the package has a setup.py. This macro ensures
 ## modules and global scripts declared therein get installed
 ## See http://ros.org/doc/api/catkin/html/user_guide/setup_dot_py.html
-catkin_python_setup()
+#catkin_python_setup()
 
 ###################################
 ## catkin specific configuration ##
@@ -31,7 +31,7 @@ include_directories(
 ## Install ##
 #############
 
-install(PROGRAMS scripts/test_template.py
+install(PROGRAMS scripts/publish_tf.py
         DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
 
 #############
@@ -41,7 +41,7 @@ install(PROGRAMS scripts/test_template.py
 if(CATKIN_ENABLE_TESTING)
     find_package(rostest REQUIRED)
     # foreach(robot ${robotlist})
-    add_rostest(test/test1_recording.test)
-    add_rostest(test/test1_analysing.test)
+    add_rostest(test/test_recording.test)
+    add_rostest(test/test_analysing.test)
     # endforeach()
 endif()
