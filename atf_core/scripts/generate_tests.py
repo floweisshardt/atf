@@ -2,6 +2,7 @@
 import rospy
 import unittest
 import rostest
+import rosgraph
 import yaml
 import json
 import re
@@ -25,14 +26,28 @@ class GenerateTests(unittest.TestCase):
         self.test_config_file = rosparam.get_param("/test_config_file")
         self.bagfile_output = rosparam.get_param("/bagfile_output")
         self.robot_config_path = rosparam.get_param("/robot_config_path")
+        self.package_name = rosparam.get_param("/package_name")
+        self.applikation_name = rosparam.get_param("/applikation_name")
+
         self.test_list = {}
 
-        if not os.path.exists(rospkg.RosPack().get_path("atf_core") + "/test/generated/"):
-            os.makedirs(rospkg.RosPack().get_path("atf_core") + "/test/generated/")
+        if not os.path.exists(rospkg.RosPack().get_path("atf_core") + "/test/generated/recording/"):
+            os.makedirs(rospkg.RosPack().get_path("atf_core") + "/test/generated/recording/")
+
+        if not os.path.exists(rospkg.RosPack().get_path("atf_core") + "/test/generated/analysing/"):
+            os.makedirs(rospkg.RosPack().get_path("atf_core") + "/test/generated/analysing/")
+
+        try:
+            self.yaml_output = rosparam.get_param("/result_yaml_output")
+        except rosgraph.masterapi.MasterError:
+            self.yaml_output = ""
+            pass
+
+        self.json_output = rosparam.get_param("/result_json_output")
 
         self.generate_test_list()
 
-    def test_GenerateRecordingTests(self):
+    def test_GenerateTests(self):
 
         for item in self.test_list:
 
@@ -45,7 +60,9 @@ class GenerateTests(unittest.TestCase):
             node = em.node
             param = em.param
 
-            the_doc = launch(
+            # TODO: Testfile should be universal
+            # Recording
+            test_record = launch(
                 param(name="use_sim_time", value="true"),
                 param(name="test_name", value=item),
                 param(name="test_config", value=self.test_list[item]["test_config"]),
@@ -71,16 +88,38 @@ class GenerateTests(unittest.TestCase):
                      param(name="approach_distance", value="0.14"),
                      param(name="manipulation_repeats", value="1"),
                      param(name="load_obstacles", value="none"),
-                     {'test-name': "test_recording", 'pkg': "atf_core", 'type': "test_recording.py",
+                     {'test-name': "test_recording", 'pkg': self.package_name, 'type': self.applikation_name,
                       'time-limit': "300.0"})
             )
 
-            xmlstr = minidom.parseString(ElementTree.tostring(the_doc)).toprettyxml(indent="    ")
+            xmlstr = minidom.parseString(ElementTree.tostring(test_record)).toprettyxml(indent="    ")
             with open(rospkg.RosPack().get_path("atf_core") + "/test/generated/recording/" + item + ".test", "w") as f:
                 f.write(xmlstr)
 
-    def test_GenerateAnalysingTests(self):
-        pass
+            # Analysing
+            em = lxml.builder.ElementMaker()
+            launch = em.launch
+            test = em.test
+            node = em.node
+            param = em.param
+
+            test_analyse = launch(
+                param(name="use_sim_time", value="true"),
+                param(name="analysing/test_name", value=item),
+                param(name="analysing/test_config", value=self.test_list[item]["test_config"]),
+                param(name="analysing/test_config_file", value=self.test_config_file),
+                param(name="analysing/result_yaml_output", value=self.yaml_output),
+                param(name="analysing/result_json_output", value=self.json_output),
+                test({'test-name': "test_analysing", 'pkg': "atf_core", 'type': "test_builder.py",
+                      'time-limit': "300.0"}),
+                node(name="player", pkg="rosbag", type="play", output="screen", args="--delay=5.0 --clock " +
+                                                                                     self.bagfile_output + item +
+                                                                                     ".bag")
+            )
+
+            xmlstr = minidom.parseString(ElementTree.tostring(test_analyse)).toprettyxml(indent="    ")
+            with open(rospkg.RosPack().get_path("atf_core") + "/test/generated/analysing/" + item + ".test", "w") as f:
+                f.write(xmlstr)
 
     def generate_test_list(self):
         temp_config = {}
