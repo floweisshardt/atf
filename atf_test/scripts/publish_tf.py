@@ -7,6 +7,7 @@ import rostest
 
 from tf import transformations, TransformListener, TransformBroadcaster
 from atf_recorder import RecordingManager
+from atf_msgs.msg import *
 
 
 class PublishTf:
@@ -22,8 +23,15 @@ class PublishTf:
         rospy.Timer(rospy.Duration(1/self.pub_freq), self.reference2)
         rospy.Timer(rospy.Duration(1/self.pub_freq), self.reference3)
         rospy.Timer(rospy.Duration(1/self.pub_freq), self.reference4)
+        pub = rospy.Publisher("/testing/test2/Trigger/", Trigger, queue_size=1)
         rospy.sleep(1.0)
 
+        pub.publish(Trigger(Trigger.ACTIVATE))
+        self.pub_quadrat(length=2, time=10)
+        # self.pub_circ(radius=2, time=2)
+        pub.publish(Trigger(Trigger.FINISH))
+
+        """
         recorder_0 = RecordingManager("all")
         recorder_1 = RecordingManager("test1")
         recorder_2 = RecordingManager("test2")
@@ -40,6 +48,7 @@ class PublishTf:
         self.pub_circ(radius=2, time=10)
         recorder_3.stop()
         recorder_0.stop()
+        """
 
     def reference2(self, event):
         self.check_for_ctrlc()
@@ -61,7 +70,7 @@ class PublishTf:
 
     def pub_line(self, length=1, time=1):
         rospy.loginfo("Line")
-        rate = rospy.Rate(self.pub_freq)
+        rate = rospy.Rate(int(self.pub_freq))
 
         for i in range((int(self.pub_freq*time/2)+1)):
             t = i/self.pub_freq/time*2
@@ -74,7 +83,7 @@ class PublishTf:
 
     def pub_circ(self, radius=1, time=1):
         rospy.loginfo("Circ")
-        rate = rospy.Rate(self.pub_freq)
+        rate = rospy.Rate(int(self.pub_freq))
 
         for i in range(int(self.pub_freq*time)+1):
             t = i/self.pub_freq/time
@@ -85,7 +94,7 @@ class PublishTf:
 
     def pub_quadrat(self, length=1, time=1):
         rospy.loginfo("Quadrat")
-        rate = rospy.Rate(self.pub_freq)
+        rate = rospy.Rate(int(self.pub_freq))
 
         for i in range((int(self.pub_freq*time/4)+1)):
             t = i/self.pub_freq/time*4
@@ -118,4 +127,5 @@ class TestRecording(unittest.TestCase):
 
 if __name__ == '__main__':
     rospy.init_node('test_recording')
-    rostest.rosrun("atf_test", 'test_recording', TestRecording, sysargs=None)
+    PublishTf()
+    # rostest.rosrun("atf_test", 'test_recording', TestRecording, sysargs=None)

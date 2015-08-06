@@ -1,38 +1,8 @@
 test_1:
-  all:
-    time:
+
+  test2:
     path_length:
       - [world, reference1]
-  test1:
-    time:
-    path_length:
+      - [world, reference1]
       - [world, reference2]
-
-  test2:
-    time:
-    resources:
-      cpu: [rostest]
-      mem: [rostest]
-    path_length:
-      - [world, reference1]
-      - [world, reference3]
-
-  test3:
-    time:
-    resources:
-      cpu: [rostest]
-      mem: [rostest]
-      io: [rostest]
-      network: [rostest]
-    path_length:
-      - [world, reference4]
-      - [reference1, reference4]
-
-test_2:
-  test2:
-    time:
-    resources:
-      cpu: [rostest]
-      mem: [rostest]
-    path_length:
-      - [world, reference3]
+      - [world, reference2]
