@@ -2,6 +2,8 @@
 import sys
 import math
 import rospy
+import unittest
+import rostest
 
 from tf import transformations, TransformListener, TransformBroadcaster
 from atf_recorder import RecordingManager
@@ -20,7 +22,7 @@ class PublishTf:
         rospy.Timer(rospy.Duration(1/self.pub_freq), self.reference2)
         rospy.Timer(rospy.Duration(1/self.pub_freq), self.reference3)
         rospy.Timer(rospy.Duration(1/self.pub_freq), self.reference4)
-        rospy.sleep(1)
+        rospy.sleep(1.0)
 
         recorder_0 = RecordingManager("all")
         recorder_1 = RecordingManager("test1")
@@ -107,8 +109,13 @@ class PublishTf:
         if rospy.is_shutdown():
             sys.exit()
 
-'''
-if __name__ == "__main__":
-    rospy.init_node("publish_tf")
-    PublishTf()
-'''
+
+class TestRecording(unittest.TestCase):
+
+    def test_Recording(self):
+
+        PublishTf()
+
+if __name__ == '__main__':
+    rospy.init_node('test_recording')
+    rostest.rosrun("atf_test", 'test_recording', TestRecording, sysargs=None)
