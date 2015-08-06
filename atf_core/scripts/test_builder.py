@@ -1,8 +1,10 @@
 #!/usr/bin/env python
+import rospy
 import yaml
 import rosparam
 import os
-import rosgraph
+import unittest
+import rostest
 import rospkg
 
 from atf_core import ATF, Testblock
@@ -50,11 +52,9 @@ class TestBuilder:
         ATF(test_list).check_states()
 
     def create_test_list(self):
-        try:
+        if not rosparam.get_param("/analysing/result_yaml_output") == "":
             if not os.path.exists(rosparam.get_param("/analysing/result_yaml_output")):
                 os.makedirs(rosparam.get_param("/analysing/result_yaml_output"))
-        except rosgraph.masterapi.MasterError:
-            pass
 
         if not os.path.exists(rosparam.get_param("/analysing/result_json_output")):
             os.makedirs(rosparam.get_param("/analysing/result_json_output"))
@@ -86,3 +86,13 @@ class TestBuilder:
         with open(filename, 'r') as stream:
             doc = yaml.load(stream)
             return doc
+
+
+class TestAnalysing(unittest.TestCase):
+
+    def test_Analysing(self):
+        TestBuilder()
+
+if __name__ == '__main__':
+    rospy.init_node('test_analysing')
+    rostest.rosrun("atf_core", 'test_analysing', TestAnalysing, sysargs=None)

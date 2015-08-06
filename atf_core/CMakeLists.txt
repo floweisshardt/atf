@@ -55,7 +55,7 @@ include_directories(
 ## in contrast to setup.py, you can choose the destination
 install(PROGRAMS
   scripts/generate_tests.py
-  scripts/start_test_builder.py
+  scripts/test_builder.py
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 
@@ -66,9 +66,14 @@ install(PROGRAMS
 if(CATKIN_ENABLE_TESTING)
     find_package(rostest REQUIRED)
     add_rostest(test/generate_tests.test)
+
     file(GLOB TESTS_FILES RELATIVE ${PROJECT_SOURCE_DIR} test/generated/recording/*.test)
     foreach(TEST ${TESTS_FILES})
         add_rostest(${TEST})
-    endforeach()
-    # add_rostest(test/generated/recording/ts1_t1.test)
+     endforeach()
+
+    file(GLOB TESTS_FILES RELATIVE ${PROJECT_SOURCE_DIR} test/generated/analysing/*.test)
+    foreach(TEST ${TESTS_FILES})
+        add_rostest(${TEST})
+     endforeach()
 endif()

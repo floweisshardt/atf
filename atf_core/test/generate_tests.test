@@ -7,6 +7,12 @@
     <param name="test_config_file" value="$(find atf_core)/config/test_config.yaml" />
     <param name="robot_config_path" value="$(find cob_grasping)/config/" />
 
+    <param name="result_json_output" value="$(find atf_presenter)/data/" />
+    <param name="result_yaml_output" value="$(find atf_presenter)/data/" />
+
+    <param name="package_name" value="cob_grasping" />
+    <param name="applikation_name" value="grasping_app.py" />
+
     <test test-name="generate_tests" pkg="atf_core" type="generate_tests.py" time-limit="300.0" />
 
 </launch>
