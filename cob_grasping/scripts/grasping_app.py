@@ -3,6 +3,8 @@ import rospkg
 import smach
 import tf
 import yaml
+import unittest
+import rostest
 
 from pyassimp import pyassimp
 from copy import copy
@@ -1813,9 +1815,16 @@ class SM(smach.StateMachine):
             "current_object",
             "base_link")
 
-"""
+
+class TestRecording(unittest.TestCase):
+
+    def setUp(self):
+        self.sm = SM()
+
+    def test_Recording(self):
+
+        self.sm.execute()
+
 if __name__ == '__main__':
-    rospy.init_node('grasping_app')
-    sm = SM()
-    outcome = sm.execute()
-"""
+    rospy.init_node('test_recording')
+    rostest.rosrun("cob_grasping", 'test_recording', TestRecording, sysargs=None)
