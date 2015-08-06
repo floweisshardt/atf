@@ -81,4 +81,4 @@ CATKIN_IGNORE
 */.idea/*
 *.idea/*
 */results/*
-*data/*
+*/data/*
