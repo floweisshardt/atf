@@ -14,6 +14,7 @@ test_1:
       cpu: [rostest]
       mem: [rostest]
     path_length:
+      - [world, reference1]
       - [world, reference3]
 
   test3:
@@ -26,3 +27,12 @@ test_1:
     path_length:
       - [world, reference4]
       - [reference1, reference4]
+
+test_2:
+  test2:
+    time:
+    resources:
+      cpu: [rostest]
+      mem: [rostest]
+    path_length:
+      - [world, reference3]
