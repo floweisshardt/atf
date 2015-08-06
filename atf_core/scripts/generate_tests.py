@@ -12,6 +12,9 @@ import os
 import lxml.etree
 import lxml.builder
 
+from xml.etree import ElementTree
+from xml.dom import minidom
+
 from copy import deepcopy, copy
 
 
@@ -58,7 +61,7 @@ class GenerateTests(unittest.TestCase):
                 include(arg(name="gui", value="false"), file="$(find cob_bringup_sim)/launch/robot.launch"),
                 include(file="$(find cob_grasping)/launch/move_group.launch"),
                 node(param(name="robot_config_file", value="$(arg rc_path)$(arg robot)/robot_config.yaml"),
-                     name="atf_recorder",pkg="atf_recorder", type="recorder.py", output="screen"),
+                     name="atf_recorder", pkg="atf_recorder", type="recorder.py", output="screen"),
                 test(param(name="scene_config_file", value="$(find cob_grasping)/config/scene_config.yaml"),
                      param(name="switch_arm", value="False"),
                      param(name="wait_for_user", value="False"),
@@ -68,11 +71,13 @@ class GenerateTests(unittest.TestCase):
                      param(name="approach_distance", value="0.14"),
                      param(name="manipulation_repeats", value="1"),
                      param(name="load_obstacles", value="none"),
-                     test-name="test_recording", pkg="atf_core", type="test_recording.py", time-limit="300.0")
+                     {'test-name': "test_recording", 'pkg': "atf_core", 'type': "test_recording.py",
+                      'time-limit': "300.0"})
             )
 
-            tree = lxml.etree.ElementTree(the_doc)
-            tree.write(rospkg.RosPack().get_path("atf_core") + "/test/generated/" + item + ".test")
+            xmlstr = minidom.parseString(ElementTree.tostring(the_doc)).toprettyxml(indent="    ")
+            with open(rospkg.RosPack().get_path("atf_core") + "/test/generated/recording/" + item + ".test", "w") as f:
+                f.write(xmlstr)
 
     def test_GenerateAnalysingTests(self):
         pass
