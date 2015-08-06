@@ -14,6 +14,7 @@ class ATF:
 
         self.testblocks = testblocks
         self.error = False
+        self.error_outside_testblock = False
         self.testblock_error = {}
         self.test_name = rosparam.get_param("/analysing/test_name")
 
@@ -35,37 +36,40 @@ class ATF:
             if len(running_testblocks) == 0:
                 break
 
+        if rospy.is_shutdown():
+            self.error_outside_testblock = True
+
         self.export_to_file()
 
     def export_to_file(self):
         doc = {}
-        for item in self.testblocks:
-            name = item.testblock
-            if name in self.testblock_error:
-                doc.update({name: {"status": "error"}})
-            else:
-                for metric in item.metrics:
-                    result = metric.get_result()
-                    if result is not False:
-                        (t, m, data) = result
-                        if name not in doc:
-                            doc.update({name: {"timestamp": round(t, 3)}})
-                            doc.update({name: {m: data}})
+        if self.error_outside_testblock:
+            doc["Error"] = "An error occured outside monitored testblocks. Aborted analysis..."
+        else:
+            for item in self.testblocks:
+                name = item.testblock
+                if name in self.testblock_error:
+                    doc.update({name: {"status": "error"}})
+                else:
+                    for metric in item.metrics:
+                        result = metric.get_result()
+                        if result is not False:
+                            (t, m, data) = result
+                            if name not in doc:
+                                doc.update({name: {"timestamp": round(t, 3)}})
+                                doc.update({name: {m: data}})
+                            else:
+                                doc[name].update({"timestamp": round(t, 3)})
+                                doc[name].update({m: data})
                         else:
-                            doc[name].update({"timestamp": round(t, 3)})
-                            doc[name].update({m: data})
-                    else:
-                        item.exit()
-                        break
+                            item.exit()
+                            break
 
         filename = rosparam.get_param("/analysing/result_json_output") + self.test_name + ".json"
         stream = file(filename, 'w')
         json.dump(copy(doc), stream)
 
-        try:
-            filename = rosparam.get_param("/analysing/result_yaml_output") + self.test_name + ".yaml"
-        except rosgraph.masterapi.MasterError:
-            pass
-        else:
+        filename = rosparam.get_param("/analysing/result_yaml_output") + self.test_name + ".yaml"
+        if not filename == "":
             stream = file(filename, 'w')
             yaml.dump(doc, stream)
