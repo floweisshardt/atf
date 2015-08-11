@@ -40,7 +40,7 @@ class ATFRecorder:
         # TODO: Pipeline for topics. Same style as res_pipeline
         topics = self.get_topics()
 
-        self.nodes = {}
+        self.nodes = self.get_pids()
         self.res_pipeline = {}
         self.topic_pipeline = {}
         self.active_sections = []
@@ -56,22 +56,6 @@ class ATFRecorder:
 
         rospy.Service(self.topic + "recorder_command", RecorderCommand, self.command_callback)
 
-        # ---- GET PIDS FOR THE NODES ----
-        for section in self.config_data:
-            try:
-                resources = self.config_data[section]["resources"]
-            except KeyError:
-                pass
-            else:
-                for res in resources:
-                    if not type(resources[res]) == bool:
-                        for item in resources[res]:
-                            if item not in self.nodes:
-                                try:
-                                    self.nodes[item] = self.get_pid(item)
-                                except False:
-                                    rospy.logerr("Node '" + item + "' is not running or does not exist!")
-
     def __enter__(self):
         return self
 
@@ -82,27 +66,26 @@ class ATFRecorder:
 
     def command_callback(self, msg):
 
-        if msg.name in self.config_data:
+        if (msg.trigger.trigger == Trigger.ACTIVATE and msg.name in self.active_sections) or\
+                (msg.trigger.trigger == Trigger.FINISH and msg.name not in self.active_sections) or\
+                msg.name not in self.config_data:
+            return RecorderCommandResponse(False)
 
-            if (msg.trigger.trigger == Trigger.ACTIVATE and msg.name in self.active_sections) or\
-                    (msg.trigger.trigger == Trigger.FINISH and msg.name not in self.active_sections):
-                return RecorderCommandResponse(True)
+        if msg.trigger.trigger == Trigger.ACTIVATE:
+            self.update_requested_nodes(msg.name, "add")
+            self.active_sections.append(msg.name)
+            # rospy.loginfo("Section '" + msg.name + "': ACTIVATE")
+        elif msg.trigger.trigger == Trigger.FINISH:
+            self.update_requested_nodes(msg.name, "del")
+            self.active_sections.remove(msg.name)
+            # rospy.loginfo("Section '" + msg.name + "': FINISH")
+        elif msg.trigger.trigger == Trigger.ERROR:
+            self.res_pipeline = {}
+            self.tf_active = False
+            # rospy.loginfo("Section '" + msg.name + "': ERROR")
 
-            if msg.trigger.trigger == Trigger.ACTIVATE:
-                self.update_requested_nodes(msg.name, "add")
-                self.active_sections.append(msg.name)
-                # rospy.loginfo("Section '" + msg.name + "': ACTIVATE")
-            elif msg.trigger.trigger == Trigger.FINISH:
-                self.update_requested_nodes(msg.name, "del")
-                self.active_sections.remove(msg.name)
-                # rospy.loginfo("Section '" + msg.name + "': FINISH")
-            elif msg.trigger.trigger == Trigger.ERROR:
-                self.res_pipeline = {}
-                self.tf_active = False
-                # rospy.loginfo("Section '" + msg.name + "': ERROR")
-
-            self.write_to_bagfile(self.topic + msg.name + "/Trigger", Trigger(msg.trigger.trigger),
-                                  rospy.Time.from_sec(time.time()))
+        self.write_to_bagfile(self.topic + msg.name + "/Trigger", Trigger(msg.trigger.trigger),
+                              rospy.Time.from_sec(time.time()))
 
         return RecorderCommandResponse(True)
 
@@ -172,13 +155,13 @@ class ATFRecorder:
                     msg_data.node_name = node
 
                     if "cpu" in pipeline[node]:
-                        msg_data.cpu = psutil.Process(pid).cpu_percent(interval=self.timer_interval)
+                        msg_data.cpu = psutil.Process(pid).get_cpu_percent(interval=self.timer_interval)
 
                     if "mem" in pipeline[node]:
-                        msg_data.memory = psutil.Process(pid).memory_percent()
+                        msg_data.memory = psutil.Process(pid).get_memory_percent()
 
                     if "io" in pipeline[node]:
-                        data = findall('\d+', str(psutil.Process(pid).io_counters()))
+                        data = findall('\d+', str(psutil.Process(pid).get_io_counters()))
                         msg_data.io.read_count = int(data[0])
                         msg_data.io.write_count = int(data[1])
                         msg_data.io.read_bytes = int(data[2])
@@ -248,6 +231,25 @@ class ATFRecorder:
                             topics.append(topic)
 
         return topics
+
+    def get_pids(self):
+        nodes = {}
+        for section in self.config_data:
+            try:
+                resources = self.config_data[section]["resources"]
+            except KeyError:
+                pass
+            else:
+                for res in resources:
+                    if not type(resources[res]) == bool:
+                        for item in resources[res]:
+                            if item not in nodes:
+                                try:
+                                    nodes[item] = self.get_pid(item)
+                                except False:
+                                    rospy.logerr("Node '" + item + "' is not running or does not exist!")
+
+        return nodes
 
 
 if __name__ == "__main__":
