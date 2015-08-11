@@ -6,10 +6,20 @@ import time
 
 
 class CalculatePathLengthParamHandler:
+    """
+    Class for returning the corresponding metric class with the given parameter.
+    """
     def __init__(self):
+        """
+        Constructor
+        """
         self.params = []
 
     def parse_parameter(self, params):
+        """
+        Method that returns the metric method with the given parameter.
+        @param params: Parameter
+        """
         self.params = params
         metrics = []
 
