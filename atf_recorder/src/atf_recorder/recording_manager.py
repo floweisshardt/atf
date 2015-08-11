@@ -19,7 +19,7 @@ class RecordingManager:
 
         result = self.recorder_command(self.name, Trigger(Trigger.ACTIVATE))
         if not result:
-            rospy.logerr("Recorder not ready!")
+            rospy.logerr("Invalid command")
 
     def pause(self):
 
@@ -27,7 +27,7 @@ class RecordingManager:
 
         result = self.recorder_command(self.name, Trigger(Trigger.PAUSE))
         if not result:
-            rospy.logerr("Recorder not ready!")
+            rospy.logerr("Invalid command")
 
     def stop(self):
 
@@ -35,7 +35,7 @@ class RecordingManager:
 
         result = self.recorder_command(self.name, Trigger(Trigger.FINISH))
         if not result:
-            rospy.logerr("Recorder not ready!")
+            rospy.logerr("Invalid command")
 
     def error(self):
 
@@ -43,7 +43,7 @@ class RecordingManager:
 
         result = self.recorder_command(self.name, Trigger(Trigger.ERROR))
         if not result:
-            rospy.logerr("Recorder not ready!")
+            rospy.logerr("Invalid command")
 
     def __del__(self):
         self.recorder_command.close()
