@@ -81,10 +81,9 @@ class CalculatePathLength:
                     self.first_value = False
                     return
 
-                path_increment = round(math.sqrt((trans[0] - self.trans_old[0])**2 + (trans[1] - self.trans_old[1])**2 +
-                                                 (trans[2] - self.trans_old[2])**2), 3)
+                path_increment = math.sqrt((trans[0] - self.trans_old[0])**2 + (trans[1] - self.trans_old[1])**2 +
+                                           (trans[2] - self.trans_old[2])**2)
                 self.path_length += path_increment
-                self.path_length = round(self.path_length, 3)
 
                 self.trans_old = trans
                 self.rot_old = rot
@@ -92,6 +91,6 @@ class CalculatePathLength:
     def get_result(self):
         if self.finished:
             return self.activation_time.to_sec(), "path_length " + self.root_frame +\
-                                                  " to " + self.measured_frame, self.path_length
+                                                  " to " + self.measured_frame, round(self.path_length, 3)
         else:
             return False
