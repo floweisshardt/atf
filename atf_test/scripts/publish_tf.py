@@ -23,15 +23,8 @@ class PublishTf:
         rospy.Timer(rospy.Duration(1/self.pub_freq), self.reference2)
         rospy.Timer(rospy.Duration(1/self.pub_freq), self.reference3)
         rospy.Timer(rospy.Duration(1/self.pub_freq), self.reference4)
-        pub = rospy.Publisher("/testing/test2/Trigger/", Trigger, queue_size=1)
         rospy.sleep(1.0)
 
-        pub.publish(Trigger(Trigger.ACTIVATE))
-        self.pub_quadrat(length=2, time=10)
-        # self.pub_circ(radius=2, time=2)
-        pub.publish(Trigger(Trigger.FINISH))
-
-        """
         recorder_0 = RecordingManager("all")
         recorder_1 = RecordingManager("test1")
         recorder_2 = RecordingManager("test2")
@@ -42,13 +35,12 @@ class PublishTf:
         self.pub_line(length=-1, time=2.5)
         recorder_1.stop()
         recorder_2.start()
-        self.pub_quadrat(length=2, time=10)
+        self.pub_quadrat(length=2, time=60)
         recorder_2.stop()
         recorder_3.start()
         self.pub_circ(radius=2, time=10)
         recorder_3.stop()
         recorder_0.stop()
-        """
 
     def reference2(self, event):
         self.check_for_ctrlc()
@@ -127,5 +119,4 @@ class TestRecording(unittest.TestCase):
 
 if __name__ == '__main__':
     rospy.init_node('test_recording')
-    PublishTf()
-    # rostest.rosrun("atf_test", 'test_recording', TestRecording, sysargs=None)
+    rostest.rosrun("atf_test", 'test_recording', TestRecording, sysargs=None)
