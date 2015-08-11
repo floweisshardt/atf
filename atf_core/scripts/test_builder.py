@@ -95,5 +95,4 @@ class TestAnalysing(unittest.TestCase):
 
 if __name__ == '__main__':
     rospy.init_node('test_analysing')
-    TestBuilder()
-    # rostest.rosrun("atf_core", 'test_analysing', TestAnalysing, sysargs=None)
+    rostest.rosrun("atf_core", 'test_analysing', TestAnalysing, sysargs=None)
