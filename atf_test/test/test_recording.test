@@ -11,6 +11,6 @@
         <param name="robot_config_file" value="$(find atf_test)/config/robot_config.yaml" />
     </node>
 
-    <test test-name="test_recording" pkg="atf_test" type="publish_tf.py" />
+    <test test-name="test_recording" pkg="atf_test" type="publish_tf.py" time-limit="300.0" />
 
 </launch>
