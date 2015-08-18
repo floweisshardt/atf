@@ -78,7 +78,7 @@ class GenerateTests(unittest.TestCase):
                 include(arg(name="gui", value="false"), file="$(find cob_bringup_sim)/launch/robot.launch"),
                 include(file="$(find cob_grasping)/launch/move_group.launch"),
                 node(param(name="robot_config_file", value="$(arg rc_path)$(arg robot)/robot_config.yaml"),
-                     name="atf_recorder", pkg="atf_recorder", type="recorder.py", output="screen"),
+                     name="atf_recorder", pkg="atf_recorder", type="recorder_core.py", output="screen"),
                 test(param(name="scene_config_file", value="$(find cob_grasping)/config/scene_config.yaml"),
                      param(name="switch_arm", value="False"),
                      param(name="wait_for_user", value="False"),

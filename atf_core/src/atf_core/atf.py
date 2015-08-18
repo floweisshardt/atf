@@ -47,7 +47,7 @@ class ATF:
             doc["Error"] = "An error occured outside monitored testblocks. Aborted analysis..."
         else:
             for item in self.testblocks:
-                name = item.testblock
+                name = item.testblock_name
                 if name in self.testblock_error:
                     doc.update({name: {"status": "error"}})
                 else:

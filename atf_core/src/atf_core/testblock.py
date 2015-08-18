@@ -6,15 +6,15 @@ from atf_msgs.msg import Status, Trigger
 
 
 class Testblock:
-    def __init__(self, testblock, metrics):
+    def __init__(self, testblock_name, metrics):
 
-        self.testblock = testblock
-        rospy.Subscriber("/testing/" + self.testblock + "/Trigger", Trigger, self.trigger_callback)
+        self.testblock_name = testblock_name
+        rospy.Subscriber("/testing/" + self.testblock_name + "/Trigger", Trigger, self.trigger_callback)
 
         self.transition = None
         self.metrics = metrics
         
-        self.m = StateMachine(self.testblock)
+        self.m = StateMachine(self.testblock_name)
         self.m.add_state(Status.PURGED, self.purged_state)
         self.m.add_state(Status.ACTIVE, self.active_state)
         self.m.add_state(Status.PAUSED, self.paused_state)
