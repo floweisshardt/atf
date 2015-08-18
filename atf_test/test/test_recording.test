@@ -7,7 +7,7 @@
     <param name="test_name" value="ts1_t1" />
     <param name="test_config" value="test_1" />
 
-    <node name="atf_recorder" pkg="atf_recorder" type="recorder.py" output="screen">
+    <node name="atf_recorder" pkg="atf_recorder" type="recorder_core.py" output="screen">
         <param name="robot_config_file" value="$(find atf_test)/config/robot_config.yaml" />
     </node>
 
