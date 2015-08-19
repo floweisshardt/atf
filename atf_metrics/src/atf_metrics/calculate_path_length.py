@@ -6,19 +6,16 @@ import time
 
 
 class CalculatePathLengthParamHandler:
-    """
-    Class for returning the corresponding metric class with the given parameter.
-    """
     def __init__(self):
         """
-        Constructor
+        Class for returning the corresponding metric class with the given parameter.
         """
         self.params = []
 
     def parse_parameter(self, params):
         """
         Method that returns the metric method with the given parameter.
-        @param params: Parameter
+        :param params: Parameter
         """
         self.params = params
         metrics = []
@@ -30,18 +27,14 @@ class CalculatePathLengthParamHandler:
 
 
 class CalculatePathLength:
-    """
-    Class for calculating the distance covered by the given frame in relation to a given root frame.
-    The tf data is sent over the topic "/testing/tf".
-    """
     def __init__(self, root_frame, measured_frame):
         """
-        Constructor.
-
-        @param root_frame: name of the first frame
-        @type  root_frame: string
-        @param measured_frame: name of the second frame. The distance will be measured in relation to the root_frame.
-        @type  measured_frame: string
+        Class for calculating the distance covered by the given frame in relation to a given root frame.
+        The tf data is sent over the topic "/testing/tf".
+        :param root_frame: name of the first frame
+        :type  root_frame: string
+        :param measured_frame: name of the second frame. The distance will be measured in relation to the root_frame.
+        :type  measured_frame: string
         """
         
         self.active = False
@@ -57,7 +50,6 @@ class CalculatePathLength:
 
         self.listener = tf.TransformListener()
 
-        # call tf recording cyclically
         rospy.Timer(rospy.Duration.from_sec(1/self.tf_sampling_freq), self.record_tf)
 
     def start(self):

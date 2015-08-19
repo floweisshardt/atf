@@ -5,21 +5,26 @@ import time
 
 class CalculateTimeParamHandler:
     def __init__(self):
+        """
+        Class for returning the corresponding metric class with the given parameter.
+        """
         self.params = []
 
     @staticmethod
     def parse_parameter(params):
+        """
+        Method that returns the metric method with the given parameter.
+        :param params: Parameter
+        """
 
         return CalculateTime()
 
 
 class CalculateTime:
-    """
-    Class for calculating the time between the trigger 'ACTIVATE' and 'FINISH' on the topic assigned to the testblock.
-    """
     def __init__(self):
         """
-        Constructor.
+        Class for calculating the time between the trigger 'ACTIVATE' and 'FINISH' on the topic assigned to the
+        testblock.
         """
         self.start_time = rospy.Time()
         self.stop_time = rospy.Time()

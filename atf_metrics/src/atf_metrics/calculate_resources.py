@@ -8,9 +8,16 @@ from atf_msgs.msg import *
 
 class CalculateResourcesParamHandler:
     def __init__(self):
+        """
+        Class for returning the corresponding metric class with the given parameter.
+        """
         self.params = []
 
     def parse_parameter(self, params):
+        """
+        Method that returns the metric method with the given parameter.
+        :param params: Parameter
+        """
         self.params = params
 
         metrics = CalculateResources(self.params)
@@ -19,17 +26,13 @@ class CalculateResourcesParamHandler:
 
 
 class CalculateResources:
-    """
-    Class for calculating the average resource workload and writing the current resource data.
-    The resource data is sent over the topic "/testing/Resources".
-    """
     def __init__(self, resources):
         """
-        Constructor.
-
-        @param resources: a dictionary containing the names of the resources and a list with
-        the names of the nodes. Example: {"cpu":[move_group], "mem": [move_group]}
-        @type  resources: dict
+        Class for calculating the average resource workload and writing the current resource data.
+        The resource data is sent over the topic "/testing/Resources".
+        :param resources: a dictionary containing the names of the resources and a list with the names of the nodes.
+        Example: {"cpu":[move_group], "mem": [move_group]}
+        :type  resources: dict
         """
 
         self.active = False
