@@ -1,2 +1,2 @@
 from recording_manager import RecordingManager
-from record_resources import RecordResources
+from recorder_tools import BagfileWriter

@@ -7,11 +7,12 @@ import rosparam
 import yaml
 import time
 import os
+import atf_recorder_plugins
 
 from threading import Lock
 from atf_msgs.msg import *
 from atf_recorder.srv import *
-import atf_recorder
+from atf_recorder import BagfileWriter
 
 
 class ATFRecorder:
@@ -28,15 +29,16 @@ class ATFRecorder:
         self.bag = rosbag.Bag(rosparam.get_param("/recorder/bagfile_output") + bag_name + ".bag", 'w')
         self.test_config = self.load_data(rosparam.get_param("/recorder/test_config_file"))[rosparam.get_param(
             "/test_config")]
-        recorder_config = self.load_data(rospkg.RosPack().get_path("atf_recorder") + "/config/recorder_config.yaml")
+        recorder_config = self.load_data(rospkg.RosPack().get_path("atf_recorder_plugins") +
+                                         "/config/recorder_config.yaml")
+
+        self.BW = BagfileWriter(self.bag, self.lock_write)
 
         # Init metric recorder
         self.recorder_list = []
-        for item in recorder_config:
-            self.recorder_list.append(getattr(atf_recorder, recorder_config[item]["class"])(self.topic,
-                                                                                            self.test_config,
-                                                                                            self.lock_write,
-                                                                                            self.bag))
+        for (key, value) in recorder_config.iteritems():
+            self.recorder_list.append(getattr(atf_recorder_plugins, value)(self.topic, self.test_config,
+                                                                           self.lock_write, self.bag))
 
         self.topic_pipeline = []
         self.active_sections = []
@@ -61,29 +63,27 @@ class ATFRecorder:
         testblock_list = {}
         for testblock in self.test_config:
             for metric in self.test_config[testblock]:
-
-                # Topics
                 if metric in self.robot_config_file:
                     try:
-                        testblock_list[testblock]["topics"]
+                        testblock_list[testblock]
                     except KeyError:
-                        testblock_list.update({testblock: {"topics": self.robot_config_file[testblock]["topics"]}})
+                        testblock_list[testblock] = self.robot_config_file[metric]["topics"]
                     else:
-                        for topic in self.robot_config_file[testblock]["topics"]:
-                            testblock_list[testblock]["topics"].append(topic)
+                        for topic in self.robot_config_file[metric]["topics"]:
+                            testblock_list[testblock].append(topic)
 
         return testblock_list
 
     def update_requested_topics(self, name, command):
 
         if command == "add":
-            for topic in self.testblock_list[name]["topics"]:
+            for topic in self.testblock_list[name]:
                 self.requested_topics.append(topic)
                 if topic not in self.topic_pipeline:
                     self.topic_pipeline.append(topic)
 
         elif command == "del":
-            for topic in self.testblock_list[name]["topics"]:
+            for topic in self.testblock_list[name]:
                 self.requested_topics.remove(topic)
                 if topic not in self.requested_topics:
                     self.topic_pipeline.remove(topic)
@@ -99,19 +99,21 @@ class ATFRecorder:
             recorder.trigger_callback(msg)
 
         if msg.trigger.trigger == Trigger.ACTIVATE:
-            self.update_requested_topics(msg.name, "add")
+            if msg.name in self.testblock_list:
+                self.update_requested_topics(msg.name, "add")
             self.active_sections.append(msg.name)
             # rospy.loginfo("Section '" + msg.name + "': ACTIVATE")
         elif msg.trigger.trigger == Trigger.FINISH:
-            self.update_requested_topics(msg.name, "del")
+            if msg.name in self.testblock_list:
+                self.update_requested_topics(msg.name, "del")
             self.active_sections.remove(msg.name)
             # rospy.loginfo("Section '" + msg.name + "': FINISH")
         elif msg.trigger.trigger == Trigger.ERROR:
             self.topic_pipeline = []
             # rospy.loginfo("Section '" + msg.name + "': ERROR")
 
-        self.write_to_bagfile(self.topic + msg.name + "/Trigger", Trigger(msg.trigger.trigger),
-                              rospy.Time.from_sec(time.time()))
+        self.BW.write_to_bagfile(self.topic + msg.name + "/Trigger", Trigger(msg.trigger.trigger),
+                                 rospy.Time.from_sec(time.time()))
 
         return RecorderCommandResponse(True)
 
@@ -127,12 +129,7 @@ class ATFRecorder:
             now = rospy.Time.from_sec(time.time())
             for item in msg.transforms:
                 item.header.stamp = now
-            self.write_to_bagfile(name, msg, now)
-
-    def write_to_bagfile(self, topic, data, set_time):
-        self.lock_write.acquire()
-        self.bag.write(topic, data, set_time)
-        self.lock_write.release()
+            self.BW.write_to_bagfile(name, msg, now)
 
     def get_topics(self):
         topics = []
