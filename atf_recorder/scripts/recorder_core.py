@@ -32,7 +32,7 @@ class ATFRecorder:
         recorder_config = self.load_data(rospkg.RosPack().get_path("atf_recorder_plugins") +
                                          "/config/recorder_config.yaml")
 
-        self.BW = BagfileWriter(self.bag, self.lock_write)
+        self.BfW = BagfileWriter(self.bag, self.lock_write)
 
         # Init metric recorder
         self.recorder_list = []
@@ -102,17 +102,14 @@ class ATFRecorder:
             if msg.name in self.testblock_list:
                 self.update_requested_topics(msg.name, "add")
             self.active_sections.append(msg.name)
-            # rospy.loginfo("Section '" + msg.name + "': ACTIVATE")
         elif msg.trigger.trigger == Trigger.FINISH:
             if msg.name in self.testblock_list:
                 self.update_requested_topics(msg.name, "del")
             self.active_sections.remove(msg.name)
-            # rospy.loginfo("Section '" + msg.name + "': FINISH")
         elif msg.trigger.trigger == Trigger.ERROR:
             self.topic_pipeline = []
-            # rospy.loginfo("Section '" + msg.name + "': ERROR")
 
-        self.BW.write_to_bagfile(self.topic + msg.name + "/Trigger", Trigger(msg.trigger.trigger),
+        self.BfW.write_to_bagfile(self.topic + msg.name + "/Trigger", Trigger(msg.trigger.trigger),
                                  rospy.Time.from_sec(time.time()))
 
         return RecorderCommandResponse(True)
@@ -129,7 +126,7 @@ class ATFRecorder:
             now = rospy.Time.from_sec(time.time())
             for item in msg.transforms:
                 item.header.stamp = now
-            self.BW.write_to_bagfile(name, msg, now)
+            self.BfW.write_to_bagfile(name, msg, now)
 
     def get_topics(self):
         topics = []

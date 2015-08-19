@@ -25,7 +25,7 @@ class RecordResources:
         self.requested_nodes = {}
         self.res_pipeline = {}
 
-        self.BW = BagfileWriter(bag_file, write_lock)
+        self.BfW = BagfileWriter(bag_file, write_lock)
 
         rospy.Timer(rospy.Duration.from_sec(self.timer_interval), self.collect_resource_data)
 
@@ -120,7 +120,7 @@ class RecordResources:
                 except (psutil.NoSuchProcess, psutil.AccessDenied):
                     pass
 
-            self.BW.write_to_bagfile(topic, msg, rospy.Time.from_sec(time.time()))
+            self.BfW.write_to_bagfile(topic, msg, rospy.Time.from_sec(time.time()))
 
     def trigger_callback(self, msg):
         if msg.name in self.testblock_list:
