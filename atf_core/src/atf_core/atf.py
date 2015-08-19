@@ -3,7 +3,6 @@ import rospy
 import rosparam
 import json
 import yaml
-import rosgraph
 
 from atf_msgs.msg import Status
 from copy import copy
@@ -24,9 +23,9 @@ class ATF:
             for testblock in self.testblocks:
                 try:
                     if testblock.get_state() == Status.ERROR:
-                        self.testblock_error[testblock.testblock] = Status.ERROR
-                        rospy.loginfo("An error occured during analysis in '" + testblock.testblock + "', no useful " +
-                                      "results available.")
+                        self.testblock_error[testblock.testblock_name] = Status.ERROR
+                        rospy.loginfo("An error occured during analysis in '" + testblock.testblock_name +
+                                      "', no useful " + "results available.")
                         self.error = True
                         break
                     elif testblock.get_state() == Status.FINISHED:
