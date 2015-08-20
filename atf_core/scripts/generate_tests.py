@@ -125,7 +125,6 @@ class GenerateTests(unittest.TestCase):
         temp_config = {}
 
         test_data = self.load_yaml(self.test_suite_file)
-        test_config = self.load_yaml(self.test_config_file)
 
         for suite in test_data:
 
@@ -142,7 +141,7 @@ class GenerateTests(unittest.TestCase):
             temp = [dict(zip(items, prod)) for prod in it.product(*(suite_data[varName] for varName in items))]
 
             for i in xrange(0, len(temp)):
-                test_name = suite[0] + suite[4] + suite.split("_")[1] + "_" + "t" + str(i+1)
+                test_name = suite[0] + suite[4] + suite.split("_")[1] + "_" + "t" + str(i + 1)
                 self.test_list[test_name] = copy(temp_config)
                 self.test_list[test_name].update(temp[i])
 
