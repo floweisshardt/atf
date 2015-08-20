@@ -1,12 +1,12 @@
 #!/usr/bin/env python
 import rospy
 import psutil
-from re import findall
 import time
 import xmlrpclib
 import rosnode
 
 from copy import copy
+from re import findall
 from subprocess import check_output, CalledProcessError
 from atf_msgs.msg import *
 from atf_recorder import BagfileWriter
@@ -29,22 +29,22 @@ class RecordResources:
 
         rospy.Timer(rospy.Duration.from_sec(self.timer_interval), self.collect_resource_data)
 
-    def update_requested_nodes(self, name, command):
+    def update_requested_nodes(self, msg):
 
-        if command == "add":
-            for node in self.testblock_list[name]:
+        if msg.trigger.trigger == Trigger.ACTIVATE:
+            for node in self.testblock_list[msg.name]:
                 if node not in self.requested_nodes:
-                    self.requested_nodes[node] = copy(self.testblock_list[name][node])
-                    self.res_pipeline[node] = copy(self.testblock_list[name][node])
+                    self.requested_nodes[node] = copy(self.testblock_list[msg.name][node])
+                    self.res_pipeline[node] = copy(self.testblock_list[msg.name][node])
                 else:
-                    for res in self.testblock_list[name][node]:
+                    for res in self.testblock_list[msg.name][node]:
                         self.requested_nodes[node].append(res)
                         if res not in self.res_pipeline[node]:
                             self.res_pipeline[node].append(res)
 
-        elif command == "del":
-            for node in self.testblock_list[name]:
-                for res in self.testblock_list[name][node]:
+        elif msg.trigger.trigger == Trigger.FINISH:
+            for node in self.testblock_list[msg.name]:
+                for res in self.testblock_list[msg.name][node]:
                     self.requested_nodes[node].remove(res)
                     if res not in self.requested_nodes[node]:
                         self.res_pipeline[node].remove(res)
@@ -123,13 +123,13 @@ class RecordResources:
             self.BfW.write_to_bagfile(topic, msg, rospy.Time.from_sec(time.time()))
 
     def trigger_callback(self, msg):
+
+        # Only save node resources if testblock requests them
         if msg.name in self.testblock_list:
-            if msg.trigger.trigger == Trigger.ACTIVATE:
-                self.update_requested_nodes(msg.name, "add")
-            elif msg.trigger.trigger == Trigger.FINISH:
-                self.update_requested_nodes(msg.name, "del")
-            elif msg.trigger.trigger == Trigger.ERROR:
-                self.res_pipeline = []
+            self.update_requested_nodes(msg)
+
+        if msg.trigger.trigger == Trigger.ERROR:
+            self.res_pipeline = []
 
     def create_pid_list(self):
         node_list = {}

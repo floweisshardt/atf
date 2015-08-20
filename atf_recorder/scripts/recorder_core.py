@@ -35,10 +35,10 @@ class ATFRecorder:
         self.BfW = BagfileWriter(self.bag, self.lock_write)
 
         # Init metric recorder
-        self.recorder_list = []
+        self.recorder_plugin_list = []
         for (key, value) in recorder_config.iteritems():
-            self.recorder_list.append(getattr(atf_recorder_plugins, value)(self.topic, self.test_config,
-                                                                           self.lock_write, self.bag))
+            self.recorder_plugin_list.append(getattr(atf_recorder_plugins, value)(self.topic, self.test_config,
+                                                                                  self.lock_write, self.bag))
 
         self.topic_pipeline = []
         self.active_sections = []
@@ -74,16 +74,16 @@ class ATFRecorder:
 
         return testblock_list
 
-    def update_requested_topics(self, name, command):
+    def update_requested_topics(self, msg):
 
-        if command == "add":
-            for topic in self.testblock_list[name]:
+        if msg.trigger.trigger == Trigger.ACTIVATE:
+            for topic in self.testblock_list[msg.name]:
                 self.requested_topics.append(topic)
                 if topic not in self.topic_pipeline:
                     self.topic_pipeline.append(topic)
 
-        elif command == "del":
-            for topic in self.testblock_list[name]:
+        elif msg.trigger.trigger == Trigger.FINISH:
+            for topic in self.testblock_list[msg.name]:
                 self.requested_topics.remove(topic)
                 if topic not in self.requested_topics:
                     self.topic_pipeline.remove(topic)
@@ -93,24 +93,26 @@ class ATFRecorder:
         if (msg.trigger.trigger == Trigger.ACTIVATE and msg.name in self.active_sections) or\
                 (msg.trigger.trigger == Trigger.FINISH and msg.name not in self.active_sections) or\
                 msg.name not in self.test_config:
+
             return RecorderCommandResponse(False)
 
-        for recorder in self.recorder_list:
-            recorder.trigger_callback(msg)
+        # Only process message if testblock requests topics
+        if msg.name in self.testblock_list:
+            self.update_requested_topics(msg)
+
+        # Send message to all recorder plugins
+        for recorder_plugin in self.recorder_plugin_list:
+            recorder_plugin.trigger_callback(msg)
 
         if msg.trigger.trigger == Trigger.ACTIVATE:
-            if msg.name in self.testblock_list:
-                self.update_requested_topics(msg.name, "add")
             self.active_sections.append(msg.name)
         elif msg.trigger.trigger == Trigger.FINISH:
-            if msg.name in self.testblock_list:
-                self.update_requested_topics(msg.name, "del")
             self.active_sections.remove(msg.name)
         elif msg.trigger.trigger == Trigger.ERROR:
             self.topic_pipeline = []
 
         self.BfW.write_to_bagfile(self.topic + msg.name + "/Trigger", Trigger(msg.trigger.trigger),
-                                 rospy.Time.from_sec(time.time()))
+                                  rospy.Time.from_sec(time.time()))
 
         return RecorderCommandResponse(True)
 
