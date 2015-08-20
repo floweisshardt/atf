@@ -60,7 +60,7 @@ class GenerateTests(unittest.TestCase):
             node = em.node
             param = em.param
 
-            # TODO: Testfile should be universal
+            # TODO: Testfile should be universal (no cob_grasping)
             # Recording
             test_record = launch(
                 param(name="use_sim_time", value="true"),
@@ -76,7 +76,7 @@ class GenerateTests(unittest.TestCase):
                 arg(name="robot", value=self.test_list[item]["robot"]),
                 arg(name="rc_path", value=self.robot_config_path),
                 include(arg(name="gui", value="false"), file="$(find cob_bringup_sim)/launch/robot.launch"),
-                include(file="$(find cob_grasping)/launch/move_group.launch"),
+                include(file="$(find " + self.applikation_name + ")/launch/move_group.launch"),
                 node(param(name="robot_config_file", value="$(arg rc_path)$(arg robot)/robot_config.yaml"),
                      name="atf_recorder", pkg="atf_recorder", type="recorder_core.py", output="screen"),
                 test(param(name="scene_config_file", value="$(find cob_grasping)/config/scene_config.yaml"),
@@ -124,8 +124,8 @@ class GenerateTests(unittest.TestCase):
     def generate_test_list(self):
         temp_config = {}
 
-        with open(self.test_suite_file, 'r') as stream:
-            test_data = yaml.load(stream)
+        test_data = self.load_yaml(self.test_suite_file)
+        test_config = self.load_yaml(self.test_config_file)
 
         for suite in test_data:
 
@@ -145,6 +145,7 @@ class GenerateTests(unittest.TestCase):
                 test_name = suite[0] + suite[4] + suite.split("_")[1] + "_" + "t" + str(i+1)
                 self.test_list[test_name] = copy(temp_config)
                 self.test_list[test_name].update(temp[i])
+                self.test_list[test_name]["testblock_count"] = len(test_config[temp_config["test_config"]])
 
         if not os.path.exists(rospkg.RosPack().get_path("atf_presenter") + "/data/"):
             os.makedirs(rospkg.RosPack().get_path("atf_presenter") + "/data/")
@@ -169,6 +170,11 @@ class GenerateTests(unittest.TestCase):
         convert = lambda text: int(text) if text.isdigit() else text.lower()
         alphanum_key = lambda key: [convert(c) for c in re.split('([0-9]+)', key)]
         return sorted(l, key=alphanum_key)
+
+    @staticmethod
+    def load_yaml(filename):
+        with open(filename, 'r') as stream:
+            return yaml.load(stream)
 
 if __name__ == '__main__':
     rospy.init_node('generate_tests')
