@@ -9,7 +9,7 @@ class RecordingManager:
     def __init__(self, name):
         """
         Class for managing recordings.
-        :param name: The name of the section you want to record.
+        :param name: The name of the testblock you want to record.
         :type name: str
         :return:
         """
@@ -25,7 +25,7 @@ class RecordingManager:
         """
         result = self.recorder_command(self.name, Trigger(Trigger.ACTIVATE))
         if not result:
-            rospy.logerr("Invalid command")
+            rospy.logerr("Testblock name is not defined in test_config.yaml!")
 
     def pause(self):
         """
@@ -34,7 +34,7 @@ class RecordingManager:
         """
         result = self.recorder_command(self.name, Trigger(Trigger.PAUSE))
         if not result:
-            rospy.logerr("Invalid command")
+            rospy.logerr("Testblock name is not defined in test_config.yaml!")
 
     def stop(self):
         """
@@ -43,7 +43,7 @@ class RecordingManager:
         """
         result = self.recorder_command(self.name, Trigger(Trigger.FINISH))
         if not result:
-            rospy.logerr("Invalid command")
+            rospy.logerr("Testblock name is not defined in test_config.yaml!")
 
     def error(self):
         """
@@ -52,4 +52,4 @@ class RecordingManager:
         """
         result = self.recorder_command(self.name, Trigger(Trigger.ERROR))
         if not result:
-            rospy.logerr("Invalid command")
+            rospy.logerr("Testblock name is not defined in test_config.yaml!")
