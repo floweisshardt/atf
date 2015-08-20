@@ -145,7 +145,6 @@ class GenerateTests(unittest.TestCase):
                 test_name = suite[0] + suite[4] + suite.split("_")[1] + "_" + "t" + str(i+1)
                 self.test_list[test_name] = copy(temp_config)
                 self.test_list[test_name].update(temp[i])
-                self.test_list[test_name]["testblock_count"] = len(test_config[temp_config["test_config"]])
 
         if not os.path.exists(rospkg.RosPack().get_path("atf_presenter") + "/data/"):
             os.makedirs(rospkg.RosPack().get_path("atf_presenter") + "/data/")
