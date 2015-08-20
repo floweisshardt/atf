@@ -21,62 +21,10 @@
 
     <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
     <!--[if lt IE 9]>
-    <script type="text/javascript" src="https://oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
-    <script type="text/javascript" src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
+    <script type="text/javascript" src="js/html5shiv.min.js"></script>
+    <script type="text/javascript" src="js/html5shiv-printshiv.min.js"></script>
+    <script type="text/javascript" src="js/respond.min.js"></script>
     <![endif]-->
-
-    <script type="text/javascript" src="js/underscore-min.js" ></script>
-    <script src="js/backbone-min.js"></script>
-    <script type="text/javascript">
-        var Demo_AppRouter = Backbone.Router.extend({
-            initialize: function() {
-                console.log("initialized");
-            },
-            routes: {
-                '': "indexRoute",
-                'home' : "homeRoute",
-                'test_list' : "test_listRoute",
-                '*args' : "defaultRoute"
-            },
-            indexRoute: function() {
-                console.log("Index route invoked, redirecting to home route");
-                this.navigate('home', {trigger:true});
-            },
-            homeRoute: function() {
-                console.log("Home route invoked");
-            },
-            test_listRoute: function() {
-                console.log("Test_list route invoked");
-            }
-            //No default route handler needed, just the route.
-        });
-
-        $(document).ready(function() {
-            //Build the app
-            //(has to be done before you can bind events to 'Backbone.history')
-            var router = new Demo_AppRouter();
-
-            //Initialise the Bootstrap Tabs
-            //-----------------------------
-            //On click, show the page, allow to route.
-            $('#tab_menu li a').on('click', function (e) {
-                console.log('Clicked', this);
-                $(this).tab('show');
-                //Note: Doesn't cancel the action, thus allowing the location to bubble up to the location bar.
-            });
-
-            //On route, trigger the 'click'
-            Backbone.history.on('route', function(router, event) {
-                console.log('Routed', this.fragment, 'to', event);
-                $('#tab_menu li a[href="#'+this.fragment+'"]').click();
-            });
-            //-----------------------------
-
-
-            //Start the app
-            Backbone.history.start();
-        });
-    </script>
 
 </head>
 
@@ -84,12 +32,6 @@
 <nav class="navbar navbar-inverse navbar-fixed-top">
     <div class="container-fluid">
         <div class="navbar-header">
-            <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
-                <span class="sr-only">Toggle navigation</span>
-                <span class="icon-bar"></span>
-                <span class="icon-bar"></span>
-                <span class="icon-bar"></span>
-            </button>
             <a class="navbar-brand" href="#">ATF Evaluation</a>
         </div>
     </div>
@@ -100,121 +42,30 @@
         <div class="col-sm-3 col-md-2 sidebar">
             <ul class="nav nav-sidebar" id="tab_menu">
                 <li class="active"><a href="#home">Home <span class="sr-only">(current)</span></a></li>
-                <li><a href="#test_list">Test List </a></li>
             </ul>
         </div>
 
         <div class="col-sm-9 col-sm-offset-3 col-md-10 col-md-offset-2 main">
 
             <div class="tab-pane" id="home">
-                <h1 class="page-header">Dashboard</h1>
-
-                <div class="row placeholders"></div>
-                <h2 class="sub-header">Section title</h2>
-                <div class="table-responsive">
-                    <table class="table table-striped">
-                        <thead>
-                            <tr>
-                                <th>#</th>
-                                <th>Header</th>
-                                <th>Header</th>
-                                <th>Header</th>
-                                <th>Header</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td>1,001</td>
-                                <td>Lorem</td>
-                                <td>ipsum</td>
-                                <td>dolor</td>
-                                <td>sit</td>
-                            </tr>
-                            <tr>
-                                <td>1,002</td>
-                                <td>amet</td>
-                                <td>consectetur</td>
-                                <td>adipiscing</td>
-                                <td>elit</td>
-                            </tr>
-                            <tr>
-                                <td>1,003</td>
-                                <td>Integer</td>
-                                <td>nec</td>
-                                <td>odio</td>
-                                <td>Praesent</td>
-                            </tr>
-                            <tr>
-                                <td>1,003</td>
-                                <td>libero</td>
-                                <td>Sed</td>
-                                <td>cursus</td>
-                                <td>ante</td>
-                            </tr>
-                            <tr>
-                                <td>1,004</td>
-                                <td>dapibus</td>
-                                <td>diam</td>
-                                <td>Sed</td>
-                                <td>nisi</td>
-                            </tr>
-                            <tr>
-                                <td>1,005</td>
-                                <td>Nulla</td>
-                                <td>quis</td>
-                                <td>sem</td>
-                                <td>at</td>
-                            </tr>
-                            <tr>
-                                <td>1,006</td>
-                                <td>nibh</td>
-                                <td>elementum</td>
-                                <td>imperdiet</td>
-                                <td>Duis</td>
-                            </tr>
-                        </tbody>
-                    </table>
+                <div>
+                    <h1 class="page-header">Test list</h1>
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>Name</th>
+                                    <th>Test Config</th>
+                                    <th>Details</th>
+                                </tr>
+                            </thead>
+                            <tbody id="test_list"></tbody>
+                        </table>
+                    </div>
                 </div>
+
             </div>
-
-            <div class="tab-pane" id="test_list">
-                <h1 class="page-header">Test list</h1>
-
-                <h2 class="sub-header">Overview</h2>
-                <div class="table-responsive">
-                    <table class="table table-hover">
-                        <thead>
-                        <tr>
-                            <th>#</th>
-                            <th>Name</th>
-                            <th>Created</th>
-                            <th>Details</th>
-                        </tr>
-                        </thead>
-                        <tbody>
-                        <tr>
-                            <td>1</td>
-                            <td>ts1_t1</td>
-                            <td>31.07.2015 16:07</td>
-                            <td><a id="detail_button" class="btn btn-default detail_button" href="#" role="button" data-page="pages/test_details.html">Click</a></td>
-                        </tr>
-                        <tr>
-                            <td>2</td>
-                            <td>ts1_t2</td>
-                            <td>31.07.2015 16:10</td>
-                            <td><a class="btn btn-default" href="#" role="button">Click</a></td>
-                        </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
-            <div class="tab-pane" id="test_details">
-                <h1 class="page-header">Test details</h1>
-
-                <h2 class="sub-header">Details</h2>
-            </div>
-
         </div>
     </div>
 </div>
@@ -222,12 +73,13 @@
 <!-- Bootstrap core JavaScript
 ================================================== -->
 <!-- Placed at the end of the document so the pages load faster -->
-<script src="js/jquery.js"></script>
+<script type="text/javascript" src="js/jquery-2.1.4.min.js"></script>
 <script src="js/bootstrap.min.js"></script>
 
 <!-- IE10 viewport hack for Surface/desktop Windows 8 bug -->
-<script src="js/ie10-viewport-bug-workaround.js"></script>
-<script type="text/javascript" src="js/read_json.js"> </script>
+<script type="text/javascript" src="js/ie10-viewport-bug-workaround.js"></script>
+<script type="text/javascript" src="js/javascript_tools.js"> </script>
+<script type="text/javascript" src="js/ui_behavior.js"> </script>
 
 </body>
 </html>
