@@ -8,7 +8,7 @@
     <param name="robot_config_path" value="$(find cob_grasping)/config/" />
 
     <param name="result_json_output" value="$(find atf_presenter)/data/" />
-    <param name="result_yaml_output" value="$(find atf_presenter)/data/" />
+    <param name="result_yaml_output" value="$(find atf_core)/config/" />
 
     <param name="package_name" value="cob_grasping" />
     <param name="applikation_name" value="grasping_app.py" />

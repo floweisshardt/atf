@@ -1,6 +1,6 @@
 testsuite_1:
   scene_config: "scene_3"
-  test_config: "test_1"
+  test_config: "test_2"
   robot: "cob4-2"
   planer_id:
     - "BKPIECEkConfigDefault"

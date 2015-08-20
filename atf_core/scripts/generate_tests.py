@@ -76,7 +76,7 @@ class GenerateTests(unittest.TestCase):
                 arg(name="robot", value=self.test_list[item]["robot"]),
                 arg(name="rc_path", value=self.robot_config_path),
                 include(arg(name="gui", value="false"), file="$(find cob_bringup_sim)/launch/robot.launch"),
-                include(file="$(find " + self.applikation_name + ")/launch/move_group.launch"),
+                include(file="$(find cob_grasping)/launch/move_group.launch"),
                 node(param(name="robot_config_file", value="$(arg rc_path)$(arg robot)/robot_config.yaml"),
                      name="atf_recorder", pkg="atf_recorder", type="recorder_core.py", output="screen"),
                 test(param(name="scene_config_file", value="$(find cob_grasping)/config/scene_config.yaml"),
@@ -150,8 +150,9 @@ class GenerateTests(unittest.TestCase):
         if not os.path.exists(rospkg.RosPack().get_path("atf_presenter") + "/data/"):
             os.makedirs(rospkg.RosPack().get_path("atf_presenter") + "/data/")
 
-        stream = file(rospkg.RosPack().get_path("atf_core") + "/config/test_list.yaml", 'w')
-        yaml.dump(deepcopy(self.list_to_array()), stream)
+        if self.yaml_output != "":
+            stream = file(self.yaml_output + "/test_list.yaml", 'w')
+            yaml.dump(deepcopy(self.list_to_array()), stream)
 
         stream = file(rospkg.RosPack().get_path("atf_presenter") + "/data/test_list.json", 'w')
         json.dump(self.list_to_array(), stream)
