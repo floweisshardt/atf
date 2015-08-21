@@ -31,5 +31,8 @@ $(document).on('change', '.btn-file :file', function() {
     for (var files = 0; files < input.get(0).files.length; files++) {
         labels.push(input.get(0).files[parseInt(files)].name.split(".")[0]);
     }
+    if ($.inArray("test_list", labels) === -1) {
+        alert("You have to select the test_list.yaml file!");
+    }
     input.trigger('fileselect', [numFiles, labels]);
 });
