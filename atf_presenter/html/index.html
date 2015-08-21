@@ -63,6 +63,8 @@
                         <thead>
                         <tr>
                             <th>#</th>
+                            <th>Testsuite</th>
+                            <th>Test</th>
                             <th>Name</th>
                             <th>Test Config</th>
                             <th>Details</th>
@@ -88,9 +90,50 @@
                 <h4 class="modal-title"></h4>
             </div>
             <div class="modal-body">
-                <div>
-
+                <h2>Configuration</h2>
+                <ul>
+                    <li>Scene config: scene_3</li>
+                    <li>Test config: test_1</li>
+                    <li>Robot: cob4_2</li>
+                    <li>Planer ID: BKPIECEkConfigDefault</li>
+                    <li>Planning Method: Joint</li>
+                    <li>Jump threshold: 2</li>
+                    <li>eef_step: 0.02</li>
+                </ul>
+                <h2>Results</h2>
+                <h3>execution_1</h3>
+                <h4>Resources</h4>
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Node name</th>
+                                <th>Memory</th>
+                                <th>CPU</th>
+                                <th>IO</th>
+                                <th>Network</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>move_group</td>
+                                <td>1.99 | 1.99 | 1.99</td>
+                                <td>3.9 | 8.53 | 12.0</td>
+                                <td>0 | 0 | 0</td>
+                                <td>0 | 0 | 0</td>
+                            </tr>
+                            <tr>
+                                <td>rostest</td>
+                                <td>1.99 | 1.99 | 1.99</td>
+                                <td>3.9 | 8.53 | 12.0</td>
+                                <td>0 | 0 | 0</td>
+                                <td>0 | 0 | 0</td>
+                            </tr>
+                        </tbody>
+                    </table>
                 </div>
+                <h4>Time</h4>
+                Time: 9.322s<br>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
