@@ -9,5 +9,5 @@ $('.sidebar > ul.nav li a').click(function(e) {
 $('#test_list').on("click", ".btn", function(e){
     e.preventDefault(); // preventing default click action
     var name = $(this).attr('data-name');
-    getTestDetails(name);
+    drawTestDetails(name);
 });

@@ -18,15 +18,17 @@ function drawTestList() {
     document.getElementById("test_list").innerHTML = "";
     for (var number in test_list) {
         for(var test_name in test_list[number]) {
-            document.getElementById("test_list").innerHTML += "<tr><td>" + (parseInt(number) + 1) + "</td><td>" + test_name + "</td><td>" + test_list[number][test_name].test_config + "</td><td><button type='button' class='btn btn-default' data-target='#test_detail' data-toggle='modal' data-name='" + test_name + "'>Details</button></td>";
+            test_name_full = test_name.split("_");
+            document.getElementById("test_list").innerHTML += "<tr><td>" + (parseInt(number) + 1) + "</td><td>Testsuite " + test_name_full[0].replace(/^\D+/g, '') + "</td><td>Test " + test_name_full[1].replace(/^\D+/g, "") + "</td><td>" + test_name + "</td><td>" + test_list[number][test_name].test_config + "</td><td><button type='button' class='btn btn-default' data-target='#test_detail' data-toggle='modal' data-name='" + test_name + "'>Details</button></td>";
         }
     }
 }
 
-function getTestDetails(test_name) {
+function drawTestDetails(test_name) {
     var test_detail = $('#test_detail');
-    test_detail.find('.modal-title').html("Details " + test_name);
-    test_detail.find('.modal-body p').html(JSON.stringify(sessionStorage.getItem(test_name)));
+    test_name = test_name.split("_");
+    test_detail.find('.modal-title').html("Details Testsuite " + test_name[0].replace(/^\D+/g, "") + " - Test " + test_name[1].replace(/^\D+/g, ""));
+    //test_detail.find('.modal-body p').html(JSON.stringify(sessionStorage.getItem(test_name)));
 }
 
 $(document).ready( function() {
