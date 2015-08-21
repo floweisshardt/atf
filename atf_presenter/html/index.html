@@ -41,32 +41,62 @@
     <div class="row">
         <div class="col-sm-3 col-md-2 sidebar">
             <ul class="nav nav-sidebar" id="tab_menu">
-                <li class="active"><a href="#home">Home <span class="sr-only">(current)</span></a></li>
+                <li class="active"><a href="#">Home <span class="sr-only">(current)</span></a></li>
             </ul>
         </div>
 
+
         <div class="col-sm-9 col-sm-offset-3 col-md-10 col-md-offset-2 main">
 
-            <div class="tab-pane" id="home">
+            <div class="tab-pane">
+                <h1 class="page-header">Overview</h1>
                 <div>
-                    <h1 class="page-header">Test list</h1>
-                    <div class="table-responsive">
-                        <table class="table table-hover">
-                            <thead>
-                                <tr>
-                                    <th>#</th>
-                                    <th>Name</th>
-                                    <th>Test Config</th>
-                                    <th>Details</th>
-                                </tr>
-                            </thead>
-                            <tbody id="test_list"></tbody>
-                        </table>
+                    <p>Select the test files you want to compare.</p>
+                    <div class="btn btn-default btn-file">
+                        Browse <input type="file" multiple>
                     </div>
+                </div>
+                <div class="row placeholders"></div>
+                <h2 class="sub-header">Test list</h2>
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Name</th>
+                            <th>Test Config</th>
+                            <th>Details</th>
+                        </tr>
+                        </thead>
+                        <tbody id="test_list"></tbody>
+                    </table>
                 </div>
 
             </div>
         </div>
+    </div>
+</div>
+
+<!-- Detail Popup -->
+<div id="test_detail" class="modal fade" role="dialog">
+    <div class="modal-dialog modal-lg">
+
+        <!-- Content-->
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal">&times;</button>
+                <h4 class="modal-title"></h4>
+            </div>
+            <div class="modal-body">
+                <div>
+
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+
     </div>
 </div>
 
@@ -78,6 +108,7 @@
 
 <!-- IE10 viewport hack for Surface/desktop Windows 8 bug -->
 <script type="text/javascript" src="js/ie10-viewport-bug-workaround.js"></script>
+<script type="text/javascript" src="js/file_storage.js"></script>
 <script type="text/javascript" src="js/javascript_tools.js"> </script>
 <script type="text/javascript" src="js/ui_behavior.js"> </script>
 
