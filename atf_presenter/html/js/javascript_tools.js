@@ -16,19 +16,274 @@ function getJSON(folder, filename, callback) {
 function drawTestList() {
     var test_list = getDataFromStorage("test_list");
     document.getElementById("test_list").innerHTML = "";
-    for (var number in test_list) {
-        for(var test_name in test_list[number]) {
-            test_name_full = test_name.split("_");
-            document.getElementById("test_list").innerHTML += "<tr><td>" + (parseInt(number) + 1) + "</td><td>Testsuite " + test_name_full[0].replace(/^\D+/g, '') + "</td><td>Test " + test_name_full[1].replace(/^\D+/g, "") + "</td><td>" + test_name + "</td><td>" + test_list[number][test_name].test_config + "</td><td><button type='button' class='btn btn-default' data-target='#test_detail' data-toggle='modal' data-name='" + test_name + "'>Details</button></td>";
-        }
-    }
+    var number = 1;
+    test_list.forEach(function(test_data) {
+        var test_name = Object.keys(test_data)[0];
+        var test_name_full = test_name.split("_");
+        document.getElementById("test_list").innerHTML += "<tr><td>" + (number) + "</td><td>" + test_name + "</td><td>Testsuite " + test_name_full[0].replace(/^\D+/g, '') + "</td><td>Test " + test_name_full[1].replace(/^\D+/g, "") + "</td><td>" + test_data[test_name].test_config + "</td><td><button type='button' class='btn btn-default' data-target='#test_detail' data-toggle='modal' data-name='" + test_name + "'>Details</button></td>";
+        number++;
+    });
 }
 
 function drawTestDetails(test_name) {
     var test_detail = $('#test_detail');
-    test_name = test_name.split("_");
-    test_detail.find('.modal-title').html("Details Testsuite " + test_name[0].replace(/^\D+/g, "") + " - Test " + test_name[1].replace(/^\D+/g, ""));
+    var test_name_split = test_name.split("_");
+    test_detail.find('.modal-title').html("Details Testsuite " + test_name_split[0].replace(/^\D+/g, "") + " - Test " + test_name_split[1].replace(/^\D+/g, ""));
+
+    // Get test data
+    var test_data = getDataFromStorage(test_name);
+
+    // Get test list
+    var test_list = getDataFromStorage("test_list");
+
+
+
+    $.each(test_data, function(index, value) {
+        console.log(index, value);
+    });
+    //plotData('res_cpu', [[1], [2], [3]]);
     //test_detail.find('.modal-body p').html(JSON.stringify(sessionStorage.getItem(test_name)));
+
+    $('#res_cpu').highcharts({
+        chart: {
+            type: 'column'
+        },
+        title: {
+            text: 'CPU'
+        },
+        yAxis: {
+            title: {
+                text: 'Average consumption [%]'
+            }
+        },
+        tooltip: {
+            formatter: function () {
+                var o = this.point.options;
+
+                return '<b>' + this.series.name + '</b><br>' +
+                    'Average: ' + this.y + '<br>' +
+                    'Min: ' + o.min + '<br>' +
+                    'Max: ' + o.max + '<br>';
+            }
+        },
+        series: [{
+            name: 'move_group',
+            data: [{
+                x: 1,
+                y: 99.94,
+                min: 8.0,
+                max: 111.4
+            }]
+        }, {
+            name: 'rostest',
+            data: [{
+                x: 1,
+                y: 80.01,
+                min: 20.0,
+                max: 120.43
+            }]
+        }, {
+            name: 'security',
+            data: [{
+                x: 1,
+                y: 50.03,
+                min: 2.05,
+                max: 98.44
+            }]
+        }]
+    });
+
+    $('#res_mem').highcharts({
+        chart: {
+            type: 'column'
+        },
+        title: {
+            text: 'Memory'
+        },
+        yAxis: {
+            title: {
+                text: 'Average consumption [%]'
+            }
+        },
+        tooltip: {
+            formatter: function () {
+                var o = this.point.options;
+
+                return '<b>' + this.series.name + '</b><br>' +
+                    'Average: ' + this.y + '<br>' +
+                    'Min: ' + o.min + '<br>' +
+                    'Max: ' + o.max + '<br>';
+            }
+        },
+        series: [{
+            name: 'move_group',
+            data: [{
+                x: 1,
+                y: 99.94,
+                min: 8.0,
+                max: 111.4
+            }]
+        }, {
+            name: 'rostest',
+            data: [{
+                x: 1,
+                y: 80.01,
+                min: 20.0,
+                max: 120.43
+            }]
+        }, {
+            name: 'security',
+            data: [{
+                x: 1,
+                y: 50.03,
+                min: 2.05,
+                max: 98.44
+            }]
+        }]
+    });
+    $('#res_io').highcharts({
+        chart: {
+            type: 'column'
+        },
+        title: {
+            text: 'Disk IO operations'
+        },
+        xAxis: {
+            categories: ['Read count', 'Write count', 'Bytes read', 'Bytes wrote']
+        },
+        tooltip: {
+            formatter: function () {
+                var o = this.point.options;
+
+                return '<b>' + this.series.name + '</b><br>' +
+                    'Average: ' + this.y + '<br>' +
+                    'Min: ' + o.min + '<br>' +
+                    'Max: ' + o.max + '<br>';
+            }
+        },
+        series: [{
+            name: 'move_group',
+            data: [{
+                x: 0,
+                y: 99.94,
+                min: 8.0,
+                max: 111.4
+            }, {
+                x: 1,
+                y: 99.94,
+                min: 8.0,
+                max: 111.4
+            }, {
+                x: 2,
+                y: 99.94,
+                min: 8.0,
+                max: 111.4
+            }, {
+                x: 3,
+                y: 99.94,
+                min: 8.0,
+                max: 111.4
+            }]
+        }, {
+            name: 'rostest',
+            data: [{
+                x: 0,
+                y: 80.01,
+                min: 20.0,
+                max: 120.43
+            }, {
+                x: 1,
+                y: 80.01,
+                min: 20.0,
+                max: 120.43
+            }, {
+                x: 2,
+                y: 80.01,
+                min: 20.0,
+                max: 120.43
+            }, {
+                x: 3,
+                y: 80.01,
+                min: 20.0,
+                max: 120.43
+            }]
+        }, {
+            name: 'security',
+            data: [{
+                x: 0,
+                y: 50.03,
+                min: 2.05,
+                max: 98.44
+            }, {
+                x: 1,
+                y: 50.03,
+                min: 2.05,
+                max: 98.44
+            }, {
+                x: 2,
+                y: 50.03,
+                min: 2.05,
+                max: 98.44
+            }, {
+                x: 3,
+                y: 50.03,
+                min: 2.05,
+                max: 98.44
+            }]
+        }]
+    });
+}
+
+function plotData(div, data) {
+    $('#' + div).highcharts({
+        chart: {
+            type: 'column'
+        },
+        title: {
+            text: 'CPU'
+        },
+        yAxis: {
+            title: {
+                text: 'Average consumption [%]'
+            }
+        },
+        tooltip: {
+            formatter: function () {
+                var o = this.point.options;
+
+                return '<b>' + this.series.name + '</b><br>' +
+                    'Average: ' + this.y + '<br>' +
+                    'Min: ' + o.min + '<br>' +
+                    'Max: ' + o.max + '<br>';
+            }
+        },
+        series: [{
+            name: 'move_group',
+            data: [{
+                /* CPU */
+                x: 1,
+                y: 99.94,
+                min: 8.0,
+                max: 111.4
+            }]
+        }, {
+            name: 'rostest',
+            data: [{
+                x: 1,
+                y: 80.01,
+                min: 20.0,
+                max: 120.43
+            }]
+        }, {
+            name: 'security',
+            data: [{
+                x: 1,
+                y: 50.03,
+                min: 2.05,
+                max: 98.44
+            }]
+        }]
+    });
 }
 
 $(document).ready( function() {
@@ -40,8 +295,11 @@ $(document).ready( function() {
                 getJSON("./data/", labels[x]);
             }
         }
+        $('#test_list_content').show();
     });
+
     if (sessionStorage.getItem("test_list") != null) {
         drawTestList();
+        $('#test_list_content').show();
     }
 });

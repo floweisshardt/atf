@@ -1,7 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <!-- TODO: Think of an usefull way to get the data from json to web -->
     <meta http-equiv="content-type" content="text/html; charset=UTF-8">
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
@@ -14,10 +13,13 @@
     <title>ATF Dashboard</title>
 
     <!-- Bootstrap core CSS -->
-    <link href="css/bootstrap.min.css" rel="stylesheet">
+    <link type="text/css" href="css/bootstrap.min.css" rel="stylesheet">
 
     <!-- Custom styles for this template -->
-    <link href="css/dashboard.css" rel="stylesheet">
+    <link type="text/css" href="css/dashboard.css" rel="stylesheet">
+
+    <!-- Custom CSS -->
+    <link type="text/css" href="css/css.css" rel="stylesheet">
 
     <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
     <!--[if lt IE 9]>
@@ -57,21 +59,23 @@
                     </div>
                 </div>
                 <div class="row placeholders"></div>
-                <h2 class="sub-header">Test list</h2>
-                <div class="table-responsive">
-                    <table class="table table-hover">
-                        <thead>
-                        <tr>
-                            <th>#</th>
-                            <th>Testsuite</th>
-                            <th>Test</th>
-                            <th>Name</th>
-                            <th>Test Config</th>
-                            <th>Details</th>
-                        </tr>
-                        </thead>
-                        <tbody id="test_list"></tbody>
-                    </table>
+                <div id="test_list_content">
+                    <h2 class="sub-header">Test list</h2>
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Name</th>
+                                <th>Testsuite</th>
+                                <th>Test</th>
+                                <th>Test Config</th>
+                                <th>Details</th>
+                            </tr>
+                            </thead>
+                            <tbody id="test_list"></tbody>
+                        </table>
+                    </div>
                 </div>
 
             </div>
@@ -103,35 +107,10 @@
                 <h2>Results</h2>
                 <h3>execution_1</h3>
                 <h4>Resources</h4>
-                <div class="table-responsive">
-                    <table class="table table-hover">
-                        <thead>
-                            <tr>
-                                <th>Node name</th>
-                                <th>Memory</th>
-                                <th>CPU</th>
-                                <th>IO</th>
-                                <th>Network</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td>move_group</td>
-                                <td>1.99 | 1.99 | 1.99</td>
-                                <td>3.9 | 8.53 | 12.0</td>
-                                <td>0 | 0 | 0</td>
-                                <td>0 | 0 | 0</td>
-                            </tr>
-                            <tr>
-                                <td>rostest</td>
-                                <td>1.99 | 1.99 | 1.99</td>
-                                <td>3.9 | 8.53 | 12.0</td>
-                                <td>0 | 0 | 0</td>
-                                <td>0 | 0 | 0</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
+                <div class="plot" id="res_cpu"></div>
+                <div class="plot" id="res_mem"></div>
+                <div class="plot" id="res_io"></div>
+                <div class="plot" id="res_network"></div>
                 <h4>Time</h4>
                 Time: 9.322s<br>
             </div>
@@ -139,15 +118,15 @@
                 <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
             </div>
         </div>
-
     </div>
 </div>
 
 <!-- Bootstrap core JavaScript
 ================================================== -->
 <!-- Placed at the end of the document so the pages load faster -->
-<script type="text/javascript" src="js/jquery-2.1.4.min.js"></script>
-<script src="js/bootstrap.min.js"></script>
+<script type="text/javascript" src="js/jquery-1.11.3.min.js"></script>
+<script type="text/javascript" src="js/bootstrap.min.js"></script>
+<script type="text/javascript" src="js/highcharts.js"></script>
 
 <!-- IE10 viewport hack for Surface/desktop Windows 8 bug -->
 <script type="text/javascript" src="js/ie10-viewport-bug-workaround.js"></script>

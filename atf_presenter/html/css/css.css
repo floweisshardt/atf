@@ -1,39 +1,10 @@
-body {
-    font: 62.5% "Trebuchet MS", sans-serif;
-    margin: 50px;
-    background-color: #F0F0F0;
+#test_detail .modal-body {
+
 }
-a {
-    text-decoration: none;
-    color: #000;
+#test_list_content {
+    display: none;
 }
-#page {
-    position: relative;
-    width: 90%;
-    margin: 0 auto;
-    background-color: #D8D8D8;
-}
-#testsuite_collection {
-    position: relative;
-    height: 100%;
-    padding: 20px;
-}
-#testsuite_collection div {
-    margin-bottom: 10px;
-}
-#testsuite_collection div:last-child {
-    margin-bottom: 0 !important;
-}
-#testsuite_collection div h1 {
-    position: relative;
-    border: solid 1px #000;
-    margin: 0;
-    font-size: 15px;
-}
-.test_collection {
-    position: relative;
-    height: 100%;
-    color: #000;
-    margin-left: 20px;
-    margin-top: 10px;
+.plot {
+    width: 800px;
+    height: 300px;
 }
