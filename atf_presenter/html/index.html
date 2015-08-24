@@ -105,14 +105,34 @@
                     <li>eef_step: 0.02</li>
                 </ul>
                 <h2>Results</h2>
-                <h3>execution_1</h3>
-                <h4>Resources</h4>
-                <div class="plot" id="res_cpu"></div>
-                <div class="plot" id="res_mem"></div>
-                <div class="plot" id="res_io"></div>
-                <div class="plot" id="res_network"></div>
+                <h3>Resources</h3>
+                <div>
+                    <!-- Nav tabs -->
+                    <ul class="nav nav-tabs" role="tablist">
+                        <li role="presentation" class="active"><a href="#execution_1" aria-controls="execution_1" role="tab" data-toggle="tab">execution_1</a></li>
+                        <li role="presentation"><a href="#execution_2" aria-controls="execution_2" role="tab" data-toggle="tab">execution_2</a></li>
+                    </ul>
+
+                    <!-- Tab panes -->
+                    <div class="tab-content">
+                        <div role="tabpanel" class="tab-pane active" id="execution_1">
+                            <div class="plot" id="res_cpu"></div>
+                            <div class="plot" id="res_mem"></div>
+                            <div class="plot" id="res_io"></div>
+                            <div class="plot" id="res_network"></div></div>
+                        <div role="tabpanel" class="tab-pane" id="execution_2">
+                            <div class="plot" id="res_cpu"></div>
+                            <div class="plot" id="res_mem"></div>
+                            <div class="plot" id="res_io"></div>
+                            <div class="plot" id="res_network"></div>
+                        </div>
+                    </div>
+
+                </div>
                 <h4>Time</h4>
-                Time: 9.322s<br>
+                <div id="time">
+
+                </div>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>

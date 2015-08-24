@@ -46,7 +46,8 @@ function drawTestDetails(test_name) {
 
     $('#res_cpu').highcharts({
         chart: {
-            type: 'column'
+            type: 'column',
+            zoomType: 'xy'
         },
         title: {
             text: 'CPU'
@@ -95,7 +96,8 @@ function drawTestDetails(test_name) {
 
     $('#res_mem').highcharts({
         chart: {
-            type: 'column'
+            type: 'column',
+            zoomType: 'xy'
         },
         title: {
             text: 'Memory'
@@ -143,7 +145,8 @@ function drawTestDetails(test_name) {
     });
     $('#res_io').highcharts({
         chart: {
-            type: 'column'
+            type: 'column',
+            zoomType: 'xy'
         },
         title: {
             text: 'Disk IO operations'
@@ -232,20 +235,16 @@ function drawTestDetails(test_name) {
             }]
         }]
     });
-}
-
-function plotData(div, data) {
-    $('#' + div).highcharts({
+    $('#res_network').highcharts({
         chart: {
-            type: 'column'
+            type: 'column',
+            zoomType: 'xy'
         },
         title: {
-            text: 'CPU'
+            text: 'Network traffic'
         },
-        yAxis: {
-            title: {
-                text: 'Average consumption [%]'
-            }
+        xAxis: {
+            categories: ['Bytes sent', 'Bytes received', 'Packets sent', 'Packets received', 'Errors received', 'Errors sent', 'Packets dropped: Received', 'Packets dropped: Sent']
         },
         tooltip: {
             formatter: function () {
@@ -260,8 +259,47 @@ function plotData(div, data) {
         series: [{
             name: 'move_group',
             data: [{
-                /* CPU */
+                x: 0,
+                y: 99.94,
+                min: 8.0,
+                max: 111.4
+            }, {
                 x: 1,
+                y: 99.94,
+                min: 8.0,
+                max: 111.4
+            }, {
+                x: 2,
+                y: 99.94,
+                min: 8.0,
+                max: 111.4
+            }, {
+                x: 3,
+                y: 99.94,
+                min: 8.0,
+                max: 111.4
+            }, {
+                x: 4,
+                y: 99.94,
+                min: 8.0,
+                max: 111.4
+            }, {
+                x: 5,
+                y: 99.94,
+                min: 8.0,
+                max: 111.4
+            }, {
+                x: 6,
+                y: 99.94,
+                min: 8.0,
+                max: 111.4
+            }, {
+                x: 7,
+                y: 99.94,
+                min: 8.0,
+                max: 111.4
+            }, {
+                x: 8,
                 y: 99.94,
                 min: 8.0,
                 max: 111.4
@@ -269,18 +307,159 @@ function plotData(div, data) {
         }, {
             name: 'rostest',
             data: [{
+                x: 0,
+                y: 99.94,
+                min: 8.0,
+                max: 111.4
+            }, {
                 x: 1,
-                y: 80.01,
-                min: 20.0,
-                max: 120.43
+                y: 99.94,
+                min: 8.0,
+                max: 111.4
+            }, {
+                x: 2,
+                y: 99.94,
+                min: 8.0,
+                max: 111.4
+            }, {
+                x: 3,
+                y: 99.94,
+                min: 8.0,
+                max: 111.4
+            }, {
+                x: 4,
+                y: 99.94,
+                min: 8.0,
+                max: 111.4
+            }, {
+                x: 5,
+                y: 99.94,
+                min: 8.0,
+                max: 111.4
+            }, {
+                x: 6,
+                y: 99.94,
+                min: 8.0,
+                max: 111.4
+            }, {
+                x: 7,
+                y: 99.94,
+                min: 8.0,
+                max: 111.4
+            }, {
+                x: 8,
+                y: 99.94,
+                min: 8.0,
+                max: 111.4
             }]
         }, {
             name: 'security',
             data: [{
+                x: 0,
+                y: 99.94,
+                min: 8.0,
+                max: 111.4
+            }, {
                 x: 1,
-                y: 50.03,
-                min: 2.05,
-                max: 98.44
+                y: 99.94,
+                min: 8.0,
+                max: 111.4
+            }, {
+                x: 2,
+                y: 99.94,
+                min: 8.0,
+                max: 111.4
+            }, {
+                x: 3,
+                y: 99.94,
+                min: 8.0,
+                max: 111.4
+            }, {
+                x: 4,
+                y: 99.94,
+                min: 8.0,
+                max: 111.4
+            }, {
+                x: 5,
+                y: 99.94,
+                min: 8.0,
+                max: 111.4
+            }, {
+                x: 6,
+                y: 99.94,
+                min: 8.0,
+                max: 111.4
+            }, {
+                x: 7,
+                y: 99.94,
+                min: 8.0,
+                max: 111.4
+            }, {
+                x: 8,
+                y: 99.94,
+                min: 8.0,
+                max: 111.4
+            }]
+        }]
+    });
+
+    $('#time').highcharts({
+        chart: {
+            plotBackgroundColor: null,
+            plotBorderWidth: null,
+            plotShadow: false,
+            type: 'pie'
+        },
+        title: {
+            text: 'Time'
+        },
+        tooltip: {
+            formatter: function () {
+                var o = this.point.options;
+
+                return '<b>' + this.series.name + '</b><br>' +
+                    'Time: ' + this.y;
+            }
+        },
+        plotOptions: {
+            pie: {
+                allowPointSelect: true,
+                cursor: 'pointer',
+                dataLabels: {
+                    enabled: false
+                },
+                showInLegend: true
+            }
+        },
+        series: [{
+            name: "Time",
+            colorByPoint: true,
+            data: [{
+                name: "execution_1",
+                y: 9.272
+            }, {
+                name: "execution_2",
+                y: 64.581,
+                sliced: true,
+                selected: true
+            }, {
+                name: "execution_3",
+                y: 10.916
+            }, {
+                name: "execution_all",
+                y: 106.139
+            }, {
+                name: "planning_1",
+                y: 4.413
+            }, {
+                name: "planning_2",
+                y: 17.329
+            }, {
+                name: "planning_3",
+                y: 3.458
+            }, {
+                name: "planning_all",
+                y: 99.581
             }]
         }]
     });
