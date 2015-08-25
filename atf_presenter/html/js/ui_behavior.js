@@ -7,7 +7,7 @@ $('.sidebar > ul.nav li a').click(function(e) {
 });
 
 $('#test_list').on("click", ".btn", function(e){
-    e.preventDefault(); // preventing default click action
+    e.preventDefault();
     var name = $(this).attr('data-name');
     drawTestDetails(name);
 });
