@@ -2,6 +2,7 @@
     display: none;
 }
 .plot {
-    width: auto;
+    width: 100%;
+    max-width: 800px;
     height: 300px;
 }
