@@ -5,9 +5,8 @@
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <!-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags -->
-    <meta name="description" content="">
-    <meta name="author" content="">
+    <meta name="description" content="Website for evaluation manipulation tests.">
+    <meta name="author" content="Florian Koehler (florian.koehler@ipa.fraunhofer.de)">
     <link rel="icon" type="image/vnd.microsoft.icon" href="favicon.ico">
 
     <title>ATF Dashboard</title>
@@ -27,7 +26,6 @@
     <script type="text/javascript" src="js/html5shiv-printshiv.min.js"></script>
     <script type="text/javascript" src="js/respond.min.js"></script>
     <![endif]-->
-
 </head>
 
 <body>
@@ -46,23 +44,20 @@
                 <li class="active"><a href="#">Home <span class="sr-only">(current)</span></a></li>
             </ul>
         </div>
-
-
         <div class="col-sm-9 col-sm-offset-3 col-md-10 col-md-offset-2 main">
-
             <div class="tab-pane">
-                <h1 class="page-header">Overview</h1>
+                <h2 class="sub-header">Upload files</h2>
                 <div>
-                    <p>Select all test files (.json). The "test_list.json" must be selected.</p>
+                    <p>Select all test files (.json) which are listed in the "test_list.json" file. The "test_list.json" must be selected, too.</p>
                     <div class="btn btn-default btn-file">
                         Browse <input type="file" multiple>
                     </div>
                 </div>
                 <div class="row placeholders"></div>
                 <div id="test_list_content">
-                    <h2 class="sub-header">Test list</h2>
+                    <h2 class="sub-header">Overview</h2>
                     <div class="table-responsive">
-                        <table class="table table-hover">
+                        <table class="table table-hover table-striped table-condensed">
                             <thead>
                             <tr>
                                 <th>#</th>
@@ -70,6 +65,7 @@
                                 <th>Testsuite</th>
                                 <th>Test</th>
                                 <th>Test Config</th>
+                                <th>Upload Status</th>
                                 <th>Details</th>
                             </tr>
                             </thead>
@@ -77,7 +73,6 @@
                         </table>
                     </div>
                 </div>
-
             </div>
         </div>
     </div>
@@ -95,31 +90,24 @@
             </div>
             <div class="modal-body">
                 <h2>Configuration</h2>
-                <ul>
-                    <li>Scene config: scene_3</li>
-                    <li>Test config: test_1</li>
-                    <li>Robot: cob4_2</li>
-                    <li>Planer ID: BKPIECEkConfigDefault</li>
-                    <li>Planning Method: Joint</li>
-                    <li>Jump threshold: 2</li>
-                    <li>eef_step: 0.02</li>
-                </ul>
+                <ul id="configuration"></ul>
+                <hr class="divider">
                 <h2>Results</h2>
+                <div id="status">
+                    <h3>Status</h3>
+                </div>
                 <div id="resources">
                     <h3>Resources</h3>
-                    <!-- Nav tabs -->
                     <ul class="nav nav-tabs" role="tablist"></ul>
-                    <!-- Tab panes -->
                     <div class="tab-content"></div>
+                    <hr class="divider">
                 </div>
-
-                </div>
-                <div id="path_length" class="plot"></div>
-                <div id="time" class="plot"></div>
             </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
-            </div>
+            <div id="path_length" class="plot"></div>
+            <div id="time" class="plot"></div>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
         </div>
     </div>
 </div>
