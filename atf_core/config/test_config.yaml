@@ -5,33 +5,36 @@ test_1:
   planning_1:
     time:
     resources:
-      cpu: [move_group]
-      mem: [move_group]
+      cpu: [move_group, firefox]
+      mem: [move_group, rostest]
 
   planning_2:
     time:
     resources:
-      cpu: [move_group]
-      mem: [move_group]
-      io: [move_group]
-      network: [move_group]
+      cpu: [move_group, firefox]
+      mem: [move_group, firefox]
+      io: [move_group, firefox]
+      network: [move_group, firefox]
 
   planning_3:
     time:
     resources:
-      cpu: [move_group]
-      mem: [move_group]
+      cpu: [move_group, phpstorm]
+      mem: [move_group, phpstorm]
 
   execution_all:
     time:
     path_length:
       - [base_link, gripper_right_grasp_link]
+      - [arm_right_3_link, gripper_right_grasp_link]
 
   execution_1:
     time:
     resources:
-      cpu: [move_group]
-      mem: [move_group]
+      cpu: [phpstorm]
+      mem: [phpstorm]
+      io: [move_group, firefox]
+      network: [move_group, firefox]
 
   execution_2:
     time:
@@ -50,19 +53,19 @@ test_1:
 test_2:
   execution_1:
     time:
-    resources:
-      cpu: [move_group]
-      mem: [move_group]
+    path_length:
+      - [base_link, gripper_right_grasp_link]
+      - [arm_right_2_link, gripper_right_grasp_link]
 
   execution_2:
     time:
     path_length:
       - [base_link, gripper_right_grasp_link]
-    resources:
-      cpu: [move_group, rostest]
-      mem: [move_group, rostest]
+      - [arm_right_1_link, gripper_right_grasp_link]
 
   execution_3:
     time:
-    resources:
-      cpu: [grasping_app]
+    path_length:
+      - [base_link, gripper_right_grasp_link]
+      - [arm_right_4_link, gripper_right_grasp_link]
+
