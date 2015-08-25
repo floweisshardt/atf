@@ -28,10 +28,10 @@ function drawTestList() {
 
         if (!getDataFromStorage(test_name)) {
             upload_status = '<span class="glyphicon glyphicon-alert" aria-hidden="true"></span><span class="sr-only">Error: </span> File not found!';
-            test_list_div.append('<tr class="danger"><td>' + (number) + '</td><td>' + test_name + '</td><td>Testsuite ' + test_name_full[0].replace(/^\D+/g, '') + '</td><td>Test ' + test_name_full[1].replace(/^\D+/g, "") + '</td><td>' + test_data[test_name]["test_config"] + '</td><td>' + upload_status + '</td><td><button type="button" class="btn btn-default" data-target="#test_detail" data-toggle="modal" data-name="' + test_name + '" disabled="disabled">Details</button></td>');
+            test_list_div.append('<tr class="danger"><td>' + (number) + '</td><td>' + test_name + '</td><td>Testsuite ' + test_name_full[0].replace(/^\D+/g, '') + '</td><td>Test ' + test_name_full[1].replace(/^\D+/g, "") + '</td><td>' + test_data[test_name]["test_config"] + '</td><td>' + test_data[test_name]["robot"] + '</td><td>' + upload_status + '</td><td><button type="button" class="btn btn-default" data-target="#test_detail" data-toggle="modal" data-name="' + test_name + '" disabled="disabled">Details</button></td>');
         } else {
             upload_status = '<span class="glyphicon glyphicon-ok" aria-hidden="true"></span><span class="sr-only">No error:</span> No errors!';
-            test_list_div.append('<tr><td>' + (number) + '</td><td>' + test_name + '</td><td>Testsuite ' + test_name_full[0].replace(/^\D+/g, '') + '</td><td>Test ' + test_name_full[1].replace(/^\D+/g, "") + '</td><td>' + test_data[test_name]["test_config"] + '</td><td>' + upload_status + '</td><td><button type="button" class="btn btn-default" data-target="#test_detail" data-toggle="modal" data-name="' + test_name + '">Details</button></td>');
+            test_list_div.append('<tr><td>' + (number) + '</td><td>' + test_name + '</td><td>Testsuite ' + test_name_full[0].replace(/^\D+/g, '') + '</td><td>Test ' + test_name_full[1].replace(/^\D+/g, "") + '</td><td>' + test_data[test_name]["test_config"] + '</td><td>' + test_data[test_name]["robot"] + '</td><td>' + upload_status + '</td><td><button type="button" class="btn btn-default" data-target="#test_detail" data-toggle="modal" data-name="' + test_name + '">Details</button></td>');
         }
     });
 }
