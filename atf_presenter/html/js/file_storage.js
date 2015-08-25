@@ -6,6 +6,7 @@ function writeDataToStorage(name, data) {
     if (typeof data === "object") {
         data = JSON.stringify(data);
     }
+    sessionStorage.removeItem(name);
     sessionStorage.setItem(name, data);
 }
 
@@ -13,7 +14,7 @@ function getDataFromStorage(name) {
     var data = sessionStorage.getItem(name);
 
     if (!data) {
-        return;
+        return false;
     }
 
     // assume it is an object that has been stringified
@@ -24,12 +25,16 @@ function getDataFromStorage(name) {
     return data;
 }
 
+function clearStorage() {
+    sessionStorage.clear();
+}
+
 $(document).on('change', '.btn-file :file', function() {
     var labels = [];
     var input = $(this),
         numFiles = input.get(0).files ? input.get(0).files.length : 1;
     for (var files = 0; files < input.get(0).files.length; files++) {
-        if(input.get(0).files[parseInt(files)].name.indexOf(".json") == -1) {
+        if(input.get(0).files[parseInt(files)].name.indexOf(".json") === -1) {
             alert("Select only .json files!");
             return;
         }
