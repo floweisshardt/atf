@@ -53,7 +53,7 @@
             <div class="tab-pane">
                 <h1 class="page-header">Overview</h1>
                 <div>
-                    <p>Select the test files you want to compare.</p>
+                    <p>Select all test files (.json). The "test_list.json" must be selected.</p>
                     <div class="btn btn-default btn-file">
                         Browse <input type="file" multiple>
                     </div>
@@ -105,34 +105,17 @@
                     <li>eef_step: 0.02</li>
                 </ul>
                 <h2>Results</h2>
-                <h3>Resources</h3>
-                <div>
+                <div id="resources">
+                    <h3>Resources</h3>
                     <!-- Nav tabs -->
-                    <ul class="nav nav-tabs" role="tablist">
-                        <li role="presentation" class="active"><a href="#execution_1" aria-controls="execution_1" role="tab" data-toggle="tab">execution_1</a></li>
-                        <li role="presentation"><a href="#execution_2" aria-controls="execution_2" role="tab" data-toggle="tab">execution_2</a></li>
-                    </ul>
-
+                    <ul class="nav nav-tabs" role="tablist"></ul>
                     <!-- Tab panes -->
-                    <div class="tab-content">
-                        <div role="tabpanel" class="tab-pane active" id="execution_1">
-                            <div class="plot" id="res_cpu"></div>
-                            <div class="plot" id="res_mem"></div>
-                            <div class="plot" id="res_io"></div>
-                            <div class="plot" id="res_network"></div></div>
-                        <div role="tabpanel" class="tab-pane" id="execution_2">
-                            <div class="plot" id="res_cpu"></div>
-                            <div class="plot" id="res_mem"></div>
-                            <div class="plot" id="res_io"></div>
-                            <div class="plot" id="res_network"></div>
-                        </div>
-                    </div>
+                    <div class="tab-content"></div>
+                </div>
 
                 </div>
-                <h4>Time</h4>
-                <div id="time">
-
-                </div>
+                <div id="path_length" class="plot"></div>
+                <div id="time" class="plot"></div>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
@@ -147,6 +130,8 @@
 <script type="text/javascript" src="js/jquery-1.11.3.min.js"></script>
 <script type="text/javascript" src="js/bootstrap.min.js"></script>
 <script type="text/javascript" src="js/highcharts.js"></script>
+<script type="text/javascript" src="js/data.js"></script>
+<script type="text/javascript" src="js/drilldown.js"></script>
 
 <!-- IE10 viewport hack for Surface/desktop Windows 8 bug -->
 <script type="text/javascript" src="js/ie10-viewport-bug-workaround.js"></script>

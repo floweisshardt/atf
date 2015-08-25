@@ -11,3 +11,8 @@ $('#test_list').on("click", ".btn", function(e){
     var name = $(this).attr('data-name');
     drawTestDetails(name);
 });
+
+$('.nav-tabs').on("click", "a", function(e) {
+    e.preventDefault();
+    $(this).tab('show');
+});

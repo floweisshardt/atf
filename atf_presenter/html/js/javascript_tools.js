@@ -18,6 +18,7 @@ function drawTestList() {
     document.getElementById("test_list").innerHTML = "";
     var number = 1;
     test_list.forEach(function(test_data) {
+        //Todo: Check for errors
         var test_name = Object.keys(test_data)[0];
         var test_name_full = test_name.split("_");
         document.getElementById("test_list").innerHTML += "<tr><td>" + (number) + "</td><td>" + test_name + "</td><td>Testsuite " + test_name_full[0].replace(/^\D+/g, '') + "</td><td>Test " + test_name_full[1].replace(/^\D+/g, "") + "</td><td>" + test_data[test_name].test_config + "</td><td><button type='button' class='btn btn-default' data-target='#test_detail' data-toggle='modal' data-name='" + test_name + "'>Details</button></td>";
@@ -36,433 +37,340 @@ function drawTestDetails(test_name) {
     // Get test list
     var test_list = getDataFromStorage("test_list");
 
+    var resources_div = test_detail.find('#resources');
+    var path_length_div = test_detail.find('#path_length');
+    var time_div = test_detail.find('#time');
+    resources_div.hide();
+    time_div.hide();
+    path_length_div.hide();
 
+    var first_entry = true;
+
+    var plot_tooltip = {
+        'formatter': function () {
+            var o = this.point.options;
+
+            return '<b>' + this.series.name + '</b><br>' +
+                'Average: ' + this.y + '<br>' +
+                'Minimum: ' + o.min + '<br>' +
+                'Maximum: ' + o.max + '<br>';
+        }
+    };
+
+    var path_lengths = [];
+    var path_lengths_drilldowns = [];
+    var times = [];
 
     $.each(test_data, function(index, value) {
-        console.log(index, value);
-    });
-    //plotData('res_cpu', [[1], [2], [3]]);
-    //test_detail.find('.modal-body p').html(JSON.stringify(sessionStorage.getItem(test_name)));
+        var testblock_name = index;
+        var testblock_metrics = value;
 
-    $('#res_cpu').highcharts({
-        chart: {
-            type: 'column',
-            zoomType: 'xy'
-        },
-        title: {
-            text: 'CPU'
-        },
-        yAxis: {
+        if (testblock_metrics.hasOwnProperty("resources")) {
+            if (first_entry) {
+                resources_div.find('.nav-tabs').empty();
+                resources_div.find('.tab-content').empty();
+                resources_div.find('.nav-tabs').append('<li role="presentation" class="active"><a href="#' + testblock_name + '" aria-controls="' + testblock_name + '" role="tab" data-toggle="tab">' + testblock_name + '</a></li>');
+                resources_div.find('.tab-content').append('<div role="tabpanel" class="tab-pane active" id="' + testblock_name + '"></div>');
+                resources_div.show();
+                first_entry = false;
+            } else {
+                resources_div.find('.nav-tabs').append('<li role="presentation"><a href="#' + testblock_name + '" aria-controls="' + testblock_name + '" role="tab" data-toggle="tab">' + testblock_name + '</a></li>');
+                resources_div.find('.tab-content').append('<div role="tabpanel" class="tab-pane" id="' + testblock_name + '"></div>');
+            }
+
+            var cpu_nodes = [];
+            var mem_nodes = [];
+            var io_nodes = [];
+            var net_nodes = [];
+            $.each(testblock_metrics["resources"], function(index, value) {
+                var node_name = index;
+                var node_resources = value;
+
+                if (node_resources.hasOwnProperty("cpu")) {
+                    cpu_nodes.push({
+                        'name': node_name,
+                        'data': [{
+                            'x': 0,
+                            'y': node_resources["cpu"].average,
+                            'min': node_resources["cpu"].min,
+                            'max': node_resources["cpu"].max
+                        }]
+                    });
+                }
+                if (node_resources.hasOwnProperty("mem")) {
+                    mem_nodes.push({
+                        'name': node_name,
+                        'data': [{
+                            'x': 0,
+                            'y': node_resources["mem"].average,
+                            'min': node_resources["mem"].min,
+                            'max': node_resources["mem"].max
+                        }]
+                    });
+                }
+                if (node_resources.hasOwnProperty("io")) {
+                    io_nodes.push({
+                        'name': node_name,
+                        'data': [{
+                            'x': 0,
+                            'y': node_resources["io"].average[0],
+                            'min': node_resources["io"].min[0],
+                            'max': node_resources["io"].max[0]
+                        }, {
+                            'x': 1,
+                            'y': node_resources["io"].average[1],
+                            'min': node_resources["io"].min[1],
+                            'max': node_resources["io"].max[1]
+                        }, {
+                            'x': 2,
+                            'y': node_resources["io"].average[2],
+                            'min': node_resources["io"].min[2],
+                            'max': node_resources["io"].max[2]
+                        }, {
+                            'x': 3,
+                            'y': node_resources["io"].average[3],
+                            'min': node_resources["io"].min[3],
+                            'max': node_resources["io"].max[3]
+                        }]
+                    });
+                }
+                if (node_resources.hasOwnProperty("network")) {
+                    net_nodes.push({
+                        'name': node_name,
+                        'data': [{
+                            'x': 0,
+                            'y': node_resources["network"].average[0],
+                            'min': node_resources["network"].min[0],
+                            'max': node_resources["network"].max[0]
+                        }, {
+                            'x': 1,
+                            'y': node_resources["network"].average[1],
+                            'min': node_resources["network"].min[1],
+                            'max': node_resources["network"].max[1]
+                        }, {
+                            'x': 2,
+                            'y': node_resources["network"].average[2],
+                            'min': node_resources["network"].min[2],
+                            'max': node_resources["network"].max[2]
+                        }, {
+                            'x': 3,
+                            'y': node_resources["network"].average[3],
+                            'min': node_resources["network"].min[3],
+                            'max': node_resources["network"].max[3]
+                        }, {
+                            'x': 4,
+                            'y': node_resources["network"].average[4],
+                            'min': node_resources["network"].min[4],
+                            'max': node_resources["network"].max[4]
+                        }, {
+                            'x': 5,
+                            'y': node_resources["network"].average[5],
+                            'min': node_resources["network"].min[5],
+                            'max': node_resources["network"].max[5]
+                        }, {
+                            'x': 6,
+                            'y': node_resources["network"].average[6],
+                            'min': node_resources["network"].min[6],
+                            'max': node_resources["network"].max[6]
+                        }, {
+                            'x': 7,
+                            'y': node_resources["network"].average[7],
+                            'min': node_resources["network"].min[7],
+                            'max': node_resources["network"].max[7]
+                        }]
+                    });
+                }
+            });
+
+            if (cpu_nodes.length != 0) {
+                resources_div.find('.tab-content #' + testblock_name).append('<div class="plot" id="' + testblock_name + '_res_cpu"></div>');
+                $('#' + testblock_name + '_res_cpu').highcharts({
+                    chart: {
+                        type: 'column',
+                        zoomType: 'xy'
+                    },
+                    title: {
+                        text: 'CPU'
+                    },
+                    yAxis: {
+                        title: {
+                            text: 'Average consumption [%]'
+                        }
+                    },
+                    tooltip: plot_tooltip,
+                    series: cpu_nodes
+                });
+            }
+
+            if (mem_nodes.length != 0) {
+                resources_div.find('.tab-content #' + testblock_name).append('<div class="plot" id="' + testblock_name + '_res_mem"></div>');
+                $('#' + testblock_name + '_res_mem').highcharts({
+                    chart: {
+                        type: 'column',
+                        zoomType: 'xy'
+                    },
+                    title: {
+                        text: 'Memory'
+                    },
+                    yAxis: {
+                        title: {
+                            text: 'Average consumption [%]'
+                        }
+                    },
+                    tooltip: plot_tooltip,
+                    series: mem_nodes
+                });
+            }
+            if (io_nodes.length != 0) {
+                resources_div.find('.tab-content #' + testblock_name).append('<div class="plot" id="' + testblock_name + '_res_io"></div>');
+                $('#' + testblock_name + '_res_io').highcharts({
+                    chart: {
+                        type: 'column',
+                        zoomType: 'xy'
+                    },
+                    title: {
+                        text: 'Disk IO operations'
+                    },
+                    xAxis: {
+                        categories: ['Read count', 'Write count', 'Bytes read', 'Bytes wrote']
+                    },
+                    tooltip: plot_tooltip,
+                    series: io_nodes
+                });
+            }
+            if (net_nodes.length != 0) {
+                resources_div.find('.tab-content #' + testblock_name).append('<div class="plot" id="' + testblock_name + '_res_network"></div>');
+                $('#' + testblock_name + '_res_network').highcharts({
+                    chart: {
+                        type: 'column',
+                        zoomType: 'xy'
+                    },
+                    title: {
+                        text: 'Network traffic'
+                    },
+                    xAxis: {
+                        categories: ['Bytes sent', 'Bytes received', 'Packets sent', 'Packets received', 'Errors received', 'Errors sent', 'Packets dropped: Received', 'Packets dropped: Sent']
+                    },
+                    tooltip: plot_tooltip,
+                    series: net_nodes
+                });
+            }
+        }
+
+        var path_lengths_drilldowns_data = [];
+        var path_length_sum = 0;
+        $.each(testblock_metrics, function(index, value) {
+            var metric_name = index;
+            var metric_values = value;
+            if (metric_name.contains("path_length")) {
+                path_lengths_drilldowns_data.push([metric_name.split("path_length ")[1], metric_values]);
+                path_length_sum += metric_values;
+            }
+        });
+        if (path_lengths_drilldowns_data.length != 0) {
+            path_lengths_drilldowns.push({
+                'name': testblock_name,
+                'id': testblock_name,
+                'data': path_lengths_drilldowns_data
+            });
+            path_lengths.push({
+                'name': testblock_name,
+                'y': path_length_sum,
+                'drilldown': testblock_name
+            });
+        }
+
+        console.log(path_lengths);
+
+        if (testblock_metrics.hasOwnProperty("time")) {
+            times.push({
+                'name': testblock_name,
+                'y': testblock_metrics["time"]
+            });
+        }
+    });
+
+    if (path_lengths.length != 0) {
+        path_length_div.show();
+        $('#path_length').highcharts({
+            chart: {
+                type: 'column'
+            },
             title: {
-                text: 'Average consumption [%]'
+                text: 'Path length'
+            },
+            subtitle: {
+                text: 'Click the columns to view path lengths</a>.'
+            },
+            xAxis: {
+                type: 'category'
+            },
+            yAxis: {
+                title: {
+                    text: 'Path length'
+                }
+            },
+            legend: {
+                enabled: false
+            },
+            plotOptions: {
+                series: {
+                    borderWidth: 0,
+                    dataLabels: {
+                        enabled: true,
+                        format: '{point.y}m'
+                    }
+                }
+            },
+            tooltip: {
+                headerFormat: '<span style="font-size:11px">{series.name}</span><br>',
+                pointFormat: '<span style="color:{point.color}">{point.name}</span>: <b>{point.y}m</b> of total<br/>'
+            },
+            series: [{
+                name: "Path lengths",
+                colorByPoint: true,
+                data: path_lengths
+            }],
+            drilldown: {
+                series: path_lengths_drilldowns
             }
-        },
-        tooltip: {
-            formatter: function () {
-                var o = this.point.options;
-
-                return '<b>' + this.series.name + '</b><br>' +
-                    'Average: ' + this.y + '<br>' +
-                    'Min: ' + o.min + '<br>' +
-                    'Max: ' + o.max + '<br>';
-            }
-        },
-        series: [{
-            name: 'move_group',
-            data: [{
-                x: 1,
-                y: 99.94,
-                min: 8.0,
-                max: 111.4
-            }]
-        }, {
-            name: 'rostest',
-            data: [{
-                x: 1,
-                y: 80.01,
-                min: 20.0,
-                max: 120.43
-            }]
-        }, {
-            name: 'security',
-            data: [{
-                x: 1,
-                y: 50.03,
-                min: 2.05,
-                max: 98.44
-            }]
-        }]
-    });
-
-    $('#res_mem').highcharts({
-        chart: {
-            type: 'column',
-            zoomType: 'xy'
-        },
-        title: {
-            text: 'Memory'
-        },
-        yAxis: {
+        });
+    }
+    if (times.length != 0) {
+        time_div.show();
+        $('#time').highcharts({
+            chart: {
+                plotBackgroundColor: null,
+                plotBorderWidth: null,
+                plotShadow: false,
+                type: 'pie'
+            },
             title: {
-                text: 'Average consumption [%]'
-            }
-        },
-        tooltip: {
-            formatter: function () {
-                var o = this.point.options;
-
-                return '<b>' + this.series.name + '</b><br>' +
-                    'Average: ' + this.y + '<br>' +
-                    'Min: ' + o.min + '<br>' +
-                    'Max: ' + o.max + '<br>';
-            }
-        },
-        series: [{
-            name: 'move_group',
-            data: [{
-                x: 1,
-                y: 99.94,
-                min: 8.0,
-                max: 111.4
+                text: 'Time'
+            },
+            tooltip: {
+                pointFormat: '{series.name}: <b>{point.y}s</b>'
+            },
+            plotOptions: {
+                pie: {
+                    allowPointSelect: true,
+                    cursor: 'pointer',
+                    dataLabels: {
+                        enabled: true,
+                        format: '<b>{point.name}</b>: {point.y}s',
+                        style: {
+                            color: 'black'
+                        }
+                    }
+                }
+            },
+            series: [{
+                name: "Time",
+                colorByPoint: true,
+                data: times
             }]
-        }, {
-            name: 'rostest',
-            data: [{
-                x: 1,
-                y: 80.01,
-                min: 20.0,
-                max: 120.43
-            }]
-        }, {
-            name: 'security',
-            data: [{
-                x: 1,
-                y: 50.03,
-                min: 2.05,
-                max: 98.44
-            }]
-        }]
-    });
-    $('#res_io').highcharts({
-        chart: {
-            type: 'column',
-            zoomType: 'xy'
-        },
-        title: {
-            text: 'Disk IO operations'
-        },
-        xAxis: {
-            categories: ['Read count', 'Write count', 'Bytes read', 'Bytes wrote']
-        },
-        tooltip: {
-            formatter: function () {
-                var o = this.point.options;
-
-                return '<b>' + this.series.name + '</b><br>' +
-                    'Average: ' + this.y + '<br>' +
-                    'Min: ' + o.min + '<br>' +
-                    'Max: ' + o.max + '<br>';
-            }
-        },
-        series: [{
-            name: 'move_group',
-            data: [{
-                x: 0,
-                y: 99.94,
-                min: 8.0,
-                max: 111.4
-            }, {
-                x: 1,
-                y: 99.94,
-                min: 8.0,
-                max: 111.4
-            }, {
-                x: 2,
-                y: 99.94,
-                min: 8.0,
-                max: 111.4
-            }, {
-                x: 3,
-                y: 99.94,
-                min: 8.0,
-                max: 111.4
-            }]
-        }, {
-            name: 'rostest',
-            data: [{
-                x: 0,
-                y: 80.01,
-                min: 20.0,
-                max: 120.43
-            }, {
-                x: 1,
-                y: 80.01,
-                min: 20.0,
-                max: 120.43
-            }, {
-                x: 2,
-                y: 80.01,
-                min: 20.0,
-                max: 120.43
-            }, {
-                x: 3,
-                y: 80.01,
-                min: 20.0,
-                max: 120.43
-            }]
-        }, {
-            name: 'security',
-            data: [{
-                x: 0,
-                y: 50.03,
-                min: 2.05,
-                max: 98.44
-            }, {
-                x: 1,
-                y: 50.03,
-                min: 2.05,
-                max: 98.44
-            }, {
-                x: 2,
-                y: 50.03,
-                min: 2.05,
-                max: 98.44
-            }, {
-                x: 3,
-                y: 50.03,
-                min: 2.05,
-                max: 98.44
-            }]
-        }]
-    });
-    $('#res_network').highcharts({
-        chart: {
-            type: 'column',
-            zoomType: 'xy'
-        },
-        title: {
-            text: 'Network traffic'
-        },
-        xAxis: {
-            categories: ['Bytes sent', 'Bytes received', 'Packets sent', 'Packets received', 'Errors received', 'Errors sent', 'Packets dropped: Received', 'Packets dropped: Sent']
-        },
-        tooltip: {
-            formatter: function () {
-                var o = this.point.options;
-
-                return '<b>' + this.series.name + '</b><br>' +
-                    'Average: ' + this.y + '<br>' +
-                    'Min: ' + o.min + '<br>' +
-                    'Max: ' + o.max + '<br>';
-            }
-        },
-        series: [{
-            name: 'move_group',
-            data: [{
-                x: 0,
-                y: 99.94,
-                min: 8.0,
-                max: 111.4
-            }, {
-                x: 1,
-                y: 99.94,
-                min: 8.0,
-                max: 111.4
-            }, {
-                x: 2,
-                y: 99.94,
-                min: 8.0,
-                max: 111.4
-            }, {
-                x: 3,
-                y: 99.94,
-                min: 8.0,
-                max: 111.4
-            }, {
-                x: 4,
-                y: 99.94,
-                min: 8.0,
-                max: 111.4
-            }, {
-                x: 5,
-                y: 99.94,
-                min: 8.0,
-                max: 111.4
-            }, {
-                x: 6,
-                y: 99.94,
-                min: 8.0,
-                max: 111.4
-            }, {
-                x: 7,
-                y: 99.94,
-                min: 8.0,
-                max: 111.4
-            }, {
-                x: 8,
-                y: 99.94,
-                min: 8.0,
-                max: 111.4
-            }]
-        }, {
-            name: 'rostest',
-            data: [{
-                x: 0,
-                y: 99.94,
-                min: 8.0,
-                max: 111.4
-            }, {
-                x: 1,
-                y: 99.94,
-                min: 8.0,
-                max: 111.4
-            }, {
-                x: 2,
-                y: 99.94,
-                min: 8.0,
-                max: 111.4
-            }, {
-                x: 3,
-                y: 99.94,
-                min: 8.0,
-                max: 111.4
-            }, {
-                x: 4,
-                y: 99.94,
-                min: 8.0,
-                max: 111.4
-            }, {
-                x: 5,
-                y: 99.94,
-                min: 8.0,
-                max: 111.4
-            }, {
-                x: 6,
-                y: 99.94,
-                min: 8.0,
-                max: 111.4
-            }, {
-                x: 7,
-                y: 99.94,
-                min: 8.0,
-                max: 111.4
-            }, {
-                x: 8,
-                y: 99.94,
-                min: 8.0,
-                max: 111.4
-            }]
-        }, {
-            name: 'security',
-            data: [{
-                x: 0,
-                y: 99.94,
-                min: 8.0,
-                max: 111.4
-            }, {
-                x: 1,
-                y: 99.94,
-                min: 8.0,
-                max: 111.4
-            }, {
-                x: 2,
-                y: 99.94,
-                min: 8.0,
-                max: 111.4
-            }, {
-                x: 3,
-                y: 99.94,
-                min: 8.0,
-                max: 111.4
-            }, {
-                x: 4,
-                y: 99.94,
-                min: 8.0,
-                max: 111.4
-            }, {
-                x: 5,
-                y: 99.94,
-                min: 8.0,
-                max: 111.4
-            }, {
-                x: 6,
-                y: 99.94,
-                min: 8.0,
-                max: 111.4
-            }, {
-                x: 7,
-                y: 99.94,
-                min: 8.0,
-                max: 111.4
-            }, {
-                x: 8,
-                y: 99.94,
-                min: 8.0,
-                max: 111.4
-            }]
-        }]
-    });
-
-    $('#time').highcharts({
-        chart: {
-            plotBackgroundColor: null,
-            plotBorderWidth: null,
-            plotShadow: false,
-            type: 'pie'
-        },
-        title: {
-            text: 'Time'
-        },
-        tooltip: {
-            formatter: function () {
-                var o = this.point.options;
-
-                return '<b>' + this.series.name + '</b><br>' +
-                    'Time: ' + this.y;
-            }
-        },
-        plotOptions: {
-            pie: {
-                allowPointSelect: true,
-                cursor: 'pointer',
-                dataLabels: {
-                    enabled: false
-                },
-                showInLegend: true
-            }
-        },
-        series: [{
-            name: "Time",
-            colorByPoint: true,
-            data: [{
-                name: "execution_1",
-                y: 9.272
-            }, {
-                name: "execution_2",
-                y: 64.581,
-                sliced: true,
-                selected: true
-            }, {
-                name: "execution_3",
-                y: 10.916
-            }, {
-                name: "execution_all",
-                y: 106.139
-            }, {
-                name: "planning_1",
-                y: 4.413
-            }, {
-                name: "planning_2",
-                y: 17.329
-            }, {
-                name: "planning_3",
-                y: 3.458
-            }, {
-                name: "planning_all",
-                y: 99.581
-            }]
-        }]
-    });
+        })
+    }
 }
 
 $(document).ready( function() {

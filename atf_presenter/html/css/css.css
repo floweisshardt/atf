@@ -4,7 +4,17 @@
 #test_list_content {
     display: none;
 }
+#resources {
+    display: none;
+}
+#path_length {
+    display: none;
+}
+#time {
+    display: none;
+}
 .plot {
     width: 800px;
+    min-width: 310px;
     height: 300px;
 }
