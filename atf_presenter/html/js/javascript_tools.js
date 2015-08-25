@@ -18,20 +18,21 @@ function drawTestList() {
     var test_list_div = $('#test_list_content').find('#test_list');
     test_list_div.empty();
 
-    var number = 1;
     var upload_status;
 
-    test_list.forEach(function(test_data) {
-        var test_name = Object.keys(test_data)[0];
+    $.each(test_list, function(index, values) {
+        var number = index + 1;
+        var test_data = values;
+        var test_name = Object.keys(values)[0];
         var test_name_full = test_name.split("_");
+
         if (!getDataFromStorage(test_name)) {
             upload_status = '<span class="glyphicon glyphicon-alert" aria-hidden="true"></span><span class="sr-only">Error: </span> File not found!';
-            test_list_div.append('<tr class="danger"><td>' + (number) + '</td><td>' + test_name + '</td><td>Testsuite ' + test_name_full[0].replace(/^\D+/g, '') + '</td><td>Test ' + test_name_full[1].replace(/^\D+/g, "") + '</td><td>' + test_data[test_name]["test_config"] + '</td><td>' + upload_status + '</td><td><button type="button" class="btn btn-default" data-target="#test_detail" data-toggle="modal" data-name="' + test_name + '" disabled>Details</button></td>');
+            test_list_div.append('<tr class="danger"><td>' + (number) + '</td><td>' + test_name + '</td><td>Testsuite ' + test_name_full[0].replace(/^\D+/g, '') + '</td><td>Test ' + test_name_full[1].replace(/^\D+/g, "") + '</td><td>' + test_data[test_name]["test_config"] + '</td><td>' + upload_status + '</td><td><button type="button" class="btn btn-default" data-target="#test_detail" data-toggle="modal" data-name="' + test_name + '" disabled="disabled">Details</button></td>');
         } else {
             upload_status = '<span class="glyphicon glyphicon-ok" aria-hidden="true"></span><span class="sr-only">No error:</span> No errors!';
             test_list_div.append('<tr><td>' + (number) + '</td><td>' + test_name + '</td><td>Testsuite ' + test_name_full[0].replace(/^\D+/g, '') + '</td><td>Test ' + test_name_full[1].replace(/^\D+/g, "") + '</td><td>' + test_data[test_name]["test_config"] + '</td><td>' + upload_status + '</td><td><button type="button" class="btn btn-default" data-target="#test_detail" data-toggle="modal" data-name="' + test_name + '">Details</button></td>');
         }
-        number++;
     });
 }
 
@@ -236,6 +237,11 @@ function drawTestDetails(test_name) {
                             text: 'Average consumption [%]'
                         }
                     },
+                    xAxis: {
+                        labels: {
+                            enabled: false
+                        }
+                    },
                     tooltip: plot_tooltip,
                     series: cpu_nodes
                 });
@@ -254,6 +260,11 @@ function drawTestDetails(test_name) {
                     yAxis: {
                         title: {
                             text: 'Average consumption [%]'
+                        }
+                    },
+                    xAxis: {
+                        labels: {
+                            enabled: false
                         }
                     },
                     tooltip: plot_tooltip,
@@ -420,7 +431,7 @@ $(document).ready( function() {
         clearStorage();
 
         for (var x = 0; x <= (labels.length-1); x++) {
-            if (x === (labels.length-1)) {
+            if (x == (labels.length-1)) {
                 getJSON("./data/", labels[x], drawTestList);
             } else {
                 getJSON("./data/", labels[x]);
@@ -429,7 +440,7 @@ $(document).ready( function() {
         $('#test_list_content').show();
     });
 
-    if (getDataFromStorage("test_list") != null) {
+    if (getDataFromStorage("test_list")) {
         drawTestList();
         $('#test_list_content').show();
     }
