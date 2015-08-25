@@ -1,20 +1,7 @@
-#test_detail .modal-body {
-
-}
-#test_list_content {
-    display: none;
-}
-#resources {
-    display: none;
-}
-#path_length {
-    display: none;
-}
-#time {
+#test_list_content, #resources, #path_length, #time {
     display: none;
 }
 .plot {
-    width: 800px;
-    min-width: 310px;
+    width: auto;
     height: 300px;
 }
