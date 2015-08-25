@@ -17,6 +17,9 @@
     <!-- Custom styles for this template -->
     <link type="text/css" href="css/dashboard.css" rel="stylesheet">
 
+    <!-- CSS for bootstrap table -->
+    <link type="text/css" href="css/bootstrap-table.min.css" rel="stylesheet">
+
     <!-- Custom CSS -->
     <link type="text/css" href="css/css.css" rel="stylesheet">
 
@@ -56,8 +59,8 @@
                 <div class="row placeholders"></div>
                 <div id="test_list_content">
                     <h2 class="sub-header">Overview</h2>
-                    <div class="table-responsive">
-                        <table class="table table-hover table-striped table-condensed">
+
+                        <table data-toggle="table">
                             <thead>
                             <tr>
                                 <th>#</th>
@@ -65,13 +68,14 @@
                                 <th>Testsuite</th>
                                 <th>Test</th>
                                 <th>Test Config</th>
+                                <th>Robot</th>
                                 <th>Upload Status</th>
                                 <th>Details</th>
                             </tr>
                             </thead>
                             <tbody id="test_list"></tbody>
                         </table>
-                    </div>
+
                 </div>
             </div>
         </div>
@@ -121,6 +125,8 @@
 <script type="text/javascript" src="js/highcharts.js"></script>
 <script type="text/javascript" src="js/data.js"></script>
 <script type="text/javascript" src="js/drilldown.js"></script>
+<script type="text/javascript" src="js/bootstrap-table.min.js"></script>
+<script type="text/javascript" src="js/bootstrap-table-de-DE.min.js"></script>
 
 <!-- IE10 viewport hack for Surface/desktop Windows 8 bug -->
 <script type="text/javascript" src="js/ie10-viewport-bug-workaround.js"></script>
