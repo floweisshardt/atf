@@ -1,3 +1,7 @@
+function round(number, decimals) {
+    return +(Math.round(number + "e+" + decimals) + "e-" + decimals);
+}
+
 function getData(folder, files) {
     var list = [];
     for (var x = 0; x < files.length; x++) {
@@ -34,21 +38,26 @@ function drawTestList() {
     var test_list_div = $('#test_list_content').find('#test_list');
     test_list_div.empty();
 
-    var upload_status;
-
     $.each(test_list, function(index, values) {
         var number = index + 1;
         var test_data = values;
         var test_name = Object.keys(values)[0];
         var test_name_full = test_name.split("_");
+        var upload_status;
+        var table_row_error;
+        var button_disabled;
 
         if (!getDataFromStorage(test_name)) {
             upload_status = '<span class="glyphicon glyphicon-alert" aria-hidden="true"></span><span class="sr-only">Error: </span> File not found!';
-            test_list_div.append('<tr class="danger"><td>' + (number) + '</td><td>' + test_name + '</td><td>Testsuite ' + test_name_full[0].replace(/^\D+/g, '') + '</td><td>Test ' + test_name_full[1].replace(/^\D+/g, "") + '</td><td>' + test_data[test_name]["test_config"] + '</td><td>' + test_data[test_name]["robot"] + '</td><td>' + upload_status + '</td><td><button type="button" class="btn btn-default" data-target="#test_detail" data-toggle="modal" data-name="' + test_name + '" disabled="disabled">Details</button></td>');
+            table_row_error = '<tr class="danger">';
+            button_disabled = ' disabled="disabled"';
         } else {
             upload_status = '<span class="glyphicon glyphicon-ok" aria-hidden="true"></span><span class="sr-only">No error:</span> No errors!';
-            test_list_div.append('<tr><td>' + (number) + '</td><td>' + test_name + '</td><td>Testsuite ' + test_name_full[0].replace(/^\D+/g, '') + '</td><td>Test ' + test_name_full[1].replace(/^\D+/g, "") + '</td><td>' + test_data[test_name]["test_config"] + '</td><td>' + test_data[test_name]["robot"] + '</td><td>' + upload_status + '</td><td><button type="button" class="btn btn-default" data-target="#test_detail" data-toggle="modal" data-name="' + test_name + '">Details</button></td>');
+            table_row_error = '<tr>';
+            button_disabled = '';
         }
+        test_list_div.append(table_row_error + '<td><div class="checkbox-inline"><label><input type="checkbox" value=""' + button_disabled + '></label></div></td><td>' + (number) + '</td><td>' + test_name + '</td><td>Testsuite ' + test_name_full[0].replace(/^\D+/g, '') + '</td><td>Test ' + test_name_full[1].replace(/^\D+/g, "") + '</td><td>' + test_data[test_name]["test_config"] + '</td><td>' + test_data[test_name]["robot"] + '</td><td>' + upload_status + '</td><td><button type="button" class="btn btn-default" data-target="#test_detail" data-toggle="modal" data-name="' + test_name + '"' + button_disabled + '>Details</button></td>');
+
     });
 }
 
@@ -325,14 +334,16 @@ function drawTestDetails(test_name) {
 
         var path_lengths_drilldowns_data = [];
         var path_length_sum = 0;
-        $.each(testblock_metrics, function(index, value) {
-            var metric_name = index;
-            var metric_values = value;
-            if (metric_name.contains("path_length")) {
-                path_lengths_drilldowns_data.push([metric_name.split("path_length ")[1], metric_values]);
-                path_length_sum += metric_values;
-            }
-        });
+        if (!(typeof testblock_metrics === 'string' || testblock_metrics instanceof String)) {
+            $.each(testblock_metrics, function (index, value) {
+                var metric_name = index;
+                var metric_values = value;
+                if (metric_name.contains("path_length")) {
+                    path_lengths_drilldowns_data.push([metric_name.split("path_length ")[1], metric_values]);
+                    path_length_sum += metric_values;
+                }
+            });
+        }
         if (path_lengths_drilldowns_data.length != 0) {
             path_lengths_drilldowns.push({
                 'name': testblock_name,
@@ -341,7 +352,7 @@ function drawTestDetails(test_name) {
             });
             path_lengths.push({
                 'name': testblock_name,
-                'y': path_length_sum,
+                'y': round(path_length_sum, 3),
                 'drilldown': testblock_name
             });
         }

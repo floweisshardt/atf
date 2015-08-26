@@ -6,3 +6,10 @@
     max-width: 800px;
     height: 300px;
 }
+input[type="radio"], input[type="checkbox"], .table th input[type="checkbox"] {
+    line-height: normal;
+    margin-top: -7px;
+}
+.table > tbody > tr > td, .table > thead > tr > th {
+    vertical-align: middle;
+}
