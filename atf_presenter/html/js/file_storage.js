@@ -1,6 +1,6 @@
 function writeDataToStorage(name, data) {
     if (!name || !data) {
-        return;
+        return false;
     }
 
     if (typeof data === "object") {
@@ -8,6 +8,8 @@ function writeDataToStorage(name, data) {
     }
     sessionStorage.removeItem(name);
     sessionStorage.setItem(name, data);
+
+    return true;
 }
 
 function getDataFromStorage(name) {

@@ -1,16 +1,32 @@
-function getJSON(folder, filename, callback) {
-    $.getJSON(folder + filename + ".json")
-        .done(function(json) {
+function getData(folder, files) {
+    var list = [];
+    for (var x = 0; x < files.length; x++) {
+        var filename = files[x];
+        list.push($.getJSON(folder + filename + ".json")
+            .done(onJSONSuccess(filename))
+            .fail(function (jqxhr, textStatus, error) {
+                var err = textStatus + ", " + error;
+                console.log("Request failed: " + err);
+            }));
+    }
+    $.when.all(list).done(function() {
+        showTestList();
+    });
+}
+
+function onJSONSuccess(filename) {
+    return function(data) {
+        if (!writeDataToStorage(filename, data)) {
+            console.log("Writing to storage failed!");
+        } else {
             console.log("Request suceeded");
-            writeDataToStorage(filename, json);
-            if(callback) {
-                callback();
-            }
-        })
-        .fail(function(jqxhr, textStatus, error) {
-            var err = textStatus + ", " + error;
-            console.log("Request failed: " + err);
-        });
+        }
+    };
+}
+
+function showTestList() {
+    drawTestList();
+    $('#test_list_content').show();
 }
 
 function drawTestList() {
@@ -429,19 +445,28 @@ function drawTestDetails(test_name) {
 $(document).ready( function() {
     $('.btn-file :file').on('fileselect', function(event, numFiles, labels) {
         clearStorage();
-
-        for (var x = 0; x <= (labels.length-1); x++) {
-            if (x == (labels.length-1)) {
-                getJSON("./data/", labels[x], drawTestList);
-            } else {
-                getJSON("./data/", labels[x]);
-            }
-        }
-        $('#test_list_content').show();
+        getData("./data/", labels);
     });
 
     if (getDataFromStorage("test_list")) {
-        drawTestList();
-        $('#test_list_content').show();
+        showTestList();
+    }
+
+    // Extending jQuery.when
+    if (jQuery.when.all === undefined) {
+        jQuery.when.all = function(deferreds) {
+            var deferred = new jQuery.Deferred();
+
+            $.when.apply(jQuery, deferreds).then(
+                function() {
+                    deferred.resolve(Array.prototype.slice.call(arguments));
+                },
+                function() {
+                    deferred.fail(Array.prototype.slice.call(arguments));
+                }
+            );
+
+            return deferred;
+        }
     }
 });
