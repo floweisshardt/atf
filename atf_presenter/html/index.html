@@ -5,11 +5,11 @@
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="description" content="Website for evaluation manipulation tests.">
+    <meta name="description" content="Website for evaluating manipulation tests.">
     <meta name="author" content="Florian Koehler (florian.koehler@ipa.fraunhofer.de)">
     <link rel="icon" type="image/vnd.microsoft.icon" href="favicon.ico">
 
-    <title>ATF Dashboard</title>
+    <title>ATF Evaluation</title>
 
     <!-- Bootstrap core CSS -->
     <link type="text/css" href="css/bootstrap.min.css" rel="stylesheet">
@@ -49,7 +49,7 @@
                 <h2 class="sub-header">Upload files</h2>
                 <div>
                     <p>Select all test files (.json) which are listed in the "test_list.json" file and the "test_list.json" itself.</p>
-                    <div class="btn btn-default btn-file">
+                    <div class="btn btn-primary btn-file">
                         Browse <input type="file" multiple>
                     </div>
                 </div>
@@ -59,17 +59,17 @@
                     <div class="table-responsive">
                         <table class="table table-hover table-striped table-condensed">
                             <thead>
-                            <tr>
-                                <th><div class="checkbox-inline"><label><input type="checkbox" value=""></label></div></th>
-                                <th>#</th>
-                                <th>Name</th>
-                                <th>Testsuite</th>
-                                <th>Test</th>
-                                <th>Test Config</th>
-                                <th>Robot</th>
-                                <th>Upload Status</th>
-                                <th>Details</th>
-                            </tr>
+                                <tr>
+                                    <th></th>
+                                    <th>#</th>
+                                    <th>Name</th>
+                                    <th>Testsuite</th>
+                                    <th>Test</th>
+                                    <th>Test Config</th>
+                                    <th>Robot</th>
+                                    <th>Upload Status</th>
+                                    <th>Details</th>
+                                </tr>
                             </thead>
                             <tbody id="test_list"></tbody>
                         </table>
@@ -82,14 +82,14 @@
 
 <!-- Detail Popup -->
 <div id="test_detail" class="modal fade" role="dialog">
-    <div class="modal-dialog modal-lg">
-
-        <!-- Content-->
+    <div class="modal-dialog modal-lg" role="document">
         <div class="modal-content">
+            <!-- HEADER -->
             <div class="modal-header">
                 <button type="button" class="close" data-dismiss="modal">&times;</button>
                 <h4 class="modal-title"></h4>
             </div>
+            <!-- BODY -->
             <div class="modal-body">
                 <h2>Configuration</h2>
                 <hr class="divider">
@@ -105,12 +105,13 @@
                     <div class="tab-content"></div>
                     <hr class="divider">
                 </div>
+                <div id="path_length" class="plot"></div>
+                <div id="time" class="plot"></div>
             </div>
-            <div id="path_length" class="plot"></div>
-            <div id="time" class="plot"></div>
-        </div>
-        <div class="modal-footer">
-            <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+            <!-- FOOTER -->
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" data-dismiss="modal">Close</button>
+            </div>
         </div>
     </div>
 </div>
