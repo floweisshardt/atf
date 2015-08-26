@@ -54,6 +54,14 @@
                     </div>
                 </div>
                 <div class="row placeholders"></div>
+                <h2 class="sub-header">Compare tests</h2>
+                <div>
+                    <p>Select the tests you want to compare via the checkboxes and click the button.</p>
+                    <button id="button_compare" type="button" class="btn btn-primary" data-target="#compare_tests" data-toggle="modal" disabled="disabled">
+                        Compare tests
+                    </button>
+                </div>
+                <div class="row placeholders"></div>
                 <div id="test_list_content">
                     <h2 class="sub-header">Overview</h2>
                     <div class="table-responsive">
@@ -116,13 +124,33 @@
     </div>
 </div>
 
+<!-- Compare Popup -->
+<div id="compare_tests" class="modal fade" role="dialog">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <!-- HEADER -->
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal">&times;</button>
+                <h4 class="modal-title"></h4>
+            </div>
+            <!-- BODY -->
+            <div class="modal-body">
+
+            </div>
+            <!-- FOOTER -->
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Bootstrap core JavaScript
 ================================================== -->
 <!-- Placed at the end of the document so the pages load faster -->
 <script type="text/javascript" src="js/jquery-1.11.3.min.js"></script>
 <script type="text/javascript" src="js/bootstrap.min.js"></script>
 <script type="text/javascript" src="js/highcharts.js"></script>
-<script type="text/javascript" src="js/data.js"></script>
 <script type="text/javascript" src="js/drilldown.js"></script>
 
 <!-- IE10 viewport hack for Surface/desktop Windows 8 bug -->

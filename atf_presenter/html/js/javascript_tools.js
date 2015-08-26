@@ -56,7 +56,7 @@ function drawTestList() {
             table_row_error = '<tr>';
             button_disabled = '';
         }
-        test_list_div.append(table_row_error + '<td><div class="checkbox-inline"><label><input type="checkbox" value=""' + button_disabled + '></label></div></td><td>' + (number) + '</td><td>' + test_name + '</td><td>Testsuite ' + test_name_full[0].replace(/^\D+/g, '') + '</td><td>Test ' + test_name_full[1].replace(/^\D+/g, "") + '</td><td>' + test_data[test_name]["test_config"] + '</td><td>' + test_data[test_name]["robot"] + '</td><td>' + upload_status + '</td><td><button type="button" class="btn btn-default" data-target="#test_detail" data-toggle="modal" data-name="' + test_name + '"' + button_disabled + '>Details</button></td>');
+        test_list_div.append(table_row_error + '<td><div class="checkbox-inline"><label><input type="checkbox" value="' + test_name + '"' + button_disabled + '></label></div></td><td>' + (number) + '</td><td>' + test_name + '</td><td>Testsuite ' + test_name_full[0].replace(/^\D+/g, '') + '</td><td>Test ' + test_name_full[1].replace(/^\D+/g, "") + '</td><td class="test_config">' + test_data[test_name]["test_config"] + '</td><td class="robot_name">' + test_data[test_name]["robot"] + '</td><td>' + upload_status + '</td><td><button id="button_detail" type="button" class="btn btn-primary" data-target="#test_detail" data-toggle="modal" data-name="' + test_name + '"' + button_disabled + '>Details</button></td>');
 
     });
 }
@@ -453,31 +453,8 @@ function drawTestDetails(test_name) {
     }
 }
 
-$(document).ready( function() {
-    $('.btn-file :file').on('fileselect', function(event, numFiles, labels) {
-        clearStorage();
-        getData("./data/", labels);
-    });
+function compareTests(tests) {
+    console.log(tests);
 
-    if (getDataFromStorage("test_list")) {
-        showTestList();
-    }
-
-    // Extending jQuery.when
-    if (jQuery.when.all === undefined) {
-        jQuery.when.all = function(deferreds) {
-            var deferred = new jQuery.Deferred();
-
-            $.when.apply(jQuery, deferreds).then(
-                function() {
-                    deferred.resolve(Array.prototype.slice.call(arguments));
-                },
-                function() {
-                    deferred.fail(Array.prototype.slice.call(arguments));
-                }
-            );
-
-            return deferred;
-        }
-    }
-});
+    $('#button_compare').prop("disabled", true);
+}
