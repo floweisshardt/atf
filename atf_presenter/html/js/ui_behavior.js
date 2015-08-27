@@ -64,9 +64,10 @@ $('.nav-tabs').on("click", "a", function(e) {
 $('.table').find('#test_list').on("click", "input", function() {
     if ($(this).is(":checked")) {
         var test_config = $(this).parent().parent().parent().parent().find('.test_config').html();
+        var scene_config = $(this).parent().parent().parent().parent().find('.scene_config').html();
         $('.table').find('#test_list .test_config').each(function() {
             if ($(this).parent().find('#button_detail').prop("disabled") == false) {
-                if ($(this).html() != test_config) {
+                if ($(this).html() != test_config || $(this).parent().find('.scene_config').html() != scene_config) {
                     $(this).parent().addClass('danger');
                     $(this).parent().find('input').prop("disabled", true);
                 } else {

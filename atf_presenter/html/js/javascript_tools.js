@@ -20,12 +20,25 @@ function getData(folder, files) {
 
 function onJSONSuccess(filename) {
     return function(data) {
+        if (filename.contains("test_list")) {
+            data = convertTestList(data);
+        }
         if (!writeDataToStorage(filename, data)) {
             console.log("Writing to storage failed!");
         } else {
             console.log("Request suceeded");
         }
     };
+}
+
+function convertTestList(test_list) {
+    var new_test_list = {};
+    $.each(test_list, function(index, values) {
+        $.each(values, function(index, values) {
+           new_test_list[index] = values;
+        });
+    });
+    return new_test_list;
 }
 
 function showTestList() {
@@ -38,10 +51,8 @@ function drawTestList() {
     var test_list_div = $('#test_list_content').find('#test_list');
     test_list_div.empty();
 
-    $.each(test_list, function(index, values) {
-        var number = index + 1;
-        var test_data = values;
-        var test_name = Object.keys(values)[0];
+    var number = 1;
+    $.each(test_list, function(test_name, test_data) {
         var test_name_full = test_name.split("_");
         var upload_status;
         var table_row_error;
@@ -56,13 +67,14 @@ function drawTestList() {
             table_row_error = '<tr>';
             button_disabled = '';
         }
-        test_list_div.append(table_row_error + '<td><div class="checkbox-inline"><label><input type="checkbox" value="' + test_name + '"' + button_disabled + '></label></div></td><td>' + (number) + '</td><td>' + test_name + '</td><td>Testsuite ' + test_name_full[0].replace(/^\D+/g, '') + '</td><td>Test ' + test_name_full[1].replace(/^\D+/g, "") + '</td><td class="test_config">' + test_data[test_name]["test_config"] + '</td><td class="robot_name">' + test_data[test_name]["robot"] + '</td><td>' + upload_status + '</td><td><button id="button_detail" type="button" class="btn btn-primary" data-target="#test_detail" data-toggle="modal" data-name="' + test_name + '"' + button_disabled + '>Details</button></td>');
+        test_list_div.append(table_row_error + '<td><div class="checkbox-inline"><label><input type="checkbox" value="' + test_name + '"' + button_disabled + '></label></div></td><td>' + number + '</td><td>' + test_name + '</td><td>Testsuite ' + test_name_full[0].replace(/^\D+/g, '') + '</td><td>Test ' + test_name_full[1].replace(/^\D+/g, "") + '</td><td class="test_config">' + test_data["test_config"] + '</td><td class="scene_config">' + test_data["scene_config"] + '</td><td class="robot_name">' + test_data["robot"] + '</td><td>' + upload_status + '</td><td><button id="button_detail" type="button" class="btn btn-primary" data-target="#detail_test" data-toggle="modal" data-name="' + test_name + '"' + button_disabled + '>Details</button></td>');
 
+        number++;
     });
 }
 
 function drawTestDetails(test_name) {
-    var test_detail = $('#test_detail');
+    var test_detail = $('#detail_test');
     var test_name_split = test_name.split("_");
     test_detail.find('.modal-title').html("Details Testsuite " + test_name_split[0].replace(/^\D+/g, "") + " - Test " + test_name_split[1].replace(/^\D+/g, ""));
 
@@ -71,22 +83,29 @@ function drawTestDetails(test_name) {
 
     // Get test list
     var test_list = getDataFromStorage("test_list");
-    var test_data = JSON;
-    test_list.forEach(function(data) {
-       if (Object.keys(data)[0] === test_name) {
-           test_data = data;
-           return false;
+    var test_data = {};
+
+    $.each(test_list, function(index, values) {
+       if (index === test_name) {
+           test_data = values;
        }
     });
 
-    var resources_div = test_detail.find('#resources');
-    var path_length_div = test_detail.find('#path_length');
-    var time_div = test_detail.find('#time');
-    var status_div = test_detail.find('#status');
+    var configuration_div = test_detail.find('#detail_configuration');
+    var status_div = test_detail.find('#detail_status');
 
-    resources_div.hide();
-    time_div.hide();
-    path_length_div.hide();
+    var resources_div = test_detail.find('#detail_resources');
+    var resources_panel = test_detail.find('#panel_detail_resources');
+
+    var path_length_div = test_detail.find('#detail_path_length');
+    var path_length_panel = test_detail.find('#panel_detail_path_length');
+
+    var time_div = test_detail.find('#detail_time');
+    var time_panel = test_detail.find('#panel_detail_time');
+
+    resources_panel.hide();
+    path_length_panel.hide();
+    time_panel.hide();
 
     var first_entry = true;
     var error = false;
@@ -106,19 +125,16 @@ function drawTestDetails(test_name) {
     var path_lengths_drilldowns = [];
     var times = [];
 
-    var configuration_div = test_detail.find('#configuration');
     configuration_div.empty();
-    configuration_div.append('<li>Scene config: ' + test_data[test_name]["scene_config"] + '</li>');
-    configuration_div.append('<li>Test config: ' + test_data[test_name]["test_config"] + '</li>');
-    configuration_div.append('<li>Robot: ' + test_data[test_name]["robot"] + '</li>');
-    configuration_div.append('<li>Planer ID: ' + test_data[test_name]["planer_id"] + '</li>');
-    configuration_div.append('<li>Planning Method: ' + test_data[test_name]["planning_method"] + '</li>');
-    configuration_div.append('<li>Jump threshold: ' + test_data[test_name]["jump_threshold"] + '</li>');
-    configuration_div.append('<li>EEF_step: ' + test_data[test_name]["eef_step"] + '</li>');
+    configuration_div.append('<li><b>Scene config:</b> ' + test_data["scene_config"] + '</li>' +
+        '<li><b>Test config:</b> ' + test_data["test_config"] + '</li>' +
+        '<li><b>Robot:</b> ' + test_data["robot"] + '</li>' +
+        '<li><b>Planer ID:</b> ' + test_data["planer_id"] + '</li>' +
+        '<li><b>Planning Method:</b> ' + test_data["planning_method"] + '</li>' +
+        '<li><b>Jump threshold:</b> ' + test_data["jump_threshold"] + '</li>' +
+        '<li><b>EEF_step:</b> ' + test_data["eef_step"] + '</li>');
 
-    $.each(test_results, function(index, value) {
-        var testblock_name = index;
-        var testblock_metrics = value;
+    $.each(test_results, function(testblock_name, testblock_metrics) {
 
         if (testblock_metrics.hasOwnProperty("status") && testblock_metrics["status"] === "error") {
             status_div.empty();
@@ -131,25 +147,25 @@ function drawTestDetails(test_name) {
         }
 
         if (testblock_metrics.hasOwnProperty("resources")) {
+            var active_class;
             if (first_entry) {
                 resources_div.find('.nav-tabs').empty();
                 resources_div.find('.tab-content').empty();
-                resources_div.find('.nav-tabs').append('<li role="presentation" class="active"><a href="#' + testblock_name + '" aria-controls="' + testblock_name + '" role="tab" data-toggle="tab">' + testblock_name + '</a></li>');
-                resources_div.find('.tab-content').append('<div role="tabpanel" class="tab-pane active" id="' + testblock_name + '"></div>');
-                resources_div.show();
+                active_class = "active";
+                resources_panel.show();
                 first_entry = false;
             } else {
-                resources_div.find('.nav-tabs').append('<li role="presentation"><a href="#' + testblock_name + '" aria-controls="' + testblock_name + '" role="tab" data-toggle="tab">' + testblock_name + '</a></li>');
-                resources_div.find('.tab-content').append('<div role="tabpanel" class="tab-pane" id="' + testblock_name + '"></div>');
+                active_class = "";
             }
+
+            resources_div.find('.nav-tabs').append('<li role="presentation" class="' + active_class + '"><a href="#' + testblock_name + '" aria-controls="' + testblock_name + '" role="tab" data-toggle="tab">' + testblock_name + '</a></li>');
+            resources_div.find('.tab-content').append('<div role="tabpanel" class="tab-pane ' + active_class + '" id="' + testblock_name + '"></div>');
 
             var cpu_nodes = [];
             var mem_nodes = [];
             var io_nodes = [];
             var net_nodes = [];
-            $.each(testblock_metrics["resources"], function(index, value) {
-                var node_name = index;
-                var node_resources = value;
+            $.each(testblock_metrics["resources"], function(node_name, node_resources) {
 
                 if (node_resources.hasOwnProperty("cpu")) {
                     cpu_nodes.push({
@@ -335,9 +351,7 @@ function drawTestDetails(test_name) {
         var path_lengths_drilldowns_data = [];
         var path_length_sum = 0;
         if (!(typeof testblock_metrics === 'string' || testblock_metrics instanceof String)) {
-            $.each(testblock_metrics, function (index, value) {
-                var metric_name = index;
-                var metric_values = value;
+            $.each(testblock_metrics, function (metric_name, metric_values) {
                 if (metric_name.contains("path_length")) {
                     path_lengths_drilldowns_data.push([metric_name.split("path_length ")[1], metric_values]);
                     path_length_sum += metric_values;
@@ -366,16 +380,16 @@ function drawTestDetails(test_name) {
     });
 
     if (path_lengths.length != 0) {
-        path_length_div.show();
-        $('#path_length').highcharts({
+        path_length_panel.show();
+        $(path_length_div).highcharts({
             chart: {
                 type: 'column'
             },
             title: {
-                text: 'Path length'
+                text: ''
             },
             subtitle: {
-                text: 'Click the columns to view path lengths</a>.'
+                text: 'Click the columns to view path lengths'
             },
             xAxis: {
                 type: 'category'
@@ -412,8 +426,8 @@ function drawTestDetails(test_name) {
         });
     }
     if (times.length != 0) {
-        time_div.show();
-        $('#time').highcharts({
+        time_panel.show();
+        $(time_div).highcharts({
             chart: {
                 plotBackgroundColor: null,
                 plotBorderWidth: null,
@@ -421,7 +435,7 @@ function drawTestDetails(test_name) {
                 type: 'pie'
             },
             title: {
-                text: 'Time'
+                text: ''
             },
             tooltip: {
                 pointFormat: '{series.name}: <b>{point.y}s</b>'
@@ -454,7 +468,195 @@ function drawTestDetails(test_name) {
 }
 
 function compareTests(tests) {
-    console.log(tests);
+    var configuration_div = $('#compare_tests').find('#compare_configuration');
+    var test_list = getDataFromStorage("test_list");
+
+    var results_speed = [];
+    var results_resources = [];
+    var results_efficiency = [];
+    var final_results = [];
+
+    var weight_speed = 1;
+    var weight_resources = 1;
+    var weight_efficiency = 1;
+
+    var temp_time = [];
+    var temp_time_total = 0.0;
+
+    var temp_resources = [];
+    var temp_resources_total = [];
+    temp_resources_total.push(0.0);
+    temp_resources_total.push(0.0);
+    temp_resources_total.push([0.0, 0.0, 0.0, 0.0]);
+    temp_resources_total.push([0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]);
+
+    var temp_path_length = [];
+    var temp_path_length_total = 0.0;
+
+    var counter = 0;
+
+    var plot_tooltip = {
+        'formatter': function () {
+            var o = this.point.options;
+
+            return '<b>' + this.series.name + '</b><br>' +
+                'Average: ' + this.y + '<br>' +
+                'Minimum: ' + o.min + '<br>' +
+                'Maximum: ' + o.max + '<br>';
+        }
+    };
+
+    configuration_div.empty();
+    configuration_div.append('<li><h4><b>General configuration</b></h4></li>' +
+        '<li><b>Scene config: </b>' + test_list[tests[0]]["scene_config"] + '</li>' +
+        '<li><b>Test config: </b>' + test_list[tests[0]]["test_config"] + '</li>' +
+        '<li><h4><b>Test configurations</b></h4></li>');
+
+    $.each(tests, function(index, test_name) {
+        var test_data = test_list[test_name];
+
+        configuration_div.append('<li><a data-toggle="collapse" href="#' + test_name + '" aria-expanded="false" aria-controls="' + test_name + '">' +
+            '<span class="glyphicon glyphicon-plus-sign" aria-hidden="true"></span><b>&nbsp;' + test_name + '</b></a></li>' +
+            '<ul class="collapse" id="' + test_name + '"><div class="well-sm">' +
+            '<li><b>Robot:</b> ' + test_data["robot"] + '</li>' +
+            '<li><b>Planer ID:</b> ' + test_data["planer_id"] + '</li>' +
+            '<li><b>Planning Method:</b> ' + test_data["planning_method"] + '</li>' +
+            '<li><b>Jump threshold:</b> ' + test_data["jump_threshold"] + '</li>' +
+            '<li><b>EEF_step:</b> ' + test_data["eef_step"] + '</li>' +
+            '</div></ul>');
+
+        var test_results = getDataFromStorage(test_name);
+
+        temp_time[counter] = 0.0;
+        temp_path_length[counter] = 0.0;
+
+        temp_resources[counter] = [];
+        temp_resources[counter].push(0.0);
+        temp_resources[counter].push(0.0);
+        temp_resources[counter].push([]);
+        temp_resources[counter][2].push(0.0);
+        temp_resources[counter][2].push(0.0);
+        temp_resources[counter][2].push(0.0);
+        temp_resources[counter][2].push(0.0);
+        temp_resources[counter].push([]);
+        temp_resources[counter][3].push(0.0);
+        temp_resources[counter][3].push(0.0);
+        temp_resources[counter][3].push(0.0);
+        temp_resources[counter][3].push(0.0);
+        temp_resources[counter][3].push(0.0);
+        temp_resources[counter][3].push(0.0);
+        temp_resources[counter][3].push(0.0);
+        temp_resources[counter][3].push(0.0);
+
+        $.each(test_results, function(index, metrics) {
+
+            if (metrics.hasOwnProperty("time")) {
+                temp_time_total += metrics["time"];
+                temp_time[counter] += metrics["time"];
+            }
+            if (metrics.hasOwnProperty("resources")) {
+                $.each(metrics["resources"], function(node_name, node_resources) {
+                    $.each(node_resources, function(resource_name, resource_data) {
+
+                        if (resource_name === "cpu") {
+                            temp_resources[counter][0] += resource_data["average"];
+                            temp_resources_total[0] += resource_data["average"];
+                        } else if (resource_name === "mem") {
+                            temp_resources[counter][1] += resource_data["average"];
+                            temp_resources_total[1] += resource_data["average"];
+                        } else if (resource_name === "io") {
+                            console.log(counter);
+                            temp_resources[counter][2][0] += resource_data["average"][0];
+                            temp_resources[counter][2][1] += resource_data["average"][1];
+                            temp_resources[counter][2][2] += resource_data["average"][2];
+                            temp_resources[counter][2][3] += resource_data["average"][3];
+
+                            temp_resources_total[2][0] += resource_data["average"][0];
+                            temp_resources_total[2][1] += resource_data["average"][1];
+                            temp_resources_total[2][2] += resource_data["average"][2];
+                            temp_resources_total[2][3] += resource_data["average"][3];
+                        } else if (resource_name === "network") {
+                            temp_resources[counter][3][0] += resource_data["average"][0];
+                            temp_resources[counter][3][1] += resource_data["average"][1];
+                            temp_resources[counter][3][2] += resource_data["average"][2];
+                            temp_resources[counter][3][3] += resource_data["average"][3];
+                            temp_resources[counter][3][4] += resource_data["average"][4];
+                            temp_resources[counter][3][5] += resource_data["average"][5];
+                            temp_resources[counter][3][6] += resource_data["average"][6];
+                            temp_resources[counter][3][7] += resource_data["average"][7];
+
+                            temp_resources_total[3][0] += resource_data["average"][0];
+                            temp_resources_total[3][1] += resource_data["average"][1];
+                            temp_resources_total[3][2] += resource_data["average"][2];
+                            temp_resources_total[3][3] += resource_data["average"][3];
+                            temp_resources_total[3][4] += resource_data["average"][4];
+                            temp_resources_total[3][5] += resource_data["average"][5];
+                            temp_resources_total[3][6] += resource_data["average"][6];
+                            temp_resources_total[3][7] += resource_data["average"][7];
+                        }
+
+                        if (typeof resource_data["average"] === "object") {
+                            $.each(resource_data["average"], function(index, data) {
+                               temp_resources += data;
+                            });
+                        } else {
+                            temp_resources += resource_data["average"];
+                        }
+                    });
+                });
+            }
+            $.each(metrics, function (metric_name, metric_values) {
+                if (metric_name.contains("path_length")) {
+                    temp_path_length[counter] += metric_values;
+                    temp_path_length_total += metric_values;
+                }
+            });
+        });
+
+        counter++;
+    });
+    for (var i = 0; i < counter; i++) {
+        results_speed.push(temp_time_total/temp_time[i]);
+        results_efficiency.push(temp_path_length_total/temp_path_length[i]);
+        results_resources.push(
+            (temp_resources[i][0]/temp_resources_total[0]) +
+            (temp_resources[i][1]/temp_resources_total[1]) +
+            (
+                (temp_resources[i][2][0]/temp_resources_total[2][0]) +
+                (temp_resources[i][2][1]/temp_resources_total[2][1]) +
+                (temp_resources[i][2][2]/temp_resources_total[2][2]) +
+                (temp_resources[i][2][3]/temp_resources_total[2][3])
+            ) +
+            (
+                (temp_resources[i][3][0]/temp_resources_total[3][0]) +
+                (temp_resources[i][3][1]/temp_resources_total[3][1]) +
+                (temp_resources[i][3][2]/temp_resources_total[3][2]) +
+                (temp_resources[i][3][3]/temp_resources_total[3][3]) +
+                (temp_resources[i][3][4]/temp_resources_total[3][4]) +
+                (temp_resources[i][3][5]/temp_resources_total[3][5]) +
+                (temp_resources[i][3][6]/temp_resources_total[3][6]) +
+                (temp_resources[i][3][7]/temp_resources_total[3][7])
+            )
+        )
+    }
+    console.log(results_speed);
+    console.log(results_efficiency);
+
+    /*
+    $('#' + testblock_name + '_res_network').highcharts({
+        chart: {
+            type: 'column',
+            zoomType: 'xy'
+        },
+        title: {
+            text: 'Network traffic'
+        },
+        xAxis: {
+            categories: ['Bytes sent', 'Bytes received', 'Packets sent', 'Packets received', 'Errors received', 'Errors sent', 'Packets dropped: Received', 'Packets dropped: Sent']
+        },
+        tooltip: plot_tooltip,
+        series: net_nodes
+    });*/
 
     $('#button_compare').prop("disabled", true);
 }

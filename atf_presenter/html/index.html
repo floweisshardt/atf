@@ -46,27 +46,30 @@
         </div>
         <div class="col-sm-9 col-sm-offset-3 col-md-10 col-md-offset-2 main">
             <div class="tab-pane">
-                <h2 class="sub-header">Upload files</h2>
-                <div>
-                    <p>Select all test files (.json) which are listed in the "test_list.json" file and the "test_list.json" itself.</p>
-                    <div class="btn btn-primary btn-file">
-                        Browse <input type="file" multiple>
+                <div class="panel panel-primary">
+                    <div class="panel-heading">Upload files</div>
+                    <div class="panel-body">
+                        <p>Select all test files (.json) which are listed in the "test_list.json" file and the "test_list.json" itself.</p>
+                        <div class="btn btn-primary btn-file">
+                            Browse <input type="file" multiple>
+                        </div>
                     </div>
                 </div>
-                <div class="row placeholders"></div>
-                <h2 class="sub-header">Compare tests</h2>
-                <div>
-                    <p>Select the tests you want to compare via the checkboxes and click the button.</p>
-                    <button id="button_compare" type="button" class="btn btn-primary" data-target="#compare_tests" data-toggle="modal" disabled="disabled">
-                        Compare tests
-                    </button>
+                <div class="panel panel-primary">
+                    <div class="panel-heading">Compare tests</div>
+                    <div class="panel-body">
+                        <p>Select the tests you want to compare via the checkboxes and click the button.</p>
+                        <button id="button_compare" type="button" class="btn btn-primary" data-target="#compare_tests" data-toggle="modal" disabled="disabled">
+                            Compare tests
+                        </button>
+                    </div>
                 </div>
-                <div class="row placeholders"></div>
-                <div id="test_list_content">
-                    <h2 class="sub-header">Overview</h2>
-                    <div class="table-responsive">
-                        <table class="table table-hover table-striped table-condensed">
-                            <thead>
+                <div class="panel panel-primary" id="test_list_content">
+                    <div class="panel-heading">Test overview</div>
+                    <div class="panel-body">
+                        <div class="table-responsive">
+                            <table class="table table-hover table-striped table-condensed">
+                                <thead>
                                 <tr>
                                     <th></th>
                                     <th>#</th>
@@ -74,13 +77,15 @@
                                     <th>Testsuite</th>
                                     <th>Test</th>
                                     <th>Test Config</th>
+                                    <th>Scene Config</th>
                                     <th>Robot</th>
                                     <th>Upload Status</th>
                                     <th>Details</th>
                                 </tr>
-                            </thead>
-                            <tbody id="test_list"></tbody>
-                        </table>
+                                </thead>
+                                <tbody id="test_list"></tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -89,33 +94,51 @@
 </div>
 
 <!-- Detail Popup -->
-<div id="test_detail" class="modal fade" role="dialog">
+<div id="detail_test" class="modal fade" role="dialog">
     <div class="modal-dialog modal-lg" role="document">
         <div class="modal-content">
+
             <!-- HEADER -->
             <div class="modal-header">
                 <button type="button" class="close" data-dismiss="modal">&times;</button>
                 <h4 class="modal-title"></h4>
             </div>
+
             <!-- BODY -->
             <div class="modal-body">
-                <h2>Configuration</h2>
-                <hr class="divider">
-                <ul id="configuration"></ul>
-                <div class="row placeholders"></div>
-                <h2>Results</h2>
-                <hr class="divider">
-                <h3>Status</h3>
-                <div id="status"></div>
-                <div id="resources">
-                    <h3>Resources</h3>
-                    <ul class="nav nav-tabs" role="tablist"></ul>
-                    <div class="tab-content"></div>
-                    <hr class="divider">
+                <div class="panel panel-primary">
+                    <div class="panel-heading">Test Configuration</div>
+                    <div class="panel-body">
+                        <ul id="detail_configuration"></ul>
+                    </div>
                 </div>
-                <div id="path_length" class="plot"></div>
-                <div id="time" class="plot"></div>
+                <div class="panel panel-primary">
+                    <div class="panel-heading">Status</div>
+                    <div class="panel-body">
+                        <ul id="detail_status"></ul>
+                    </div>
+                </div>
+                <div class="panel panel-primary" id="panel_detail_resources">
+                    <div class="panel-heading">Resources</div>
+                    <div class="panel-body" id="detail_resources">
+                        <ul class="nav nav-tabs" role="tablist"></ul>
+                        <div class="tab-content"></div>
+                    </div>
+                </div>
+                <div class="panel panel-primary" id="panel_detail_path_length">
+                    <div class="panel-heading">Path length</div>
+                    <div class="panel-body">
+                        <div id="detail_path_length" class="plot"></div>
+                    </div>
+                </div>
+                <div class="panel panel-primary" id="panel_detail_time">
+                    <div class="panel-heading">Time</div>
+                    <div class="panel-body">
+                        <div id="detail_time" class="plot"></div>
+                    </div>
+                </div>
             </div>
+
             <!-- FOOTER -->
             <div class="modal-footer">
                 <button type="button" class="btn btn-primary" data-dismiss="modal">Close</button>
@@ -128,15 +151,37 @@
 <div id="compare_tests" class="modal fade" role="dialog">
     <div class="modal-dialog modal-lg" role="document">
         <div class="modal-content">
+
             <!-- HEADER -->
             <div class="modal-header">
                 <button type="button" class="close" data-dismiss="modal">&times;</button>
-                <h4 class="modal-title"></h4>
+                <h4 class="modal-title">Test comparison</h4>
             </div>
+
             <!-- BODY -->
             <div class="modal-body">
+                <div class="panel panel-primary">
+                    <div class="panel-heading">Test Configurations</div>
+                    <div class="panel-body">
+                        <ul id="compare_configuration"></ul>
+                    </div>
+                </div>
 
+                <div class="panel panel-primary">
+                    <div class="panel-heading">Results</div>
+                    <div class="panel-body" id="compare_results">
+                        <ul class="nav nav-tabs" role="tablist">
+                            <li role="presentation" class="active"><a href="#overview" aria-controls="overview" role="tab" data-toggle="tab">Overview</a></li>
+                            <li role="presentation"><a href="#categories" aria-controls="categories" role="tab" data-toggle="tab">Categories</a></li>
+                        </ul>
+                        <div class="tab-content">
+                            <div role="tabpanel" class="tab-pane active" id="overview"></div>
+                            <div role="tabpanel" class="tab-pane" id="categories"></div>
+                        </div>
+                    </div>
+                </div>
             </div>
+
             <!-- FOOTER -->
             <div class="modal-footer">
                 <button type="button" class="btn btn-primary" data-dismiss="modal">Close</button>

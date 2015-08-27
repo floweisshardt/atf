@@ -1,4 +1,8 @@
-#test_list_content, #resources, #path_length, #time {
+a {
+    text-decoration: none;
+    color: #000;
+}
+#test_list_content, #panel_detail_resources, #panel_detail_path_length, #panel_detail_time {
     display: none;
 }
 .plot {
@@ -12,4 +16,7 @@ input[type="radio"], input[type="checkbox"] {
 }
 .table > tbody > tr > td {
     vertical-align: middle;
+}
+.modal-body ul {
+    list-style: none;
 }
