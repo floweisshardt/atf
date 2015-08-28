@@ -80,6 +80,7 @@
                                     <th>Scene Config</th>
                                     <th>Robot</th>
                                     <th>Upload Status</th>
+                                    <th>Test Status</th>
                                     <th>Details</th>
                                 </tr>
                                 </thead>
@@ -170,6 +171,7 @@
                 <div class="panel panel-primary">
                     <div class="panel-heading">Results</div>
                     <div class="panel-body" id="compare_results">
+
                         <ul class="nav nav-tabs" role="tablist">
                             <li role="presentation" class="active"><a href="#overview" aria-controls="overview" role="tab" data-toggle="tab">Overview</a></li>
                             <li role="presentation"><a href="#categories" aria-controls="categories" role="tab" data-toggle="tab">Categories</a></li>
@@ -177,6 +179,18 @@
                         <div class="tab-content">
                             <div role="tabpanel" class="tab-pane active" id="overview"></div>
                             <div role="tabpanel" class="tab-pane" id="categories"></div>
+                        </div>
+                    </div>
+
+                    <!-- Weight buttons -->
+                    <div class="panel panel-info" id="weight_control">
+                        <div class="panel-heading">Weight control buttons</div>
+                        <div class="panel-body">
+                            <div class="btn-group" data-toggle="buttons">
+                                <button type="button" class="btn btn-primary">Speed</button>
+                                <button type="button" class="btn btn-primary">Efficency</button>
+                                <button type="button" class="btn btn-primary">Resources</button>
+                            </div>
                         </div>
                     </div>
                 </div>

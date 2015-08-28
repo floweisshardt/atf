@@ -56,18 +56,32 @@ function drawTestList() {
         var test_name_full = test_name.split("_");
         var upload_status;
         var table_row_error;
+        var test_error;
         var button_disabled;
+        var checkbox_disabled;
+        var test = getDataFromStorage(test_name);
 
-        if (!getDataFromStorage(test_name)) {
+        if (!test) {
             upload_status = '<span class="glyphicon glyphicon-alert" aria-hidden="true"></span><span class="sr-only">Error: </span> File not found!';
             table_row_error = '<tr class="danger">';
+            test_error = '';
             button_disabled = ' disabled="disabled"';
+            checkbox_disabled = ' disabled="disabled"';
         } else {
             upload_status = '<span class="glyphicon glyphicon-ok" aria-hidden="true"></span><span class="sr-only">No error:</span> No errors!';
-            table_row_error = '<tr>';
             button_disabled = '';
+
+            if (test.hasOwnProperty("status") || test.hasOwnProperty("Error")) {
+                test_error = '<span class="glyphicon glyphicon-exclamation-sign" aria-hidden="true"></span><span class="sr-only">Error: </span> Error(s) found!'
+                table_row_error = '<tr class="warning">';
+                checkbox_disabled = ' disabled="disabled"';
+            } else {
+                test_error = '<span class="glyphicon glyphicon-ok" aria-hidden="true"></span><span class="sr-only">No error: </span> No errors!'
+                table_row_error = '<tr>';
+                checkbox_disabled = '';
+            }
         }
-        test_list_div.append(table_row_error + '<td><div class="checkbox-inline"><label><input type="checkbox" value="' + test_name + '"' + button_disabled + '></label></div></td><td>' + number + '</td><td>' + test_name + '</td><td>Testsuite ' + test_name_full[0].replace(/^\D+/g, '') + '</td><td>Test ' + test_name_full[1].replace(/^\D+/g, "") + '</td><td class="test_config">' + test_data["test_config"] + '</td><td class="scene_config">' + test_data["scene_config"] + '</td><td class="robot_name">' + test_data["robot"] + '</td><td>' + upload_status + '</td><td><button id="button_detail" type="button" class="btn btn-primary" data-target="#detail_test" data-toggle="modal" data-name="' + test_name + '"' + button_disabled + '>Details</button></td>');
+        test_list_div.append(table_row_error + '<td><div class="checkbox-inline"><label><input type="checkbox" value="' + test_name + '"' + checkbox_disabled + '></label></div></td><td>' + number + '</td><td>' + test_name + '</td><td>Testsuite ' + test_name_full[0].replace(/^\D+/g, '') + '</td><td>Test ' + test_name_full[1].replace(/^\D+/g, "") + '</td><td class="test_config">' + test_data["test_config"] + '</td><td class="scene_config">' + test_data["scene_config"] + '</td><td class="robot_name">' + test_data["robot"] + '</td><td>' + upload_status + '</td><td>' + test_error + '</td><td><button id="button_detail" type="button" class="btn btn-primary" data-target="#detail_test" data-toggle="modal" data-name="' + test_name + '"' + button_disabled + '>Details</button></td>');
 
         number++;
     });
@@ -142,7 +156,7 @@ function drawTestDetails(test_name) {
             error = true;
         } else if (testblock_name === "Error") {
             status_div.empty();
-            status_div.append('<div class="alert alert-danger" role="alert">An error occured outside monitored testblocks. Evaluation could not be executed!</div>');
+            status_div.append('<div class="alert alert-danger" role="alert">An error occured outside monitored testblocks. Evaluation could not be finished!</div>');
             error = true;
         }
 
@@ -471,38 +485,29 @@ function compareTests(tests) {
     var configuration_div = $('#compare_tests').find('#compare_configuration');
     var test_list = getDataFromStorage("test_list");
 
-    var results_speed = [];
-    var results_resources = [];
-    var results_efficiency = [];
     var final_results = [];
+    var category_results = {
+        "speed": [],
+        "efficiency": [],
+        "resources": []
+    };
 
-    var weight_speed = 1;
+    var weight_speed = 1; /// 100 as maximum ?
     var weight_resources = 1;
     var weight_efficiency = 1;
 
-    var temp_time = [];
-    var temp_time_total = 0.0;
-
-    var temp_resources = [];
-    var temp_resources_total = [];
-    temp_resources_total.push(0.0);
-    temp_resources_total.push(0.0);
-    temp_resources_total.push([0.0, 0.0, 0.0, 0.0]);
-    temp_resources_total.push([0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]);
-
-    var temp_path_length = [];
-    var temp_path_length_total = 0.0;
-
-    var counter = 0;
+    var results = {
+        "speed": [],
+        "resources": [],
+        "efficiency": []
+    };
 
     var plot_tooltip = {
-        'formatter': function () {
+        "formatter": function () {
             var o = this.point.options;
 
             return '<b>' + this.series.name + '</b><br>' +
-                'Average: ' + this.y + '<br>' +
-                'Minimum: ' + o.min + '<br>' +
-                'Maximum: ' + o.max + '<br>';
+                this.y + ' Points';
         }
     };
 
@@ -527,136 +532,199 @@ function compareTests(tests) {
 
         var test_results = getDataFromStorage(test_name);
 
-        temp_time[counter] = 0.0;
-        temp_path_length[counter] = 0.0;
-
-        temp_resources[counter] = [];
-        temp_resources[counter].push(0.0);
-        temp_resources[counter].push(0.0);
-        temp_resources[counter].push([]);
-        temp_resources[counter][2].push(0.0);
-        temp_resources[counter][2].push(0.0);
-        temp_resources[counter][2].push(0.0);
-        temp_resources[counter][2].push(0.0);
-        temp_resources[counter].push([]);
-        temp_resources[counter][3].push(0.0);
-        temp_resources[counter][3].push(0.0);
-        temp_resources[counter][3].push(0.0);
-        temp_resources[counter][3].push(0.0);
-        temp_resources[counter][3].push(0.0);
-        temp_resources[counter][3].push(0.0);
-        temp_resources[counter][3].push(0.0);
-        temp_resources[counter][3].push(0.0);
-
-        $.each(test_results, function(index, metrics) {
-
-            if (metrics.hasOwnProperty("time")) {
-                temp_time_total += metrics["time"];
-                temp_time[counter] += metrics["time"];
+        var temp_testblock = {
+            "time": {
+                "current": [],
+                "total": 0
+            },
+            "path_length": {
+                "current": [],
+                "total": 0
+            },
+            "resources": {
+                "cpu": {
+                    "current": [],
+                    "total": 0
+                },
+                "mem": {
+                    "current": [],
+                    "total": 0
+                },
+                "io": {
+                    "current": [],
+                    "total": [0, 0, 0, 0]
+                },
+                "network": {
+                    "current": [],
+                    "total": [0, 0, 0, 0, 0, 0, 0, 0]
+                }
             }
-            if (metrics.hasOwnProperty("resources")) {
-                $.each(metrics["resources"], function(node_name, node_resources) {
+        };
+
+        $.each(test_results, function(index, testblock) {
+
+            if (testblock.hasOwnProperty("time")) {
+                temp_testblock["time"]["current"].push(testblock["time"]);
+                temp_testblock["time"]["total"] += testblock["time"];
+            }
+            if (testblock.hasOwnProperty("resources")) {
+                $.each(testblock["resources"], function(node_name, node_resources) {
+
+                    var res_all_nodes = [0, 0, [0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0]];
                     $.each(node_resources, function(resource_name, resource_data) {
 
                         if (resource_name === "cpu") {
-                            temp_resources[counter][0] += resource_data["average"];
-                            temp_resources_total[0] += resource_data["average"];
+                            res_all_nodes[0] += resource_data["average"];
+                            temp_testblock["resources"]["cpu"]["total"] += resource_data["average"];
                         } else if (resource_name === "mem") {
-                            temp_resources[counter][1] += resource_data["average"];
-                            temp_resources_total[1] += resource_data["average"];
+                            res_all_nodes[1] += resource_data["average"];
+                            temp_testblock["resources"]["mem"]["total"] += resource_data["average"];
                         } else if (resource_name === "io") {
-                            console.log(counter);
-                            temp_resources[counter][2][0] += resource_data["average"][0];
-                            temp_resources[counter][2][1] += resource_data["average"][1];
-                            temp_resources[counter][2][2] += resource_data["average"][2];
-                            temp_resources[counter][2][3] += resource_data["average"][3];
-
-                            temp_resources_total[2][0] += resource_data["average"][0];
-                            temp_resources_total[2][1] += resource_data["average"][1];
-                            temp_resources_total[2][2] += resource_data["average"][2];
-                            temp_resources_total[2][3] += resource_data["average"][3];
+                            for (var x = 0; x < 4; x++) {
+                                res_all_nodes[2][x] += resource_data["average"][x];
+                                temp_testblock["resources"]["io"]["total"][x] += resource_data["average"][x];
+                            }
                         } else if (resource_name === "network") {
-                            temp_resources[counter][3][0] += resource_data["average"][0];
-                            temp_resources[counter][3][1] += resource_data["average"][1];
-                            temp_resources[counter][3][2] += resource_data["average"][2];
-                            temp_resources[counter][3][3] += resource_data["average"][3];
-                            temp_resources[counter][3][4] += resource_data["average"][4];
-                            temp_resources[counter][3][5] += resource_data["average"][5];
-                            temp_resources[counter][3][6] += resource_data["average"][6];
-                            temp_resources[counter][3][7] += resource_data["average"][7];
-
-                            temp_resources_total[3][0] += resource_data["average"][0];
-                            temp_resources_total[3][1] += resource_data["average"][1];
-                            temp_resources_total[3][2] += resource_data["average"][2];
-                            temp_resources_total[3][3] += resource_data["average"][3];
-                            temp_resources_total[3][4] += resource_data["average"][4];
-                            temp_resources_total[3][5] += resource_data["average"][5];
-                            temp_resources_total[3][6] += resource_data["average"][6];
-                            temp_resources_total[3][7] += resource_data["average"][7];
-                        }
-
-                        if (typeof resource_data["average"] === "object") {
-                            $.each(resource_data["average"], function(index, data) {
-                               temp_resources += data;
-                            });
-                        } else {
-                            temp_resources += resource_data["average"];
+                            for (var y = 0; y < 8; y++) {
+                                res_all_nodes[3][y] += resource_data["average"][y];
+                                temp_testblock["resources"]["network"]["total"][y] += resource_data["average"][y];
+                            }
                         }
                     });
+
+                    temp_testblock["resources"]["cpu"]["current"].push(res_all_nodes[0]);
+                    temp_testblock["resources"]["mem"]["current"].push(res_all_nodes[1]);
+                    temp_testblock["resources"]["io"]["current"].push(res_all_nodes[2]);
+                    temp_testblock["resources"]["network"]["current"].push(res_all_nodes[3]);
                 });
             }
-            $.each(metrics, function (metric_name, metric_values) {
+            $.each(testblock, function (metric_name, metric_values) {
                 if (metric_name.contains("path_length")) {
-                    temp_path_length[counter] += metric_values;
-                    temp_path_length_total += metric_values;
+                    temp_testblock["path_length"]["current"].push(metric_values);
+                    temp_testblock["path_length"]["total"] += metric_values;
                 }
             });
+
+
         });
 
-        counter++;
-    });
-    for (var i = 0; i < counter; i++) {
-        results_speed.push(temp_time_total/temp_time[i]);
-        results_efficiency.push(temp_path_length_total/temp_path_length[i]);
-        results_resources.push(
-            (temp_resources[i][0]/temp_resources_total[0]) +
-            (temp_resources[i][1]/temp_resources_total[1]) +
-            (
-                (temp_resources[i][2][0]/temp_resources_total[2][0]) +
-                (temp_resources[i][2][1]/temp_resources_total[2][1]) +
-                (temp_resources[i][2][2]/temp_resources_total[2][2]) +
-                (temp_resources[i][2][3]/temp_resources_total[2][3])
-            ) +
-            (
-                (temp_resources[i][3][0]/temp_resources_total[3][0]) +
-                (temp_resources[i][3][1]/temp_resources_total[3][1]) +
-                (temp_resources[i][3][2]/temp_resources_total[3][2]) +
-                (temp_resources[i][3][3]/temp_resources_total[3][3]) +
-                (temp_resources[i][3][4]/temp_resources_total[3][4]) +
-                (temp_resources[i][3][5]/temp_resources_total[3][5]) +
-                (temp_resources[i][3][6]/temp_resources_total[3][6]) +
-                (temp_resources[i][3][7]/temp_resources_total[3][7])
-            )
-        )
-    }
-    console.log(results_speed);
-    console.log(results_efficiency);
+        var temp_speed = 0;
+        var temp_efficiency = 0;
+        var temp_resources = 0;
 
-    /*
-    $('#' + testblock_name + '_res_network').highcharts({
+        for (var i = 0; i < Object.keys(test_results).length; i++) {
+            var temp_io = 0;
+            var temp_network = 0;
+            var temp_cpu = 0;
+            var temp_mem = 0;
+
+            if (temp_testblock["time"]["current"][i] != 0 && typeof temp_testblock["time"]["current"][i] != 'undefined') {
+                temp_speed += temp_testblock["time"]["total"] / temp_testblock["time"]["current"][i];
+            }
+            if (temp_testblock["path_length"]["current"][i] != 0 && typeof temp_testblock["path_length"]["current"][i] != 'undefined') {
+                temp_efficiency += temp_testblock["path_length"]["total"]/temp_testblock["path_length"]["current"][i];
+            }
+            if (temp_testblock["resources"]["cpu"]["current"][i] != 0 && typeof temp_testblock["resources"]["cpu"]["current"][i] != 'undefined') {
+                temp_cpu = temp_testblock["resources"]["cpu"]["total"]/temp_testblock["resources"]["cpu"]["current"][i];
+            }
+            if (temp_testblock["resources"]["mem"]["current"][i] != 0 && typeof temp_testblock["resources"]["mem"]["current"][i] != 'undefined') {
+                temp_mem = temp_testblock["resources"]["mem"]["total"]/temp_testblock["resources"]["mem"]["current"][i];
+            }
+            for (var a = 0; a < 4; a++) {
+                if (temp_testblock["resources"]["io"]["current"][i][a] != 0 && typeof temp_testblock["resources"]["io"]["current"][i] != 'undefined') {
+                    temp_io += temp_testblock["resources"]["io"]["total"][a]/temp_testblock["resources"]["io"]["current"][i][a];
+                }
+            }
+            for (var b = 0; b < 8; b++) {
+                if (temp_testblock["resources"]["network"]["current"][i][b] != 0 && typeof temp_testblock["resources"]["network"]["current"][i] != 'undefined') {
+                    temp_network += temp_testblock["resources"]["network"]["total"][b]/temp_testblock["resources"]["network"]["current"][i][b];
+                }
+            }
+
+            temp_resources += temp_cpu + temp_mem + temp_io + temp_network;
+        }
+
+        results["speed"].push(temp_speed);
+        results["efficiency"].push(temp_efficiency);
+        results["resources"].push(temp_resources);
+
+    });
+    var data_overview = [];
+    var data_categories = [];
+
+    for (var i = 0; i < tests.length; i++) {
+        category_results["speed"].push(round(results["speed"][i] * weight_speed, 3));
+        category_results["efficiency"].push(round(results["efficiency"][i] * weight_efficiency, 3));
+        category_results["resources"].push(round(results["resources"][i] * weight_resources, 3));
+
+        final_results.push(round((results["speed"][i] * weight_speed + results["efficiency"][i] * weight_efficiency + results["resources"][i] * weight_resources), 3));
+
+        data_overview.push({
+            'name': tests[i],
+            'data': [{
+                'x': i,
+                'y': final_results[i]
+            }]
+        });
+        data_categories.push({
+            'name': tests[i],
+            'data': [{
+                'x': 0,
+                'y': category_results["speed"][i]
+            }, {
+                'x': 1,
+                'y': category_results["efficiency"][i]
+            }, {
+                'x': 2,
+                'y': category_results["resources"][i]
+            }]
+        });
+    }
+
+    $('#overview').highcharts({
         chart: {
             type: 'column',
             zoomType: 'xy'
         },
         title: {
-            text: 'Network traffic'
+            text: ''
         },
         xAxis: {
-            categories: ['Bytes sent', 'Bytes received', 'Packets sent', 'Packets received', 'Errors received', 'Errors sent', 'Packets dropped: Received', 'Packets dropped: Sent']
+            labels: {
+                enabled: false
+            }
+        },
+        yAxis: {
+            title: {
+                text: 'Points'
+            }
         },
         tooltip: plot_tooltip,
-        series: net_nodes
-    });*/
+        series: data_overview
+    });
+
+    $('#categories').highcharts({
+        chart: {
+            type: 'column',
+            zoomType: 'xy'
+        },
+        title: {
+            text: ''
+        },
+        xAxis: {
+            categories: ['Speed', 'Efficiency', 'Resources'],
+            labels: {
+                enabled: false
+            }
+        },
+        yAxis: {
+            title: {
+                text: 'Points'
+            }
+        },
+        tooltip: plot_tooltip,
+        series: data_categories
+    });
 
     $('#button_compare').prop("disabled", true);
 }
