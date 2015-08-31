@@ -14,7 +14,7 @@
     <param name="jump_threshold" value="2" />
     <param name="planning_method" value="cartesian_linear" />
 
-    <node name="grasping_app" pkg="cob_grasping" type="start_grasping_app.py" output="screen" required="true">
+    <node name="grasping_app" pkg="cob_grasping" type="grasping_app.py" output="screen" required="true">
         <param name="scene_config_file" value="$(find cob_grasping)/config/scene_config.yaml" />
 
         <!-- User params -->
@@ -32,6 +32,8 @@
     <param name="recorder/robot_config_file" value="$(find cob_grasping)/config/$(arg robot)/robot_config.yaml" />
     <param name="recorder/test_config_file" value="$(find atf_core)/config/test_config.yaml" />
 
-    <node name="atf_recorder" pkg="atf_recorder" type="recorder.py" output="screen" />
+    <node name="atf_recorder" pkg="atf_recorder" type="recorder_core.py" output="screen">
+        <param name="robot_config_file" value="$(find cob_grasping)/config/cob4-2/robot_config.yaml" />
+    </node>
 
 </launch>
