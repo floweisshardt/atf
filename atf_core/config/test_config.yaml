@@ -19,22 +19,24 @@ test_1:
   planning_3:
     time:
     resources:
-      cpu: [move_group, phpstorm]
-      mem: [move_group, phpstorm]
+      cpu: [move_group, firefox]
+      mem: [move_group, firefox]
 
   execution_all:
     time:
     path_length:
       - [base_link, gripper_right_grasp_link]
       - [arm_right_3_link, gripper_right_grasp_link]
+      - [arm_right_1_link, gripper_right_grasp_link]
+      - [arm_right_2_link, gripper_right_grasp_link]
 
   execution_1:
     time:
     resources:
-      cpu: [phpstorm]
-      mem: [phpstorm]
-      io: [move_group, firefox]
-      network: [move_group, firefox]
+      cpu: [firefox, rostest]
+      mem: [firefox, rostest]
+      io: [move_group, firefox, rostest]
+      network: [move_group, firefox, rostest]
 
   execution_2:
     time:
