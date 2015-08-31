@@ -122,7 +122,7 @@
                 <div class="panel panel-primary" id="panel_detail_resources">
                     <div class="panel-heading">Resources</div>
                     <div class="panel-body" id="detail_resources">
-                        <ul class="nav nav-tabs" role="tablist"></ul>
+                        <ul class="nav nav-tabs nav-justified" role="tablist"></ul>
                         <div class="tab-content"></div>
                     </div>
                 </div>
@@ -172,13 +172,13 @@
                     <div class="panel-heading">Results</div>
                     <div class="panel-body" id="compare_results">
 
-                        <ul class="nav nav-tabs" role="tablist">
+                        <ul class="nav nav-tabs nav-justified" role="tablist">
                             <li role="presentation" class="active"><a href="#overview" aria-controls="overview" role="tab" data-toggle="tab">Overview</a></li>
                             <li role="presentation"><a href="#categories" aria-controls="categories" role="tab" data-toggle="tab">Categories</a></li>
                         </ul>
                         <div class="tab-content">
-                            <div role="tabpanel" class="tab-pane active" id="overview"></div>
-                            <div role="tabpanel" class="tab-pane" id="categories"></div>
+                            <div role="tabpanel" class="tab-pane active plot" id="overview"></div>
+                            <div role="tabpanel" class="tab-pane plot" id="categories"></div>
                         </div>
                     </div>
 
@@ -187,9 +187,14 @@
                         <div class="panel-heading">Weight control buttons</div>
                         <div class="panel-body">
                             <div class="btn-group" data-toggle="buttons">
-                                <button type="button" class="btn btn-primary">Speed</button>
-                                <button type="button" class="btn btn-primary">Efficency</button>
-                                <button type="button" class="btn btn-primary">Resources</button>
+                                <button type="button" class="btn btn-primary" value="speed">Speed</button>
+                                <button type="button" class="btn btn-primary" value="efficiency">Efficiency</button>
+                                <button type="button" class="btn btn-primary" value="resources">Resources</button>
+                            </div>
+                            <div class="row placeholders"></div>
+                            <div class="input-group col-xs-3">
+                                <span class="input-group-addon" id="basic-addon1">Weight value</span>
+                                <input type="text" id="weight_value" class="form-control" placeholder="Weight value" aria-describedby="basic-addon1" value="10">
                             </div>
                         </div>
                     </div>

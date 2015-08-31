@@ -102,12 +102,45 @@ $('.table').find('#test_list').on("click", "input", function () {
     }
 });
 
-$('#compare_tests').find('#weight_control .btn-group').on("click", "button", function (e) {
+$('#compare_tests').find('#weight_control .btn-group').on("click", "button", function () {
+    // TODO: Rewrite function
+    var weight = 1;
+    console.log($(this).parent().parent().find('#weight_value').val());
+    var weight_factor = $(this).parent().parent().find('#weight_value').val();
+
     if ($(this).hasClass('active')) {
         $(this).removeClass('active');
+        weight = 1/weight_factor;
     } else {
-        $(this). addClass('active');
+        var active = 0;
+        $(this).parent().find('.active').each(function () {
+            active++;
+        });
+
+        if (active === 2) {
+            $(this).parent().find('.active').each(function () {
+                $(this).removeClass('active');
+                weight = 1/weight_factor;
+                changeWeight($(this).val(), weight);
+            });
+        }
+
+        $(this).addClass('active');
+        weight = weight_factor;
     }
+
+    active = 0;
+    $(this).parent().find('.active').each(function () {
+        active++;
+    });
+
+    if (active === 0) {
+        $(this).parent().parent().find('#weight_value').prop("disabled", false);
+    } else {
+        $(this).parent().parent().find('#weight_value').prop("disabled", true);
+    }
+
+    changeWeight($(this).attr("value"), weight);
 });
 
 $(document).on("click", "#button_compare", function () {
@@ -125,5 +158,10 @@ $(document).on("click", "#button_compare", function () {
             $(this).parent().find('input').prop("disabled", false);
         }
     });
+
+    $('#compare_tests').find('#weight_control .btn-group button').each(function () {
+        $(this).removeClass('active');
+    });
+
     compareTests(tests);
 });

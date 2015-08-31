@@ -1,3 +1,55 @@
+var results = {
+    "speed": [],
+    "resources": [],
+    "efficiency": []
+};
+
+var chart_compare_overview = new Highcharts.Chart({
+    chart: {
+        renderTo: 'overview',
+        defaultSeriesType: 'column',
+        type: 'column',
+        zoomType: 'xy'
+    },
+    title: {
+        text: ''
+    },
+    xAxis: {
+        labels: {
+            enabled: false
+        }
+    },
+    yAxis: {
+        title: {
+            text: 'Points'
+        }
+    },
+    tooltip: '',
+    series: [{}]
+});
+
+var chart_compare_categories = new Highcharts.Chart({
+    chart: {
+        renderTo: 'categories',
+        defaultSeriesType: 'column',
+        type: 'column',
+        zoomType: 'xy'
+    },
+    title: {
+        text: ''
+    },
+    xAxis: {
+        categories: ['Speed', 'Efficiency', 'Resources']
+    },
+    yAxis: {
+        title: {
+            text: 'Points'
+        }
+    },
+    tooltip: '',
+    series: [{}]
+});
+
 function round(number, decimals) {
     return +(Math.round(number + "e+" + decimals) + "e-" + decimals);
 }
@@ -72,11 +124,11 @@ function drawTestList() {
             button_disabled = '';
 
             if (test.hasOwnProperty("status") || test.hasOwnProperty("Error")) {
-                test_error = '<span class="glyphicon glyphicon-exclamation-sign" aria-hidden="true"></span><span class="sr-only">Error: </span> Error(s) found!'
+                test_error = '<span class="glyphicon glyphicon-exclamation-sign" aria-hidden="true"></span><span class="sr-only">Error: </span> Error(s) found!';
                 table_row_error = '<tr class="warning">';
                 checkbox_disabled = ' disabled="disabled"';
             } else {
-                test_error = '<span class="glyphicon glyphicon-ok" aria-hidden="true"></span><span class="sr-only">No error: </span> No errors!'
+                test_error = '<span class="glyphicon glyphicon-ok" aria-hidden="true"></span><span class="sr-only">No error: </span> No errors!';
                 table_row_error = '<tr>';
                 checkbox_disabled = '';
             }
@@ -435,6 +487,12 @@ function drawTestDetails(test_name) {
                 data: path_lengths
             }],
             drilldown: {
+                drillUpButton: {
+                    position: {
+                        y: -10
+                    },
+                    relativeTo: "spacingBox"
+                },
                 series: path_lengths_drilldowns
             }
         });
@@ -492,20 +550,18 @@ function compareTests(tests) {
         "resources": []
     };
 
-    var weight_speed = 1; /// 100 as maximum ?
-    var weight_resources = 1;
-    var weight_efficiency = 1;
-
-    var results = {
+    results = {
         "speed": [],
         "resources": [],
         "efficiency": []
     };
 
+    var weight_speed = 1;
+    var weight_resources = 1;
+    var weight_efficiency = 1;
+
     var plot_tooltip = {
         "formatter": function () {
-            var o = this.point.options;
-
             return '<b>' + this.series.name + '</b><br>' +
                 this.y + ' Points';
         }
@@ -681,8 +737,10 @@ function compareTests(tests) {
         });
     }
 
-    $('#overview').highcharts({
+    chart_compare_overview = new Highcharts.Chart({
         chart: {
+            renderTo: 'overview',
+            defaultSeriesType: 'column',
             type: 'column',
             zoomType: 'xy'
         },
@@ -703,8 +761,10 @@ function compareTests(tests) {
         series: data_overview
     });
 
-    $('#categories').highcharts({
+    chart_compare_categories = new Highcharts.Chart({
         chart: {
+            renderTo: 'categories',
+            defaultSeriesType: 'column',
             type: 'column',
             zoomType: 'xy'
         },
@@ -712,10 +772,7 @@ function compareTests(tests) {
             text: ''
         },
         xAxis: {
-            categories: ['Speed', 'Efficiency', 'Resources'],
-            labels: {
-                enabled: false
-            }
+            categories: ['Speed', 'Efficiency', 'Resources']
         },
         yAxis: {
             title: {
@@ -727,4 +784,20 @@ function compareTests(tests) {
     });
 
     $('#button_compare').prop("disabled", true);
+}
+
+function changeWeight(category, weight) {
+
+    var final_results = [];
+
+    for (var i = 0; i < results[category].length; i++) {
+        results[category][i] *= weight;
+        chart_compare_categories.series[i].setData([
+            round(results["speed"][i], 3),
+            round(results["efficiency"][i], 3),
+            round(results["resources"][i], 3)]);
+
+        final_results.push(round(results["speed"][i] + results["efficiency"][i] + results["resources"][i], 3));
+        chart_compare_overview.series[i].setData([final_results[i]]);
+    }
 }
