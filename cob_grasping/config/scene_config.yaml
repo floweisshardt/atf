@@ -6,8 +6,8 @@ scene_1:
     position: [0.56, -0.64, 0.0]
     scaling: 0.002
   object:
-    shape: 3
     dimension: [0.02, 0.02, 0.1]
+    shape: 3
   positions:
     arm: right
     goal_l: [0.594, 0.15, 1.082]
@@ -27,8 +27,8 @@ scene_2:
     position: [0.67, -0.12, 0.16]
     scaling: 0.01
   object:
-    shape: 3
     dimension: [0.02, 0.02, 0.1]
+    shape: 3
   positions:
     arm: right
     goal_l: [0.545, 0.021, 1.053]
@@ -44,41 +44,28 @@ scene_3:
   environment:
     additional_obstacles:
     - id: wall_r
-      shape: 1
       orientation: [0.0, 0.0, 0.0]
       position: [0.8, -0.15, 0.86]
+      shape: 1
       size: [0.48, 0.05, 0.5]
     - id: wall_l
-      shape: 1
       orientation: [0.0, 0.0, 0.0]
       position: [0.8, 0.15, 0.86]
+      shape: 1
       size: [0.48, 0.05, 0.5]
     mesh: /files/table.stl
     orientation: [0.0, 0.0, 0.0]
     position: [0.56, 0.0, 0.61]
     scaling: 1.0
   object:
-    shape: 3
     dimension: [0.02, 0.02, 0.1]
+    shape: 3
+  poses: {approach: approach_3, drop: drop_3, end: end_3, grasp: grasp_3, lift: lift_3,
+    move: move_3, retreat: retreat_3, start: start_3}
   positions:
     arm: right
-    goal_l: [0.6417306065559387, 0.32268813252449036, 0.7447826862335205]
-    goal_r: [0.647759735584259, -0.30217692255973816, 0.7066922187805176]
-    start_r: [0.647759735584259, -0.30217692255973816, 0.7066922187805176]
-    waypoints_l:
-    - [0.7011745572090149, 0.0846175029873848, 0.7319022417068481]
-    - [0.7603783011436462, 0.17889727652072906, 0.7365763187408447]
-    - [0.7032328248023987, 0.24945971369743347, 0.7381619215011597]
-    waypoints_r:
-    - [0.7567728161811829, -0.30217692255973816, 0.7066922187805176]
-    - [0.7567728161811829, -0.18664437532424927, 0.7066922187805176]
-    - [0.647759735584259, -0.18664437532424927, 0.7066922187805176]
-  poses:
-    start: "start_3"
-    approach: "approach_3"
-    grasp: "grasp_3"
-    lift: "lift_3"
-    move: "move_3"
-    drop: "drop_3"
-    retreat: "retreat_3"
-    end: "end_3"
+    goal_l: [0.6333876252174377, 0.27723678946495056, 0.797934889793396]
+    goal_r: [0.637124240398407, 0.0025927298702299595, 0.800425112247467]
+    start_r: [0.6415619254112244, -0.2947347164154053, 0.8056684732437134]
+    waypoints_l: []
+    waypoints_r: []
