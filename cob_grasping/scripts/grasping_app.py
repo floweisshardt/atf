@@ -836,6 +836,8 @@ class Planning(smach.State):
         elif userdata.active_arm == "right":
             self.planer = mgc_right
         self.planer.set_planner_id(self.planer_id)
+        self.planer.allow_replanning(True)
+        self.planer.set_planning_time(60)
 
         if userdata.cs_orientation[2] >= 0.5 * math.pi:
             # Rotate clockwise
@@ -1827,4 +1829,8 @@ class TestRecording(unittest.TestCase):
 
 if __name__ == '__main__':
     rospy.init_node('test_recording')
-    rostest.rosrun("cob_grasping", 'test_recording', TestRecording, sysargs=None)
+    if rospy.get_param(rospy.get_name() + "/standalone"):
+        sm = SM()
+        sm.execute()
+    else:
+        rostest.rosrun("cob_grasping", 'test_recording', TestRecording, sysargs=None)
