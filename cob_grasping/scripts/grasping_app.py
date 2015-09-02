@@ -660,9 +660,6 @@ class StartPosition(smach.State):
             userdata.error_message = "Execution aborted by user"
             return "error"
 
-        planning_recorder_all.start()
-        planning_recorder_1.start()
-
         (config, error_code) = sss.compose_trajectory("arm_" + userdata.active_arm, userdata.arm_positions["poses"][0])
         if error_code != 0:
             rospy.logerr("unable to parse configuration")
@@ -686,21 +683,14 @@ class StartPosition(smach.State):
                 userdata.error_counter = 0
                 userdata.error_message = "Unabled to plan 'start trajectory' for " + userdata.active_arm + " arm"
 
-                planning_recorder_1.error()
-
                 return "error"
 
             userdata.error_counter += 1
             return "failed"
         else:
-            planning_recorder_1.stop()
-
-            execution_recorder_all.start()
-            execution_recorder_1.start()
 
             planer.execute(traj)
 
-            execution_recorder_1.stop()
             return "succeeded"
 
 
@@ -753,8 +743,6 @@ class EndPosition(smach.State):
             userdata.error_message = "Execution aborted by user"
             return "error"
 
-        planning_recorder_3.start()
-
         (config, error_code) = sss.compose_trajectory("arm_" + userdata.active_arm, userdata.arm_positions["poses"][-1])
         if error_code != 0:
             rospy.logerr("unable to parse configuration")
@@ -778,22 +766,13 @@ class EndPosition(smach.State):
                 userdata.error_counter = 0
                 userdata.error_message = "Unabled to plan 'end trajectory' for " + userdata.active_arm + " arm"
 
-                planning_recorder_3.error()
-
                 return "error"
 
             userdata.error_counter += 1
             return "failed"
         else:
-            planning_recorder_3.stop()
-            planning_recorder_all.stop()
-
-            execution_recorder_3.start()
 
             planer.execute(traj)
-
-            execution_recorder_3.stop()
-            execution_recorder_all.stop()
 
             # ----------- REMOVE OBJECT ------------
             add_remove_object("remove", collision_object, "", "")
@@ -837,7 +816,6 @@ class Planning(smach.State):
             self.planer = mgc_right
         self.planer.set_planner_id(self.planer_id)
         self.planer.allow_replanning(True)
-        self.planer.set_planning_time(60)
 
         if userdata.cs_orientation[2] >= 0.5 * math.pi:
             # Rotate clockwise
@@ -865,7 +843,7 @@ class Planning(smach.State):
             return "error"
 
         if not self.timer_activated:
-            planning_recorder_2.start()
+            planning_recorder.start()
             self.timer_activated = True
 
         # ---- PLANNING ----
@@ -883,13 +861,13 @@ class Planning(smach.State):
                 userdata.cs_orientation[2] = 0.0
 
                 self.timer_activated = False
-                planning_recorder_2.error()
+                planning_recorder.error()
 
                 return "error"
             else:
                 return "failed"
 
-        planning_recorder_2.stop()
+        planning_recorder.stop()
         self.timer_activated = True
 
         userdata.error_counter = 0
@@ -1545,7 +1523,7 @@ class Execution(smach.State):
             userdata.cs_position = "start"
             return "error"
 
-        execution_recorder_2.start()
+        execution_recorder.start()
 
         # ----------- EXECUTE -----------
         rospy.loginfo("---- Start execution ---")
@@ -1570,7 +1548,7 @@ class Execution(smach.State):
         self.move_gripper(userdata, "gripper_" + userdata.active_arm, "close")
         rospy.loginfo("-- Execution finished --")
 
-        execution_recorder_2.stop()
+        execution_recorder.stop()
 
         # ----------- CLEAR TRAJECTORY LIST -----------
         userdata.computed_trajectories[:] = []
@@ -1699,8 +1677,7 @@ class SM(smach.StateMachine):
 
         # ---- INITIALIZATION ----
         global sss, mgc_left, mgc_right, planning_scene, planning_scene_interface, pub_planning_scene,\
-            planning_recorder_all, planning_recorder_1, planning_recorder_2, planning_recorder_3,\
-            execution_recorder_all, execution_recorder_1, execution_recorder_2, execution_recorder_3, abort_execution
+            planning_recorder, execution_recorder, abort_execution
         sss = simple_script_server()
         mgc_left = MoveGroupCommander("arm_left")
         mgc_right = MoveGroupCommander("arm_right")
@@ -1711,14 +1688,8 @@ class SM(smach.StateMachine):
         planning_scene_interface = PlanningSceneInterface()
         pub_planning_scene = rospy.Publisher("planning_scene", PlanningScene, queue_size=1)
 
-        planning_recorder_all = RecordingManager("planning_all")
-        planning_recorder_1 = RecordingManager("planning_1")
-        planning_recorder_2 = RecordingManager("planning_2")
-        planning_recorder_3 = RecordingManager("planning_3")
-        execution_recorder_all = RecordingManager("execution_all")
-        execution_recorder_1 = RecordingManager("execution_1")
-        execution_recorder_2 = RecordingManager("execution_2")
-        execution_recorder_3 = RecordingManager("execution_3")
+        planning_recorder = RecordingManager("planning")
+        execution_recorder = RecordingManager("execution")
 
         abort_execution = False
 
