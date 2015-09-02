@@ -3,25 +3,27 @@ testsuite_1:
   test_config: "test_1"
   robot: "cob4-2"
   planer_id:
+    - "SBLkConfigDefault"
+    - "SBLkConfigDefault"
+    - "ESTkConfigDefault"
+    - "LBKPIECEkConfigDefault"
     - "BKPIECEkConfigDefault"
-    - "LBKPIECEkConfigDefault"
+    - "KPIECEkConfigDefault"
+    - "RRTkConfigDefault"
+    - "RRTConnectkConfigDefault"
+    - "RRTstarkConfigDefault"
+    - "TRRTkConfigDefault"
+    - "PRMkConfigDefault"
+    - "PRMstarkConfigDefault"
   planning_method:
-    - "joint"
-    - "cartesian_linear"
-  jump_threshold:
-    - 2
-  eef_step:
-    - 0.02
-testsuite_2:
-  scene_config: "scene_3"
-  test_config: "test_2"
-  robot: "cob4-2"
-  planer_id:
-    - "LBKPIECEkConfigDefault"
-  planning_method:
-    - "cartesian_linear"
+    - "cartesian"
   jump_threshold:
     - 1
     - 2
+    - 3
   eef_step:
     - 0.01
+    - 0.02
+    - 0.03
+    - 0.04
+    - 0.05

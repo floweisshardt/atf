@@ -80,16 +80,17 @@ class GenerateTests(unittest.TestCase):
                 node(param(name="robot_config_file", value="$(arg rc_path)$(arg robot)/robot_config.yaml"),
                      name="atf_recorder", pkg="atf_recorder", type="recorder_core.py", output="screen"),
                 test(param(name="scene_config_file", value="$(find cob_grasping)/config/scene_config.yaml"),
+                     param(name="standalone", value="False"),
                      param(name="switch_arm", value="False"),
                      param(name="wait_for_user", value="False"),
                      param(name="joint_trajectory_speed", value="0.3"),
-                     param(name="max_error", value="50"),
+                     param(name="max_error", value="100"),
                      param(name="lift_height", value="0.02"),
                      param(name="approach_distance", value="0.14"),
                      param(name="manipulation_repeats", value="1"),
-                     param(name="load_obstacles", value="none"),
+                     param(name="load_obstacles", value="wall_r"),
                      {'test-name': "test_recording", 'pkg': self.package_name, 'type': self.applikation_name,
-                      'time-limit': "300.0"})
+                      'time-limit': "500.0"})
             )
 
             xmlstr = minidom.parseString(ElementTree.tostring(test_record)).toprettyxml(indent="    ")
@@ -111,7 +112,7 @@ class GenerateTests(unittest.TestCase):
                 param(name="analysing/result_yaml_output", value=self.yaml_output),
                 param(name="analysing/result_json_output", value=self.json_output),
                 test({'test-name': "test_analysing", 'pkg': "atf_core", 'type': "test_builder.py",
-                      'time-limit': "300.0"}),
+                      'time-limit': "500.0"}),
                 node(name="player", pkg="rosbag", type="play", output="screen", args="--delay=5.0 --clock " +
                                                                                      self.bagfile_output + item +
                                                                                      ".bag")

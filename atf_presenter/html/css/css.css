@@ -1,39 +1,26 @@
-body {
-    font: 62.5% "Trebuchet MS", sans-serif;
-    margin: 50px;
-    background-color: #F0F0F0;
-}
 a {
     text-decoration: none;
     color: #000;
 }
-#page {
-    position: relative;
-    width: 90%;
-    margin: 0 auto;
-    background-color: #D8D8D8;
+#test_list_content, #panel_detail_resources, #panel_detail_path_length, #panel_detail_time, #panel_compare_detail_resources, #panel_compare_detail_path_length, #panel_compare_detail_time {
+    display: none;
 }
-#testsuite_collection {
-    position: relative;
-    height: 100%;
-    padding: 20px;
+.plot {
+    width: 100%;
+    max-width: 800px;
+    height: 300px;
 }
-#testsuite_collection div {
-    margin-bottom: 10px;
+input[type="radio"], input[type="checkbox"] {
+    line-height: normal;
+    margin-top: -7px;
 }
-#testsuite_collection div:last-child {
-    margin-bottom: 0 !important;
+.table > tbody > tr > td {
+    vertical-align: middle;
 }
-#testsuite_collection div h1 {
-    position: relative;
-    border: solid 1px #000;
-    margin: 0;
-    font-size: 15px;
+.modal-body ul {
+    list-style: none;
 }
-.test_collection {
-    position: relative;
-    height: 100%;
-    color: #000;
-    margin-left: 20px;
-    margin-top: 10px;
+.fixed-panel {
+    min-height: 180px;
+    max-height: 180px;
 }
