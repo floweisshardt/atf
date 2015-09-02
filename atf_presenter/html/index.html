@@ -15,7 +15,10 @@
     <link type="text/css" href="css/bootstrap.min.css" rel="stylesheet">
 
     <!-- Custom styles for this template -->
-    <link type="text/css" href="css/dashboard.css" rel="stylesheet">
+    <link type="text/css" href="css/dashboard.min.css" rel="stylesheet">
+
+    <!-- Bootstrap select CSS -->
+    <link type="text/css" href="css/bootstrap-select.min.css" rel="stylesheet">
 
     <!-- Custom CSS -->
     <link type="text/css" href="css/css.css" rel="stylesheet">
@@ -53,15 +56,20 @@
                         <div class="btn btn-primary btn-file">
                             Browse <input type="file" multiple>
                         </div>
+                        <!-- TODO: Add progressbar for file upload-->
                     </div>
                 </div>
-                <div class="panel panel-primary">
+                <div class="panel panel-primary" id="compare_test_option">
                     <div class="panel-heading">Compare tests</div>
                     <div class="panel-body">
                         <p>Select the tests you want to compare via the checkboxes and click the button.</p>
                         <button id="button_compare" type="button" class="btn btn-primary" data-target="#compare_tests" data-toggle="modal" disabled="disabled">
                             Compare tests
                         </button>
+                        <div class="row placeholders"></div>
+                        <p>Select the test config to compare all tests with this config.</p>
+                        <label for="select_test_config"></label>
+                        <select class="selectpicker" id="select_test_config" disabled="disabled" data-size="5" title='Select test config...'></select>
                     </div>
                 </div>
                 <div class="panel panel-primary" id="test_list_content">
@@ -173,28 +181,77 @@
                     <div class="panel-body" id="compare_results">
 
                         <ul class="nav nav-tabs nav-justified" role="tablist">
-                            <li role="presentation" class="active"><a href="#overview" aria-controls="overview" role="tab" data-toggle="tab">Overview</a></li>
-                            <li role="presentation"><a href="#categories" aria-controls="categories" role="tab" data-toggle="tab">Categories</a></li>
+                            <li role="presentation" class="active"><a href="#overview_tab" aria-controls="overview_tab" role="tab" data-toggle="tab">Overview</a></li>
+                            <li role="presentation"><a href="#categories_tab" aria-controls="categories_tab" role="tab" data-toggle="tab">Categories</a></li>
                         </ul>
                         <div class="tab-content">
-                            <div role="tabpanel" class="tab-pane active plot" id="overview"></div>
-                            <div role="tabpanel" class="tab-pane plot" id="categories"></div>
+                            <div role="tabpanel" class="tab-pane active" id="overview_tab">
+                                <div id="overview" class="plot"></div>
+                            </div>
+                            <div role="tabpanel" class="tab-pane" id="categories_tab">
+                                <div id="categories" class="plot"></div>
+                            </div>
                         </div>
                     </div>
 
                     <!-- Weight buttons -->
-                    <div class="panel panel-info" id="weight_control">
-                        <div class="panel-heading">Weight control buttons</div>
-                        <div class="panel-body">
-                            <div class="btn-group" data-toggle="buttons">
-                                <button type="button" class="btn btn-primary" value="speed">Speed</button>
-                                <button type="button" class="btn btn-primary" value="efficiency">Efficiency</button>
-                                <button type="button" class="btn btn-primary" value="resources">Resources</button>
+                    <div class="row">
+                        <div class="col-lg-6 col-md-6 col-sm-6">
+                            <div class="panel panel-info" id="weight_control">
+                                <div class="panel-heading">Weight control buttons</div>
+                                <div class="panel-body fixed-panel">
+                                    <div class="input-group">
+                                        <span class="input-group-btn">
+                                            <button type="button" class="btn btn-primary weight_control_button" value="speed">Speed</button>
+                                        </span>
+                                        <input type="text" class="form-control weight_control_value" placeholder="Speed weight value" value="1.5">
+                                    </div>
+                                    <div class="placeholder"></div>
+                                    <div class="input-group">
+                                        <span class="input-group-btn">
+                                            <button type="button" class="btn btn-primary weight_control_button" value="efficiency">Efficiency</button>
+                                        </span>
+                                        <input type="text" class="form-control weight_control_value" placeholder="Efficiency weight value" value="1.5">
+                                    </div>
+                                    <div class="placeholder"></div>
+                                    <div class="input-group">
+                                        <span class="input-group-btn">
+                                            <button type="button" class="btn btn-primary weight_control_button" value="resources">Resources</button>
+                                        </span>
+                                        <input type="text" class="form-control weight_control_value" placeholder="Resources weight value" value="1.5">
+                                    </div>
+                                    <div class="placeholder"></div>
+                                </div>
                             </div>
-                            <div class="row placeholders"></div>
-                            <div class="input-group col-xs-3">
-                                <span class="input-group-addon" id="basic-addon1">Weight value</span>
-                                <input type="text" id="weight_value" class="form-control" placeholder="Weight value" aria-describedby="basic-addon1" value="10">
+                        </div>
+                        <div class="col-lg-6 col-md-6 col-sm-6">
+                            <div class="panel panel-info" id="test_configuration_details">
+                                <div class="panel-heading">Test details</div>
+                                <div class="panel-body fixed-panel"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="panel panel-primary">
+                    <div class="panel-heading">Details</div>
+                    <div class="panel-body" id="compare_results_detail">
+                        <div class="panel panel-primary" id="panel_compare_detail_resources">
+                            <div class="panel-heading">Resources</div>
+                            <div class="panel-body" id="compare_resources_detail">
+                                <ul class="nav nav-tabs nav-justified" role="tablist"></ul>
+                                <div class="tab-content"></div>
+                            </div>
+                        </div>
+                        <div class="panel panel-primary" id="panel_compare_detail_path_length">
+                            <div class="panel-heading">Path length</div>
+                            <div class="panel-body">
+                                <div id="compare_path_length_detail" class="plot"></div>
+                            </div>
+                        </div>
+                        <div class="panel panel-primary" id="panel_compare_detail_time">
+                            <div class="panel-heading">Time</div>
+                            <div class="panel-body">
+                                <div id="compare_time_detail" class="plot"></div>
                             </div>
                         </div>
                     </div>
@@ -214,13 +271,15 @@
 <!-- Placed at the end of the document so the pages load faster -->
 <script type="text/javascript" src="js/jquery-1.11.3.min.js"></script>
 <script type="text/javascript" src="js/bootstrap.min.js"></script>
-<script type="text/javascript" src="js/highcharts.js"></script>
-<script type="text/javascript" src="js/drilldown.js"></script>
+<script type="text/javascript" src="js/highcharts.min.js"></script>
+<script type="text/javascript" src="js/drilldown.min.js"></script>
+<script type="text/javascript" src="js/bootstrap-select.min.js"></script>
 
 <!-- IE10 viewport hack for Surface/desktop Windows 8 bug -->
-<script type="text/javascript" src="js/ie10-viewport-bug-workaround.js"></script>
+<script type="text/javascript" src="js/ie10-viewport-bug-workaround.min.js"></script>
 <script type="text/javascript" src="js/file_storage.js"></script>
 <script type="text/javascript" src="js/javascript_tools.js"> </script>
+<script type="text/javascript" src="js/compare_tools.js"></script>
 <script type="text/javascript" src="js/ui_behavior.js"> </script>
 
 </body>

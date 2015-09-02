@@ -4,51 +4,8 @@ var results = {
     "efficiency": []
 };
 
-var chart_compare_overview = new Highcharts.Chart({
-    chart: {
-        renderTo: 'overview',
-        defaultSeriesType: 'column',
-        type: 'column',
-        zoomType: 'xy'
-    },
-    title: {
-        text: ''
-    },
-    xAxis: {
-        labels: {
-            enabled: false
-        }
-    },
-    yAxis: {
-        title: {
-            text: 'Points'
-        }
-    },
-    tooltip: '',
-    series: [{}]
-});
-
-var chart_compare_categories = new Highcharts.Chart({
-    chart: {
-        renderTo: 'categories',
-        defaultSeriesType: 'column',
-        type: 'column',
-        zoomType: 'xy'
-    },
-    title: {
-        text: ''
-    },
-    xAxis: {
-        categories: ['Speed', 'Efficiency', 'Resources']
-    },
-    yAxis: {
-        title: {
-            text: 'Points'
-        }
-    },
-    tooltip: '',
-    series: [{}]
-});
+var chart_compare_overview;
+var chart_compare_categories;
 
 function round(number, decimals) {
     return +(Math.round(number + "e+" + decimals) + "e-" + decimals);
@@ -65,13 +22,13 @@ function getData(folder, files) {
                 console.log("Request failed: " + err);
             }));
     }
-    $.when.all(list).done(function() {
+    $.when.all(list).done(function () {
         showTestList();
     });
 }
 
 function onJSONSuccess(filename) {
-    return function(data) {
+    return function (data) {
         if (filename.contains("test_list")) {
             data = convertTestList(data);
         }
@@ -85,8 +42,8 @@ function onJSONSuccess(filename) {
 
 function convertTestList(test_list) {
     var new_test_list = {};
-    $.each(test_list, function(index, values) {
-        $.each(values, function(index, values) {
+    $.each(test_list, function (index, values) {
+        $.each(values, function (index, values) {
            new_test_list[index] = values;
         });
     });
@@ -101,10 +58,16 @@ function showTestList() {
 function drawTestList() {
     var test_list = getDataFromStorage("test_list");
     var test_list_div = $('#test_list_content').find('#test_list');
+    var test_list_compare_selection_div = $('#compare_test_option').find('.selectpicker');
+
     test_list_div.empty();
+    test_list_compare_selection_div.empty();
+    test_list_compare_selection_div.append('<option>None</option>');
+
+    var test_config_names = [];
 
     var number = 1;
-    $.each(test_list, function(test_name, test_data) {
+    $.each(test_list, function (test_name, test_data) {
         var test_name_full = test_name.split("_");
         var upload_status;
         var table_row_error;
@@ -123,20 +86,43 @@ function drawTestList() {
             upload_status = '<span class="glyphicon glyphicon-ok" aria-hidden="true"></span><span class="sr-only">No error:</span> No errors!';
             button_disabled = '';
 
-            if (test.hasOwnProperty("status") || test.hasOwnProperty("Error")) {
-                test_error = '<span class="glyphicon glyphicon-exclamation-sign" aria-hidden="true"></span><span class="sr-only">Error: </span> Error(s) found!';
+            if (checkforError(test)) {
+                test_error = '<span class="glyphicon glyphicon-exclamation-sign" aria-hidden="true"></span><span class="sr-only">Error: </span> Error(s) during execution!';
                 table_row_error = '<tr class="warning">';
                 checkbox_disabled = ' disabled="disabled"';
             } else {
-                test_error = '<span class="glyphicon glyphicon-ok" aria-hidden="true"></span><span class="sr-only">No error: </span> No errors!';
+                test_error = upload_status;
                 table_row_error = '<tr>';
-                checkbox_disabled = '';
+                checkbox_disabled = button_disabled;
+
+                if ($.inArray(test_data["test_config"], test_config_names) === -1) {
+                    test_config_names.push(test_data["test_config"]);
+                    test_list_compare_selection_div.prop("disabled", false);
+                    test_list_compare_selection_div.append('<option>' + test_data["test_config"] + '</option>');
+                }
             }
         }
-        test_list_div.append(table_row_error + '<td><div class="checkbox-inline"><label><input type="checkbox" value="' + test_name + '"' + checkbox_disabled + '></label></div></td><td>' + number + '</td><td>' + test_name + '</td><td>Testsuite ' + test_name_full[0].replace(/^\D+/g, '') + '</td><td>Test ' + test_name_full[1].replace(/^\D+/g, "") + '</td><td class="test_config">' + test_data["test_config"] + '</td><td class="scene_config">' + test_data["scene_config"] + '</td><td class="robot_name">' + test_data["robot"] + '</td><td>' + upload_status + '</td><td>' + test_error + '</td><td><button id="button_detail" type="button" class="btn btn-primary" data-target="#detail_test" data-toggle="modal" data-name="' + test_name + '"' + button_disabled + '>Details</button></td>');
 
+        test_list_div.append(table_row_error + '<td><div class="checkbox-inline"><label><input type="checkbox" value="' + test_name + '"' + checkbox_disabled + '></label></div></td><td>' + number + '</td><td>' + test_name + '</td><td>Testsuite ' + test_name_full[0].replace(/^\D+/g, '') + '</td><td>Test ' + test_name_full[1].replace(/^\D+/g, "") + '</td><td class="test_config">' + test_data["test_config"] + '</td><td class="scene_config">' + test_data["scene_config"] + '</td><td class="robot_name">' + test_data["robot"] + '</td><td>' + upload_status + '</td><td>' + test_error + '</td><td><button id="button_detail" type="button" class="btn btn-primary" data-target="#detail_test" data-toggle="modal" data-name="' + test_name + '"' + button_disabled + '>Details</button></td>');
         number++;
     });
+
+    test_list_compare_selection_div.selectpicker('refresh');
+}
+
+function checkforError(test_file) {
+    var error = false;
+    if (test_file.hasOwnProperty("Error")) {
+        error = true;
+    } else {
+        $.each(test_file, function (testblock_name, testblock_value) {
+            if (testblock_value.hasOwnProperty("status") && testblock_value["status"] === "error") {
+                error = true;
+                return false;
+            }
+        });
+    }
+    return error;
 }
 
 function drawTestDetails(test_name) {
@@ -151,7 +137,7 @@ function drawTestDetails(test_name) {
     var test_list = getDataFromStorage("test_list");
     var test_data = {};
 
-    $.each(test_list, function(index, values) {
+    $.each(test_list, function (index, values) {
        if (index === test_name) {
            test_data = values;
        }
@@ -200,11 +186,11 @@ function drawTestDetails(test_name) {
         '<li><b>Jump threshold:</b> ' + test_data["jump_threshold"] + '</li>' +
         '<li><b>EEF_step:</b> ' + test_data["eef_step"] + '</li>');
 
-    $.each(test_results, function(testblock_name, testblock_metrics) {
+    $.each(test_results, function (testblock_name, testblock_metrics) {
 
         if (testblock_metrics.hasOwnProperty("status") && testblock_metrics["status"] === "error") {
             status_div.empty();
-            status_div.append('<div class="alert alert-danger" role="alert">An error occured in testblock "' + testblock_name + '"!</div>');
+            status_div.append('<div class="alert alert-danger" role="alert">Planning error in testblock "' + testblock_name + '"!</div>');
             error = true;
         } else if (testblock_name === "Error") {
             status_div.empty();
@@ -231,7 +217,8 @@ function drawTestDetails(test_name) {
             var mem_nodes = [];
             var io_nodes = [];
             var net_nodes = [];
-            $.each(testblock_metrics["resources"], function(node_name, node_resources) {
+
+            $.each(testblock_metrics["resources"], function (node_name, node_resources) {
 
                 if (node_resources.hasOwnProperty("cpu")) {
                     cpu_nodes.push({
@@ -270,14 +257,14 @@ function drawTestDetails(test_name) {
                             'max': node_resources["io"]["max"][1]
                         }, {
                             'x': 2,
-                            'y': node_resources["io"]["average"][2],
-                            'min': node_resources["io"]["min"][2],
-                            'max': node_resources["io"]["max"][2]
+                            'y': round(node_resources["io"]["average"][2]/1000, 3),
+                            'min': round(node_resources["io"]["min"][2]/1000, 3),
+                            'max': round(node_resources["io"]["max"][2]/1000, 3)
                         }, {
                             'x': 3,
-                            'y': node_resources["io"]["average"][3],
-                            'min': node_resources["io"]["min"][3],
-                            'max': node_resources["io"]["max"][3]
+                            'y': round(node_resources["io"]["average"][3]/1000, 3),
+                            'min': round(node_resources["io"]["min"][3]/1000, 3),
+                            'max': round(node_resources["io"]["max"][3]/1000, 3)
                         }]
                     });
                 }
@@ -286,14 +273,14 @@ function drawTestDetails(test_name) {
                         'name': node_name,
                         'data': [{
                             'x': 0,
-                            'y': node_resources["network"]["average"][0],
-                            'min': node_resources["network"]["min"][0],
-                            'max': node_resources["network"]["max"][0]
+                            'y': round(node_resources["network"]["average"][0]/1000, 3),
+                            'min': round(node_resources["network"]["min"][0]/1000, 3),
+                            'max': round(node_resources["network"]["max"][0]/1000, 3)
                         }, {
                             'x': 1,
-                            'y': node_resources["network"]["average"][1],
-                            'min': node_resources["network"]["min"][1],
-                            'max': node_resources["network"]["max"][1]
+                            'y': round(node_resources["network"]["average"][1]/1000, 3),
+                            'min': round(node_resources["network"]["min"][1]/1000, 3),
+                            'max': round(node_resources["network"]["max"][1]/1000, 3)
                         }, {
                             'x': 2,
                             'y': node_resources["network"]["average"][2],
@@ -389,7 +376,7 @@ function drawTestDetails(test_name) {
                         text: 'Disk IO operations'
                     },
                     xAxis: {
-                        categories: ['Read count', 'Write count', 'Bytes read', 'Bytes wrote']
+                        categories: ['Read count', 'Write count', 'Kilobytes read', 'Kilobytes wrote']
                     },
                     tooltip: plot_tooltip,
                     series: io_nodes
@@ -406,7 +393,7 @@ function drawTestDetails(test_name) {
                         text: 'Network traffic'
                     },
                     xAxis: {
-                        categories: ['Bytes sent', 'Bytes received', 'Packets sent', 'Packets received', 'Errors received', 'Errors sent', 'Packets dropped: Received', 'Packets dropped: Sent']
+                        categories: ['Kilobytes sent', 'Kilobytes received', 'Packets sent', 'Packets received', 'Errors received', 'Errors sent', 'Packets dropped: Received', 'Packets dropped: Sent']
                     },
                     tooltip: plot_tooltip,
                     series: net_nodes
@@ -536,268 +523,5 @@ function drawTestDetails(test_name) {
     if (!error) {
         status_div.empty();
         status_div.append('<div class="alert alert-success" role="alert">No error during evaluation!</div>');
-    }
-}
-
-function compareTests(tests) {
-    var configuration_div = $('#compare_tests').find('#compare_configuration');
-    var test_list = getDataFromStorage("test_list");
-
-    var final_results = [];
-    var category_results = {
-        "speed": [],
-        "efficiency": [],
-        "resources": []
-    };
-
-    results = {
-        "speed": [],
-        "resources": [],
-        "efficiency": []
-    };
-
-    var weight_speed = 1;
-    var weight_resources = 1;
-    var weight_efficiency = 1;
-
-    var plot_tooltip = {
-        "formatter": function () {
-            return '<b>' + this.series.name + '</b><br>' +
-                this.y + ' Points';
-        }
-    };
-
-    configuration_div.empty();
-    configuration_div.append('<li><h4><b>General configuration</b></h4></li>' +
-        '<li><b>Scene config: </b>' + test_list[tests[0]]["scene_config"] + '</li>' +
-        '<li><b>Test config: </b>' + test_list[tests[0]]["test_config"] + '</li>' +
-        '<li><h4><b>Test configurations</b></h4></li>');
-
-    $.each(tests, function(index, test_name) {
-        var test_data = test_list[test_name];
-
-        configuration_div.append('<li><a data-toggle="collapse" href="#' + test_name + '" aria-expanded="false" aria-controls="' + test_name + '">' +
-            '<span class="glyphicon glyphicon-plus-sign" aria-hidden="true"></span><b>&nbsp;' + test_name + '</b></a></li>' +
-            '<ul class="collapse" id="' + test_name + '"><div class="well-sm">' +
-            '<li><b>Robot:</b> ' + test_data["robot"] + '</li>' +
-            '<li><b>Planer ID:</b> ' + test_data["planer_id"] + '</li>' +
-            '<li><b>Planning Method:</b> ' + test_data["planning_method"] + '</li>' +
-            '<li><b>Jump threshold:</b> ' + test_data["jump_threshold"] + '</li>' +
-            '<li><b>EEF_step:</b> ' + test_data["eef_step"] + '</li>' +
-            '</div></ul>');
-
-        var test_results = getDataFromStorage(test_name);
-
-        var temp_testblock = {
-            "time": {
-                "current": [],
-                "total": 0
-            },
-            "path_length": {
-                "current": [],
-                "total": 0
-            },
-            "resources": {
-                "cpu": {
-                    "current": [],
-                    "total": 0
-                },
-                "mem": {
-                    "current": [],
-                    "total": 0
-                },
-                "io": {
-                    "current": [],
-                    "total": [0, 0, 0, 0]
-                },
-                "network": {
-                    "current": [],
-                    "total": [0, 0, 0, 0, 0, 0, 0, 0]
-                }
-            }
-        };
-
-        $.each(test_results, function(index, testblock) {
-
-            if (testblock.hasOwnProperty("time")) {
-                temp_testblock["time"]["current"].push(testblock["time"]);
-                temp_testblock["time"]["total"] += testblock["time"];
-            }
-            if (testblock.hasOwnProperty("resources")) {
-                $.each(testblock["resources"], function(node_name, node_resources) {
-
-                    var res_all_nodes = [0, 0, [0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0]];
-                    $.each(node_resources, function(resource_name, resource_data) {
-
-                        if (resource_name === "cpu") {
-                            res_all_nodes[0] += resource_data["average"];
-                            temp_testblock["resources"]["cpu"]["total"] += resource_data["average"];
-                        } else if (resource_name === "mem") {
-                            res_all_nodes[1] += resource_data["average"];
-                            temp_testblock["resources"]["mem"]["total"] += resource_data["average"];
-                        } else if (resource_name === "io") {
-                            for (var x = 0; x < 4; x++) {
-                                res_all_nodes[2][x] += resource_data["average"][x];
-                                temp_testblock["resources"]["io"]["total"][x] += resource_data["average"][x];
-                            }
-                        } else if (resource_name === "network") {
-                            for (var y = 0; y < 8; y++) {
-                                res_all_nodes[3][y] += resource_data["average"][y];
-                                temp_testblock["resources"]["network"]["total"][y] += resource_data["average"][y];
-                            }
-                        }
-                    });
-
-                    temp_testblock["resources"]["cpu"]["current"].push(res_all_nodes[0]);
-                    temp_testblock["resources"]["mem"]["current"].push(res_all_nodes[1]);
-                    temp_testblock["resources"]["io"]["current"].push(res_all_nodes[2]);
-                    temp_testblock["resources"]["network"]["current"].push(res_all_nodes[3]);
-                });
-            }
-            $.each(testblock, function (metric_name, metric_values) {
-                if (metric_name.contains("path_length")) {
-                    temp_testblock["path_length"]["current"].push(metric_values);
-                    temp_testblock["path_length"]["total"] += metric_values;
-                }
-            });
-
-
-        });
-
-        var temp_speed = 0;
-        var temp_efficiency = 0;
-        var temp_resources = 0;
-
-        for (var i = 0; i < Object.keys(test_results).length; i++) {
-            var temp_io = 0;
-            var temp_network = 0;
-            var temp_cpu = 0;
-            var temp_mem = 0;
-
-            if (temp_testblock["time"]["current"][i] != 0 && typeof temp_testblock["time"]["current"][i] != 'undefined') {
-                temp_speed += temp_testblock["time"]["total"] / temp_testblock["time"]["current"][i];
-            }
-            if (temp_testblock["path_length"]["current"][i] != 0 && typeof temp_testblock["path_length"]["current"][i] != 'undefined') {
-                temp_efficiency += temp_testblock["path_length"]["total"]/temp_testblock["path_length"]["current"][i];
-            }
-            if (temp_testblock["resources"]["cpu"]["current"][i] != 0 && typeof temp_testblock["resources"]["cpu"]["current"][i] != 'undefined') {
-                temp_cpu = temp_testblock["resources"]["cpu"]["total"]/temp_testblock["resources"]["cpu"]["current"][i];
-            }
-            if (temp_testblock["resources"]["mem"]["current"][i] != 0 && typeof temp_testblock["resources"]["mem"]["current"][i] != 'undefined') {
-                temp_mem = temp_testblock["resources"]["mem"]["total"]/temp_testblock["resources"]["mem"]["current"][i];
-            }
-            for (var a = 0; a < 4; a++) {
-                if (temp_testblock["resources"]["io"]["current"][i][a] != 0 && typeof temp_testblock["resources"]["io"]["current"][i] != 'undefined') {
-                    temp_io += temp_testblock["resources"]["io"]["total"][a]/temp_testblock["resources"]["io"]["current"][i][a];
-                }
-            }
-            for (var b = 0; b < 8; b++) {
-                if (temp_testblock["resources"]["network"]["current"][i][b] != 0 && typeof temp_testblock["resources"]["network"]["current"][i] != 'undefined') {
-                    temp_network += temp_testblock["resources"]["network"]["total"][b]/temp_testblock["resources"]["network"]["current"][i][b];
-                }
-            }
-
-            temp_resources += temp_cpu + temp_mem + temp_io + temp_network;
-        }
-
-        results["speed"].push(temp_speed);
-        results["efficiency"].push(temp_efficiency);
-        results["resources"].push(temp_resources);
-
-    });
-    var data_overview = [];
-    var data_categories = [];
-
-    for (var i = 0; i < tests.length; i++) {
-        category_results["speed"].push(round(results["speed"][i] * weight_speed, 3));
-        category_results["efficiency"].push(round(results["efficiency"][i] * weight_efficiency, 3));
-        category_results["resources"].push(round(results["resources"][i] * weight_resources, 3));
-
-        final_results.push(round((results["speed"][i] * weight_speed + results["efficiency"][i] * weight_efficiency + results["resources"][i] * weight_resources), 3));
-
-        data_overview.push({
-            'name': tests[i],
-            'data': [{
-                'x': i,
-                'y': final_results[i]
-            }]
-        });
-        data_categories.push({
-            'name': tests[i],
-            'data': [{
-                'x': 0,
-                'y': category_results["speed"][i]
-            }, {
-                'x': 1,
-                'y': category_results["efficiency"][i]
-            }, {
-                'x': 2,
-                'y': category_results["resources"][i]
-            }]
-        });
-    }
-
-    chart_compare_overview = new Highcharts.Chart({
-        chart: {
-            renderTo: 'overview',
-            defaultSeriesType: 'column',
-            type: 'column',
-            zoomType: 'xy'
-        },
-        title: {
-            text: ''
-        },
-        xAxis: {
-            labels: {
-                enabled: false
-            }
-        },
-        yAxis: {
-            title: {
-                text: 'Points'
-            }
-        },
-        tooltip: plot_tooltip,
-        series: data_overview
-    });
-
-    chart_compare_categories = new Highcharts.Chart({
-        chart: {
-            renderTo: 'categories',
-            defaultSeriesType: 'column',
-            type: 'column',
-            zoomType: 'xy'
-        },
-        title: {
-            text: ''
-        },
-        xAxis: {
-            categories: ['Speed', 'Efficiency', 'Resources']
-        },
-        yAxis: {
-            title: {
-                text: 'Points'
-            }
-        },
-        tooltip: plot_tooltip,
-        series: data_categories
-    });
-
-    $('#button_compare').prop("disabled", true);
-}
-
-function changeWeight(category, weight) {
-
-    var final_results = [];
-
-    for (var i = 0; i < results[category].length; i++) {
-        results[category][i] *= weight;
-        chart_compare_categories.series[i].setData([
-            round(results["speed"][i], 3),
-            round(results["efficiency"][i], 3),
-            round(results["resources"][i], 3)]);
-
-        final_results.push(round(results["speed"][i] + results["efficiency"][i] + results["resources"][i], 3));
-        chart_compare_overview.series[i].setData([final_results[i]]);
     }
 }

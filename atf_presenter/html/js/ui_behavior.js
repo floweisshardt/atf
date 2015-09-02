@@ -17,17 +17,22 @@ $(document).ready(function() {
         }
     }
 
+    $('#button_compare').prop("disabled", true);
+
+    $('#compare_test_option').find('.selectpicker').selectpicker({
+        style: 'btn-primary',
+        size: 4
+    });
+
     // Load test list from storage (if available)
     if (getDataFromStorage("test_list")) {
         showTestList();
     }
-
-    $('#button_compare').prop("disabled", true);
 });
 
 $(document).on('change', '.btn-file :file', function () {
     $('#button_compare').prop("disabled", true);
-
+    // TODO: Use folder from file select
     var labels = [];
     var input = $(this),
         numFiles = input.get(0).files ? input.get(0).files.length : 1;
@@ -47,7 +52,7 @@ $(document).on('change', '.btn-file :file', function () {
 
 $('.btn-file :file').on('fileselect', function (event, numFiles, labels) {
     clearStorage();
-    getData("./data/", labels);
+    getData("./bkp/", labels);
 });
 
 $('#test_list').on("click", ".btn", function (e) {
@@ -102,50 +107,46 @@ $('.table').find('#test_list').on("click", "input", function () {
     }
 });
 
-$('#compare_tests').find('#weight_control .btn-group').on("click", "button", function () {
-    // TODO: Rewrite function
-    var weight = 1;
-    console.log($(this).parent().parent().find('#weight_value').val());
-    var weight_factor = $(this).parent().parent().find('#weight_value').val();
+$('#compare_tests').find('#weight_control').on("click", ".weight_control_button", function () {
+    var weight_input;
+    var weight_factor;
+    var weight_category;
 
-    if ($(this).hasClass('active')) {
-        $(this).removeClass('active');
-        weight = 1/weight_factor;
-    } else {
-        var active = 0;
-        $(this).parent().find('.active').each(function () {
-            active++;
-        });
+    if (!$(this).hasClass('active')) {
+        var active_buttons = $(this).parent().parent().parent().find('.active');
+        var active = active_buttons.length;
 
         if (active === 2) {
-            $(this).parent().find('.active').each(function () {
+            active_buttons.each(function () {
                 $(this).removeClass('active');
-                weight = 1/weight_factor;
-                changeWeight($(this).val(), weight);
+                weight_category = $(this).val();
+                weight_input = $(this).parent().parent().find('.weight_control_value');
+                weight_factor = 1/weight_input.val();
+                weight_input.prop("disabled", false);
+                changeWeight(weight_category, weight_factor);
             });
         }
-
         $(this).addClass('active');
-        weight = weight_factor;
-    }
-
-    active = 0;
-    $(this).parent().find('.active').each(function () {
-        active++;
-    });
-
-    if (active === 0) {
-        $(this).parent().parent().find('#weight_value').prop("disabled", false);
+        weight_category = $(this).val();
+        weight_input = $(this).parent().parent().find('.weight_control_value');
+        weight_factor = weight_input.val();
+        weight_input.prop("disabled", true);
+        changeWeight(weight_category, weight_factor);
     } else {
-        $(this).parent().parent().find('#weight_value').prop("disabled", true);
+        $(this).removeClass('active');
+        weight_category = $(this).val();
+        weight_input = $(this).parent().parent().find('.weight_control_value');
+        weight_factor = 1/weight_input.val();
+        weight_input.prop("disabled", false);
+        changeWeight(weight_category, weight_factor);
     }
-
-    changeWeight($(this).attr("value"), weight);
 });
 
 $(document).on("click", "#button_compare", function () {
     var tests = [];
     var table = $('.table');
+    var compare_test_option_select = $('#compare_test_option').find('.selectpicker');
+    var compare_tests_weight_control = $('#compare_tests').find('#weight_control');
 
     table.find('#test_list input:checked').each(function () {
         tests.push($(this).val());
@@ -159,9 +160,35 @@ $(document).on("click", "#button_compare", function () {
         }
     });
 
-    $('#compare_tests').find('#weight_control .btn-group button').each(function () {
+    compare_tests_weight_control.find('.weight_control_button').each(function () {
         $(this).removeClass('active');
     });
+    compare_tests_weight_control.find('.weight_control_value').each(function () {
+        $(this).prop("disabled", false);
+    });
 
+    $(this).prop("disabled", true);
+    compare_test_option_select.val("");
+    compare_test_option_select.selectpicker('refresh');
     compareTests(tests);
+});
+
+$('#compare_test_option').on("change", ".selectpicker", function () {
+    var config_selected = $(this).val();
+    var checked = 0;
+    $('#test_list_content').find('.table #test_list .test_config').each(function () {
+        if ($(this).parent().find('#button_detail').prop("disabled") == false && ($(this).parent().find('input').prop("disabled") == false || $(this).parent().hasClass('warning') == false)) {
+            if ($(this).html() === config_selected) {
+                $(this).parent().find('input').prop("checked", true);
+                checked++;
+            } else {
+                $(this).parent().find('input').prop("checked", false);
+            }
+        }
+    });
+    if (checked > 1) {
+        $('#button_compare').prop("disabled", false);
+    } else {
+        $('#button_compare').prop("disabled", true);
+    }
 });
