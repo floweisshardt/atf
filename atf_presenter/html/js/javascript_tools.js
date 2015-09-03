@@ -18,11 +18,11 @@ function getData(folder, files) {
         list.push($.getJSON(folder + filename + ".json")
             .done(onJSONSuccess(filename))
             .fail(function (jqxhr, textStatus, error) {
-                var err = textStatus + ", " + error;
+                var err = textStatus + ": " + error;
                 console.log("Request failed: " + err);
             }));
     }
-    $.when.all(list).done(function () {
+    $.when.all(list).always(function () {
         showTestList();
     });
 }
@@ -85,9 +85,13 @@ function drawTestList() {
         } else {
             upload_status = '<span class="glyphicon glyphicon-ok" aria-hidden="true"></span><span class="sr-only">No error:</span> No errors!';
             button_disabled = '';
-
-            if (checkforError(test)) {
-                test_error = '<span class="glyphicon glyphicon-exclamation-sign" aria-hidden="true"></span><span class="sr-only">Error: </span> Error(s) during execution!';
+            var error = checkforError(test);
+            if (error[0] === "error") {
+                test_error = '<span class="glyphicon glyphicon-exclamation-sign" aria-hidden="true"></span><span class="sr-only">Error: </span> ' + error[1];
+                table_row_error = '<tr class="warning">';
+                checkbox_disabled = ' disabled="disabled"';
+            }else if (error[0] === "planning") {
+                test_error = '<span class="glyphicon glyphicon-exclamation-sign" aria-hidden="true"></span><span class="sr-only">Error: </span> ' + error[1];
                 table_row_error = '<tr class="warning">';
                 checkbox_disabled = ' disabled="disabled"';
             } else {
@@ -111,20 +115,20 @@ function drawTestList() {
 }
 
 function checkforError(test_file) {
-    var error = false;
+    var error = "";
     if (test_file.hasOwnProperty("Error")) {
-        error = true;
+        error = ["error", "Error(s) during execution!"];
     } else {
         $.each(test_file, function (testblock_name, testblock_value) {
             if (testblock_value.hasOwnProperty("status") && testblock_value["status"] === "error") {
-                error = true;
+                error = ["planning", 'Planning error in testblock "' + testblock_name + '"!'];
                 return false;
             }
         });
     }
     return error;
 }
-
+// TODO: Path length in testblock tabs
 function drawTestDetails(test_name) {
     var test_detail = $('#detail_test');
     var test_name_split = test_name.split("_");
