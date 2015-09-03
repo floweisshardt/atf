@@ -56,7 +56,13 @@
                         <div class="btn btn-primary btn-file">
                             Browse <input type="file" multiple>
                         </div>
-                        <!-- TODO: Add progressbar for file upload-->
+                        <!-- TODO: Progressbar not perfect-->
+                        <div class="placeholder"></div>
+                        <div class="progress">
+                            <div id="file_upload_progressbar" class="progress-bar" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">
+                                0%
+                            </div>
+                        </div>
                     </div>
                 </div>
                 <div class="panel panel-primary" id="compare_test_option">

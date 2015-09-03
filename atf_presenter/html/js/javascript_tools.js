@@ -7,6 +7,8 @@ var results = {
 var chart_compare_overview;
 var chart_compare_categories;
 
+var progressbar_value = 0;
+
 function round(number, decimals) {
     return +(Math.round(number + "e+" + decimals) + "e-" + decimals);
 }
@@ -15,19 +17,26 @@ function getData(folder, files) {
     var list = [];
     for (var x = 0; x < files.length; x++) {
         var filename = files[x];
+        var total_files = files.length;
         list.push($.getJSON(folder + filename + ".json")
-            .done(onJSONSuccess(filename))
-            .fail(function (jqxhr, textStatus, error) {
-                var err = textStatus + ": " + error;
-                console.log("Request failed: " + err);
-            }));
+            .done(onJSONSuccess(filename, total_files))
+            .fail(onJSONFail(total_files))
+        );
     }
     $.when.all(list).always(function () {
         showTestList();
     });
 }
 
-function onJSONSuccess(filename) {
+function onJSONFail(file_length) {
+    return function (jqxhr, textStatus, error) {
+        var err = textStatus + ": " + error;
+        console.log("Request failed: " + err);
+        updateProgressbar(file_length);
+    };
+}
+
+function onJSONSuccess(filename, file_length) {
     return function (data) {
         if (filename.contains("test_list")) {
             data = convertTestList(data);
@@ -37,6 +46,7 @@ function onJSONSuccess(filename) {
         } else {
             console.log("Request suceeded");
         }
+        updateProgressbar(file_length);
     };
 }
 
@@ -48,6 +58,25 @@ function convertTestList(test_list) {
         });
     });
     return new_test_list;
+}
+
+function updateProgressbar(file_length) {
+
+    progressbar_value += (1/file_length)*100;
+    if (progressbar_value > 100) {
+        progressbar_value = 100;
+    }
+    var progressbar = $('#file_upload_progressbar');
+
+    if (round(progressbar.attr('aria-valuenow'), 0) === 100) {
+        progressbar.empty();
+        progressbar_value = 0;
+        progressbar.css('width', '0').attr('aria-valuenow', progressbar_value);
+        progressbar.append('0%');
+    }
+    progressbar.empty();
+    progressbar.css('width', round(progressbar_value, 0) + '%').attr('aria-valuenow', round(progressbar_value, 0));
+    progressbar.append(round(progressbar_value, 0) + '%');
 }
 
 function showTestList() {
