@@ -32,16 +32,15 @@ $(document).ready(function() {
 
 $(document).on('change', '.btn-file :file', function () {
     $('#button_compare').prop("disabled", true);
-    // TODO: Use folder from file select
     var labels = [];
-    var input = $(this),
-        numFiles = input.get(0).files ? input.get(0).files.length : 1;
+    var input = $(this);
+    var numFiles = input.get(0).files ? input.get(0).files.length : 1;
     for (var files = 0; files < input.get(0).files.length; files++) {
-        if(input.get(0).files[parseInt(files)].name.indexOf(".json") === -1) {
+        if(input.get(0).files[files].name.indexOf(".json") === -1) {
             alert("Select only .json files!");
             return;
         }
-        labels.push(input.get(0).files[parseInt(files)].name.split(".")[0]);
+        labels.push(input.get(0).files[files].name.split(".")[0]);
     }
     if ($.inArray("test_list", labels) === -1) {
         alert("You have to select the test_list.yaml file!");
@@ -52,7 +51,7 @@ $(document).on('change', '.btn-file :file', function () {
 
 $('.btn-file :file').on('fileselect', function (event, numFiles, labels) {
     clearStorage();
-    getData("./bkp/", labels);
+    getData("./data/", labels);
 });
 
 $('#test_list').on("click", ".btn", function (e) {
