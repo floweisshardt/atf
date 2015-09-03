@@ -231,27 +231,61 @@
                             </div>
                         </div>
                     </div>
+                    <div class="panel panel-info" id="test_results">
+                        <div class="panel-heading">Result overview</div>
+                        <div class="panel-body">
+                            <div class="table-responsive">
+                                <table class="table table-condensed">
+                                    <thead>
+                                        <tr>
+                                            <th>Category</th>
+                                            <th>Test name</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td>Speed</td>
+                                            <td id="result_overview_speed"></td>
+                                        </tr>
+                                        <tr>
+                                            <td>Efficiency</td>
+                                            <td id="result_overview_efficiency"></td>
+                                        </tr>
+                                        <tr>
+                                            <td>Resources</td>
+                                            <td id="result_overview_resources"></td>
+                                        </tr>
+                                        <tr>
+                                            <td>Total</td>
+                                            <td id="result_overview_total"></td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
                 </div>
                 <div class="panel panel-primary">
                     <div class="panel-heading">Details</div>
                     <div class="panel-body" id="compare_results_detail">
-                        <div class="panel panel-primary" id="panel_compare_detail_resources">
-                            <div class="panel-heading">Resources</div>
-                            <div class="panel-body" id="compare_resources_detail">
-                                <ul class="nav nav-tabs nav-justified" role="tablist"></ul>
-                                <div class="tab-content"></div>
+                        <ul class="nav nav-tabs nav-justified" role="tablist"></ul>
+                        <div class="tab-content">
+                            <div class="panel panel-primary" id="panel_compare_detail_resources">
+                                <div class="panel-heading">Resources</div>
+                                <div class="panel-body" id="compare_resources_detail">
+                                </div>
                             </div>
-                        </div>
-                        <div class="panel panel-primary" id="panel_compare_detail_path_length">
-                            <div class="panel-heading">Path length</div>
-                            <div class="panel-body">
-                                <div id="compare_path_length_detail" class="plot"></div>
+                            <div class="panel panel-primary" id="panel_compare_detail_path_length">
+                                <div class="panel-heading">Path length</div>
+                                <div class="panel-body">
+                                    <div id="compare_path_length_detail" class="plot"></div>
+                                </div>
                             </div>
-                        </div>
-                        <div class="panel panel-primary" id="panel_compare_detail_time">
-                            <div class="panel-heading">Time</div>
-                            <div class="panel-body">
-                                <div id="compare_time_detail" class="plot"></div>
+                            <div class="panel panel-primary" id="panel_compare_detail_time">
+                                <div class="panel-heading">Time</div>
+                                <div class="panel-body">
+                                    <div id="compare_time_detail" class="plot"></div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -273,6 +307,7 @@
 <script type="text/javascript" src="js/bootstrap.min.js"></script>
 <script type="text/javascript" src="js/highcharts.min.js"></script>
 <script type="text/javascript" src="js/drilldown.min.js"></script>
+<script type="text/javascript" src="js/grouped-categories.min.js"></script>
 <script type="text/javascript" src="js/bootstrap-select.min.js"></script>
 
 <!-- IE10 viewport hack for Surface/desktop Windows 8 bug -->
