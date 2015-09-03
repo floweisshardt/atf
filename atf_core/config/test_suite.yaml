@@ -4,7 +4,6 @@ testsuite_1:
   robot: "cob4-2"
   planer_id:
     - "SBLkConfigDefault"
-    - "SBLkConfigDefault"
     - "ESTkConfigDefault"
     - "LBKPIECEkConfigDefault"
     - "BKPIECEkConfigDefault"
