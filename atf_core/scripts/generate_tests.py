@@ -84,7 +84,7 @@ class GenerateTests(unittest.TestCase):
                      param(name="switch_arm", value="False"),
                      param(name="wait_for_user", value="False"),
                      param(name="joint_trajectory_speed", value="0.3"),
-                     param(name="max_error", value="100"),
+                     param(name="max_error", value="30"),
                      param(name="lift_height", value="0.02"),
                      param(name="approach_distance", value="0.14"),
                      param(name="manipulation_repeats", value="1"),
