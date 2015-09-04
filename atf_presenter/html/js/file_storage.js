@@ -1,3 +1,4 @@
+var emergency_storage = {};
 function writeDataToStorage(name, data) {
     if (!name || !data) {
         return false;
@@ -7,7 +8,13 @@ function writeDataToStorage(name, data) {
         data = JSON.stringify(data);
     }
     sessionStorage.removeItem(name);
-    sessionStorage.setItem(name, data);
+    try {
+        sessionStorage.setItem(name, data);
+    } catch (error) {
+        console.log(error);
+        delete emergency_storage[name];
+        emergency_storage[name] = data;
+    }
 
     return true;
 }
@@ -16,7 +23,11 @@ function getDataFromStorage(name) {
     var data = sessionStorage.getItem(name);
 
     if (!data) {
-        return false;
+        if (!emergency_storage.hasOwnProperty(name)) {
+            return false;
+        } else {
+            data = emergency_storage[name];
+        }
     }
 
     // assume it is an object that has been stringified
