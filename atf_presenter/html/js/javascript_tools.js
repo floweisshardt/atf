@@ -4,9 +4,6 @@ var results = {
     "efficiency": []
 };
 
-var chart_compare_overview;
-var chart_compare_categories;
-
 var progressbar_value = 0;
 
 function round(number, decimals) {
@@ -62,21 +59,18 @@ function convertTestList(test_list) {
 
 function updateProgressbar(file_length) {
 
-    progressbar_value += (1/file_length)*100;
-    if (progressbar_value > 100) {
-        progressbar_value = 100;
-    }
     var progressbar = $('#file_upload_progressbar');
 
-    if (round(progressbar.attr('aria-valuenow'), 0) === 100) {
-        progressbar.empty();
+    if (progressbar.attr('aria-valuenow') >= 100) {
         progressbar_value = 0;
-        progressbar.css('width', '0').attr('aria-valuenow', progressbar_value);
-        progressbar.append('0%');
     }
+
+    progressbar_value += (1/file_length)*100;
+    var value = round(progressbar_value, 0);
+
     progressbar.empty();
-    progressbar.css('width', round(progressbar_value, 0) + '%').attr('aria-valuenow', round(progressbar_value, 0));
-    progressbar.append(round(progressbar_value, 0) + '%');
+    progressbar.css('width', value + '%').attr('aria-valuenow', value);
+    progressbar.append(value + '%');
 }
 
 function showTestList() {
