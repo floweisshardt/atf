@@ -43,7 +43,7 @@ class ATF:
     def export_to_file(self):
         doc = {}
         if self.error_outside_testblock:
-            doc["Error"] = "An error occured outside monitored testblocks. Aborted analysis..."
+            doc["error"] = "An error occured outside monitored testblocks. Aborted analysis..."
         else:
             for item in self.testblocks:
                 name = item.testblock_name
@@ -57,7 +57,10 @@ class ATF:
                             if name not in doc:
                                 doc.update({name: {m: data}})
                             else:
-                                doc[name].update({m: data})
+                                if m not in doc[name]:
+                                    doc[name].update({m: data})
+                                else:
+                                    doc[name][m].update(data)
                         else:
                             item.exit()
                             break
