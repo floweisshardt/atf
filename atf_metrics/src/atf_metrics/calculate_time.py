@@ -43,6 +43,6 @@ class CalculateTime:
 
     def get_result(self):
         if self.finished:
-            return self.start_time.to_sec(), "time", round((self.stop_time.to_sec()-self.start_time.to_sec()), 3)
+            return "time", round((self.stop_time.to_sec()-self.start_time.to_sec()), 3)
         else:
             return False

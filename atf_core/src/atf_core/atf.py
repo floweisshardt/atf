@@ -53,12 +53,10 @@ class ATF:
                     for metric in item.metrics:
                         result = metric.get_result()
                         if result is not False:
-                            (t, m, data) = result
+                            (m, data) = result
                             if name not in doc:
-                                doc.update({name: {"timestamp": round(t, 3)}})
                                 doc.update({name: {m: data}})
                             else:
-                                doc[name].update({"timestamp": round(t, 3)})
                                 doc[name].update({m: data})
                         else:
                             item.exit()

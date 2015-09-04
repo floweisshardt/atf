@@ -2,7 +2,6 @@
 import math
 import rospy
 import tf
-import time
 
 
 class CalculatePathLengthParamHandler:
@@ -45,7 +44,6 @@ class CalculatePathLength:
         self.first_value = True
         self.trans_old = []
         self.rot_old = []
-        self.activation_time = rospy.Time()
         self.finished = False
 
         self.listener = tf.TransformListener()
@@ -54,7 +52,6 @@ class CalculatePathLength:
 
     def start(self):
         self.active = True
-        self.activation_time = rospy.Time(time.time())
 
     def stop(self):
         self.active = False
@@ -92,7 +89,6 @@ class CalculatePathLength:
 
     def get_result(self):
         if self.finished:
-            return self.activation_time.to_sec(), "path_length " + self.root_frame +\
-                                                  " to " + self.measured_frame, round(self.path_length, 3)
+            return "path_length " + self.root_frame + " to " + self.measured_frame, round(self.path_length, 3)
         else:
             return False
