@@ -56,7 +56,6 @@
                         <div class="btn btn-primary btn-file">
                             Browse <input type="file" multiple>
                         </div>
-                        <!-- TODO: Progressbar not perfect-->
                         <div class="placeholder"></div>
                         <div class="progress">
                             <div id="file_upload_progressbar" class="progress-bar" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">
@@ -133,23 +132,11 @@
                         <ul id="detail_status"></ul>
                     </div>
                 </div>
-                <div class="panel panel-primary" id="panel_detail_resources">
-                    <div class="panel-heading">Resources</div>
-                    <div class="panel-body" id="detail_resources">
+                <div class="panel panel-primary">
+                    <div class="panel-heading">Details</div>
+                    <div class="panel-body" id="detail_panel">
                         <ul class="nav nav-tabs nav-justified" role="tablist"></ul>
                         <div class="tab-content"></div>
-                    </div>
-                </div>
-                <div class="panel panel-primary" id="panel_detail_path_length">
-                    <div class="panel-heading">Path length</div>
-                    <div class="panel-body">
-                        <div id="detail_path_length" class="plot"></div>
-                    </div>
-                </div>
-                <div class="panel panel-primary" id="panel_detail_time">
-                    <div class="panel-heading">Time</div>
-                    <div class="panel-body">
-                        <div id="detail_time" class="plot"></div>
                     </div>
                 </div>
             </div>
@@ -195,7 +182,22 @@
                                 <div id="overview" class="plot"></div>
                             </div>
                             <div role="tabpanel" class="tab-pane" id="categories_tab">
-                                <div id="categories" class="plot"></div>
+                                <ul class="nav nav-tabs nav-justified" role="tablist">
+                                    <li role="presentation" class="active"><a href="#speed_tab" aria-controls="speed_tab" role="tab" data-toggle="tab">Speed</a></li>
+                                    <li role="presentation"><a href="#efficiency_tab" aria-controls="efficiency_tab" role="tab" data-toggle="tab">Efficiency</a></li>
+                                    <li role="presentation"><a href="#resources_tab" aria-controls="resources_tab" role="tab" data-toggle="tab">Resources</a></li>
+                                </ul>
+                                <div class="tab-content">
+                                    <div role="tabpanel" class="tab-pane active" id="speed_tab">
+                                        <div id="speed" class="plot"></div>
+                                    </div>
+                                    <div role="tabpanel" class="tab-pane" id="efficiency_tab">
+                                        <div id="efficiency" class="plot"></div>
+                                    </div>
+                                    <div role="tabpanel" class="tab-pane" id="resources_tab">
+                                        <div id="resources" class="plot"></div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -271,6 +273,7 @@
                         </div>
                     </div>
                 </div>
+                <!--
                 <div class="panel panel-primary">
                     <div class="panel-heading">Details</div>
                     <div class="panel-body" id="compare_results_detail">
@@ -295,7 +298,7 @@
                             </div>
                         </div>
                     </div>
-                </div>
+                </div>-->
             </div>
 
             <!-- FOOTER -->
@@ -306,18 +309,18 @@
     </div>
 </div>
 
-<!-- Bootstrap core JavaScript
+<!-- JavaScript
 ================================================== -->
 <!-- Placed at the end of the document so the pages load faster -->
 <script type="text/javascript" src="js/jquery-1.11.3.min.js"></script>
 <script type="text/javascript" src="js/bootstrap.min.js"></script>
 <script type="text/javascript" src="js/highcharts.min.js"></script>
-<script type="text/javascript" src="js/drilldown.min.js"></script>
-<script type="text/javascript" src="js/grouped-categories.min.js"></script>
 <script type="text/javascript" src="js/bootstrap-select.min.js"></script>
 
 <!-- IE10 viewport hack for Surface/desktop Windows 8 bug -->
 <script type="text/javascript" src="js/ie10-viewport-bug-workaround.min.js"></script>
+
+<!-- Other javascript files -->
 <script type="text/javascript" src="js/file_storage.js"></script>
 <script type="text/javascript" src="js/javascript_tools.js"> </script>
 <script type="text/javascript" src="js/compare_tools.js"></script>

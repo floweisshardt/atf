@@ -139,7 +139,7 @@ function drawTestList() {
 
 function checkforError(test_file) {
     var error = "";
-    if (test_file.hasOwnProperty("Error")) {
+    if (test_file.hasOwnProperty("error")) {
         error = ["error", "Error(s) during execution!"];
     } else {
         $.each(test_file, function (testblock_name, testblock_value) {
@@ -153,38 +153,24 @@ function checkforError(test_file) {
 }
 // TODO: Path length in testblock tabs
 function drawTestDetails(test_name) {
-    var test_detail = $('#detail_test');
+    var test_detail_div = $('#detail_test');
     var test_name_split = test_name.split("_");
-    test_detail.find('.modal-title').html("Details Testsuite " + test_name_split[0].replace(/^\D+/g, "") + " - Test " + test_name_split[1].replace(/^\D+/g, ""));
+    test_detail_div.find('.modal-title').html("Details Testsuite " + test_name_split[0].replace(/^\D+/g, "") + " - Test " + test_name_split[1].replace(/^\D+/g, ""));
+    var test_details = test_detail_div.find('#detail_panel');
+    var test_details_tab_content = test_details.find('.tab-content');
 
     // Get test data
     var test_results = getDataFromStorage(test_name);
 
     // Get test list
     var test_list = getDataFromStorage("test_list");
-    var test_data = {};
+    var test_data = test_list[test_name];
 
-    $.each(test_list, function (index, values) {
-       if (index === test_name) {
-           test_data = values;
-       }
-    });
+    var configuration_div = test_detail_div.find('#detail_configuration');
+    configuration_div.empty();
 
-    var configuration_div = test_detail.find('#detail_configuration');
-    var status_div = test_detail.find('#detail_status');
-
-    var resources_div = test_detail.find('#detail_resources');
-    var resources_panel = test_detail.find('#panel_detail_resources');
-
-    var path_length_div = test_detail.find('#detail_path_length');
-    var path_length_panel = test_detail.find('#panel_detail_path_length');
-
-    var time_div = test_detail.find('#detail_time');
-    var time_panel = test_detail.find('#panel_detail_time');
-
-    resources_panel.hide();
-    path_length_panel.hide();
-    time_panel.hide();
+    var status_div = test_detail_div.find('#detail_status');
+    status_div.empty();
 
     var first_entry = true;
     var error = false;
@@ -200,11 +186,145 @@ function drawTestDetails(test_name) {
         }
     };
 
-    var path_lengths = [];
-    var path_lengths_drilldowns = [];
+    var compare_categories = {
+        "cpu": [],
+        "mem": [],
+        "io": [],
+        "network": [],
+        "time": "",
+        "path_length": []
+    };
+    var compare_categories_items = {
+        "io": ['Read count',
+            'Write count',
+            'Kilobytes read',
+            'Kilobytes wrote'],
+        "network": ['Kilobytes sent',
+            'Kilobytes received',
+            'Packets sent',
+            'Packets received',
+            'Errors received',
+            'Errors sent',
+            'Packets dropped: Received',
+            'Packets dropped: Sent']
+    };
+    var plot_options = {
+        "cpu": {
+            chart: {
+                defaultSeriesType: 'column',
+                type: 'column',
+                zoomType: 'xy'
+            },
+            title: {
+                text: 'CPU'
+            },
+            yAxis: {
+                title: {
+                    text: 'Average consumption [%]'
+                }
+            },
+            xAxis: {
+                labels: {}
+            },
+            plotOptions: {}
+        },
+        "mem": {
+            chart: {
+                defaultSeriesType: 'column',
+                type: 'column',
+                zoomType: 'xy'
+            },
+            title: {
+                text: 'Memory'
+            },
+            yAxis: {
+                title: {
+                    text: 'Average consumption [%]'
+                }
+            },
+            xAxis: {
+                labels: {}
+            },
+            plotOptions: {}
+        },
+        "io": {
+            chart: {
+                defaultSeriesType: 'column',
+                type: 'column',
+                zoomType: 'xy'
+            },
+            title: {
+                text: 'Disk IO operations'
+            },
+            yAxis: {},
+            xAxis: {
+                labels: {}
+            },
+            plotOptions: {}
+        },
+        "network": {
+            chart: {
+                defaultSeriesType: 'column',
+                type: 'column',
+                zoomType: 'xy'
+            },
+            title: {
+                text: 'Network traffic'
+            },
+            yAxis: {},
+            xAxis: {
+                labels: {}
+            },
+            plotOptions: {}
+        },
+        "time": {
+            chart: {
+                defaultSeriesType: 'column',
+                type: 'column',
+                zoomType: 'xy'
+            },
+            title: {
+                text: 'Time'
+            },
+            yAxis: {
+                title: {
+                    text: 'Time [s]'
+                }
+            },
+            xAxis: {
+                labels: {
+                    enabled: false
+                }
+            },
+            plotOptions: {
+                column: {
+                    pointPadding: 0,
+                    groupPadding: 0,
+                    borderWidth: 0
+                }
+            }
+        },
+        "path_length": {
+            chart: {
+                defaultSeriesType: 'column',
+                type: 'column',
+                zoomType: 'xy'
+            },
+            title: {
+                text: 'Path length'
+            },
+            yAxis: {
+                title: {
+                    text: 'Path length [m]'
+                }
+            },
+            xAxis: {},
+            plotOptions: {}
+        }
+    };
+
     var times = [];
 
-    configuration_div.empty();
     configuration_div.append('<li><b>Scene config:</b> ' + test_data["scene_config"] + '</li>' +
         '<li><b>Test config:</b> ' + test_data["test_config"] + '</li>' +
         '<li><b>Robot:</b> ' + test_data["robot"] + '</li>' +
@@ -216,339 +336,136 @@ function drawTestDetails(test_name) {
     $.each(test_results, function (testblock_name, testblock_metrics) {
 
         if (testblock_metrics.hasOwnProperty("status") && testblock_metrics["status"] === "error") {
-            status_div.empty();
             status_div.append('<div class="alert alert-danger" role="alert">Planning error in testblock "' + testblock_name + '"!</div>');
             error = true;
-        } else if (testblock_name === "Error") {
-            status_div.empty();
+        } else if (testblock_name === "error") {
             status_div.append('<div class="alert alert-danger" role="alert">An error occured outside monitored testblocks. Evaluation could not be finished!</div>');
             error = true;
         }
 
-        if (testblock_metrics.hasOwnProperty("resources")) {
-            var active_class;
-            if (first_entry) {
-                resources_div.find('.nav-tabs').empty();
-                resources_div.find('.tab-content').empty();
-                active_class = "active";
-                resources_panel.show();
-                first_entry = false;
-            } else {
-                active_class = "";
-            }
+        /*<div class="panel panel-primary" id="panel_detail_resources">
+         <div class="panel-heading">Resources</div>
+         <div class="panel-body" id="detail_resources">
+         <ul class="nav nav-tabs nav-justified" role="tablist"></ul>
+         <div class="tab-content"></div>
+         </div>
+         </div>
+         <div class="panel panel-primary" id="panel_detail_path_length">
+         <div class="panel-heading">Path length</div>
+         <div class="panel-body">
+         <div id="detail_path_length" class="plot"></div>
+         </div>
+         </div>
+         <div class="panel panel-primary" id="panel_detail_time">
+         <div class="panel-heading">Time</div>
+         <div class="panel-body">
+         <div id="detail_time" class="plot"></div>
+         </div>
+         </div>*/
 
-            resources_div.find('.nav-tabs').append('<li role="presentation" class="' + active_class + '"><a href="#' + testblock_name + '" aria-controls="' + testblock_name + '" role="tab" data-toggle="tab">' + testblock_name + '</a></li>');
-            resources_div.find('.tab-content').append('<div role="tabpanel" class="tab-pane ' + active_class + '" id="' + testblock_name + '"></div>');
 
-            var cpu_nodes = [];
-            var mem_nodes = [];
-            var io_nodes = [];
-            var net_nodes = [];
-
-            $.each(testblock_metrics["resources"], function (node_name, node_resources) {
-
-                if (node_resources.hasOwnProperty("cpu")) {
-                    cpu_nodes.push({
-                        'name': node_name,
-                        'data': [{
-                            'x': 0,
-                            'y': node_resources["cpu"]["average"],
-                            'min': node_resources["cpu"]["min"],
-                            'max': node_resources["cpu"]["max"]
-                        }]
-                    });
-                }
-                if (node_resources.hasOwnProperty("mem")) {
-                    mem_nodes.push({
-                        'name': node_name,
-                        'data': [{
-                            'x': 0,
-                            'y': node_resources["mem"]["average"],
-                            'min': node_resources["mem"]["min"],
-                            'max': node_resources["mem"]["max"]
-                        }]
-                    });
-                }
-                if (node_resources.hasOwnProperty("io")) {
-                    io_nodes.push({
-                        'name': node_name,
-                        'data': [{
-                            'x': 0,
-                            'y': node_resources["io"]["average"][0],
-                            'min': node_resources["io"]["min"][0],
-                            'max': node_resources["io"]["max"][0]
-                        }, {
-                            'x': 1,
-                            'y': node_resources["io"]["average"][1],
-                            'min': node_resources["io"]["min"][1],
-                            'max': node_resources["io"]["max"][1]
-                        }, {
-                            'x': 2,
-                            'y': round(node_resources["io"]["average"][2]/1000, 3),
-                            'min': round(node_resources["io"]["min"][2]/1000, 3),
-                            'max': round(node_resources["io"]["max"][2]/1000, 3)
-                        }, {
-                            'x': 3,
-                            'y': round(node_resources["io"]["average"][3]/1000, 3),
-                            'min': round(node_resources["io"]["min"][3]/1000, 3),
-                            'max': round(node_resources["io"]["max"][3]/1000, 3)
-                        }]
-                    });
-                }
-                if (node_resources.hasOwnProperty("network")) {
-                    net_nodes.push({
-                        'name': node_name,
-                        'data': [{
-                            'x': 0,
-                            'y': round(node_resources["network"]["average"][0]/1000, 3),
-                            'min': round(node_resources["network"]["min"][0]/1000, 3),
-                            'max': round(node_resources["network"]["max"][0]/1000, 3)
-                        }, {
-                            'x': 1,
-                            'y': round(node_resources["network"]["average"][1]/1000, 3),
-                            'min': round(node_resources["network"]["min"][1]/1000, 3),
-                            'max': round(node_resources["network"]["max"][1]/1000, 3)
-                        }, {
-                            'x': 2,
-                            'y': node_resources["network"]["average"][2],
-                            'min': node_resources["network"]["min"][2],
-                            'max': node_resources["network"]["max"][2]
-                        }, {
-                            'x': 3,
-                            'y': node_resources["network"]["average"][3],
-                            'min': node_resources["network"]["min"][3],
-                            'max': node_resources["network"]["max"][3]
-                        }, {
-                            'x': 4,
-                            'y': node_resources["network"]["average"][4],
-                            'min': node_resources["network"]["min"][4],
-                            'max': node_resources["network"]["max"][4]
-                        }, {
-                            'x': 5,
-                            'y': node_resources["network"]["average"][5],
-                            'min': node_resources["network"]["min"][5],
-                            'max': node_resources["network"]["max"][5]
-                        }, {
-                            'x': 6,
-                            'y': node_resources["network"]["average"][6],
-                            'min': node_resources["network"]["min"][6],
-                            'max': node_resources["network"]["max"][6]
-                        }, {
-                            'x': 7,
-                            'y': node_resources["network"]["average"][7],
-                            'min': node_resources["network"]["min"][7],
-                            'max': node_resources["network"]["max"][7]
-                        }]
-                    });
-                }
-            });
-
-            if (cpu_nodes.length != 0) {
-                resources_div.find('.tab-content #' + testblock_name).append('<div class="plot" id="' + testblock_name + '_res_cpu"></div>');
-                $('#' + testblock_name + '_res_cpu').highcharts({
-                    chart: {
-                        type: 'column',
-                        zoomType: 'xy'
-                    },
-                    title: {
-                        text: 'CPU'
-                    },
-                    yAxis: {
-                        title: {
-                            text: 'Average consumption [%]'
-                        }
-                    },
-                    xAxis: {
-                        labels: {
-                            enabled: false
-                        }
-                    },
-                    tooltip: plot_tooltip,
-                    series: cpu_nodes
-                });
-            }
-
-            if (mem_nodes.length != 0) {
-                resources_div.find('.tab-content #' + testblock_name).append('<div class="plot" id="' + testblock_name + '_res_mem"></div>');
-                $('#' + testblock_name + '_res_mem').highcharts({
-                    chart: {
-                        type: 'column',
-                        zoomType: 'xy'
-                    },
-                    title: {
-                        text: 'Memory'
-                    },
-                    yAxis: {
-                        title: {
-                            text: 'Average consumption [%]'
-                        }
-                    },
-                    xAxis: {
-                        labels: {
-                            enabled: false
-                        }
-                    },
-                    tooltip: plot_tooltip,
-                    series: mem_nodes
-                });
-            }
-            if (io_nodes.length != 0) {
-                resources_div.find('.tab-content #' + testblock_name).append('<div class="plot" id="' + testblock_name + '_res_io"></div>');
-                $('#' + testblock_name + '_res_io').highcharts({
-                    chart: {
-                        type: 'column',
-                        zoomType: 'xy'
-                    },
-                    title: {
-                        text: 'Disk IO operations'
-                    },
-                    xAxis: {
-                        categories: ['Read count', 'Write count', 'Kilobytes read', 'Kilobytes wrote']
-                    },
-                    tooltip: plot_tooltip,
-                    series: io_nodes
-                });
-            }
-            if (net_nodes.length != 0) {
-                resources_div.find('.tab-content #' + testblock_name).append('<div class="plot" id="' + testblock_name + '_res_network"></div>');
-                $('#' + testblock_name + '_res_network').highcharts({
-                    chart: {
-                        type: 'column',
-                        zoomType: 'xy'
-                    },
-                    title: {
-                        text: 'Network traffic'
-                    },
-                    xAxis: {
-                        categories: ['Kilobytes sent', 'Kilobytes received', 'Packets sent', 'Packets received', 'Errors received', 'Errors sent', 'Packets dropped: Received', 'Packets dropped: Sent']
-                    },
-                    tooltip: plot_tooltip,
-                    series: net_nodes
-                });
-            }
-        }
-
-        var path_lengths_drilldowns_data = [];
-        var path_length_sum = 0;
-        if (!(typeof testblock_metrics === 'string' || testblock_metrics instanceof String)) {
-            $.each(testblock_metrics, function (metric_name, metric_values) {
-                if (metric_name.contains("path_length")) {
-                    path_lengths_drilldowns_data.push([metric_name.split("path_length ")[1], metric_values]);
-                    path_length_sum += metric_values;
-                }
-            });
-        }
-        if (path_lengths_drilldowns_data.length != 0) {
-            path_lengths_drilldowns.push({
-                'name': testblock_name,
-                'id': testblock_name,
-                'data': path_lengths_drilldowns_data
-            });
-            path_lengths.push({
-                'name': testblock_name,
-                'y': round(path_length_sum, 3),
-                'drilldown': testblock_name
-            });
-        }
-
-        if (testblock_metrics.hasOwnProperty("time")) {
-            times.push({
-                'name': testblock_name,
-                'y': testblock_metrics["time"]
-            });
+        if (!error) {
+            status_div.append('<div class="alert alert-success" role="alert">No error during evaluation!</div>');
         }
     });
 
-    if (path_lengths.length != 0) {
-        path_length_panel.show();
-        $(path_length_div).highcharts({
-            chart: {
-                type: 'column'
-            },
-            title: {
-                text: ''
-            },
-            subtitle: {
-                text: 'Click the columns to view path lengths'
-            },
-            xAxis: {
-                type: 'category'
-            },
-            yAxis: {
-                title: {
-                    text: 'Path length'
-                }
-            },
-            legend: {
-                enabled: false
-            },
-            plotOptions: {
-                series: {
-                    borderWidth: 0,
-                    dataLabels: {
-                        enabled: true,
-                        format: '{point.y}m'
-                    }
-                }
-            },
-            tooltip: {
-                headerFormat: '<span style="font-size:11px">{series.name}</span><br>',
-                pointFormat: '<span style="color:{point.color}">{point.name}</span>: <b>{point.y}m</b> of total<br/>'
-            },
-            series: [{
-                name: "Path lengths",
-                colorByPoint: true,
-                data: path_lengths
-            }],
-            drilldown: {
-                drillUpButton: {
-                    position: {
-                        y: -10
-                    },
-                    relativeTo: "spacingBox"
-                },
-                series: path_lengths_drilldowns
-            }
-        });
-    }
-    if (times.length != 0) {
-        time_panel.show();
-        $(time_div).highcharts({
-            chart: {
-                plotBackgroundColor: null,
-                plotBorderWidth: null,
-                plotShadow: false,
-                type: 'pie'
-            },
-            title: {
-                text: ''
-            },
-            tooltip: {
-                pointFormat: '{series.name}: <b>{point.y}s</b>'
-            },
-            plotOptions: {
-                pie: {
-                    allowPointSelect: true,
-                    cursor: 'pointer',
-                    dataLabels: {
-                        enabled: true,
-                        format: '<b>{point.name}</b>: {point.y}s',
-                        style: {
-                            color: 'black'
+    $.each(test_results, function (testblock_name, testblock_data) {
+
+        if (testblock_data.hasOwnProperty("status") && testblock_data["status"] === "error") {
+            status_div.append('<div class="alert alert-danger" role="alert">Planning error in testblock "' + testblock_name + '"!</div>');
+            error = true;
+        } else if (testblock_name === "error") {
+            status_div.append('<div class="alert alert-danger" role="alert">An error occured outside monitored testblocks. Evaluation could not be finished!</div>');
+            error = true;
+        }
+
+        var compare_data = {
+            "cpu": [],
+            "mem": [],
+            "io": [],
+            "network": [],
+            "time": [],
+            "path_length": []
+        };
+
+        var active_class;
+        if (first_entry) {
+            test_details.find('.nav-tabs').empty();
+            test_details.find('.tab-content').empty();
+            active_class = "active";
+            first_entry = false;
+        } else {
+            active_class = "";
+        }
+
+        test_details.find('.nav-tabs').append('<li role="presentation" class="' + active_class + '"><a href="#details_' + testblock_name + '" aria-controls="details_' + testblock_name + '" role="tab" data-toggle="tab">' + testblock_name + '</a></li>');
+        test_details.find('.tab-content').append('<div role="tabpanel" class="tab-pane ' + active_class + '" id="details_' + testblock_name + '"></div>');
+
+        // TODO: Get test details
+
+        $.each(testblock_data, function (resource_name, resource_data) {
+            var testblock_tab_content = test_details_tab_content.find('#details_' + testblock_name);
+            var category_name = resource_name.split('_').join(' ');
+
+            testblock_tab_content.append('<div class="panel panel-primary"><div class="panel-heading">' + category_name + '</div>' +
+                '<div class="panel-body"><div id="details_' + resource_name + '_content" class="plot"></div></div></div>');
+
+            $.each(resource_data, function (name, data) {
+                if (data instanceof Object) {
+                    $.each(data, function (res_name, res_data) {
+                        var data = [];
+                        if (test_data instanceof Array) {
+                            // IO & Network
+                            if ($.inArray(name, compare_categories[resource_name]) === -1) {
+                                compare_categories[resource_name].push({"name": name, "categories": compare_categories_items[resource_name]});
+                            }
+                            for (var i = 0; i < test_data.length; i++) {
+                                data.push(test_data[i]);
+                            }
+                        } else {
+                            /// CPU & Mem & Path length
+                            if ($.inArray(name, compare_categories[resource_name]) === -1) {
+                                compare_categories[resource_name].push(name);
+                            }
+                            data.push({
+                                'x': compare_categories[resource_name].indexOf(name),
+                                'y': test_data
+                            });
                         }
-                    }
+                        compare_data[resource_name].push({
+                            'name': test_name,
+                            'data': data
+                        });
+                    });
+                } else {
+                    /// Time
+                    compare_data[resource_name].push({
+                        'name': name,
+                        'data': [{
+                            'y': data
+                        }]
+                    });
                 }
-            },
-            series: [{
-                name: "Time",
-                colorByPoint: true,
-                data: times
-            }]
-        })
-    }
+            });
+        });
+
+        $.each(data[testblock_name], function (resource_name, data) {
+
+            plot_options[resource_name]["xAxis"]["categories"] = compare_categories[resource_name];
+
+            $('#compare_' + testblock_name).find('#details_' + resource_name + '_content').highcharts({
+                chart: plot_options[resource_name]["chart"],
+                title: plot_options[resource_name]["title"],
+                xAxis: plot_options[resource_name]["xAxis"],
+                yAxis: plot_options[resource_name]["yAxis"],
+                tooltip: plot_tooltip,
+                series: compare_data[resource_name],
+                plotOptions: plot_options[resource_name]["plotOptions"]
+            });
+        });
+    });
 
     if (!error) {
-        status_div.empty();
         status_div.append('<div class="alert alert-success" role="alert">No error during evaluation!</div>');
     }
 }

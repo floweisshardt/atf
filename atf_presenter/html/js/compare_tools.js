@@ -1,3 +1,8 @@
+var chart_compare_overview;
+var chart_compare_category_speed;
+var chart_compare_category_efficiency;
+var chart_compare_category_resources;
+
 function searchForMaximum(tests) {
     var max = {
         "cpu": 0,
@@ -14,23 +19,28 @@ function searchForMaximum(tests) {
             $.each(testblock, function (resource_name, resource_data) {
                 if (resource_data instanceof Object) {
                     $.each(resource_data, function (node_name, node_resources) {
-                        $.each(node_resources, function (resource_name, resource_data) {
-                            if (resource_data["max"] > max[resource_name]) {
-                                max[resource_name] = resource_data["max"];
-                            } else if (resource_data instanceof Array) {
-                                $.each(resource_data, function (index, value) {
-                                    if (value > max[resource_name][index]) {
-                                        max[resource_name][index] = value;
-                                    }
-                                });
-                            }
-                        });
+                        if (node_resources instanceof  Object) {
+                            // Resourcen
+                            $.each(node_resources, function (resource_name, resource_data) {
+                                if (resource_data instanceof Array) {
+                                    // IO & Network
+                                    $.each(resource_data, function (index, value) {
+                                        if (value > max[resource_name][index]) {
+                                            max[resource_name][index] = value;
+                                        }
+                                    });
+                                    // CPU & Mem
+                                } else if (resource_data["max"] > max[resource_name]) {
+                                    max[resource_name] = resource_data["max"];
+                                }
+                            });
+                            // Path length
+                        } else if (node_resources > max[resource_name]) {
+                            max[resource_name] = node_resources;
+                        }
                     });
-                } else if (resource_name.contains("path_length")) {
-                    if (resource_data > max[resource_name.split(" ")[0]]) {
-                        max[resource_name.split(" ")[0]] = resource_data;
-                    }
                 } else {
+                    // Time
                     if (resource_data > max[resource_name]) {
                         max[resource_name] = resource_data;
                     }
@@ -38,6 +48,7 @@ function searchForMaximum(tests) {
             });
         });
     });
+
     return max;
 }
 
@@ -48,7 +59,11 @@ function compareTests(tests) {
     var test_list = getDataFromStorage("test_list");
 
     var data_overview = [];
-    var data_categories = [];
+    var data_categories = {
+        "speed": [],
+        "efficiency": [],
+        "resources": []
+    };
 
     results = {
         "speed": [],
@@ -133,66 +148,67 @@ function compareTests(tests) {
             }
         };
 
-        $.each(test_results, function (testblock_name, testblock) {
+        $.each(test_results, function(testblock_name, testblock) {
             if (!(testblock_name in data_compare_plot)) {
                 data_compare_plot[testblock_name] = {};
             }
 
-            if (testblock.hasOwnProperty("time")) {
-                if (!("time" in data_compare_plot[testblock_name])) {
-                    data_compare_plot[testblock_name]["time"] = {}
-                }
-                data_compare_plot[testblock_name]["time"][test_name] = testblock["time"];
-                if (temp_testblock["time"]["total"] != 0) {
-                    temp_testblock["time"]["current"] += (temp_testblock["time"]["total"] - testblock["time"]) / temp_testblock["time"]["total"];
-                }
-                temp_testblock["time"]["length"]++;
-            }
+            $.each(testblock, function (resource_name, resource_data) {
+                if (resource_data instanceof Object) {
+                    $.each(resource_data, function (node_name, node_resources) {
+                        if (node_resources instanceof  Object) {
+                            // Resourcen
+                            $.each(node_resources, function (resource_name, resource_data) {
 
-            if (testblock.hasOwnProperty("resources")) {
-
-                $.each(testblock["resources"], function (node_name, node_resources) {
-
-                    $.each(node_resources, function (resource_name, resource_data) {
-
-                        if (!(resource_name in data_compare_plot[testblock_name])) {
-                            data_compare_plot[testblock_name][resource_name] = {};
-                        }
-                        if (!(node_name in data_compare_plot[testblock_name][resource_name])) {
-                            data_compare_plot[testblock_name][resource_name][node_name] = {};
-                        }
-                        data_compare_plot[testblock_name][resource_name][node_name][test_name] = resource_data["average"];
-
-                        if (resource_data["average"] instanceof Array) {
-                            for (var x = 0; x < resource_data.length; x++) {
-                                if (temp_testblock["resources"][resource_name]["total"][x] != 0) {
-                                    temp_testblock["resources"][resource_name]["current"] += (temp_testblock["resources"][resource_name]["total"][x] - resource_data["average"][x])/temp_testblock["resources"][resource_name]["total"][x];
+                                if (!(resource_name in data_compare_plot[testblock_name])) {
+                                    data_compare_plot[testblock_name][resource_name] = {};
                                 }
-                                temp_testblock["resources"][resource_name]["length"]++;
-                            }
+                                if (!(node_name in data_compare_plot[testblock_name][resource_name])) {
+                                    data_compare_plot[testblock_name][resource_name][node_name] = {};
+                                }
+                                data_compare_plot[testblock_name][resource_name][node_name][test_name] = resource_data["average"];
+
+                                if (resource_data["average"] instanceof Array) {
+                                    // IO & Network
+                                    for (var x = 0; x < resource_data.length; x++) {
+                                        if (temp_testblock["resources"][resource_name]["total"][x] != 0) {
+                                            temp_testblock["resources"][resource_name]["current"] += (temp_testblock["resources"][resource_name]["total"][x] - resource_data["average"][x])/temp_testblock["resources"][resource_name]["total"][x];
+                                        }
+                                        temp_testblock["resources"][resource_name]["length"]++;
+                                    }
+                                    // CPU & Mem
+                                } else {
+                                    if (temp_testblock["resources"][resource_name]["total"] != 0) {
+                                        temp_testblock["resources"][resource_name]["current"] += (temp_testblock["resources"][resource_name]["total"] - resource_data["average"])/temp_testblock["resources"][resource_name]["total"];
+                                    }
+                                    temp_testblock["resources"][resource_name]["length"]++;
+                                }
+                            });
+                            // Path length
                         } else {
-                            if (temp_testblock["resources"][resource_name]["total"] != 0) {
-                                temp_testblock["resources"][resource_name]["current"] += (temp_testblock["resources"][resource_name]["total"] - resource_data["average"])/temp_testblock["resources"][resource_name]["total"];
+                            if (!(resource_name in data_compare_plot[testblock_name])) {
+                                data_compare_plot[testblock_name][resource_name] = {};
                             }
-                            temp_testblock["resources"][resource_name]["length"]++;
+                            if (!(node_name in data_compare_plot[testblock_name][resource_name])) {
+                                data_compare_plot[testblock_name][resource_name][node_name] = {};
+                            }
+                            data_compare_plot[testblock_name][resource_name][node_name][test_name] = node_resources;
+                            if (temp_testblock[resource_name]["total"] != 0) {
+                                temp_testblock[resource_name]["current"] += (temp_testblock[resource_name]["total"] - node_resources) / temp_testblock[resource_name]["total"];
+                            }
+                            temp_testblock[resource_name]["length"]++;
                         }
                     });
-                });
-            }
-
-            $.each(testblock, function (metric_name, metric_values) {
-                if (metric_name.contains("path_length")) {
-                    if (!("path_length" in data_compare_plot[testblock_name])) {
-                        data_compare_plot[testblock_name]["path_length"] = {}
+                } else {
+                    // Time
+                    if (!(resource_name in data_compare_plot[testblock_name])) {
+                        data_compare_plot[testblock_name][resource_name] = {}
                     }
-                    if (!((metric_name.split("path_length ")[1]) in data_compare_plot[testblock_name]["path_length"])) {
-                        data_compare_plot[testblock_name]["path_length"][metric_name.split("path_length ")[1]] = {};
+                    data_compare_plot[testblock_name][resource_name][test_name] = resource_data;
+                    if (temp_testblock[resource_name]["total"] != 0) {
+                        temp_testblock[resource_name]["current"] += (temp_testblock[resource_name]["total"] - resource_data) / temp_testblock[resource_name]["total"];
                     }
-                    data_compare_plot[testblock_name]["path_length"][metric_name.split("path_length ")[1]][test_name] = metric_values;
-                    if (temp_testblock["path_length"]["total"] != 0) {
-                        temp_testblock["path_length"]["current"] += (temp_testblock["path_length"]["total"] - metric_values) / temp_testblock["path_length"]["total"];
-                    }
-                    temp_testblock["path_length"]["length"]++;
+                    temp_testblock[resource_name]["length"]++;
                 }
             });
         });
@@ -211,8 +227,6 @@ function compareTests(tests) {
 
         var temp_speed = temp_testblock["time"]["current"]/temp_testblock["time"]["length"];
         var temp_efficiency = temp_testblock["path_length"]["current"]/temp_testblock["path_length"]["length"];
-
-        // TODO: Button for category selection
 
         results["speed"].push(temp_speed * weight_speed);
         results["efficiency"].push(temp_efficiency * weight_efficiency);
@@ -235,7 +249,7 @@ function compareTests(tests) {
                 'eef_step': test_list[test_name]["eef_step"]
             }]
         });
-        data_categories.push({
+        data_categories["speed"].push({
             'name': test_name,
             'data': [{
                 'x': 0,
@@ -245,16 +259,24 @@ function compareTests(tests) {
                 'planning_method': test_list[test_name]["planning_method"],
                 'jump_threshold': test_list[test_name]["jump_threshold"],
                 'eef_step': test_list[test_name]["eef_step"]
-            }, {
-                'x': 1,
+            }]
+        });
+        data_categories["efficiency"].push({
+            'name': test_name,
+            'data': [{
+                'x': 0,
                 'y': category_results["efficiency"],
                 'robot': test_list[test_name]["robot"],
                 'planer': test_list[test_name]["planer_id"],
                 'planning_method': test_list[test_name]["planning_method"],
                 'jump_threshold': test_list[test_name]["jump_threshold"],
                 'eef_step': test_list[test_name]["eef_step"]
-            }, {
-                'x': 2,
+            }]
+        });
+        data_categories["resources"].push({
+            'name': test_name,
+            'data': [{
+                'x': 0,
                 'y': category_results["resources"],
                 'robot': test_list[test_name]["robot"],
                 'planer': test_list[test_name]["planer_id"],
@@ -263,7 +285,6 @@ function compareTests(tests) {
                 'eef_step': test_list[test_name]["eef_step"]
             }]
         });
-
     });
 
     chart_compare_overview = new Highcharts.Chart({
@@ -279,7 +300,8 @@ function compareTests(tests) {
         xAxis: {
             labels: {
                 enabled: false
-            }
+            },
+            minTickInterval: 0
         },
         yAxis: {
             title: {
@@ -287,12 +309,18 @@ function compareTests(tests) {
             }
         },
         tooltip: plot_tooltip,
-        series: data_overview
+        series: data_overview,
+        plotOptions: {
+            column: {
+                pointPadding: 0,
+                groupPadding: 0,
+                borderWidth: 0
+            }
+        }
     });
-
-    chart_compare_categories = new Highcharts.Chart({
+    chart_compare_category_speed = new Highcharts.Chart({
         chart: {
-            renderTo: 'categories',
+            renderTo: 'speed',
             defaultSeriesType: 'column',
             type: 'column',
             zoomType: 'xy'
@@ -300,18 +328,90 @@ function compareTests(tests) {
         title: {
             text: ''
         },
+        yAxis: {
+            title: {
+                text: 'Points'
+            }
+        },
         xAxis: {
-            categories: ['Speed', 'Efficiency', 'Resources']
+            labels: {
+                enabled: false
+            },
+            minTickInterval: 0
+        },
+        tooltip: plot_tooltip,
+        series: data_categories["speed"],
+        plotOptions: {
+            column: {
+                pointPadding: 0,
+                groupPadding: 0,
+                borderWidth: 0
+            }
+        }
+    });
+    chart_compare_category_efficiency = new Highcharts.Chart({
+        chart: {
+            renderTo: 'efficiency',
+            defaultSeriesType: 'column',
+            type: 'column',
+            zoomType: 'xy'
+        },
+        title: {
+            text: ''
         },
         yAxis: {
             title: {
                 text: 'Points'
             }
         },
+        xAxis: {
+            labels: {
+                enabled: false
+            },
+            minTickInterval: 0
+        },
         tooltip: plot_tooltip,
-        series: data_categories
+        series: data_categories["efficiency"],
+        plotOptions: {
+            column: {
+                pointPadding: 0,
+                groupPadding: 0,
+                borderWidth: 0
+            }
+        }
     });
-    createComparisonGraphs(data_compare_plot);
+    chart_compare_category_resources = new Highcharts.Chart({
+        chart: {
+            renderTo: 'resources',
+            defaultSeriesType: 'column',
+            type: 'column',
+            zoomType: 'xy'
+        },
+        title: {
+            text: ''
+        },
+        yAxis: {
+            title: {
+                text: 'Points'
+            }
+        },
+        xAxis: {
+            labels: {
+                enabled: false
+            },
+            minTickInterval: 0
+        },
+        tooltip: plot_tooltip,
+        series: data_categories["resources"],
+        plotOptions: {
+            column: {
+                pointPadding: 0,
+                groupPadding: 0,
+                borderWidth: 0
+            }
+        }
+    });
+    //createComparisonGraphs(data_compare_plot);
     showBestTest();
 }
 
@@ -321,10 +421,9 @@ function changeWeight(category, weight) {
 
     for (var i = 0; i < results[category].length; i++) {
         results[category][i] *= weight;
-        chart_compare_categories.series[i].setData([
-            round(results["speed"][i], 3),
-            round(results["efficiency"][i], 3),
-            round(results["resources"][i], 3)]);
+        chart_compare_category_speed.series[i].setData([round(results["speed"][i], 3)]);
+        chart_compare_category_efficiency.series[i].setData([round(results["efficiency"][i], 3)]);
+        chart_compare_category_resources.series[i].setData([round(results["resources"][i], 3)]);
 
         final_results.push(round(results["speed"][i] + results["efficiency"][i] + results["resources"][i], 3));
         chart_compare_overview.series[i].setData([final_results[i]]);
@@ -334,15 +433,15 @@ function changeWeight(category, weight) {
 
 function showBestTest() {
     var results = {
-        "Speed": {
+        "speed": {
             "name": "",
             "value": 0
         },
-        "Efficiency": {
+        "efficiency": {
             "name": "",
             "value": 0
         },
-        "Resources": {
+        "resources": {
             "name": "",
             "value": 0
         },
@@ -358,13 +457,23 @@ function showBestTest() {
     var resources = compare_tests.find('#result_overview_resources');
     var total = compare_tests.find('#result_overview_total');
 
-    $.each(chart_compare_categories.series, function (index, data) {
-        $.each(data["data"], function (index, category_data) {
-            if (category_data.y > results[category_data.category]["value"]) {
-                results[category_data.category]["value"] = category_data.y;
-                results[category_data.category]["name"] = data.name;
-            }
-        });
+    $.each(chart_compare_category_speed.series, function (index, data) {
+        if (data["data"][0].y > results["speed"]["value"]) {
+            results["speed"]["value"] = data["data"][0].y;
+            results["speed"]["name"] = data.name;
+        }
+    });
+    $.each(chart_compare_category_efficiency.series, function (index, data) {
+        if (data["data"][0].y > results["efficiency"]["value"]) {
+            results["efficiency"]["value"] = data["data"][0].y;
+            results["efficiency"]["name"] = data.name;
+        }
+    });
+    $.each(chart_compare_category_resources.series, function (index, data) {
+        if (data["data"][0].y > results["resources"]["value"]) {
+            results["resources"]["value"] = data["data"][0].y;
+            results["resources"]["name"] = data.name;
+        }
     });
     $.each(chart_compare_overview.series, function (index, data) {
         if (data["data"][0].y > results["total"]["value"]) {
@@ -378,9 +487,9 @@ function showBestTest() {
     resources.empty();
     total.empty();
 
-    speed.append(results["Speed"]["name"]);
-    efficiency.append(results["Efficiency"]["name"]);
-    resources.append(results["Resources"]["name"]);
+    speed.append(results["speed"]["name"]);
+    efficiency.append(results["efficiency"]["name"]);
+    resources.append(results["resources"]["name"]);
     total.append(results["total"]["name"]);
 }
 
@@ -429,7 +538,8 @@ function createComparisonGraphs(data) {
             },
             xAxis: {
                 labels: {}
-            }
+            },
+            plotOptions: {}
         },
         "mem": {
             chart: {
@@ -447,7 +557,8 @@ function createComparisonGraphs(data) {
             },
             xAxis: {
                 labels: {}
-            }
+            },
+            plotOptions: {}
         },
         "io": {
             chart: {
@@ -461,7 +572,8 @@ function createComparisonGraphs(data) {
             yAxis: {},
             xAxis: {
                 labels: {}
-            }
+            },
+            plotOptions: {}
         },
         "network": {
             chart: {
@@ -475,7 +587,8 @@ function createComparisonGraphs(data) {
             yAxis: {},
             xAxis: {
                 labels: {}
-            }
+            },
+            plotOptions: {}
         },
         "time": {
             chart: {
@@ -495,6 +608,13 @@ function createComparisonGraphs(data) {
                 labels: {
                     enabled: false
                 }
+            },
+            plotOptions: {
+                column: {
+                    pointPadding: 0,
+                    groupPadding: 0,
+                    borderWidth: 0
+                }
             }
         },
         "path_length": {
@@ -511,7 +631,8 @@ function createComparisonGraphs(data) {
                     text: 'Path length [m]'
                 }
             },
-            xAxis: {}
+            xAxis: {},
+            plotOptions: {}
         }
     };
 
@@ -602,7 +723,8 @@ function createComparisonGraphs(data) {
                 xAxis: plot_options[resource_name]["xAxis"],
                 yAxis: plot_options[resource_name]["yAxis"],
                 tooltip: plot_tooltip,
-                series: compare_data[resource_name]
+                series: compare_data[resource_name],
+                plotOptions: plot_options[resource_name]["plotOptions"]
             });
         });
     });
