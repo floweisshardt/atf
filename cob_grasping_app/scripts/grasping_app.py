@@ -516,7 +516,7 @@ class SceneManager(smach.State):
         environment.id = self.scenario
         environment.header.stamp = rospy.Time.now()
         environment.header.frame_id = "base_link"
-        filename = rospkg.RosPack().get_path("cob_grasping") + self.scene_data[self.scenario]["environment"]["mesh"]
+        filename = rospkg.RosPack().get_path("cob_grasping_app") + self.scene_data[self.scenario]["environment"]["mesh"]
         scale = self.scene_data[self.scenario]["environment"]["scaling"]
         environment.meshes.append(self.load_mesh(filename, scale))
 
