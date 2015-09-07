@@ -26,8 +26,8 @@ class GenerateTests(unittest.TestCase):
         self.test_config_file = rosparam.get_param("/test_config_file")
         self.bagfile_output = rosparam.get_param("/bagfile_output")
         self.robot_config_path = rosparam.get_param("/robot_config_path")
-        self.package_name = rosparam.get_param("/package_name")
-        self.applikation_name = rosparam.get_param("/applikation_name")
+        self.test_application_path = rosparam.get_param("/test_application_path")
+        self.time_limit = rosparam.get_param("/time_limit")
 
         self.test_list = {}
 
@@ -56,11 +56,9 @@ class GenerateTests(unittest.TestCase):
             launch = em.launch
             arg = em.arg
             include = em.include
-            test = em.test
             node = em.node
             param = em.param
 
-            # TODO: Testfile should be universal (no cob_grasping)
             # Recording
             test_record = launch(
                 param(name="use_sim_time", value="true"),
@@ -79,18 +77,7 @@ class GenerateTests(unittest.TestCase):
                 include(file="$(find cob_grasping)/launch/move_group.launch"),
                 node(param(name="robot_config_file", value="$(arg rc_path)$(arg robot)/robot_config.yaml"),
                      name="atf_recorder", pkg="atf_recorder", type="recorder_core.py", output="screen"),
-                test(param(name="scene_config_file", value="$(find cob_grasping)/config/scene_config.yaml"),
-                     param(name="standalone", value="False"),
-                     param(name="switch_arm", value="False"),
-                     param(name="wait_for_user", value="False"),
-                     param(name="joint_trajectory_speed", value="0.3"),
-                     param(name="max_error", value="80"),
-                     param(name="lift_height", value="0.02"),
-                     param(name="approach_distance", value="0.14"),
-                     param(name="manipulation_repeats", value="1"),
-                     param(name="load_obstacles", value="wall_r"),
-                     {'test-name': "test_recording", 'pkg': self.package_name, 'type': self.applikation_name,
-                      'time-limit': "500.0"})
+                include(file=self.test_application_path)
             )
 
             xmlstr = minidom.parseString(ElementTree.tostring(test_record)).toprettyxml(indent="    ")
@@ -112,7 +99,7 @@ class GenerateTests(unittest.TestCase):
                 param(name="analysing/result_yaml_output", value=self.yaml_output),
                 param(name="analysing/result_json_output", value=self.json_output),
                 test({'test-name': "test_analysing", 'pkg': "atf_core", 'type': "test_builder.py",
-                      'time-limit': "500.0"}),
+                      'time-limit': str(self.time_limit)}),
                 node(name="player", pkg="rosbag", type="play", output="screen", args="--delay=5.0 --clock " +
                                                                                      self.bagfile_output + item +
                                                                                      ".bag")

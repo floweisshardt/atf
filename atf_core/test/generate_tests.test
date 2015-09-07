@@ -10,8 +10,8 @@
     <param name="result_json_output" value="$(find atf_presenter)/data/" />
     <param name="result_yaml_output" value="" />
 
-    <param name="package_name" value="cob_grasping" />
-    <param name="applikation_name" value="grasping_app.py" />
+    <param name="test_application_path" value="$(find cob_grasping)/test/grasping_app.test" />
+    <param name="time_limit" value="500.0" />
 
     <test test-name="generate_tests" pkg="atf_core" type="generate_tests.py" time-limit="300.0" />
 
