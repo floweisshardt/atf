@@ -159,6 +159,8 @@ function drawTestDetails(test_name) {
     var test_details = test_detail_div.find('#detail_panel');
     var test_details_tab_content = test_details.find('.tab-content');
 
+    test_details.hide();
+
     // Get test data
     var test_results = getDataFromStorage(test_name);
 
@@ -351,6 +353,7 @@ function drawTestDetails(test_name) {
         } else if (testblock_name === "error") {
             status_div.append('<div class="alert alert-danger" role="alert">An error occured outside monitored testblocks. Evaluation could not be finished!</div>');
             error = true;
+            return false;
         }
 
         var test_data = {
@@ -431,20 +434,23 @@ function drawTestDetails(test_name) {
                     }
                 });
             } else {
-                /// Time
-                time_data.push({
-                    'name': testblock_name,
-                    'data': [{
-                        'x': 0,
-                        'y': metric_data
-                    }]
-                });
+                if (typeof metric_data == "number") {
+                    /// Time
+                    time_data.push({
+                        'name': testblock_name,
+                        'data': [{
+                            'x': 0,
+                            'y': metric_data
+                        }]
+                    });
+                }
             }
         });
 
         $.each(test_data, function (metric_name, data) {
-            console.log(testblock_name, metric_name, data);
             if (data.length != 0) {
+                test_details.show();
+
                 var testblock_tab_content = test_details_tab_content.find('#details_' + testblock_name);
                 testblock_tab_content.append('<div class="panel panel-info"><div class="panel-heading"></div>' +
                     '<div class="panel-body"><div id="details_' + testblock_name + '_' + metric_name + '_content" class="plot"></div></div></div>');
@@ -463,8 +469,9 @@ function drawTestDetails(test_name) {
             }
         });
     });
-
     if (time_data.length != 0) {
+        test_details.show();
+
         var details_time = $('#details_time');
         details_time.empty();
         details_time.append('<div class="panel panel-primary"><div class="panel-heading"></div>' +
