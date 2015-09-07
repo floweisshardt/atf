@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <package>
-    <name>cob_grasping</name>
+    <name>cob_grasping_app</name>
     <version>1.0.0</version>
     <description>Grasping application for the Care-O-bot 4</description>
 

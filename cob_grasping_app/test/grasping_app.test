@@ -1,7 +1,7 @@
 <?xml version="1.0" ?>
 <launch>
-    <test pkg="cob_grasping" test-name="test_recording" time-limit="500.0" type="grasping_app.py">
-        <param name="scene_config_file" value="$(find cob_grasping)/config/scene_config.yaml"/>
+    <test pkg="cob_grasping_app" test-name="test_recording" time-limit="500.0" type="grasping_app.py">
+        <param name="scene_config_file" value="$(find cob_grasping_app)/config/scene_config.yaml"/>
         <param name="standalone" value="False"/>
         <param name="switch_arm" value="False"/>
         <param name="wait_for_user" value="False"/>

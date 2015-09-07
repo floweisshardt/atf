@@ -1,9 +1,0 @@
-<?xml version="1.0"?>
-<launch>
-    <arg name="robot" default="$(optenv ROBOT !!NO_ROBOT_SET!!)"/>
-    <arg name="robot_env" default="$(optenv ROBOT_ENV !!NO_ROBOT_ENV_SET!!)"/>
-
-    <!-- send ROBOT parameters to parameter server -->
-    <rosparam command="load" ns="/script_server/arm_left" file="$(find cob_grasping)/config/$(arg robot)/arm_left_joint_configurations.yaml"/>
-    <rosparam command="load" ns="/script_server/arm_right" file="$(find cob_grasping)/config/$(arg robot)/arm_right_joint_configurations.yaml"/>
-</launch>

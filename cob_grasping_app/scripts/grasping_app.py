@@ -1804,4 +1804,4 @@ if __name__ == '__main__':
         sm = SM()
         sm.execute()
     else:
-        rostest.rosrun("cob_grasping", 'test_recording', TestRecording, sysargs=None)
+        rostest.rosrun("cob_grasping_app", 'test_recording', TestRecording, sysargs=None)

@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 2.8.3)
-project(cob_grasping)
+project(cob_grasping_app)
 
 find_package(catkin REQUIRED COMPONENTS rospy)
 
