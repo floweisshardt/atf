@@ -5,12 +5,12 @@
     <param name="bagfile_output" value="$(find atf_recorder)/data/" />
     <param name="test_suite_file" value="$(find atf_core)/config/test_suite.yaml" />
     <param name="test_config_file" value="$(find atf_core)/config/test_config.yaml" />
-    <param name="robot_config_path" value="$(find cob_grasping)/config/" />
+    <param name="robot_config_path" value="$(find cob_grasping_app)/config/" />
 
     <param name="result_json_output" value="$(find atf_presenter)/data/" />
     <param name="result_yaml_output" value="" />
 
-    <param name="test_application_path" value="$(find cob_grasping)/test/grasping_app.test" />
+    <param name="test_application_path" value="$(find cob_grasping_app)/test/grasping_app.test" />
     <param name="time_limit" value="500.0" />
 
     <test test-name="generate_tests" pkg="atf_core" type="generate_tests.py" time-limit="300.0" />

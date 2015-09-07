@@ -73,7 +73,7 @@ class GenerateTests(unittest.TestCase):
                 arg(name="robot", value=self.test_list[item]["robot"]),
                 arg(name="rc_path", value=self.robot_config_path),
                 include(arg(name="gui", value="false"), file="$(find cob_bringup_sim)/launch/robot.launch"),
-                include(file="$(find cob_grasping)/launch/move_group.launch"),
+                include(file="$(find cob_grasping_app)/launch/move_group.launch"),
                 node(param(name="robot_config_file", value="$(arg rc_path)$(arg robot)/robot_config.yaml"),
                      name="atf_recorder", pkg="atf_recorder", type="recorder_core.py", output="screen"),
                 include(file=self.test_application_path)
