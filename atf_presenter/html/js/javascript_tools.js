@@ -151,7 +151,7 @@ function checkforError(test_file) {
     }
     return error;
 }
-// TODO: Path length in testblock tabs
+
 function drawTestDetails(test_name) {
     var test_detail_div = $('#detail_test');
     var test_name_split = test_name.split("_");
@@ -175,7 +175,7 @@ function drawTestDetails(test_name) {
     var first_entry = true;
     var error = false;
 
-    var plot_tooltip = {
+    var plot_tooltip_resources = {
         'formatter': function () {
             var o = this.point.options;
 
@@ -186,15 +186,14 @@ function drawTestDetails(test_name) {
         }
     };
 
-    var compare_categories = {
-        "cpu": [],
-        "mem": [],
-        "io": [],
-        "network": [],
-        "time": "",
-        "path_length": []
+    var plot_tooltip = {
+        'formatter': function () {
+
+            return '<b>' + this.series.name + '</b> ' + this.y;
+        }
     };
-    var compare_categories_items = {
+
+    var categories = {
         "io": ['Read count',
             'Write count',
             'Kilobytes read',
@@ -206,7 +205,11 @@ function drawTestDetails(test_name) {
             'Errors received',
             'Errors sent',
             'Packets dropped: Received',
-            'Packets dropped: Sent']
+            'Packets dropped: Sent'],
+        "cpu": [],
+        "mem": [],
+        "time": [],
+        "path_length": []
     };
     var plot_options = {
         "cpu": {
@@ -224,9 +227,12 @@ function drawTestDetails(test_name) {
                 }
             },
             xAxis: {
-                labels: {}
+                labels: {
+                    enabled: false
+                }
             },
-            plotOptions: {}
+            plotOptions: {},
+            tooltip: plot_tooltip_resources
         },
         "mem": {
             chart: {
@@ -243,9 +249,12 @@ function drawTestDetails(test_name) {
                 }
             },
             xAxis: {
-                labels: {}
+                labels: {
+                    enabled: false
+                }
             },
-            plotOptions: {}
+            plotOptions: {},
+            tooltip: plot_tooltip_resources
         },
         "io": {
             chart: {
@@ -260,7 +269,8 @@ function drawTestDetails(test_name) {
             xAxis: {
                 labels: {}
             },
-            plotOptions: {}
+            plotOptions: {},
+            tooltip: plot_tooltip_resources
         },
         "network": {
             chart: {
@@ -275,7 +285,8 @@ function drawTestDetails(test_name) {
             xAxis: {
                 labels: {}
             },
-            plotOptions: {}
+            plotOptions: {},
+            tooltip: plot_tooltip_resources
         },
         "time": {
             chart: {
@@ -296,13 +307,8 @@ function drawTestDetails(test_name) {
                     enabled: false
                 }
             },
-            plotOptions: {
-                column: {
-                    pointPadding: 0,
-                    groupPadding: 0,
-                    borderWidth: 0
-                }
-            }
+            plotOptions: {},
+            tooltip: plot_tooltip
         },
         "path_length": {
             chart: {
@@ -318,12 +324,16 @@ function drawTestDetails(test_name) {
                     text: 'Path length [m]'
                 }
             },
-            xAxis: {},
-            plotOptions: {}
+            xAxis: {
+                labels: {
+                    enabled: false
+                }
+            },
+            plotOptions: {},
+            tooltip: plot_tooltip
         }
     };
-
-    var times = [];
+    var time_data = [];
 
     configuration_div.append('<li><b>Scene config:</b> ' + test_data["scene_config"] + '</li>' +
         '<li><b>Test config:</b> ' + test_data["test_config"] + '</li>' +
@@ -332,42 +342,6 @@ function drawTestDetails(test_name) {
         '<li><b>Planning Method:</b> ' + test_data["planning_method"] + '</li>' +
         '<li><b>Jump threshold:</b> ' + test_data["jump_threshold"] + '</li>' +
         '<li><b>EEF_step:</b> ' + test_data["eef_step"] + '</li>');
-
-    $.each(test_results, function (testblock_name, testblock_metrics) {
-
-        if (testblock_metrics.hasOwnProperty("status") && testblock_metrics["status"] === "error") {
-            status_div.append('<div class="alert alert-danger" role="alert">Planning error in testblock "' + testblock_name + '"!</div>');
-            error = true;
-        } else if (testblock_name === "error") {
-            status_div.append('<div class="alert alert-danger" role="alert">An error occured outside monitored testblocks. Evaluation could not be finished!</div>');
-            error = true;
-        }
-
-        /*<div class="panel panel-primary" id="panel_detail_resources">
-         <div class="panel-heading">Resources</div>
-         <div class="panel-body" id="detail_resources">
-         <ul class="nav nav-tabs nav-justified" role="tablist"></ul>
-         <div class="tab-content"></div>
-         </div>
-         </div>
-         <div class="panel panel-primary" id="panel_detail_path_length">
-         <div class="panel-heading">Path length</div>
-         <div class="panel-body">
-         <div id="detail_path_length" class="plot"></div>
-         </div>
-         </div>
-         <div class="panel panel-primary" id="panel_detail_time">
-         <div class="panel-heading">Time</div>
-         <div class="panel-body">
-         <div id="detail_time" class="plot"></div>
-         </div>
-         </div>*/
-
-
-        if (!error) {
-            status_div.append('<div class="alert alert-success" role="alert">No error during evaluation!</div>');
-        }
-    });
 
     $.each(test_results, function (testblock_name, testblock_data) {
 
@@ -379,12 +353,11 @@ function drawTestDetails(test_name) {
             error = true;
         }
 
-        var compare_data = {
+        var test_data = {
             "cpu": [],
             "mem": [],
             "io": [],
             "network": [],
-            "time": [],
             "path_length": []
         };
 
@@ -401,69 +374,111 @@ function drawTestDetails(test_name) {
         test_details.find('.nav-tabs').append('<li role="presentation" class="' + active_class + '"><a href="#details_' + testblock_name + '" aria-controls="details_' + testblock_name + '" role="tab" data-toggle="tab">' + testblock_name + '</a></li>');
         test_details.find('.tab-content').append('<div role="tabpanel" class="tab-pane ' + active_class + '" id="details_' + testblock_name + '"></div>');
 
-        // TODO: Get test details
+        $.each(testblock_data, function (metric_name, metric_data) {
 
-        $.each(testblock_data, function (resource_name, resource_data) {
-            var testblock_tab_content = test_details_tab_content.find('#details_' + testblock_name);
-            var category_name = resource_name.split('_').join(' ');
+            if (metric_data instanceof Object) {
+                $.each(metric_data, function (node_name, node_data) {
+                    if (node_data instanceof Object) {
+                        $.each(node_data, function (res_name, res_data) {
+                            if (res_data["min"] instanceof Array) {
+                                var data = [];
 
-            testblock_tab_content.append('<div class="panel panel-primary"><div class="panel-heading">' + category_name + '</div>' +
-                '<div class="panel-body"><div id="details_' + resource_name + '_content" class="plot"></div></div></div>');
-
-            $.each(resource_data, function (name, data) {
-                if (data instanceof Object) {
-                    $.each(data, function (res_name, res_data) {
-                        var data = [];
-                        if (test_data instanceof Array) {
-                            // IO & Network
-                            if ($.inArray(name, compare_categories[resource_name]) === -1) {
-                                compare_categories[resource_name].push({"name": name, "categories": compare_categories_items[resource_name]});
+                                // IO & Network
+                                for (var i = 0; i < res_data["min"].length; i++) {
+                                    if (res_name == "io" && i > 1) {
+                                        res_data["average"][i] = round(res_data["average"][i]/1000, 3);
+                                        res_data["min"][i] = round(res_data["min"][i]/1000, 3);
+                                        res_data["max"][i] = round(res_data["max"][i]/1000, 3);
+                                    } else if (res_name == "network" && i < 2) {
+                                        res_data["average"][i] = round(res_data["average"][i]/1000, 3);
+                                        res_data["min"][i] = round(res_data["min"][i]/1000, 3);
+                                        res_data["max"][i] = round(res_data["max"][i]/1000, 3);
+                                    }
+                                    data.push({
+                                        'x': i,
+                                        'y': res_data["average"][i],
+                                        'min': res_data["min"][i],
+                                        'max': res_data["max"][i]
+                                    });
+                                }
+                                test_data[res_name].push({
+                                    'name': node_name,
+                                    'data': data
+                                });
                             }
-                            for (var i = 0; i < test_data.length; i++) {
-                                data.push(test_data[i]);
+                            else {
+                                /// CPU & Mem
+                                test_data[res_name].push({
+                                    'name': node_name,
+                                    'data': [{
+                                        'x': 0,
+                                        'y': res_data["average"],
+                                        'min': res_data["min"],
+                                        'max': res_data["max"]
+                                    }]
+                                });
                             }
-                        } else {
-                            /// CPU & Mem & Path length
-                            if ($.inArray(name, compare_categories[resource_name]) === -1) {
-                                compare_categories[resource_name].push(name);
-                            }
-                            data.push({
-                                'x': compare_categories[resource_name].indexOf(name),
-                                'y': test_data
-                            });
-                        }
-                        compare_data[resource_name].push({
-                            'name': test_name,
-                            'data': data
                         });
-                    });
-                } else {
-                    /// Time
-                    compare_data[resource_name].push({
-                        'name': name,
-                        'data': [{
-                            'y': data
-                        }]
-                    });
-                }
-            });
+                    } else {
+                        // Path length
+                        test_data[metric_name].push({
+                            'name': node_name,
+                            'data': [{
+                                'x': 0,
+                                'y': node_data
+                            }]
+                        });
+                    }
+                });
+            } else {
+                /// Time
+                time_data.push({
+                    'name': testblock_name,
+                    'data': [{
+                        'x': 0,
+                        'y': metric_data
+                    }]
+                });
+            }
         });
 
-        $.each(data[testblock_name], function (resource_name, data) {
+        $.each(test_data, function (metric_name, data) {
+            console.log(testblock_name, metric_name, data);
+            if (data.length != 0) {
+                var testblock_tab_content = test_details_tab_content.find('#details_' + testblock_name);
+                testblock_tab_content.append('<div class="panel panel-info"><div class="panel-heading"></div>' +
+                    '<div class="panel-body"><div id="details_' + testblock_name + '_' + metric_name + '_content" class="plot"></div></div></div>');
 
-            plot_options[resource_name]["xAxis"]["categories"] = compare_categories[resource_name];
+                plot_options[metric_name]["xAxis"]["categories"] = categories[metric_name];
 
-            $('#compare_' + testblock_name).find('#details_' + resource_name + '_content').highcharts({
-                chart: plot_options[resource_name]["chart"],
-                title: plot_options[resource_name]["title"],
-                xAxis: plot_options[resource_name]["xAxis"],
-                yAxis: plot_options[resource_name]["yAxis"],
-                tooltip: plot_tooltip,
-                series: compare_data[resource_name],
-                plotOptions: plot_options[resource_name]["plotOptions"]
-            });
+                $('#details_' + testblock_name).find('#details_' + testblock_name + '_' + metric_name + '_content').highcharts({
+                    chart: plot_options[metric_name]["chart"],
+                    title: plot_options[metric_name]["title"],
+                    xAxis: plot_options[metric_name]["xAxis"],
+                    yAxis: plot_options[metric_name]["yAxis"],
+                    tooltip: plot_options[metric_name]["tooltip"],
+                    series: data,
+                    plotOptions: plot_options[metric_name]["plotOptions"]
+                });
+            }
         });
     });
+
+    if (time_data.length != 0) {
+        var details_time = $('#details_time');
+        details_time.empty();
+        details_time.append('<div class="panel panel-primary"><div class="panel-heading"></div>' +
+            '<div class="panel-body"><div id="details_time_content" class="plot"></div></div></div>');
+        $('#details_time_content').highcharts({
+            chart: plot_options["time"]["chart"],
+            title: plot_options["time"]["title"],
+            xAxis: plot_options["time"]["xAxis"],
+            yAxis: plot_options["time"]["yAxis"],
+            tooltip: plot_options["time"]["tooltip"],
+            series: time_data,
+            plotOptions: plot_options["time"]["plotOptions"]
+        });
+    }
 
     if (!error) {
         status_div.append('<div class="alert alert-success" role="alert">No error during evaluation!</div>');

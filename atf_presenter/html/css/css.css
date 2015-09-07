@@ -8,7 +8,7 @@ a {
 .plot {
     width: 100%;
     max-width: 800px;
-    height: 500px;
+    height: 400px;
 }
 input[type="radio"], input[type="checkbox"] {
     line-height: normal;
