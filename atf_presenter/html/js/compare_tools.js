@@ -418,14 +418,15 @@ function compareTests(tests) {
 function changeWeight(category, weight) {
 
     var final_results = [];
+    var results_temp = jQuery.extend(true, {}, results);
 
-    for (var i = 0; i < results[category].length; i++) {
-        results[category][i] *= weight;
-        chart_compare_category_speed.series[i].setData([round(results["speed"][i], 3)]);
-        chart_compare_category_efficiency.series[i].setData([round(results["efficiency"][i], 3)]);
-        chart_compare_category_resources.series[i].setData([round(results["resources"][i], 3)]);
+    for (var i = 0; i < results_temp[category].length; i++) {
+        results_temp[category][i] *= weight;
+        chart_compare_category_speed.series[i].setData([round(results_temp["speed"][i], 3)]);
+        chart_compare_category_efficiency.series[i].setData([round(results_temp["efficiency"][i], 3)]);
+        chart_compare_category_resources.series[i].setData([round(results_temp["resources"][i], 3)]);
 
-        final_results.push(round(results["speed"][i] + results["efficiency"][i] + results["resources"][i], 3));
+        final_results.push(round(results_temp["speed"][i] + results_temp["efficiency"][i] + results_temp["resources"][i], 3));
         chart_compare_overview.series[i].setData([final_results[i]]);
     }
     showBestTest();
