@@ -20,7 +20,6 @@ from copy import deepcopy, copy
 
 
 class GenerateTests(unittest.TestCase):
-
     def setUp(self):
         self.test_suite_file = rosparam.get_param("/test_suite_file")
         self.test_config_file = rosparam.get_param("/test_config_file")
@@ -152,16 +151,18 @@ class GenerateTests(unittest.TestCase):
 
         return output_array
 
+    def natural_sort(self, l):
+        return sorted(l, key=self.natural_sort_key)
+
     @staticmethod
-    def natural_sort(l):
-        convert = lambda text: int(text) if text.isdigit() else text.lower()
-        alphanum_key = lambda key: [convert(c) for c in re.split('([0-9]+)', key)]
-        return sorted(l, key=alphanum_key)
+    def natural_sort_key(s, _nsre=re.compile('([0-9]+)')):
+        return [int(text) if text.isdigit() else text.lower() for text in re.split(_nsre, s)]
 
     @staticmethod
     def load_yaml(filename):
         with open(filename, 'r') as stream:
             return yaml.load(stream)
+
 
 if __name__ == '__main__':
     rospy.init_node('generate_tests')
