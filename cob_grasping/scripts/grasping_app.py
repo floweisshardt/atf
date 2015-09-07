@@ -1529,23 +1529,23 @@ class Execution(smach.State):
         rospy.loginfo("---- Start execution ---")
         rospy.loginfo("------- Approach -------")
         self.planer.execute(userdata.computed_trajectories[0])
-        self.move_gripper(userdata, "gripper_" + userdata.active_arm, "open")
+        # self.move_gripper(userdata, "gripper_" + userdata.active_arm, "open")
         rospy.loginfo("--------- Grasp --------")
         self.planer.execute(userdata.computed_trajectories[1])
-        self.move_gripper(userdata, "gripper_" + userdata.active_arm, "close")
+        # self.move_gripper(userdata, "gripper_" + userdata.active_arm, "close")
         rospy.loginfo("--------- Lift ---------")
         self.planer.execute(userdata.computed_trajectories[2])
         rospy.loginfo("--------- Move ---------")
         self.planer.execute(userdata.computed_trajectories[3])
         rospy.loginfo("--------- Drop ---------")
         self.planer.execute(userdata.computed_trajectories[4])
-        self.move_gripper(userdata, "gripper_" + userdata.active_arm, "open")
+        # self.move_gripper(userdata, "gripper_" + userdata.active_arm, "open")
         if userdata.planning_method == "joint":
             userdata.joint_goal_position =\
                 self.planer.get_current_pose(self.planer.get_end_effector_link()).pose.position
         rospy.loginfo("-------- Retreat -------")
         self.planer.execute(userdata.computed_trajectories[5])
-        self.move_gripper(userdata, "gripper_" + userdata.active_arm, "close")
+        # self.move_gripper(userdata, "gripper_" + userdata.active_arm, "close")
         rospy.loginfo("-- Execution finished --")
 
         execution_recorder.stop()
