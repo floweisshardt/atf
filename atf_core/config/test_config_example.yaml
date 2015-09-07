@@ -1,0 +1,26 @@
+test_1:
+  planning:
+    time:
+    resources:
+      cpu: [move_group]
+      mem: [move_group, rostest]
+      io: [move_group]
+      network: [move_group, rostest]
+
+  execution:
+    time:
+    path_length:
+      - [base_link, gripper_right_grasp_link]
+      - [base_link, arm_right_3_link]
+    resources:
+      cpu: [move_group, rostest]
+      mem: [move_group, rostest]
+
+test_2:
+  planning:
+    time:
+  execution:
+    time:
+    path_length:
+      - [base_link, gripper_right_grasp_link]
+      - [arm_right_1_link, gripper_right_grasp_link]

@@ -30,5 +30,6 @@ ts*_t*.yaml
 test_list.json
 test_list.yaml
 test_suite.yaml
+test_config.yaml
 */results/*
 */test/generated/*
