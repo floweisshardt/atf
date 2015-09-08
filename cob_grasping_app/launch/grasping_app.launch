@@ -9,7 +9,7 @@
     <param name="test_name" value="ts3_t1" />
     <param name="test_config" value="test_1" />
     <param name="scene_config" value="scene_3" />
-    <param name="planer_id" value="LBKPIECEkConfigDefault" />
+    <param name="planer_id" value="RRTConnectkConfigDefault" />
     <param name="eef_step" value="0.01" />
     <param name="jump_threshold" value="2" />
     <param name="planning_method" value="cartesian" />
