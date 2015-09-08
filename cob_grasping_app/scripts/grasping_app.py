@@ -11,8 +11,7 @@ from copy import copy
 from re import findall
 
 from moveit_commander import MoveGroupCommander, PlanningSceneInterface
-from moveit_msgs.msg import RobotState, AttachedCollisionObject, CollisionObject, PlanningScene
-from moveit_msgs.msg import RobotTrajectory
+from moveit_msgs.msg import RobotState, AttachedCollisionObject, CollisionObject, PlanningScene, RobotTrajectory
 from shape_msgs.msg import MeshTriangle, Mesh, SolidPrimitive
 from interactive_markers.interactive_marker_server import *
 from interactive_markers.menu_handler import *
