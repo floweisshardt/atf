@@ -225,6 +225,10 @@ function compareTests(tests) {
 
         temp_resources /= count_resource_categories;
 
+        if (isNaN(temp_resources)) {
+            temp_resources = 0;
+        }
+
         var temp_speed = temp_testblock["time"]["current"]/temp_testblock["time"]["length"];
         var temp_efficiency = temp_testblock["path_length"]["current"]/temp_testblock["path_length"]["length"];
 
