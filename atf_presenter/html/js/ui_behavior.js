@@ -37,13 +37,13 @@ $(document).on('change', '.btn-file :file', function () {
     var numFiles = input.get(0).files ? input.get(0).files.length : 1;
     for (var files = 0; files < input.get(0).files.length; files++) {
         if(input.get(0).files[files].name.indexOf(".json") === -1) {
-            alert("Select only .json files!");
+            bootbox.alert("Select only .json files!");
             return;
         }
         labels.push(input.get(0).files[files].name.split(".")[0]);
     }
     if ($.inArray("test_list", labels) === -1) {
-        alert("You have to select the test_list.yaml file!");
+        bootbox.alert("You have to select the test_list.yaml file!");
         return;
     }
     input.trigger('fileselect', [numFiles, labels]);
