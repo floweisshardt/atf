@@ -11,6 +11,7 @@
     <param name="result_yaml_output" value="" />
 
     <param name="test_application_path" value="$(find cob_grasping_app)/test/grasping_app.test" />
+    <param name="move_group_launch" value="$(find cob_grasping_app)/launch/move_group.launch" />
     <param name="time_limit" value="500.0" />
 
     <test test-name="generate_tests" pkg="atf_core" type="generate_tests.py" time-limit="300.0" />
