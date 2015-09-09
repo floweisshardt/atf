@@ -81,13 +81,17 @@ function showTestList() {
 function drawTestList() {
     var test_list = getDataFromStorage("test_list");
     var test_list_div = $('#test_list_content').find('#test_list');
-    var test_list_compare_selection_div = $('#compare_test_option').find('.selectpicker');
+    var compare_test_option = $('#compare_test_option');
+    var test_list_compare_selection_test = compare_test_option.find('#select_test_config');
+    var test_list_compare_selection_scene = compare_test_option.find('#select_scene_config');
 
     test_list_div.empty();
-    test_list_compare_selection_div.empty();
-    test_list_compare_selection_div.append('<option>None</option>');
+    test_list_compare_selection_test.empty().append('<option>None</option>').selectpicker('refresh');
+
+    test_list_compare_selection_scene.empty().append('<option>None</option>').selectpicker('refresh');
 
     var test_config_names = [];
+    var scene_config_names = [];
 
     var number = 1;
     $.each(test_list, function (test_name, test_data) {
@@ -124,8 +128,12 @@ function drawTestList() {
 
                 if ($.inArray(test_data["test_config"], test_config_names) === -1) {
                     test_config_names.push(test_data["test_config"]);
-                    test_list_compare_selection_div.prop("disabled", false);
-                    test_list_compare_selection_div.append('<option>' + test_data["test_config"] + '</option>');
+                    test_list_compare_selection_test.prop("disabled", false).append('<option>' + test_data["test_config"] + '</option>').selectpicker('refresh');
+                }
+
+                if ($.inArray(test_data["scene_config"], scene_config_names) === -1) {
+                    scene_config_names.push(test_data["scene_config"]);
+                    test_list_compare_selection_scene.append('<option>' + test_data["scene_config"] + '</option>').selectpicker('refresh');
                 }
             }
         }
@@ -133,8 +141,6 @@ function drawTestList() {
         test_list_div.append(table_row_error + '<td><div class="checkbox-inline"><label><input type="checkbox" value="' + test_name + '"' + checkbox_disabled + '></label></div></td><td>' + number + '</td><td>' + test_name + '</td><td>Testsuite ' + test_name_full[0].replace(/^\D+/g, '') + '</td><td>Test ' + test_name_full[1].replace(/^\D+/g, "") + '</td><td class="test_config">' + test_data["test_config"] + '</td><td class="scene_config">' + test_data["scene_config"] + '</td><td class="robot_name">' + test_data["robot"] + '</td><td>' + upload_status + '</td><td>' + test_error + '</td><td><button id="button_detail" type="button" class="btn btn-primary" data-target="#detail_test" data-toggle="modal" data-name="' + test_name + '"' + button_disabled + '>Details</button></td>');
         number++;
     });
-
-    test_list_compare_selection_div.selectpicker('refresh');
 }
 
 function checkforError(test_file) {
@@ -473,8 +479,7 @@ function drawTestDetails(test_name) {
         test_details.show();
 
         var details_time = $('#details_time');
-        details_time.empty();
-        details_time.append('<div class="panel panel-primary"><div class="panel-heading"></div>' +
+        details_time.empty().append('<div class="panel panel-primary"><div class="panel-heading"></div>' +
             '<div class="panel-body"><div id="details_time_content" class="plot"></div></div></div>');
         $('#details_time_content').highcharts({
             chart: plot_options["time"]["chart"],

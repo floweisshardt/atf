@@ -18,11 +18,18 @@ $(document).ready(function() {
     }
 
     $('#button_compare').prop("disabled", true);
+    var compare_test_option = $('#compare_test_option');
 
-    $('#compare_test_option').find('.selectpicker').selectpicker({
+    compare_test_option.find('#select_test_config').selectpicker({
         style: 'btn-primary',
         size: 4
     });
+    compare_test_option.find('#select_scene_config').selectpicker({
+        style: 'btn-primary',
+        size: 4
+    });
+
+    compare_test_option.find('.selectpicker').prop('disabled', true).selectpicker('refresh);')
 
     // Load test list from storage (if available)
     if (getDataFromStorage("test_list")) {
@@ -69,36 +76,27 @@ $('.table').find('#test_list').on("click", "input", function () {
     if ($(this).is(":checked")) {
         var test_config = $(this).parent().parent().parent().parent().find('.test_config').html();
         var scene_config = $(this).parent().parent().parent().parent().find('.scene_config').html();
+
         $('.table').find('#test_list .test_config').each(function() {
-            if ($(this).parent().find('#button_detail').prop("disabled") == false && $(this).parent().find('input').prop("disabled") == false) {
+            if ($(this).parent().find('#button_detail').prop("disabled") === false && $(this).parent().find('input').prop("disabled") === false) {
                 if ($(this).html() != test_config || $(this).parent().find('.scene_config').html() != scene_config) {
-                    $(this).parent().addClass('danger');
-                    $(this).parent().find('input').prop("disabled", true);
+                    $(this).parent().addClass('danger').find('input').prop("disabled", true);
                 } else {
-                    $(this).parent().removeClass('danger');
-                    $(this).parent().find('input').prop("disabled", false);
+                    $(this).parent().removeClass('danger').find('input').prop("disabled", false);
                 }
             }
         });
     } else {
-        var selected = 0;
-        $(this).parent().parent().parent().parent().parent().find('input:checked').each(function () {
-            selected += 1;
-        });
+        var selected = $(this).parent().parent().parent().parent().parent().find('input:checked').length;
         if (selected === 0) {
             $('.table').find('#test_list .test_config').each(function () {
-                if ($(this).parent().find('#button_detail').prop("disabled") == false && ($(this).parent().find('input').prop("disabled") == false || $(this).parent().hasClass('warning') == false)) {
-                    $(this).parent().removeClass('danger');
-                    $(this).parent().find('input').prop("disabled", false);
+                if ($(this).parent().find('#button_detail').prop("disabled") === false && ($(this).parent().find('input').prop("disabled") === false || $(this).parent().hasClass('warning') === false)) {
+                    $(this).parent().removeClass('danger').find('input').prop("disabled", false);
                 }
             });
         }
     }
-    var checked = 0;
-    $(this).parent().parent().parent().parent().parent().find('input:checked').each(function () {
-        checked += 1;
-    });
-
+    var checked = $(this).parent().parent().parent().parent().parent().find('input:checked').length;
     if (checked > 1) {
         $('#button_compare').prop("disabled", false);
     } else {
@@ -149,7 +147,9 @@ $('#compare_tests').find('#weight_control').on("click", ".weight_control_button"
 $(document).on("click", "#button_compare", function () {
     var tests = [];
     var table = $('.table');
-    var compare_test_option_select = $('#compare_test_option').find('.selectpicker');
+    var compare_test_option = $('#compare_test_option');
+    var compare_test_option_select_test = compare_test_option.find('#select_test_config');
+    var compare_test_option_select_scene = compare_test_option.find('#select_scene_config');
     var compare_tests_weight_control = $('#compare_tests').find('#weight_control');
 
     table.find('#test_list input:checked').each(function () {
@@ -158,41 +158,67 @@ $(document).on("click", "#button_compare", function () {
     });
 
     table.find('#test_list .test_config').each(function () {
-        if ($(this).parent().find('#button_detail').prop("disabled") == false && ($(this).parent().find('input').prop("disabled") == false || $(this).parent().hasClass('warning') == false)) {
-            $(this).parent().removeClass('danger');
-            $(this).parent().find('input').prop("disabled", false);
+        if ($(this).parent().find('#button_detail').prop("disabled") === false && ($(this).parent().find('input').prop("disabled") === false || $(this).parent().hasClass('warning') === false)) {
+            $(this).parent().removeClass('danger').find('input').prop("disabled", false);
         }
     });
 
-    compare_tests_weight_control.find('.weight_control_button').each(function () {
-        $(this).removeClass('active');
-    });
-    compare_tests_weight_control.find('.weight_control_value').each(function () {
-        $(this).prop("disabled", false);
+    compare_tests_weight_control
+        .find('.weight_control_button').each(function () {
+            $(this).removeClass('active');
+    })
+        .find('.weight_control_value').each(function () {
+            $(this).prop("disabled", false);
     });
 
     $(this).prop("disabled", true);
-    compare_test_option_select.val("");
-    compare_test_option_select.selectpicker('refresh');
+    compare_test_option_select_test.val("").selectpicker('refresh');
+    compare_test_option_select_scene.val("").prop('disabled', true).selectpicker('refresh');
     compareTests(tests);
 });
 
-$('#compare_test_option').on("change", ".selectpicker", function () {
-    var config_selected = $(this).val();
-    var checked = 0;
-    $('#test_list_content').find('.table #test_list .test_config').each(function () {
-        if ($(this).parent().find('#button_detail').prop("disabled") == false && ($(this).parent().find('input').prop("disabled") == false || $(this).parent().hasClass('warning') == false)) {
-            if ($(this).html() === config_selected) {
-                $(this).parent().find('input').prop("checked", true);
-                checked++;
+$('#compare_test_option')
+    .on("change", "#select_test_config", function () {
+        var config_selected = $(this).val();
+        if (config_selected != "None") {
+            var test_found = 0;
+            $('#test_list_content').find('.table #test_list .test_config').each(function () {
+                if ($(this).parent().find('#button_detail').prop("disabled") === false && ($(this).parent().find('input').prop("disabled") === false || $(this).parent().hasClass('warning') === false)) {
+                    if ($(this).html() === config_selected) {
+                        test_found++;
+                    }
+                }
+            });
+            if (test_found > 1) {
+                $('#select_scene_config').prop("disabled", false).selectpicker('refresh');
             } else {
-                $(this).parent().find('input').prop("checked", false);
+                $('#select_scene_config').prop("disabled", true).selectpicker('refresh');
             }
+        } else {
+            $('#select_scene_config').prop("disabled", true).selectpicker('refresh');
         }
-    });
-    if (checked > 1) {
-        $('#button_compare').prop("disabled", false);
-    } else {
-        $('#button_compare').prop("disabled", true);
     }
-});
+)
+    .on("change", "#select_scene_config", function () {
+        var config_selected = $('#select_test_config').val();
+        var checked = 0;
+        var scene_config = $(this).val();
+        $('#test_list_content').find('.table #test_list .test_config').each(function () {
+            if ($(this).parent().find('#button_detail').prop("disabled") === false && ($(this).parent().find('input').prop("disabled") === false || $(this).parent().hasClass('warning') === false)) {
+                if ($(this).html() === config_selected && $(this).parent().find('.scene_config').html() === scene_config) {
+                    $(this).parent().removeClass('danger').find('input').prop("checked", true).prop("disabled", false);
+                    checked++;
+                } else if (scene_config === "None") {
+                    $(this).parent().removeClass('danger').find('input').prop("checked", false).prop("disabled", false);
+                } else {
+                    $(this).parent().addClass('danger').find('input').prop("checked", false).prop("disabled", true);
+                }
+            }
+        });
+        if (checked > 1) {
+            $('#button_compare').prop("disabled", false);
+        } else {
+            $('#button_compare').prop("disabled", true);
+        }
+    }
+);
