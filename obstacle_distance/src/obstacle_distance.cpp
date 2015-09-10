@@ -45,9 +45,10 @@ public:
     }
 };
 
-void ObstacleDistance::getDistanceToObstacles(std::vector<std::string> link_names) {
-
+void ObstacleDistance::getDistanceToObstacles(std::vector<std::string> link_names)
+{
     planning_scene_monitor_->requestPlanningSceneState(PLANNING_SCENE_SERVICE);
+    ROS_INFO("Service requested");
     planning_scene_monitor::LockedPlanningSceneRW ps(planning_scene_monitor_);
     ps->getCurrentStateNonConst().update();
 
@@ -55,6 +56,7 @@ void ObstacleDistance::getDistanceToObstacles(std::vector<std::string> link_name
 
     MyCollisionWorld cworld(planning_scene_ptr->getWorldNonConst());
     robot_state::RobotState state(planning_scene_ptr->getCurrentState());
+    // setJointPositions(const std::string &joint_name, const double *position)
     state.update();
     state.updateCollisionBodyTransforms();
 
@@ -64,7 +66,7 @@ void ObstacleDistance::getDistanceToObstacles(std::vector<std::string> link_name
     crobot.getCollisionObject(state, robot_obj);
     cworld.getCollisionObject(world_obj);
 
-    fcl::DistanceRequest req(true);
+    fcl::DistanceRequest req;
     fcl::DistanceResult res;
     double d;
 
@@ -80,13 +82,14 @@ void ObstacleDistance::getDistanceToObstacles(std::vector<std::string> link_name
                 {
                     double dist = fcl::distance(robot_obj[i].get(), world_obj[j].get(), req, res);
 
-                    std::cout << "Robot Link " << cd->getID() << " at (" << robot_obj[i]->getTranslation().data.vs[0] << ", " << robot_obj[i]->getTranslation().data.vs[1] << ", " << robot_obj[i]->getTranslation().data.vs[2] << ")" << std::endl;
-                    std::cout << "Object at (" << world_obj[j]->getTranslation().data.vs[0] << ", " << world_obj[j]->getTranslation().data.vs[1] << ", " << world_obj[j]->getTranslation().data.vs[2] << ")" << std::endl;
-                    std::cout << "distance: " << dist <<std::endl;
+                    //std::cout << "Robot Link " << cd->getID() << " at (" << robot_obj[i]->getTranslation().data.vs[0] << ", " << robot_obj[i]->getTranslation().data.vs[1] << ", " << robot_obj[i]->getTranslation().data.vs[2] << ")" << std::endl;
+                    //std::cout << "Object at (" << world_obj[j]->getTranslation().data.vs[0] << ", " << world_obj[j]->getTranslation().data.vs[1] << ", " << world_obj[j]->getTranslation().data.vs[2] << ")" << std::endl;
+                    std::cout << cd->getID() << ": Minimal distance " << dist << std::endl;
                 }
             }
         }
     }
+    ROS_INFO("Calculation done");
 }
 
 ObstacleDistance::ObstacleDistance()
@@ -95,7 +98,8 @@ ObstacleDistance::ObstacleDistance()
 
     //Initialize planning scene monitor
     boost::shared_ptr<tf::TransformListener> tf_listener_(new tf::TransformListener(ros::Duration(2.0)));
-    planning_scene_monitor_ =  boost::make_shared<planning_scene_monitor::PlanningSceneMonitor>("robot_description", tf_listener_);
+    planning_scene_monitor_ =  boost::make_shared<planning_scene_monitor::PlanningSceneMonitor>("robot_description"/*, tf_listener_*/);
+    planning_scene_monitor_->startSceneMonitor("planning_scene");
 
 };
 
@@ -105,20 +109,18 @@ ObstacleDistance::~ObstacleDistance()
 int main(int argc, char **argv)
 {
     ros::init (argc, argv, "obstacle_distance");
-    ros::AsyncSpinner spinner(1);
+    ros::AsyncSpinner spinner(2);
     spinner.start();
-    ObstacleDistance *ob;
-    ob = new ObstacleDistance();
+    ObstacleDistance *ob = new ObstacleDistance();
 
-    std::vector<std::string> seg_names_;
-    seg_names_.resize(1);
-    seg_names_[0] = "gripper_right_grasp_link";
+    std::string link_names[] = {"gripper_right_grasp_link", "gripper_left_grasp_link"};
+    std::vector<std::string> links (link_names, link_names + sizeof(link_names) / sizeof(std::string));
 
     while(ros::ok())
     {
-        ob->getDistanceToObstacles(seg_names_);
+        ob->getDistanceToObstacles(links);
         ros::spinOnce();
-        sleep(1);
+        ros::Duration(0.5).sleep();
     }
 
     ros::shutdown();
