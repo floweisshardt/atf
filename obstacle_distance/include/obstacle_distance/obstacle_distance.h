@@ -12,6 +12,8 @@
 
 #include <boost/thread.hpp>
 #include <sensor_msgs/JointState.h>
+#include <atf_msgs/ObstacleDistance.h>
+#include <atf_msgs/ObstacleDistanceLink.h>
 
 class ObstacleDistance : public ros::NodeHandle
 {
@@ -23,14 +25,15 @@ private:
     planning_scene_monitor::PlanningSceneMonitorPtr planning_scene_monitor_;
     std::string PLANNING_SCENE_SERVICE;
 
-    ros::Subscriber tf_subscriber;
-    ros::Timer distance_timer;
-    std::vector<std::string> requested_links;
+    ros::Subscriber joint_state_subscriber;
+    ros::Publisher obstacle_distance_publisher;
+    ros::Timer obstacle_distance_timer;
     sensor_msgs::JointState current_joint_states;
 
     void joint_state_callback(const sensor_msgs::JointStatePtr &joint_states);
     void getDistanceToObstacles(const ros::TimerEvent&);
     void getPlanningScene();
+    void getRequestedLinks();
 
 };
 

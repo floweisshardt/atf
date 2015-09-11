@@ -37,16 +37,19 @@ public:
 
 void ObstacleDistance::getDistanceToObstacles(const ros::TimerEvent&)
 {
-    planning_scene_monitor::LockedPlanningSceneRO ps(planning_scene_monitor_);
+    //planning_scene_monitor::LockedPlanningSceneRO ps(planning_scene_monitor_);
+    planning_scene_monitor::LockedPlanningSceneRW ps(planning_scene_monitor_);
+    ps->getCurrentStateNonConst().update();
 
     planning_scene::PlanningScenePtr planning_scene_ptr = ps->diff();
 
     CreateCollisionWorld collision_world(planning_scene_ptr->getWorldNonConst());
     robot_state::RobotState robot_state(planning_scene_ptr->getCurrentState());
-
+    std::vector<std::string> requested_links;
     for (int i = 0; i < current_joint_states.name.size(); i++)
     {
         robot_state.setVariablePosition(current_joint_states.name[i], current_joint_states.position[i]);
+        requested_links.push_back(current_joint_states.name[i].c_str());
     }
 
     robot_state.update();
@@ -60,6 +63,16 @@ void ObstacleDistance::getDistanceToObstacles(const ros::TimerEvent&)
 
     fcl::DistanceRequest req;
     fcl::DistanceResult res;
+    atf_msgs::ObstacleDistance ob;
+
+    requested_links.push_back("arm_right_1_link");
+    requested_links.push_back("arm_right_2_link");
+    requested_links.push_back("arm_right_3_link");
+    requested_links.push_back("arm_right_4_link");
+    requested_links.push_back("arm_right_5_link");
+    requested_links.push_back("arm_right_6_link");
+    requested_links.push_back("arm_right_7_link");
+    requested_links.push_back("gripper_right_grasp_link");
 
     for (int i = 0; i < robot_obj.size(); i++)
     {
@@ -69,19 +82,34 @@ void ObstacleDistance::getDistanceToObstacles(const ros::TimerEvent&)
         {
             if (requested_links[it].compare(cd->getID()) == 0)
             {
-                double min_distance = 999;
                 for (int j = 0; j < world_obj.size(); j++)
                 {
                     double dist = fcl::distance(robot_obj[i].get(), world_obj[j].get(), req, res);
-                    if (dist < min_distance)
-                    {
-                        min_distance = fcl::distance(robot_obj[i].get(), world_obj[j].get(), req, res);
-                    }
+                    ROS_INFO("Minimal distance for %s: %f", cd->getID().c_str(), dist);
                 }
-                ROS_INFO("Minimal distance for %s: %f", cd->getID().c_str(), min_distance);
+
             }
         }
+
+        /*
+        atf_msgs::ObstacleDistanceLink ob_link;
+        ob_link.name = robot_link->getID();
+
+        for (int j = 0; j < world_obj.size(); j++)
+        {
+            //const collision_detection::CollisionGeometryData* collision_object = static_cast<const collision_detection::CollisionGeometryData*>(world_obj[j]->collisionGeometry()->getUserData());
+            double dist = fcl::distance(robot_obj[i].get(), world_obj[j].get(), req, res);
+
+            //ob_link.objects.push_back(collision_object->getID());
+            ROS_INFO("Distance for %s: %f",robot_link->getID().c_str(), dist);
+            //ob_link.distances.push_back(dist);
+        }
+        robot_link = NULL;
+        delete robot_link;
+
+        //ob.links.push_back(ob_link);*/
     }
+    //obstacle_distance_publisher.publish(ob);
 }
 
 void ObstacleDistance::joint_state_callback(const sensor_msgs::JointStatePtr &joint_states)
@@ -97,20 +125,38 @@ void ObstacleDistance::getPlanningScene()
     }
 }
 
+void ObstacleDistance::getRequestedLinks()
+{
+    std::string test;
+    getParam("/test_config", test);
+
+    XmlRpc::XmlRpcValue testblocks;
+
+    if (getParam("obstacle_distance_node/test_config/" + test, testblocks))
+    {
+        std::map<std::string, XmlRpc::XmlRpcValue>::iterator i;
+        for (i = testblocks.begin(); i != testblocks.end(); i++)
+        {
+            std::cout << i->first << " | " << i->second << std::endl;
+        }
+    }
+}
+
 ObstacleDistance::ObstacleDistance()
         : ros::NodeHandle()
 {
     PLANNING_SCENE_SERVICE = "get_planning_scene";
-    requested_links.push_back("gripper_right_grasp_link");
-    requested_links.push_back("gripper_left_grasp_link");
+    double publish_frequency = 10.0; //Hz
+    ObstacleDistance::getRequestedLinks();
 
     //Initialize planning scene monitor
     boost::shared_ptr<tf::TransformListener> tf_listener_(new tf::TransformListener(ros::Duration(2.0)));
     planning_scene_monitor_ =  boost::make_shared<planning_scene_monitor::PlanningSceneMonitor>("robot_description", tf_listener_);
 
     //Initialize timer & subscriber
-    tf_subscriber = subscribe("joint_states", 1, &ObstacleDistance::joint_state_callback, this);
-    distance_timer = createTimer(ros::Duration(0.5), &ObstacleDistance::getDistanceToObstacles, this);
+    joint_state_subscriber = subscribe("joint_states", 1, &ObstacleDistance::joint_state_callback, this);
+    obstacle_distance_publisher = advertise<atf_msgs::ObstacleDistance>("/atf/obstacle_distance", 1);
+    obstacle_distance_timer = createTimer(ros::Duration(0.1), &ObstacleDistance::getDistanceToObstacles, this);
 
     //Initialize thread for updating the planning scene
     boost::thread* ps_thread = new boost::thread(&ObstacleDistance::getPlanningScene, this);

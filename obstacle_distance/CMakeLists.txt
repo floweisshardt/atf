@@ -11,6 +11,7 @@ find_package(catkin REQUIRED
         moveit_ros_planning
         moveit_ros_planning_interface
         tf
+        atf_msgs
 )
 
 ## System dependencies are found with CMake's conventions
@@ -94,6 +95,7 @@ catkin_package(
         moveit_core
         moveit_ros_planning_interface
         roscpp
+        atf_msgs
     DEPENDS
         Boost
         fcl
