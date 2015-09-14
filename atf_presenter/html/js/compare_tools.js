@@ -233,24 +233,24 @@ function compareTests(tests) {
         var count_resource_categories = 0;
         var temp_efficiency = 0;
 
-        $.each(temp_testblock, function(name, values) {
-            if (values instanceof Object) {
-                // Resources
-                $.each(values, function(res_name, res_data) {
+        $.each(temp_testblock, function(metric, metric_data) {
+            if (metric == "resources") {
+                $.each(metric_data, function (res_name, res_data) {
+                    // Resources
                     if (res_data["length"] != 0) {
-                        temp_categories[name] += res_data["current"]/res_data["length"];
+                        temp_categories[metric] += res_data["current"]/res_data["length"];
                         count_resource_categories++;
                     }
                 });
             } else {
                 // Time & Path length & Obstacle distance
-                if (values["length"] != 0) {
-                    temp_categories[name] = values["current"]/values["length"];
+                if (metric_data["length"] != 0) {
+                    temp_categories[metric] = metric_data["current"]/metric_data["length"];
                 }
             }
         });
 
-        var temp_resources = temp_categories/count_resource_categories;
+        var temp_resources = temp_categories["resources"]/count_resource_categories;
         var temp_speed = temp_categories["time"];
 
         if (temp_categories["path_length"] != 0 && temp_categories["obstacle_distance"] != 0) {
