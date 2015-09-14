@@ -73,6 +73,9 @@ void ObstacleDistance::getDistanceToObstacles(const ros::TimerEvent&)
             res.update(2.0, NULL, NULL, fcl::DistanceResult::NONE, fcl::DistanceResult::NONE);
 
             double dist = fcl::distance(robot_obj[i].get(), world_obj[j].get(), fcl::DistanceRequest(), res);
+            if (dist < 0) {
+                dist = 0;
+            }
 
             ob_link.objects.push_back(collision_object->getID());
             ob_link.distances.push_back(dist);
