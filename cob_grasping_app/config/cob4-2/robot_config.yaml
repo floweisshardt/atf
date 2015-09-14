@@ -1,2 +1,4 @@
 path_length:
   topics: ["/tf"]
+obstacle_distance:
+  topics: ["/atf/obstacle_distance"]

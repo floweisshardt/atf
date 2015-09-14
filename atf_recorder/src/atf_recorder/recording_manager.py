@@ -14,7 +14,7 @@ class RecordingManager:
         :return:
         """
         self.name = name
-        self.topic = "/testing/"
+        self.topic = "/atf/"
         rospy.wait_for_service(self.topic + "recorder_command")
         self.recorder_command = rospy.ServiceProxy(self.topic + "recorder_command", RecorderCommand)
 

@@ -24,7 +24,7 @@ class ATFRecorder:
         if not os.path.exists(rosparam.get_param("/recorder/bagfile_output")):
             os.makedirs(rosparam.get_param("/recorder/bagfile_output"))
 
-        self.topic = "/testing/"
+        self.topic = "/atf/"
         self.lock_write = Lock()
         self.bag = rosbag.Bag(rosparam.get_param("/recorder/bagfile_output") + bag_name + ".bag", 'w')
         self.test_config = self.load_data(rosparam.get_param("/recorder/test_config_file"))[rosparam.get_param(
@@ -126,8 +126,12 @@ class ATFRecorder:
     def global_topic_callback(self, msg, name):
         if name in self.topic_pipeline:
             now = rospy.Time.from_sec(time.time())
-            for item in msg.transforms:
-                item.header.stamp = now
+            try:
+                for item in msg.transforms:
+                    item.header.stamp = now
+            except AttributeError:
+                pass
+
             self.BfW.write_to_bagfile(name, msg, now)
 
     def get_topics(self):
