@@ -80,7 +80,7 @@ class RecordResources:
         pipeline = copy(self.res_pipeline)
         if not len(pipeline) == 0:
             msg = Resources()
-            topic = self.topic_prefix + "Resources"
+            topic = self.topic_prefix + "resources"
 
             for node in pipeline:
                 msg_data = NodeResources()
