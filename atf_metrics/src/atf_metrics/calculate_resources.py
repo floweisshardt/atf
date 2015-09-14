@@ -49,7 +49,7 @@ class CalculateResources:
                 elif resource not in self.node_data[node]:
                     self.node_data[node].update({resource: {"data": [], "average": [], "min": [], "max": []}})
 
-        rospy.Subscriber("/testing/Resources", Resources, self.process_resource_data, queue_size=1)
+        rospy.Subscriber("/atf/resources", Resources, self.process_resource_data, queue_size=1)
 
     def start(self):
         self.active = True
