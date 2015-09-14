@@ -1,4 +1,4 @@
-#include <obstacle_distance/obstacle_distance.h>
+#include <atf_recorder_plugins/obstacle_distance.h>
 
 class CreateCollisionWorld: public collision_detection::CollisionWorldFCL
 {

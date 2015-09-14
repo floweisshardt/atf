@@ -4,13 +4,25 @@ project(atf_recorder_plugins)
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
-find_package(catkin REQUIRED COMPONENTS
-  atf_msgs
-  rospy
+find_package(catkin REQUIRED
+    COMPONENTS
+        atf_msgs
+        rospy
+        roscpp
+        moveit_core
+        moveit_ros_planning
+        moveit_ros_planning_interface
+        tf
 )
 
 ## System dependencies are found with CMake's conventions
-# find_package(Boost REQUIRED COMPONENTS system)
+find_package(Boost REQUIRED
+    COMPONENTS
+        filesystem
+        system
+        thread
+    REQUIRED)
+find_package(fcl REQUIRED)
 
 
 ## Uncomment this if the package has a setup.py. This macro ensures
@@ -78,11 +90,23 @@ catkin_python_setup()
 ## LIBRARIES: libraries you create in this project that dependent projects also need
 ## CATKIN_DEPENDS: catkin_packages dependent projects also need
 ## DEPENDS: system dependencies of this project that dependent projects also need
+
+find_package(PkgConfig REQUIRED)
+pkg_check_modules(LIBFCL REQUIRED fcl)
+find_library(LIBFCL_LIBRARIES_FULL ${LIBFCL_LIBRARIES} ${LIBFCL_LIBRARY_DIRS})
+set(LIBFCL_LIBRARIES "${LIBFCL_LIBRARIES_FULL}")
+
 catkin_package(
-#  INCLUDE_DIRS include
-#  LIBRARIES atf_recorder_plugins
-#  CATKIN_DEPENDS atf_msgs rospy
-#  DEPENDS system_lib
+    CATKIN_DEPENDS
+        moveit_core
+        moveit_ros_planning_interface
+        roscpp
+        atf_msgs
+    DEPENDS
+        Boost
+        fcl
+    INCLUDE_DIRS
+        include
 )
 
 ###########
@@ -91,9 +115,16 @@ catkin_package(
 
 ## Specify additional locations of header files
 ## Your package locations should be listed before other locations
-# include_directories(include)
 include_directories(
-  ${catkin_INCLUDE_DIRS}
+    include
+    ${catkin_INCLUDE_DIRS}
+    ${Boost_INCLUDE_DIRS}
+    ${FCL_INCLUDE_DIRS}
+)
+link_directories(
+    ${catkin_LIBRARY_DIRS}
+    ${Boost_INCLUDE_DIRS}
+    ${FCL_INCLUDE_DIRS}
 )
 
 ## Declare a cpp library
@@ -101,8 +132,8 @@ include_directories(
 #   src/${PROJECT_NAME}/atf_recorder_plugins.cpp
 # )
 
-## Declare a cpp executable
-# add_executable(atf_recorder_plugins_node src/atf_recorder_plugins_node.cpp)
+add_executable(obstacle_distance_node src/${PROJECT_NAME}/obstacle_distance.cpp include/${PROJECT_NAME}/obstacle_distance.h)
+target_link_libraries(obstacle_distance_node ${catkin_LIBRARIES} ${LIBFCL_LIBRARIES})
 
 ## Add cmake target dependencies of the executable/library
 ## as an example, message headers may need to be generated before nodes

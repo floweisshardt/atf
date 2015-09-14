@@ -1,5 +1,5 @@
-#ifndef OBSTACLE_DISTANCE_OBSTACLE_DISTANCE_H
-#define OBSTACLE_DISTANCE_OBSTACLE_DISTANCE_H
+#ifndef ATF_RECORDER_PLUGINS_OBSTACLE_DISTANCE_H
+#define ATF_RECORDER_PLUGINS_OBSTACLE_DISTANCE_H
 
 #include <ros/ros.h>
 
@@ -19,7 +19,6 @@ class ObstacleDistance : public ros::NodeHandle
 {
 public:
     ObstacleDistance();
-    ~ObstacleDistance();
 
 private:
     planning_scene_monitor::PlanningSceneMonitorPtr planning_scene_monitor_;
@@ -36,4 +35,4 @@ private:
 
 };
 
-#endif //OBSTACLE_DISTANCE_OBSTACLE_DISTANCE_H
+#endif //ATF_RECORDER_PLUGINS_OBSTACLE_DISTANCE_H
