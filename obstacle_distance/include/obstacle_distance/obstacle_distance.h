@@ -3,7 +3,6 @@
 
 #include <ros/ros.h>
 
-// MoveIt!
 #include <moveit/planning_scene_monitor/planning_scene_monitor.h>
 #include <moveit_msgs/GetStateValidity.h>
 #include <moveit_msgs/DisplayRobotState.h>
@@ -11,6 +10,7 @@
 #include <moveit/collision_detection_fcl/collision_world_fcl.h>
 
 #include <boost/thread.hpp>
+
 #include <sensor_msgs/JointState.h>
 #include <atf_msgs/ObstacleDistance.h>
 #include <atf_msgs/ObstacleDistanceLink.h>
@@ -33,7 +33,6 @@ private:
     void joint_state_callback(const sensor_msgs::JointStatePtr &joint_states);
     void getDistanceToObstacles(const ros::TimerEvent&);
     void getPlanningScene();
-    void getRequestedLinks();
 
 };
 

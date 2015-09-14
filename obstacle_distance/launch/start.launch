@@ -1,8 +1,0 @@
-<?xml version="1.0"?>
-<launch>
-    <rosparam command="load" ns="obstacle_distance_node/test_config" file="$(find atf_core)/config/test_config.yaml" />
-    <param name="test_config" value="test_1" />
-
-    <node name="obstacle_distance_node" pkg="obstacle_distance" type="obstacle_distance_node" output="screen" required="true" />
-
-</launch>
