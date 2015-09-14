@@ -9,7 +9,7 @@ class Testblock:
     def __init__(self, testblock_name, metrics):
 
         self.testblock_name = testblock_name
-        rospy.Subscriber("/testing/" + self.testblock_name + "/Trigger", Trigger, self.trigger_callback)
+        rospy.Subscriber("/atf/" + self.testblock_name + "/Trigger", Trigger, self.trigger_callback)
 
         self.transition = None
         self.metrics = metrics

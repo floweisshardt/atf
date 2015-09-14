@@ -217,7 +217,8 @@ function drawTestDetails(test_name) {
         "cpu": [],
         "mem": [],
         "time": [],
-        "path_length": []
+        "path_length": [],
+        "obstacle_distance": []
     };
     var plot_options = {
         "cpu": {
@@ -339,6 +340,28 @@ function drawTestDetails(test_name) {
             },
             plotOptions: {},
             tooltip: plot_tooltip
+        },
+        "obstacle_distance": {
+            chart: {
+                defaultSeriesType: 'column',
+                type: 'column',
+                zoomType: 'xy'
+            },
+            title: {
+                text: 'Minimal distance to obstacles'
+            },
+            yAxis: {
+                title: {
+                    text: 'Distance [m]'
+                }
+            },
+            xAxis: {
+                labels: {
+                    enabled: false
+                }
+            },
+            plotOptions: {},
+            tooltip: plot_tooltip
         }
     };
     var time_data = [];
@@ -367,7 +390,8 @@ function drawTestDetails(test_name) {
             "mem": [],
             "io": [],
             "network": [],
-            "path_length": []
+            "path_length": [],
+            "obstacle_distance": []
         };
 
         var active_class;
@@ -429,7 +453,7 @@ function drawTestDetails(test_name) {
                             }
                         });
                     } else {
-                        // Path length
+                        // Path length & Obstacle distance
                         test_data[metric_name].push({
                             'name': node_name,
                             'data': [{

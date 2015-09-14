@@ -12,6 +12,9 @@ test_1:
     path_length:
       - [base_link, gripper_right_grasp_link]
       - [base_link, arm_right_3_link]
+    obstacle_distance:
+      - [gripper_right_grasp_link, [scene_3, wall_r]]
+      - [arm_right_4_link, wall_r]
     resources:
       cpu: [move_group, rostest]
       mem: [move_group, rostest]

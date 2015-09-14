@@ -10,7 +10,8 @@ function searchForMaximum(tests) {
         "io": [0, 0, 0, 0],
         "network": [0, 0, 0, 0, 0, 0, 0, 0],
         "time": 0,
-        "path_length": 0
+        "path_length": 0,
+        "obstacle_distance": 0
     };
     $.each(tests, function (index, test_name) {
         var test_results = getDataFromStorage(test_name);
@@ -34,7 +35,7 @@ function searchForMaximum(tests) {
                                     max[resource_name] = resource_data["max"];
                                 }
                             });
-                            // Path length
+                            // Path length & Obstacle distance
                         } else if (node_resources > max[resource_name]) {
                             max[resource_name] = node_resources;
                         }
@@ -124,6 +125,11 @@ function compareTests(tests) {
                 "current": 0,
                 "total": max_values["path_length"]
             },
+            "obstacle_distance": {
+                "length": 0,
+                "current": 0,
+                "total": max_values["obstacle_distance"]
+            },
             "resources": {
                 "cpu": {
                     "length": 0,
@@ -184,7 +190,7 @@ function compareTests(tests) {
                                     temp_testblock["resources"][resource_name]["length"]++;
                                 }
                             });
-                            // Path length
+                            // Path length & Obstacle distance
                         } else {
                             if (!(resource_name in data_compare_plot[testblock_name])) {
                                 data_compare_plot[testblock_name][resource_name] = {};
@@ -213,24 +219,41 @@ function compareTests(tests) {
             });
         });
 
-        var temp_resources = 0;
-        var count_resource_categories = 0;
+        var temp_categories = {
+            "resources": 0,
+            "time": 0,
+            "path_length": 0,
+            "obstacle_distance": 0
+        };
 
-        $.each(temp_testblock["resources"], function (resource_name, values) {
-            if (values["length"] != 0) {
-                temp_resources += values["current"]/values["length"];
-                count_resource_categories++;
+        var count_resource_categories = 0;
+        var temp_efficiency = 0;
+
+        $.each(temp_testblock, function(name, values) {
+            if (values instanceof Object) {
+                // Resources
+                $.each(values, function(res_name, res_data) {
+                    if (res_data["length"] != 0) {
+                        temp_categories[name] += res_data["current"]/res_data["length"];
+                        count_resource_categories++;
+                    }
+                });
+            } else {
+                // Time & Path length & Obstacle distance
+                if (values["length"] != 0) {
+                    temp_categories[name] = values["current"]/values["length"];
+                }
             }
         });
 
-        temp_resources /= count_resource_categories;
+        var temp_resources = temp_categories/count_resource_categories;
+        var temp_speed = temp_categories["time"];
 
-        if (isNaN(temp_resources)) {
-            temp_resources = 0;
+        if (temp_categories["path_length"] != 0 && temp_categories["obstacle_distance"] != 0) {
+            temp_efficiency = (temp_categories["path_length"] + temp_categories["obstacle_distance"])/2;
+        } else {
+            temp_efficiency = (temp_categories["path_length"] + temp_categories["obstacle_distance"]);
         }
-
-        var temp_speed = temp_testblock["time"]["current"]/temp_testblock["time"]["length"];
-        var temp_efficiency = temp_testblock["path_length"]["current"]/temp_testblock["path_length"]["length"];
 
         results["speed"].push(temp_speed * weight_speed);
         results["efficiency"].push(temp_efficiency * weight_efficiency);

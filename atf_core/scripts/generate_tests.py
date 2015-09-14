@@ -77,6 +77,8 @@ class GenerateTests(unittest.TestCase):
                 include(file=self.move_group_launch),
                 node(param(name="robot_config_file", value="$(arg rc_path)$(arg robot)/robot_config.yaml"),
                      name="atf_recorder", pkg="atf_recorder", type="recorder_core.py", output="screen"),
+                node(name="obstacle_distance_node", pkg="atf_recorder_plugins", type="obstacle_distance_node",
+                     output="screen"),
                 include(file=self.test_application_path)
             )
 
