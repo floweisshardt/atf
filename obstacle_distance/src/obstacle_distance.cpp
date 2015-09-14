@@ -37,10 +37,7 @@ public:
 
 void ObstacleDistance::getDistanceToObstacles(const ros::TimerEvent&)
 {
-    //planning_scene_monitor::LockedPlanningSceneRO ps(planning_scene_monitor_);
-    planning_scene_monitor::LockedPlanningSceneRW ps(planning_scene_monitor_);
-    ps->getCurrentStateNonConst().update();
-
+    planning_scene_monitor::LockedPlanningSceneRO ps(planning_scene_monitor_);
     planning_scene::PlanningScenePtr planning_scene_ptr = ps->diff();
 
     CreateCollisionWorld collision_world(planning_scene_ptr->getWorldNonConst());
@@ -72,17 +69,16 @@ void ObstacleDistance::getDistanceToObstacles(const ros::TimerEvent&)
         for (int j = 0; j < world_obj.size(); j++)
         {
             const collision_detection::CollisionGeometryData* collision_object = static_cast<const collision_detection::CollisionGeometryData*>(world_obj[j]->collisionGeometry()->getUserData());
-            fcl::DistanceRequest req;
             fcl::DistanceResult res;
+            res.update(2.0, NULL, NULL, fcl::DistanceResult::NONE, fcl::DistanceResult::NONE);
 
-            double dist = fcl::distance(robot_obj[i].get(), world_obj[j].get(), req, res);
+            double dist = fcl::distance(robot_obj[i].get(), world_obj[j].get(), fcl::DistanceRequest(), res);
 
             ob_link.objects.push_back(collision_object->getID());
             ob_link.distances.push_back(dist);
         }
         ob.links.push_back(ob_link);
     }
-
     obstacle_distance_publisher.publish(ob);
 }
 
@@ -117,9 +113,6 @@ ObstacleDistance::ObstacleDistance()
     //Initialize thread for updating the planning scene
     boost::thread* ps_thread = new boost::thread(&ObstacleDistance::getPlanningScene, this);
 }
-
-ObstacleDistance::~ObstacleDistance()
-{}
 
 int main(int argc, char **argv)
 {
