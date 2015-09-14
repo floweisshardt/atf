@@ -35,7 +35,7 @@ function searchForMaximum(tests) {
                                     max[resource_name] = resource_data["max"];
                                 }
                             });
-                            // Path length & Obstacle distance
+                            // Path length
                         } else if (node_resources > max[resource_name]) {
                             max[resource_name] = node_resources;
                         }
@@ -200,7 +200,11 @@ function compareTests(tests) {
                             }
                             data_compare_plot[testblock_name][resource_name][node_name][test_name] = node_resources;
                             if (temp_testblock[resource_name]["total"] != 0) {
-                                temp_testblock[resource_name]["current"] += (temp_testblock[resource_name]["total"] - node_resources) / temp_testblock[resource_name]["total"];
+                                if (resource_name == "obstacle_distance") {
+                                    temp_testblock[resource_name]["current"] += node_resources / temp_testblock[resource_name]["total"];
+                                } else {
+                                    temp_testblock[resource_name]["current"] += (temp_testblock[resource_name]["total"] - node_resources) / temp_testblock[resource_name]["total"];
+                                }
                             }
                             temp_testblock[resource_name]["length"]++;
                         }
