@@ -1,1 +1,1 @@
-float32 distance
+ObstacleDistanceLink[] links
