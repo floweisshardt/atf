@@ -1,0 +1,1 @@
+from plugin_resources import RecordResources

@@ -1,0 +1,77 @@
+scene_1:
+  environment:
+    additional_obstacles: []
+    mesh: /files/rack.stl
+    orientation: [90.0, 0.0, 90.0]
+    position: [0.56, -0.91, 0.0]
+    scaling: 0.002
+  object:
+    dimension: [0.02, 0.02, 0.1]
+    shape: 3
+  poses: {approach: approach_1, drop: drop_1, end: end_1, grasp: grasp_1, lift: lift_1,
+    move: move_1, retreat: retreat_1, start: start_1}
+  positions:
+    arm: right
+    goal_l: [0.594, 0.15, 1.082]
+    goal_r: [0.5520347356796265, -0.047698214650154114, 0.8594473004341125]
+    start_r: [0.5857568383216858, -0.5347049236297607, 0.8630751371383667]
+    waypoints_l:
+    - [0.403, 0.166, 0.843]
+    - [0.41, 0.165, 1.067]
+    waypoints_r:
+    - [0.419, -0.17, 0.858]
+    - [0.428, 0.071, 0.856]
+scene_2:
+  environment:
+    additional_obstacles: []
+    mesh: /files/shelf.stl
+    orientation: [90.0, 0.0, 90.0]
+    position: [0.82, -0.12, 0.16]
+    scaling: 0.01
+  object:
+    dimension: [0.02, 0.02, 0.1]
+    shape: 3
+  poses: {approach: approach_2, drop: drop_2, end: end_2, grasp: grasp_2, lift: lift_2,
+    move: move_2, retreat: retreat_2, start: start_2}
+  positions:
+    arm: right
+    goal_l: [0.7250823974609375, 0.03201216459274292, 1.0019516944885254]
+    goal_r: [0.7270793914794922, -0.23835718631744385, 0.7922670841217041]
+    start_r: [0.7250710129737854, -0.4975782036781311, 0.800812840461731]
+    waypoints_l:
+    - [0.38, 0.01, 0.853]
+    - [0.386, 0.01, 1.08]
+    waypoints_r:
+    - [0.416, -0.238, 0.784]
+    - [0.428, 0.006, 0.775]
+scene_3:
+  environment:
+    additional_obstacles:
+    - id: wall_r
+      orientation: [0.0, 0.0, 0.0]
+      position: [0.8, -0.39, 0.86]
+      shape: 1
+      size: [0.48, 0.05, 0.5]
+    - id: wall_l
+      orientation: [0.0, 0.0, 0.0]
+      position: [0.8, 0.15, 0.86]
+      shape: 1
+      size: [0.48, 0.05, 0.5]
+    mesh: /files/table.stl
+    orientation: [0.0, 0.0, 0.0]
+    position: [0.56, 0.0, 0.61]
+    scaling: 1.0
+  object:
+    dimension: [0.02, 0.02, 0.1]
+    shape: 3
+  poses: {approach: approach_3, drop: drop_3, end: end_3, grasp: grasp_3, lift: lift_3,
+    move: move_3, retreat: retreat_3, start: start_3}
+  positions:
+    arm: right
+    goal_l: [0.8803333640098572, 0.36599868535995483, 0.7421368360519409]
+    goal_r: [0.6450473070144653, -0.17430835962295532, 0.7039675116539001]
+    start_r: [0.6601482033729553, -0.6105925440788269, 0.7023671865463257]
+    waypoints_l: []
+    waypoints_r:
+    - [0.4571572542190552, -0.5318987369537354, 0.8519324064254761]
+    - [0.44729146361351013, -0.25760185718536377, 0.8546686172485352]

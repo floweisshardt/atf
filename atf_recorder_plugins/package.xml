@@ -1,0 +1,30 @@
+<?xml version="1.0"?>
+<package format="2">
+    <name>atf_recorder_plugins</name>
+    <version>1.0.0</version>
+    <description>The atf_recorder_plugins package</description>
+
+    <!-- One maintainer tag required, multiple allowed, one person per tag -->
+    <!-- Example:  -->
+    <!-- <maintainer email="jane.doe@example.com">Jane Doe</maintainer> -->
+    <maintainer email="fmw-fk@todo.todo">fmw-fk</maintainer>
+
+    <!-- One license tag required, multiple allowed, one license per tag -->
+    <!-- Commonly used license strings: -->
+    <!--   BSD, MIT, Boost Software License, GPLv2, GPLv3, LGPLv2.1, LGPLv3 -->
+    <license>LGPL</license>
+
+    <buildtool_depend>catkin</buildtool_depend>
+    <buildtool_depend>pkg-config</buildtool_depend>
+
+    <depend>atf_msgs</depend>
+    <depend>rospy</depend>
+    <depend>boost</depend>
+    <depend>roscpp</depend>
+    <depend>moveit_core</depend>
+    <depend>moveit_ros_planning_interface</depend>
+    <depend>tf</depend>
+    <depend>fcl</depend>
+    <depend>pkg-config</depend>
+
+</package>
