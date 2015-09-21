@@ -3,7 +3,6 @@ import rospy
 import yaml
 import rosparam
 import os
-import shutil
 import unittest
 import rostest
 import rospkg
@@ -19,13 +18,11 @@ class TestBuilder:
 
     def create_test_list(self):
         if not rosparam.get_param("/analysing/result_yaml_output") == "":
-            if os.path.exists(rosparam.get_param("/analysing/result_yaml_output")):
-                shutil.rmtree(rosparam.get_param("/analysing/result_yaml_output"))
-            os.makedirs(rosparam.get_param("/analysing/result_yaml_output"))
+            if not os.path.exists(rosparam.get_param("/analysing/result_yaml_output")):
+                os.makedirs(rosparam.get_param("/analysing/result_yaml_output"))
 
-        if os.path.exists(rosparam.get_param("/analysing/result_json_output")):
-            shutil.rmtree(rosparam.get_param("/analysing/result_json_output"))
-        os.makedirs(rosparam.get_param("/analysing/result_json_output"))
+        if not os.path.exists(rosparam.get_param("/analysing/result_json_output")):
+            os.makedirs(rosparam.get_param("/analysing/result_json_output"))
 
         test_config_path = rosparam.get_param("/analysing/test_config_file")
         config_data = self.load_data(test_config_path)[rosparam.get_param("/analysing/test_config")]

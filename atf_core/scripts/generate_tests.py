@@ -57,6 +57,7 @@ class GenerateTests:
 
         self.test_list = {}
 
+        # Empty folder
         if os.path.exists(rospkg.RosPack().get_path("atf_core") + "/test/generated/recording/"):
             shutil.rmtree(rospkg.RosPack().get_path("atf_core") + "/test/generated/recording/")
         os.makedirs(rospkg.RosPack().get_path("atf_core") + "/test/generated/recording/")
@@ -64,6 +65,19 @@ class GenerateTests:
         if os.path.exists(rospkg.RosPack().get_path("atf_core") + "/test/generated/analysing/"):
             shutil.rmtree(rospkg.RosPack().get_path("atf_core") + "/test/generated/analysing/")
         os.makedirs(rospkg.RosPack().get_path("atf_core") + "/test/generated/analysing/")
+
+        if os.path.exists(self.bagfile_output):
+            shutil.rmtree(self.bagfile_output)
+        os.makedirs(self.bagfile_output)
+
+        if os.path.exists(self.json_output):
+            shutil.rmtree(self.json_output)
+        os.makedirs(self.json_output)
+
+        if self.yaml_output != "":
+            if os.path.exists(self.yaml_output):
+                shutil.rmtree(self.yaml_output)
+            os.makedirs(self.yaml_output)
 
         self.generate_test_list()
 

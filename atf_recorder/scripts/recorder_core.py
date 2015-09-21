@@ -7,7 +7,6 @@ import rosparam
 import yaml
 import time
 import os
-import shutil
 import atf_recorder_plugins
 
 from threading import Lock
@@ -22,9 +21,8 @@ class ATFRecorder:
         bag_name = rosparam.get_param("/test_name")
         self.robot_config_file = self.load_data(rosparam.get_param(rospy.get_name() + "/robot_config_file"))
 
-        if os.path.exists(rosparam.get_param("/recorder/bagfile_output")):
-            shutil.rmtree(rosparam.get_param("/recorder/bagfile_output"))
-        os.makedirs(rosparam.get_param("/recorder/bagfile_output"))
+        if not os.path.exists(rosparam.get_param("/recorder/bagfile_output")):
+            os.makedirs(rosparam.get_param("/recorder/bagfile_output"))
 
         self.topic = "/atf/"
         self.lock_write = Lock()
