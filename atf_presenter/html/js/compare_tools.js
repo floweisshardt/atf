@@ -72,9 +72,9 @@ function compareTests(tests) {
         "efficiency": []
     };
 
-    var weight_speed = 1000;
-    var weight_resources = 1000;
-    var weight_efficiency = 1000;
+    var weight_speed = 100;
+    var weight_resources = 100;
+    var weight_efficiency = 100;
 
     var plot_tooltip = {
         "formatter": function () {
@@ -267,7 +267,7 @@ function compareTests(tests) {
         category_results["efficiency"] = round(temp_efficiency * weight_efficiency, 3);
         category_results["resources"] = round(temp_resources * weight_resources, 3);
 
-        var final_results = round((temp_speed * weight_speed + temp_efficiency * weight_efficiency + temp_resources * weight_resources), 3);
+        var final_results = round((temp_speed * weight_speed + temp_efficiency * weight_efficiency + temp_resources * weight_resources)/3, 3);
         data_overview.push({
             'name': test_name,
             'data': [{
@@ -442,7 +442,6 @@ function compareTests(tests) {
             }
         }
     });
-    //createComparisonGraphs(data_compare_plot);
     showBestTest();
 }
 
@@ -457,7 +456,7 @@ function changeWeight(category, weight) {
         chart_compare_category_efficiency.series[i].setData([round(results_temp["efficiency"][i], 3)]);
         chart_compare_category_resources.series[i].setData([round(results_temp["resources"][i], 3)]);
 
-        final_results.push(round(results_temp["speed"][i] + results_temp["efficiency"][i] + results_temp["resources"][i], 3));
+        final_results.push(round((results_temp["speed"][i] + results_temp["efficiency"][i] + results_temp["resources"][i])/3, 3));
         chart_compare_overview.series[i].setData([final_results[i]]);
     }
     showBestTest();
@@ -523,241 +522,4 @@ function showBestTest() {
     efficiency.append(results["efficiency"]["name"]);
     resources.append(results["resources"]["name"]);
     total.append(results["total"]["name"]);
-}
-
-function createComparisonGraphs(data) {
-    var compare_tests = $('#compare_tests');
-    var compare_tests_detail = compare_tests.find('#compare_results_detail');
-    var compare_tests_detail_tab_content = compare_tests_detail.find('.tab-content');
-
-    var first_entry = true;
-    var compare_categories = {
-        "cpu": [],
-        "mem": [],
-        "io": [],
-        "network": [],
-        "time": "",
-        "path_length": []
-    };
-    var compare_categories_items = {
-        "io": ['Read count',
-            'Write count',
-            'Kilobytes read',
-            'Kilobytes wrote'],
-        "network": ['Kilobytes sent',
-            'Kilobytes received',
-            'Packets sent',
-            'Packets received',
-            'Errors received',
-            'Errors sent',
-            'Packets dropped: Received',
-            'Packets dropped: Sent']
-    };
-    var plot_options = {
-        "cpu": {
-            chart: {
-                defaultSeriesType: 'column',
-                type: 'column',
-                zoomType: 'xy'
-            },
-            title: {
-                text: 'CPU'
-            },
-            yAxis: {
-                title: {
-                    text: 'Average consumption [%]'
-                }
-            },
-            xAxis: {
-                labels: {}
-            },
-            plotOptions: {}
-        },
-        "mem": {
-            chart: {
-                defaultSeriesType: 'column',
-                type: 'column',
-                zoomType: 'xy'
-            },
-            title: {
-                text: 'Memory'
-            },
-            yAxis: {
-                title: {
-                    text: 'Average consumption [%]'
-                }
-            },
-            xAxis: {
-                labels: {}
-            },
-            plotOptions: {}
-        },
-        "io": {
-            chart: {
-                defaultSeriesType: 'column',
-                type: 'column',
-                zoomType: 'xy'
-            },
-            title: {
-                text: 'Disk IO operations'
-            },
-            yAxis: {},
-            xAxis: {
-                labels: {}
-            },
-            plotOptions: {}
-        },
-        "network": {
-            chart: {
-                defaultSeriesType: 'column',
-                type: 'column',
-                zoomType: 'xy'
-            },
-            title: {
-                text: 'Network traffic'
-            },
-            yAxis: {},
-            xAxis: {
-                labels: {}
-            },
-            plotOptions: {}
-        },
-        "time": {
-            chart: {
-                defaultSeriesType: 'column',
-                type: 'column',
-                zoomType: 'xy'
-            },
-            title: {
-                text: 'Time'
-            },
-            yAxis: {
-                title: {
-                    text: 'Time [s]'
-                }
-            },
-            xAxis: {
-                labels: {
-                    enabled: false
-                }
-            },
-            plotOptions: {
-                column: {
-                    pointPadding: 0,
-                    groupPadding: 0,
-                    borderWidth: 0
-                }
-            }
-        },
-        "path_length": {
-            chart: {
-                defaultSeriesType: 'column',
-                type: 'column',
-                zoomType: 'xy'
-            },
-            title: {
-                text: 'Path length'
-            },
-            yAxis: {
-                title: {
-                    text: 'Path length [m]'
-                }
-            },
-            xAxis: {},
-            plotOptions: {}
-        }
-    };
-
-    var plot_tooltip = {
-        "formatter": function () {
-
-            return '<b>' + this.series.name + '</b>: '+ this.y;
-        }
-    };
-
-    $.each(data, function (testblock_name, testblock_data) {
-        var compare_data = {
-            "cpu": [],
-            "mem": [],
-            "io": [],
-            "network": [],
-            "time": [],
-            "path_length": []
-        };
-
-        var active_class;
-        if (first_entry) {
-            compare_tests_detail.find('.nav-tabs').empty();
-            compare_tests_detail.find('.tab-content').empty();
-            active_class = "active";
-            first_entry = false;
-        } else {
-            active_class = "";
-        }
-
-        compare_tests_detail.find('.nav-tabs').append('<li role="presentation" class="' + active_class + '"><a href="#compare_' + testblock_name + '" aria-controls="compare_' + testblock_name + '" role="tab" data-toggle="tab">' + testblock_name + '</a></li>');
-        compare_tests_detail.find('.tab-content').append('<div role="tabpanel" class="tab-pane ' + active_class + '" id="compare_' + testblock_name + '"></div>');
-
-        $.each(testblock_data, function (resource_name, resource_data) {
-            var testblock_tab_content = compare_tests_detail_tab_content.find('#compare_' + testblock_name);
-            var category_name = resource_name.split('_').join(' ');
-
-            testblock_tab_content.append('<div class="panel panel-primary"><div class="panel-heading">' + category_name + '</div>' +
-                '<div class="panel-body"><div id="compare_' + resource_name + '_detail" class="plot"></div></div></div>');
-
-            // TODO: Fix grouped categories for IO & Network
-            $.each(resource_data, function (name, data) {
-                if (data instanceof Object) {
-                    $.each(data, function (test_name, test_data) {
-                        var data = [];
-                        if (test_data instanceof Array) {
-                            // IO & Network
-                            if ($.inArray(name, compare_categories[resource_name]) === -1) {
-                                compare_categories[resource_name].push({"name": name, "categories": compare_categories_items[resource_name]});
-                            }
-                            for (var i = 0; i < test_data.length; i++) {
-                                data.push(test_data[i]);
-                            }
-                        } else {
-                            /// CPU & Mem & Path length
-                            if ($.inArray(name, compare_categories[resource_name]) === -1) {
-                                compare_categories[resource_name].push(name);
-                            }
-                            data.push({
-                                'x': compare_categories[resource_name].indexOf(name),
-                                'y': test_data
-                            });
-                        }
-                        compare_data[resource_name].push({
-                            'name': test_name,
-                            'data': data
-                        });
-                    });
-                } else {
-                    /// Time
-                    compare_data[resource_name].push({
-                        'name': name,
-                        'data': [{
-                            'y': data
-                        }]
-                    });
-                }
-            });
-        });
-
-        $.each(data[testblock_name], function (resource_name, data) {
-
-            plot_options[resource_name]["xAxis"]["categories"] = compare_categories[resource_name];
-
-            $('#compare_' + testblock_name).find('#compare_' + resource_name + '_detail').highcharts({
-                chart: plot_options[resource_name]["chart"],
-                title: plot_options[resource_name]["title"],
-                xAxis: plot_options[resource_name]["xAxis"],
-                yAxis: plot_options[resource_name]["yAxis"],
-                tooltip: plot_tooltip,
-                series: compare_data[resource_name],
-                plotOptions: plot_options[resource_name]["plotOptions"]
-            });
-        });
-    });
 }
