@@ -65,7 +65,12 @@ install(PROGRAMS
 
 if(CATKIN_ENABLE_TESTING)
     find_package(rostest REQUIRED)
-    add_rostest(test/generate_tests.test)
+
+    message("Generating test files ...")
+    execute_process(
+        COMMAND "${CMAKE_CURRENT_SOURCE_DIR}/scripts/generate_tests.py"
+        WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+    )
 
     file(GLOB TESTS_FILES RELATIVE ${PROJECT_SOURCE_DIR} test/generated/recording/*.test)
     foreach(TEST ${TESTS_FILES})

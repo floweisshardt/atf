@@ -1,17 +1,13 @@
 #!/usr/bin/env python
-import rospy
-import unittest
-import rostest
-import rosgraph
 import yaml
 import json
 import re
 import itertools as it
 import rospkg
-import rosparam
 import os
 import lxml.etree
 import lxml.builder
+import shutil
 
 from xml.etree import ElementTree
 from xml.dom import minidom
@@ -19,38 +15,61 @@ from xml.dom import minidom
 from copy import deepcopy, copy
 
 
-class GenerateTests(unittest.TestCase):
-    def setUp(self):
-        self.test_suite_file = rosparam.get_param("/test_suite_file")
-        self.test_config_file = rosparam.get_param("/test_config_file")
-        self.bagfile_output = rosparam.get_param("/bagfile_output")
-        self.robot_config_path = rosparam.get_param("/robot_config_path")
-        self.test_application_path = rosparam.get_param("/test_application_path")
-        self.time_limit = rosparam.get_param("/time_limit")
-        self.move_group_launch = rosparam.get_param("/move_group_launch")
+class GenerateTests:
+    def __init__(self):
+        generation_config = self.load_yaml(rospkg.RosPack().get_path("atf_core") +
+                                           "/config/test_generation_config.yaml")
+
+        self.test_suite_file = rospkg.RosPack().get_path(generation_config["test_suite_file"].split("/")[0]) + self.\
+            remove_pkgname(generation_config["test_suite_file"], generation_config["test_suite_file"].split("/")[0])
+
+        self.test_config_file = rospkg.RosPack().get_path(generation_config["test_config_file"].split("/")[0]) + self.\
+            remove_pkgname(generation_config["test_config_file"], generation_config["test_config_file"].split("/")[0])
+
+        self.bagfile_output = rospkg.RosPack().get_path(generation_config["bagfile_output"].split("/")[0]) + self.\
+            remove_pkgname(generation_config["bagfile_output"], generation_config["bagfile_output"].split("/")[0])
+
+        self.robot_config_path = rospkg.RosPack().get_path(generation_config["robot_config_path"].split("/")[0]) +\
+            self.remove_pkgname(generation_config["robot_config_path"],
+                                generation_config["robot_config_path"].split("/")[0])
+
+        self.test_application_path = rospkg.RosPack().get_path(generation_config["test_application_path"].
+                                                               split("/")[0]) +\
+            self.remove_pkgname(generation_config["test_application_path"],
+                                generation_config["test_application_path"].split("/")[0])
+
+        self.move_group_launch = rospkg.RosPack().get_path(generation_config["move_group_launch"].split("/")[0]) +\
+            self.remove_pkgname(generation_config["move_group_launch"],
+                                generation_config["move_group_launch"].split("/")[0])
+
+        if generation_config["result_yaml_output"] != "":
+            self.yaml_output = rospkg.RosPack().get_path(generation_config["result_yaml_output"].split("/")[0]) + self.\
+                remove_pkgname(generation_config["result_yaml_output"],
+                               generation_config["result_yaml_output"].split("/")[0])
+        else:
+            self.yaml_output = generation_config["result_yaml_output"]
+
+        self.json_output = rospkg.RosPack().get_path(generation_config["result_json_output"].split("/")[0]) + self.\
+            remove_pkgname(generation_config["result_json_output"],
+                           generation_config["result_json_output"].split("/")[0])
+
+        self.time_limit = generation_config["time_limit"]
 
         self.test_list = {}
 
-        if not os.path.exists(rospkg.RosPack().get_path("atf_core") + "/test/generated/recording/"):
-            os.makedirs(rospkg.RosPack().get_path("atf_core") + "/test/generated/recording/")
+        if os.path.exists(rospkg.RosPack().get_path("atf_core") + "/test/generated/recording/"):
+            shutil.rmtree(rospkg.RosPack().get_path("atf_core") + "/test/generated/recording/")
+        os.makedirs(rospkg.RosPack().get_path("atf_core") + "/test/generated/recording/")
 
-        if not os.path.exists(rospkg.RosPack().get_path("atf_core") + "/test/generated/analysing/"):
-            os.makedirs(rospkg.RosPack().get_path("atf_core") + "/test/generated/analysing/")
-
-        try:
-            self.yaml_output = rosparam.get_param("/result_yaml_output")
-        except rosgraph.masterapi.MasterError:
-            self.yaml_output = ""
-            pass
-
-        self.json_output = rosparam.get_param("/result_json_output")
+        if os.path.exists(rospkg.RosPack().get_path("atf_core") + "/test/generated/analysing/"):
+            shutil.rmtree(rospkg.RosPack().get_path("atf_core") + "/test/generated/analysing/")
+        os.makedirs(rospkg.RosPack().get_path("atf_core") + "/test/generated/analysing/")
 
         self.generate_test_list()
 
-    def test_GenerateTests(self):
+    def generate_tests(self):
 
-        for item in self.test_list:
-
+        for idx, item in enumerate(self.test_list):
             # Create .test file
             em = lxml.builder.ElementMaker()
             launch = em.launch
@@ -111,6 +130,8 @@ class GenerateTests(unittest.TestCase):
             with open(rospkg.RosPack().get_path("atf_core") + "/test/generated/analysing/" + item + ".test", "w") as f:
                 f.write(xmlstr)
 
+        print "Generation done!"
+
     def generate_test_list(self):
         temp_config = {}
 
@@ -135,14 +156,15 @@ class GenerateTests(unittest.TestCase):
                 self.test_list[test_name] = copy(temp_config)
                 self.test_list[test_name].update(temp[i])
 
-        if not os.path.exists(rospkg.RosPack().get_path("atf_presenter") + "/data/"):
-            os.makedirs(rospkg.RosPack().get_path("atf_presenter") + "/data/")
+        if os.path.exists(self.json_output):
+            shutil.rmtree(self.json_output)
+        os.makedirs(self.json_output)
 
         if self.yaml_output != "":
             stream = file(self.yaml_output + "/test_list.yaml", 'w')
             yaml.dump(deepcopy(self.list_to_array()), stream)
 
-        stream = file(rospkg.RosPack().get_path("atf_presenter") + "/data/test_list.json", 'w')
+        stream = file(self.json_output + "/test_list.json", 'w')
         json.dump(self.list_to_array(), stream)
 
     def list_to_array(self):
@@ -166,7 +188,10 @@ class GenerateTests(unittest.TestCase):
         with open(filename, 'r') as stream:
             return yaml.load(stream)
 
+    @staticmethod
+    def remove_pkgname(text, pkgname):
+        return text[len(pkgname):]
+
 
 if __name__ == '__main__':
-    rospy.init_node('generate_tests')
-    rostest.rosrun("atf_core", 'generate_tests', GenerateTests, sysargs=None)
+    GenerateTests().generate_tests()
