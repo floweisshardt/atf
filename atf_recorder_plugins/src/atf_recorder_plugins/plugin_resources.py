@@ -162,5 +162,5 @@ class RecordResources:
         except CalledProcessError:
             pass
 
-        rospy.logerr("Node '" + name + "' is not running or does not exist!")
+        rospy.logerr("Node '" + name + "' is not running!")
         return None
