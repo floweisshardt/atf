@@ -29,7 +29,7 @@ class CalculatePathLength:
     def __init__(self, root_frame, measured_frame):
         """
         Class for calculating the distance covered by the given frame in relation to a given root frame.
-        The tf data is sent over the topic "/testing/tf".
+        The tf data is sent over the tf topic given in the robot_config.yaml.
         :param root_frame: name of the first frame
         :type  root_frame: string
         :param measured_frame: name of the second frame. The distance will be measured in relation to the root_frame.
