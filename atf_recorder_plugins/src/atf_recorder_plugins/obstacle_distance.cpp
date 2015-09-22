@@ -43,9 +43,9 @@ void ObstacleDistance::getDistanceToObstacles(const ros::TimerEvent&)
     CreateCollisionWorld collision_world(planning_scene_ptr->getWorldNonConst());
     robot_state::RobotState robot_state(planning_scene_ptr->getCurrentState());
 
-    for (int i = 0; i < current_joint_states.name.size(); i++)
+    for (int i = 0; i < current_joint_states_.name.size(); i++)
     {
-        robot_state.setVariablePosition(current_joint_states.name[i], current_joint_states.position[i]);
+        robot_state.setVariablePosition(current_joint_states_.name[i], current_joint_states_.position[i]);
     }
 
     robot_state.update();
@@ -61,16 +61,18 @@ void ObstacleDistance::getDistanceToObstacles(const ros::TimerEvent&)
 
     for (int i = 0; i < robot_obj.size(); i++)
     {
-        const collision_detection::CollisionGeometryData* robot_link = static_cast<const collision_detection::CollisionGeometryData*>(robot_obj[i]->collisionGeometry()->getUserData());
+        const collision_detection::CollisionGeometryData* robot_link =
+                static_cast<const collision_detection::CollisionGeometryData*>(robot_obj[i]->collisionGeometry()->getUserData());
 
         atf_msgs::ObstacleDistanceLink ob_link;
         ob_link.name = robot_link->getID();
 
         for (int j = 0; j < world_obj.size(); j++)
         {
-            const collision_detection::CollisionGeometryData* collision_object = static_cast<const collision_detection::CollisionGeometryData*>(world_obj[j]->collisionGeometry()->getUserData());
+            const collision_detection::CollisionGeometryData* collision_object =
+                    static_cast<const collision_detection::CollisionGeometryData*>(world_obj[j]->collisionGeometry()->getUserData());
             fcl::DistanceResult res;
-            res.update(2.0, NULL, NULL, fcl::DistanceResult::NONE, fcl::DistanceResult::NONE);
+            res.update(5.0, NULL, NULL, fcl::DistanceResult::NONE, fcl::DistanceResult::NONE);
 
             double dist = fcl::distance(robot_obj[i].get(), world_obj[j].get(), fcl::DistanceRequest(), res);
             if (dist < 0) {
@@ -82,12 +84,12 @@ void ObstacleDistance::getDistanceToObstacles(const ros::TimerEvent&)
         }
         ob.links.push_back(ob_link);
     }
-    obstacle_distance_publisher.publish(ob);
+    obstacle_distance_publisher_.publish(ob);
 }
 
 void ObstacleDistance::joint_state_callback(const sensor_msgs::JointStatePtr &joint_states)
 {
-    current_joint_states = *joint_states;
+    current_joint_states_ = *joint_states;
 }
 
 void ObstacleDistance::getPlanningScene()
@@ -109,9 +111,9 @@ ObstacleDistance::ObstacleDistance()
     planning_scene_monitor_ =  boost::make_shared<planning_scene_monitor::PlanningSceneMonitor>("robot_description", tf_listener_);
 
     //Initialize timer & subscriber
-    joint_state_subscriber = subscribe("joint_states", 1, &ObstacleDistance::joint_state_callback, this);
-    obstacle_distance_publisher = advertise<atf_msgs::ObstacleDistance>("/atf/obstacle_distance", 1);
-    obstacle_distance_timer = createTimer(ros::Duration(1/publish_frequency), &ObstacleDistance::getDistanceToObstacles, this);
+    joint_state_subscriber_ = subscribe("joint_states", 1, &ObstacleDistance::joint_state_callback, this);
+    obstacle_distance_publisher_ = advertise<atf_msgs::ObstacleDistance>("/atf/obstacle_distance", 1);
+    obstacle_distance_timer_ = createTimer(ros::Duration(1/publish_frequency), &ObstacleDistance::getDistanceToObstacles, this);
 
     //Initialize thread for updating the planning scene
     boost::thread* ps_thread = new boost::thread(&ObstacleDistance::getPlanningScene, this);

@@ -4,8 +4,6 @@
 #include <ros/ros.h>
 
 #include <moveit/planning_scene_monitor/planning_scene_monitor.h>
-#include <moveit_msgs/GetStateValidity.h>
-#include <moveit_msgs/DisplayRobotState.h>
 #include <moveit_msgs/GetPlanningScene.h>
 #include <moveit/collision_detection_fcl/collision_world_fcl.h>
 
@@ -24,10 +22,10 @@ private:
     planning_scene_monitor::PlanningSceneMonitorPtr planning_scene_monitor_;
     std::string PLANNING_SCENE_SERVICE;
 
-    ros::Subscriber joint_state_subscriber;
-    ros::Publisher obstacle_distance_publisher;
-    ros::Timer obstacle_distance_timer;
-    sensor_msgs::JointState current_joint_states;
+    ros::Subscriber joint_state_subscriber_;
+    ros::Publisher obstacle_distance_publisher_;
+    ros::Timer obstacle_distance_timer_;
+    sensor_msgs::JointState current_joint_states_;
 
     void joint_state_callback(const sensor_msgs::JointStatePtr &joint_states);
     void getDistanceToObstacles(const ros::TimerEvent&);
