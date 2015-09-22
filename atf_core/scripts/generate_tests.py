@@ -155,6 +155,7 @@ class GenerateTests:
 
     def generate_test_list(self):
         temp_config = {}
+        test_list_org = {}
 
         test_data = self.load_yaml(self.test_suite_file)
 
@@ -173,28 +174,28 @@ class GenerateTests:
             temp = [dict(zip(items, prod)) for prod in it.product(*(suite_data[varName] for varName in items))]
 
             for i in xrange(0, len(temp)):
+                test_name_org = suite[0] + suite[4] + suite.split("_")[1] + "_" + "t" + str(i + 1)
+                test_list_org[test_name_org] = copy(temp_config)
+                test_list_org[test_name_org].update(temp[i])
+
                 for j in xrange(0, self.test_repetitions):
                     test_name = suite[0] + suite[4] + suite.split("_")[1] + "_" + "t" + str(i + 1) + "_" + str(j + 1)
                     self.test_list[test_name] = copy(temp_config)
                     self.test_list[test_name].update(temp[i])
 
-        if os.path.exists(self.json_output):
-            shutil.rmtree(self.json_output)
-        os.makedirs(self.json_output)
-
         if self.yaml_output != "":
             stream = file(self.yaml_output + "/test_list.yaml", 'w')
-            yaml.dump(deepcopy(self.list_to_array()), stream)
+            yaml.dump(deepcopy(self.list_to_array(test_list_org)), stream)
 
         stream = file(self.json_output + "/test_list.json", 'w')
-        json.dump(self.list_to_array(), stream)
+        json.dump(self.list_to_array(test_list_org), stream)
 
-    def list_to_array(self):
-        temp_list = self.natural_sort(copy(self.test_list))
+    def list_to_array(self, list):
+        temp_list = self.natural_sort(copy(list))
         output_array = []
 
         for item in temp_list:
-            output_array.append({item: self.test_list[item]})
+            output_array.append({item: list[item]})
 
         return output_array
 
