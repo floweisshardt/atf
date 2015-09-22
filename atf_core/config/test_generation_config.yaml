@@ -8,4 +8,6 @@ result_yaml_output: ""
 
 test_application_path: "cob_grasping_app/test/grasping_app.test"
 move_group_launch: "cob_grasping_app/launch/move_group.launch"
+
 time_limit: 500.0
+test_repetitions: 5

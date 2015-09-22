@@ -55,9 +55,11 @@ class GenerateTests:
 
         self.time_limit = generation_config["time_limit"]
 
+        self.test_repetitions = generation_config["test_repetitions"]
+
         self.test_list = {}
 
-        # Empty folder
+        # Empty folders
         if os.path.exists(rospkg.RosPack().get_path("atf_core") + "/test/generated/recording/"):
             shutil.rmtree(rospkg.RosPack().get_path("atf_core") + "/test/generated/recording/")
         os.makedirs(rospkg.RosPack().get_path("atf_core") + "/test/generated/recording/")
@@ -92,6 +94,11 @@ class GenerateTests:
             node = em.node
             param = em.param
 
+            robot_config = self.load_yaml(self.robot_config_path + self.test_list[item]["robot"] + "/robot_config.yaml")
+            robot_bringup_launch = robot_config["robot_bringup_launch"]
+            robot_bringup = rospkg.RosPack().get_path(robot_bringup_launch.split("/")[0]) +\
+                self.remove_pkgname(robot_bringup_launch, robot_bringup_launch.split("/")[0])
+
             # Recording
             test_record = launch(
                 param(name="use_sim_time", value="true"),
@@ -106,7 +113,7 @@ class GenerateTests:
                 param(name="recorder/bagfile_output", value=self.bagfile_output),
                 arg(name="robot", value=self.test_list[item]["robot"]),
                 arg(name="rc_path", value=self.robot_config_path),
-                include(arg(name="gui", value="false"), file="$(find cob_bringup_sim)/launch/robot.launch"),
+                include(arg(name="gui", value="false"), file=robot_bringup),
                 include(file=self.move_group_launch),
                 node(param(name="robot_config_file", value="$(arg rc_path)$(arg robot)/robot_config.yaml"),
                      name="atf_recorder", pkg="atf_recorder", type="recorder_core.py", output="screen"),
@@ -166,9 +173,10 @@ class GenerateTests:
             temp = [dict(zip(items, prod)) for prod in it.product(*(suite_data[varName] for varName in items))]
 
             for i in xrange(0, len(temp)):
-                test_name = suite[0] + suite[4] + suite.split("_")[1] + "_" + "t" + str(i + 1)
-                self.test_list[test_name] = copy(temp_config)
-                self.test_list[test_name].update(temp[i])
+                for j in xrange(0, self.test_repetitions):
+                    test_name = suite[0] + suite[4] + suite.split("_")[1] + "_" + "t" + str(i + 1) + "_" + str(j + 1)
+                    self.test_list[test_name] = copy(temp_config)
+                    self.test_list[test_name].update(temp[i])
 
         if os.path.exists(self.json_output):
             shutil.rmtree(self.json_output)
