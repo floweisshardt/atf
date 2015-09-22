@@ -72,7 +72,7 @@ void ObstacleDistance::getDistanceToObstacles(const ros::TimerEvent&)
             const collision_detection::CollisionGeometryData* collision_object =
                     static_cast<const collision_detection::CollisionGeometryData*>(world_obj[j]->collisionGeometry()->getUserData());
             fcl::DistanceResult res;
-            res.update(5.0, NULL, NULL, fcl::DistanceResult::NONE, fcl::DistanceResult::NONE);
+            res.update(MAXIMAL_MINIMAL_DISTANCE, NULL, NULL, fcl::DistanceResult::NONE, fcl::DistanceResult::NONE);
 
             double dist = fcl::distance(robot_obj[i].get(), world_obj[j].get(), fcl::DistanceRequest(), res);
             if (dist < 0) {
@@ -104,6 +104,7 @@ ObstacleDistance::ObstacleDistance()
         : ros::NodeHandle()
 {
     PLANNING_SCENE_SERVICE = "get_planning_scene";
+    MAXIMAL_MINIMAL_DISTANCE = 5.0;
     double publish_frequency = 100.0; //Hz
 
     //Initialize planning scene monitor

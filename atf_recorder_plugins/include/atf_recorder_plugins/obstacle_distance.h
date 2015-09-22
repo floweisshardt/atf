@@ -21,6 +21,7 @@ public:
 private:
     planning_scene_monitor::PlanningSceneMonitorPtr planning_scene_monitor_;
     std::string PLANNING_SCENE_SERVICE;
+    float MAXIMAL_MINIMAL_DISTANCE;
 
     ros::Subscriber joint_state_subscriber_;
     ros::Publisher obstacle_distance_publisher_;
