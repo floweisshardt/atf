@@ -1,7 +1,13 @@
 testsuite_1:
-  scene_config: "scene_3"
-  test_config: "test_1"
-  robot: "cob4-2"
+  scene_config:
+    - "scene_3"
+    - "scene_1"
+  test_config:
+    - "test_1"
+    - "test_3"
+  robot:
+    - "cob4-2"
+    - "cob4-4"
   planer_id:
     - "SBLkConfigDefault"
     - "ESTkConfigDefault"

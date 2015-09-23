@@ -60,6 +60,7 @@ class GenerateTests:
         self.test_list = {}
 
         # Empty folders
+        """
         if os.path.exists(rospkg.RosPack().get_path("atf_core") + "/test/generated/recording/"):
             shutil.rmtree(rospkg.RosPack().get_path("atf_core") + "/test/generated/recording/")
         os.makedirs(rospkg.RosPack().get_path("atf_core") + "/test/generated/recording/")
@@ -80,7 +81,7 @@ class GenerateTests:
             if os.path.exists(self.yaml_output):
                 shutil.rmtree(self.yaml_output)
             os.makedirs(self.yaml_output)
-
+        """
         self.generate_test_list()
 
     def generate_tests(self):
@@ -154,7 +155,6 @@ class GenerateTests:
         print "Generation done!"
 
     def generate_test_list(self):
-        temp_config = {}
         test_list_org = {}
 
         test_data = self.load_yaml(self.test_suite_file)
@@ -162,25 +162,20 @@ class GenerateTests:
         for suite in test_data:
 
             suite_data = copy(test_data[suite])
-            temp_config["scene_config"] = suite_data["scene_config"]
-            temp_config["test_config"] = suite_data["test_config"]
-            temp_config["robot"] = suite_data["robot"]
-
-            suite_data.pop("scene_config", None)
-            suite_data.pop("test_config", None)
-            suite_data.pop("robot", None)
-
             items = sorted(suite_data)
             temp = [dict(zip(items, prod)) for prod in it.product(*(suite_data[varName] for varName in items))]
 
             for i in xrange(0, len(temp)):
                 test_name_org = suite[0] + suite[4] + suite.split("_")[1] + "_" + "t" + str(i + 1)
-                test_list_org[test_name_org] = copy(temp_config)
+                test_list_org[test_name_org] = {}
                 test_list_org[test_name_org].update(temp[i])
+                test_list_org[test_name_org]["test_repetitions"] = self.test_repetitions
+                test_list_org[test_name_org]["subtests"] = []
 
                 for j in xrange(0, self.test_repetitions):
                     test_name = suite[0] + suite[4] + suite.split("_")[1] + "_" + "t" + str(i + 1) + "_" + str(j + 1)
-                    self.test_list[test_name] = copy(temp_config)
+                    test_list_org[test_name_org]["subtests"].append(test_name)
+                    self.test_list[test_name] = {}
                     self.test_list[test_name].update(temp[i])
 
         if self.yaml_output != "":
@@ -190,12 +185,12 @@ class GenerateTests:
         stream = file(self.json_output + "/test_list.json", 'w')
         json.dump(self.list_to_array(test_list_org), stream)
 
-    def list_to_array(self, list):
-        temp_list = self.natural_sort(copy(list))
+    def list_to_array(self, org_list):
+        temp_list = self.natural_sort(copy(org_list))
         output_array = []
 
         for item in temp_list:
-            output_array.append({item: list[item]})
+            output_array.append({item: org_list[item]})
 
         return output_array
 
