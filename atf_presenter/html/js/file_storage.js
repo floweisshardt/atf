@@ -12,6 +12,7 @@ function writeDataToStorage(name, data) {
     sessionStorage.setItem(name, data);
   } catch (error) {
     console.log(error);
+    console.log("SessionStorage at full capacity! Switching to emergency storage!");
     delete emergency_storage[name];
     emergency_storage[name] = data;
   }
@@ -40,4 +41,8 @@ function getDataFromStorage(name) {
 
 function clearStorage() {
   sessionStorage.clear();
+}
+
+function removeDataFromStorage(name) {
+  sessionStorage.removeItem(name);
 }

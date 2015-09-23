@@ -1,7 +1,19 @@
 var results = {
-  speed: [],
-  resources: [],
-  efficiency: []
+  speed: {
+    min: [],
+    max: [],
+    average: []
+  },
+  resources: {
+    min: [],
+    max: [],
+    average: []
+  },
+  efficiency: {
+    min: [],
+    max: [],
+    average: []
+  }
 };
 
 var progressbar_value = 0;
@@ -21,6 +33,7 @@ function getData(folder, files) {
     );
   }
   $.when.all(list).always(function () {
+    summarizeTests();
     showTestList();
   });
 }
@@ -78,6 +91,174 @@ function showTestList() {
   $('#test_list_content').show();
 }
 
+function summarizeTests() {
+  var test_list = getDataFromStorage('test_list');
+
+  $.each(test_list, function (test_name, test_config) {
+    var test_data_complete = {};
+    var errors = {
+      planning: 0,
+      error: 0
+    };
+    $.each(test_config['subtests'], function(index, subtest_name) {
+      var test_data = getDataFromStorage(subtest_name);
+
+      var error = checkforError(test_data);
+      if (error[0] === 'planning') {
+        errors['planning'] += 1;
+        return true;
+      } else if (error[0] === 'error') {
+        errors['error'] += 1;
+        return true;
+      }
+
+      $.each(test_data, function (testblock_name, testblock) {
+        if (!(testblock_name in test_data_complete)) {
+          test_data_complete[testblock_name] = {};
+        }
+
+        $.each(testblock, function (metric_name, metric_data) {
+          if (!(metric_name in test_data_complete[testblock_name])) {
+            test_data_complete[testblock_name][metric_name] = {};
+          }
+          if (metric_data instanceof Object) {
+            $.each(metric_data, function (node_name, node_resources) {
+              if (!(node_name in test_data_complete[testblock_name][metric_name])) {
+                test_data_complete[testblock_name][metric_name][node_name] = {};
+              }
+
+              if (node_resources instanceof Object) {
+                // Resourcen
+                $.each(node_resources, function (resource_name, resource_data) {
+
+                  if (!(resource_name in test_data_complete[testblock_name][metric_name][node_name])) {
+                    test_data_complete[testblock_name][metric_name][node_name][resource_name] = {};
+                    test_data_complete[testblock_name][metric_name][node_name][resource_name]['max'] = [];
+                    test_data_complete[testblock_name][metric_name][node_name][resource_name]['min'] = [];
+                    test_data_complete[testblock_name][metric_name][node_name][resource_name]['average'] = [];
+                  }
+
+                  if (resource_data['average'] instanceof Array) {
+                    // IO & Network
+                    if (test_data_complete[testblock_name][metric_name][node_name][resource_name]['max'].length === 0) {
+                      for (var x = 0; x < resource_data['max'].length; x++) {
+                        test_data_complete[testblock_name][metric_name][node_name][resource_name]['max'].push([]);
+                        test_data_complete[testblock_name][metric_name][node_name][resource_name]['min'].push([]);
+                        test_data_complete[testblock_name][metric_name][node_name][resource_name]['average'].push([]);
+                      }
+                    }
+
+                    for (x = 0; x < resource_data['max'].length; x++) {
+                      test_data_complete[testblock_name][metric_name][node_name][resource_name]['max'][x].push(resource_data['max'][x]);
+                      test_data_complete[testblock_name][metric_name][node_name][resource_name]['min'][x].push(resource_data['min'][x]);
+                      test_data_complete[testblock_name][metric_name][node_name][resource_name]['average'][x].push(resource_data['average'][x]);
+                    }
+                    // CPU & Mem
+                  } else {
+                    test_data_complete[testblock_name][metric_name][node_name][resource_name]['max'].push(resource_data['max']);
+                    test_data_complete[testblock_name][metric_name][node_name][resource_name]['min'].push(resource_data['min']);
+                    test_data_complete[testblock_name][metric_name][node_name][resource_name]['average'].push(resource_data['average']);
+                  }
+                });
+                // Path length & Obstacle distance
+              } else {
+                if ($.isEmptyObject(test_data_complete[testblock_name][metric_name][node_name])) {
+                  test_data_complete[testblock_name][metric_name][node_name]['max'] = [];
+                  test_data_complete[testblock_name][metric_name][node_name]['min'] = [];
+                  test_data_complete[testblock_name][metric_name][node_name]['average'] = [];
+                }
+                test_data_complete[testblock_name][metric_name][node_name]['max'].push(node_resources);
+                test_data_complete[testblock_name][metric_name][node_name]['min'].push(node_resources);
+                test_data_complete[testblock_name][metric_name][node_name]['average'].push(node_resources);
+
+              }
+            });
+          } else {
+            // Time
+            if ($.isEmptyObject(test_data_complete[testblock_name][metric_name])) {
+              test_data_complete[testblock_name][metric_name]['max'] = [];
+              test_data_complete[testblock_name][metric_name]['min'] = [];
+              test_data_complete[testblock_name][metric_name]['average'] = [];
+            }
+            test_data_complete[testblock_name][metric_name]['max'].push(metric_data);
+            test_data_complete[testblock_name][metric_name]['min'].push(metric_data);
+            test_data_complete[testblock_name][metric_name]['average'].push(metric_data);
+          }
+        });
+      });
+      removeDataFromStorage(subtest_name);
+    });
+    /*
+    Level 1: Testblock name
+    Level 2: Metric name
+    Level 3: - resources: node name
+             - obstacle_distance / path_length: link name
+             - time: values (min, max, average)
+    Level 4: - resources: resource name
+             - obstacle_distance / path_length: values (min, max, average)
+    Level 5: - resources: values (min, max, average)
+    Level 6: - resources io / network: category values
+    */
+
+    $.each(test_data_complete, function (level_1, level_1_data) {
+      $.each(level_1_data, function (level_2, level_2_data) {
+        $.each(level_2_data, function (level_3, level_3_data) {
+          if (!(Array.isArray(level_3_data))) {
+            $.each(level_3_data, function (level_4, level_4_data) {
+              if (!(Array.isArray(level_4_data))) {
+                // Resources
+                $.each(level_4_data, function (level_5, level_5_data) {
+                  if (typeof level_5_data[0][0] === "undefined") {
+                    // CPU & Mem
+                    var value = 0;
+                    if (level_5 == 'max') value = math.max(level_5_data);
+                    else if (level_5 == 'min') value = math.min(level_5_data);
+                    else if (level_5 == 'average') value = math.mean(level_5_data);
+                    test_data_complete[level_1][level_2][level_3][level_4][level_5] = value
+                  } else {
+                    // IO & Network
+                    $.each(level_5_data, function (level_6, level_6_data) {
+                      var value = 0;
+                      if (level_5 == 'max') value = math.max(level_6_data);
+                      else if (level_5 == 'min') value = math.min(level_6_data);
+                      else if (level_5 == 'average') value = math.mean(level_6_data);
+                      test_data_complete[level_1][level_2][level_3][level_4][level_5][level_6] = value
+                    });
+                  }
+                });
+              } else {
+                // Path length & obstacle distance
+                var value = 0;
+                if (level_4 == 'max') value = math.max(level_4_data);
+                else if (level_4 == 'min') value = math.min(level_4_data);
+                else if (level_4 == 'average') value = math.mean(level_4_data);
+                test_data_complete[level_1][level_2][level_3][level_4] = value
+              }
+            });
+          } else {
+            // Time
+            var value = 0;
+            if (level_3 == 'max') value = math.max(level_3_data);
+            else if (level_3 == 'min') value = math.min(level_3_data);
+            else if (level_3 == 'average') value = math.mean(level_3_data);
+            test_data_complete[level_1][level_2][level_3] = value
+          }
+        });
+      });
+    });
+
+    // Check for errors
+    if (errors['planning'] === test_config['subtests'].length || (errors['error'] + errors['planning']) === test_config['subtests'].length) {
+      test_data_complete["status"] = "error";
+    } else if (errors['error'] === test_config['subtests'].length) {
+      test_data_complete["error"] = "An error occured outside monitored testblocks. Aborted analysis...";
+    }
+
+    removeDataFromStorage(test_name);
+    writeDataToStorage(test_name, test_data_complete);
+  });
+}
+
 function drawTestList() {
   var test_list = getDataFromStorage('test_list');
   var test_list_div = $('#test_list_content').find('#test_list');
@@ -92,8 +273,8 @@ function drawTestList() {
 
   var test_config_names = [];
   var scene_config_names = [];
-
   var number = 1;
+
   $.each(test_list, function (test_name, test_data) {
     var test_name_full = test_name.split('_');
     var upload_status;
@@ -193,7 +374,7 @@ function drawTestDetails(test_name) {
   var first_entry = true;
   var error = false;
 
-  var plot_tooltip_resources = {
+  var plot_tooltip = {
     'formatter': function () {
       var o = this.point.options;
 
@@ -201,13 +382,6 @@ function drawTestDetails(test_name) {
         'Average: ' + this.y + '<br>' +
         'Minimum: ' + o.min + '<br>' +
         'Maximum: ' + o.max + '<br>';
-    }
-  };
-
-  var plot_tooltip = {
-    'formatter': function () {
-
-      return '<b>' + this.series.name + '</b> ' + this.y;
     }
   };
 
@@ -251,7 +425,7 @@ function drawTestDetails(test_name) {
         }
       },
       plotOptions: {},
-      tooltip: plot_tooltip_resources
+      tooltip: plot_tooltip
     },
     mem: {
       chart: {
@@ -273,7 +447,7 @@ function drawTestDetails(test_name) {
         }
       },
       plotOptions: {},
-      tooltip: plot_tooltip_resources
+      tooltip: plot_tooltip
     },
     io: {
       chart: {
@@ -289,7 +463,7 @@ function drawTestDetails(test_name) {
         labels: {}
       },
       plotOptions: {},
-      tooltip: plot_tooltip_resources
+      tooltip: plot_tooltip
     },
     network: {
       chart: {
@@ -305,7 +479,7 @@ function drawTestDetails(test_name) {
         labels: {}
       },
       plotOptions: {},
-      tooltip: plot_tooltip_resources
+      tooltip: plot_tooltip
     },
     time: {
       chart: {
@@ -410,80 +584,80 @@ function drawTestDetails(test_name) {
       test_details.find('.tab-content').empty();
       active_class = 'active';
       first_entry = false;
-    } else {
+    } else
       active_class = '';
-    }
 
     test_details.find('.nav-tabs').append('<li role="presentation" class="' + active_class + '"><a href="#details_' + testblock_name + '" aria-controls="details_' + testblock_name + '" role="tab" data-toggle="tab">' + testblock_name + '</a></li>');
     test_details.find('.tab-content').append('<div role="tabpanel" class="tab-pane ' + active_class + '" id="details_' + testblock_name + '"></div>');
 
-    $.each(testblock_data, function (metric_name, metric_data) {
-
-      if (metric_data instanceof Object) {
-        $.each(metric_data, function (node_name, node_data) {
-          if (node_data instanceof Object) {
-            $.each(node_data, function (res_name, res_data) {
-              if (res_data['min'] instanceof Array) {
+    $.each(testblock_data, function (level_2, level_2_data) {
+      if (level_2_data.hasOwnProperty('max')) {
+        // Time
+        time_data.push({
+          name: testblock_name,
+          data: [{
+            x: 0,
+            y: round(level_2_data['average'], 3),
+            min: round(level_2_data['min'], 3),
+            max: round(level_2_data['max'], 3)
+          }]
+        });
+      } else {
+        $.each(level_2_data, function (level_3, level_3_data) {
+          if (level_3_data.hasOwnProperty('max')) {
+            // Path length & obstacle distance
+            test_data[level_2].push({
+              name: level_3,
+              data: [{
+                x: 0,
+                y: round(level_3_data['average'], 3),
+                min: round(level_3_data['min'], 3),
+                max: round(level_3_data['max'], 3)
+              }]
+            });
+          } else {
+            $.each(level_3_data, function (level_4, level_4_data) {
+              // Resources
+              if (typeof level_4_data['max'][0] === 'undefined') {
+                // CPU & Mem
+                test_data[level_4].push({
+                  name: level_3,
+                  data: [{
+                    x: 0,
+                    y: round(level_4_data['average'], 0),
+                    min: round(level_4_data['min'], 0),
+                    max: round(level_4_data['max'], 0)
+                  }]
+                });
+              } else {
                 var data = [];
 
                 // IO & Network
-                for (var i = 0; i < res_data['min'].length; i++) {
-                  if (res_name === 'io' && i > 1) {
-                    res_data['average'][i] = round(res_data['average'][i] / 1000, 3);
-                    res_data['min'][i] = round(res_data['min'][i] / 1000, 3);
-                    res_data['max'][i] = round(res_data['max'][i] / 1000, 3);
-                  } else if (res_name === 'network' && i < 2) {
-                    res_data['average'][i] = round(res_data['average'][i] / 1000, 3);
-                    res_data['min'][i] = round(res_data['min'][i] / 1000, 3);
-                    res_data['max'][i] = round(res_data['max'][i] / 1000, 3);
+                for (var i = 0; i < level_4_data['min'].length; i++) {
+                  if (level_4 === 'io' && i > 1) {
+                    level_4_data['average'][i] = round(level_4_data['average'][i] / 1000, 0);
+                    level_4_data['min'][i] = round(level_4_data['min'][i] / 1000, 0);
+                    level_4_data['max'][i] = round(level_4_data['max'][i] / 1000, 0);
+                  } else if (level_4 === 'network' && i < 2) {
+                    level_4_data['average'][i] = round(level_4_data['average'][i] / 1000, 0);
+                    level_4_data['min'][i] = round(level_4_data['min'][i] / 1000, 0);
+                    level_4_data['max'][i] = round(level_4_data['max'][i] / 1000, 0);
                   }
                   data.push({
                     x: i,
-                    y: res_data['average'][i],
-                    min: res_data['min'][i],
-                    max: res_data['max'][i]
+                    y: round(level_4_data['average'][i], 0),
+                    min: round(level_4_data['min'][i], 0),
+                    max: round(level_4_data['max'][i], 0)
                   });
                 }
-                test_data[res_name].push({
-                  name: node_name,
+                test_data[level_4].push({
+                  name: level_3,
                   data: data
                 });
               }
-              else {
-                /// CPU & Mem
-                test_data[res_name].push({
-                  name: node_name,
-                  data: [{
-                    x: 0,
-                    y: res_data['average'],
-                    min: res_data['min'],
-                    max: res_data['max']
-                  }]
-                });
-              }
-            });
-          } else {
-            // Path length & Obstacle distance
-            test_data[metric_name].push({
-              name: node_name,
-              data: [{
-                x: 0,
-                y: node_data
-              }]
             });
           }
         });
-      } else {
-        if (typeof metric_data === 'number') {
-          /// Time
-          time_data.push({
-            name: testblock_name,
-            data: [{
-              x: 0,
-              y: metric_data
-            }]
-          });
-        }
       }
     });
 

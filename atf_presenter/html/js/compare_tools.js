@@ -16,40 +16,43 @@ function searchForMaximum(tests) {
   $.each(tests, function (index, test_name) {
     var test_results = getDataFromStorage(test_name);
 
-    $.each(test_results, function (testblock_name, testblock) {
-      $.each(testblock, function (resource_name, resource_data) {
-        if (resource_data instanceof Object) {
-          $.each(resource_data, function (node_name, node_resources) {
-            if (node_resources instanceof  Object) {
-              // Resourcen
-              $.each(node_resources, function (resource_name, resource_data) {
-                if (resource_data instanceof Array) {
+    $.each(test_results, function (testblock_name, testblock_data) {
+      $.each(testblock_data, function (level_2, level_2_data) {
+        if (level_2_data.hasOwnProperty('max')) {
+          // Time
+          if (level_2_data['max'] > max[level_2]) {
+            max[level_2] = level_2_data['max'];
+          }
+        } else {
+          $.each(level_2_data, function (level_3, level_3_data) {
+            if (level_3_data.hasOwnProperty('max')) {
+              // Path length & obstacle distance
+              if (level_3_data['max'] > max[level_2]) {
+                max[level_2] = level_3_data['max'];
+              }
+            } else {
+              $.each(level_3_data, function (level_4, level_4_data) {
+                // Resources
+                if (typeof level_4_data['max'][0] === 'undefined') {
+                  // CPU & Mem
+                  if (level_4_data['max'] > max[level_4]) {
+                    max[level_4] = level_4_data['max'];
+                  }
+                } else {
                   // IO & Network
-                  $.each(resource_data, function (index, value) {
-                    if (value > max[resource_name][index]) {
-                      max[resource_name][index] = value;
+                  $.each(level_4_data['max'], function (index, value) {
+                    if (value > max[level_4][index]) {
+                      max[level_4][index] = value;
                     }
                   });
-                  // CPU & Mem
-                } else if (resource_data['max'] > max[resource_name]) {
-                  max[resource_name] = resource_data['max'];
                 }
               });
-              // Path length
-            } else if (node_resources > max[resource_name]) {
-              max[resource_name] = node_resources;
             }
           });
-        } else {
-          // Time
-          if (resource_data > max[resource_name]) {
-            max[resource_name] = resource_data;
-          }
         }
       });
     });
   });
-
   return max;
 }
 
@@ -67,9 +70,21 @@ function compareTests(tests) {
   };
 
   results = {
-    speed: [],
-    resources: [],
-    efficiency: []
+    speed: {
+      min: [],
+      max: [],
+      average: []
+    },
+    resources: {
+      min: [],
+      max: [],
+      average: []
+    },
+    efficiency: {
+      min: [],
+      max: [],
+      average: []
+    }
   };
 
   var WEIGHT_SPEED = 100;
@@ -90,11 +105,15 @@ function compareTests(tests) {
         '<b>Planer ID: </b>' + o.planer + '<br>' +
         '<b>Planning Method: </b>' + o.planning_method + '<br>' +
         '<b>Jump threshold: </b>' + o.jump_threshold + '<br>' +
-        '<b>EEF step: </b>' + o.eef_step + '<br>' +
-        '<b>Points: </b>' + this.y);
+        '<b>EEF step: </b>' + o.eef_step + '<br><br>' +
+        '<b>Average: </b>' + this.y + '%<br>' +
+        '<b>Minimum: </b>' + o.min + '%<br>' +
+        '<b>Maximum: </b>' + o.max + '%');
 
       return '<b>' + this.series.name + '</b><br>' +
-        '<b>Points: </b>' + this.y;
+        'Average: ' + this.y + '<br>' +
+        'Minimum: ' + o.min + '<br>' +
+        'Maximum: ' + o.max + '<br>';
     }
   };
 
@@ -103,184 +122,246 @@ function compareTests(tests) {
     '<li><b>Test config: </b>' + test_list[tests[0]]['test_config'] + '</li>');
 
   var max_values = searchForMaximum(tests);
-  var data_compare_plot = {};
 
   $.each(tests, function (index, test_name) {
 
     var category_results = {
-      speed: 0,
-      efficiency: 0,
-      resources: 0
+      speed: {
+        min: 0,
+        max: 0,
+        average: 0
+      },
+      efficiency: {
+        min: 0,
+        max: 0,
+        average: 0
+      },
+      resources: {
+        min: 0,
+        max: 0,
+        average: 0
+      }
     };
 
     var test_results = getDataFromStorage(test_name);
     var temp_testblock = {
       time: {
         length: 0,
-        current: 0,
+        min: 0,
+        max: 0,
+        average: 0,
         total: max_values['time']
       },
       path_length: {
         length: 0,
-        current: 0,
+        min: 0,
+        max: 0,
+        average: 0,
         total: max_values['path_length']
       },
       obstacle_distance: {
         length: 0,
-        current: 0,
+        min: 0,
+        max: 0,
+        average: 0,
         total: max_values['obstacle_distance']
       },
       resources: {
         cpu: {
           length: 0,
-          current: 0,
+          min: 0,
+          max: 0,
+          average: 0,
           total: max_values['cpu']
         },
         mem: {
           length: 0,
-          current: 0,
+          min: 0,
+          max: 0,
+          average: 0,
           total: max_values['mem']
         },
         io: {
           length: 0,
-          current: 0,
+          min: 0,
+          max: 0,
+          average: 0,
           total: max_values['io']
         },
         network: {
           length: 0,
-          current: 0,
+          min: 0,
+          max: 0,
+          average: 0,
           total: max_values['network']
         }
       }
     };
 
-    $.each(test_results, function (testblock_name, testblock) {
-      if (!(testblock_name in data_compare_plot)) {
-        data_compare_plot[testblock_name] = {};
-      }
-
-      $.each(testblock, function (resource_name, resource_data) {
-        if (resource_data instanceof Object) {
-          $.each(resource_data, function (node_name, node_resources) {
-            if (node_resources instanceof  Object) {
-              // Resourcen
-              $.each(node_resources, function (resource_name, resource_data) {
-
-                if (!(resource_name in data_compare_plot[testblock_name])) {
-                  data_compare_plot[testblock_name][resource_name] = {};
-                }
-                if (!(node_name in data_compare_plot[testblock_name][resource_name])) {
-                  data_compare_plot[testblock_name][resource_name][node_name] = {};
-                }
-                data_compare_plot[testblock_name][resource_name][node_name][test_name] = resource_data['average'];
-
-                if (resource_data['average'] instanceof Array) {
-                  // IO & Network
-                  for (var x = 0; x < resource_data.length; x++) {
-                    if (temp_testblock['resources'][resource_name]['total'][x] != 0) {
-                      temp_testblock['resources'][resource_name]['current'] += (temp_testblock['resources'][resource_name]['total'][x] - resource_data['average'][x]) / temp_testblock['resources'][resource_name]['total'][x];
-                    }
-                    temp_testblock['resources'][resource_name]['length']++;
-                  }
-                  // CPU & Mem
+    $.each(test_results, function (testblock_name, testblock_data) {
+      $.each(testblock_data, function (level_2, level_2_data) {
+        if (level_2_data.hasOwnProperty('max')) {
+          // Time
+          if (temp_testblock[level_2]['total'] != 0) {
+            temp_testblock[level_2]['average'] += (temp_testblock[level_2]['total'] - level_2_data['average']) / temp_testblock[level_2]['total'];
+            temp_testblock[level_2]['min'] += (temp_testblock[level_2]['total'] - level_2_data['min']) / temp_testblock[level_2]['total'];
+            temp_testblock[level_2]['max'] += (temp_testblock[level_2]['total'] - level_2_data['max']) / temp_testblock[level_2]['total'];
+          }
+          temp_testblock[level_2]['length']++;
+        } else {
+          $.each(level_2_data, function (level_3, level_3_data) {
+            if (level_3_data.hasOwnProperty('max')) {
+              // Path length & obstacle distance
+              if (temp_testblock[level_2]['total'] != 0) {
+                if (level_2 === 'obstacle_distance') {
+                  temp_testblock[level_2]['average'] += level_3_data['average'] / temp_testblock[level_2]['total'];
+                  temp_testblock[level_2]['min'] += level_3_data['min'] / temp_testblock[level_2]['total'];
+                  temp_testblock[level_2]['max'] += level_3_data['max'] / temp_testblock[level_2]['total'];
                 } else {
-                  if (temp_testblock['resources'][resource_name]['total'] != 0) {
-                    temp_testblock['resources'][resource_name]['current'] += (temp_testblock['resources'][resource_name]['total'] - resource_data['average']) / temp_testblock['resources'][resource_name]['total'];
+                  temp_testblock[level_2]['average'] += (temp_testblock[level_2]['total'] - level_3_data['average']) / temp_testblock[level_2]['total'];
+                  temp_testblock[level_2]['min'] += (temp_testblock[level_2]['total'] - level_3_data['min']) / temp_testblock[level_2]['total'];
+                  temp_testblock[level_2]['max'] += (temp_testblock[level_2]['total'] - level_3_data['max']) / temp_testblock[level_2]['total'];
+                }
+              }
+              temp_testblock[level_2]['length']++;
+            } else {
+              $.each(level_3_data, function (level_4, level_4_data) {
+                // Resources
+                if (typeof level_4_data['max'][0] === 'undefined') {
+                  // CPU & Mem
+                  if (temp_testblock['resources'][level_4]['total'] != 0) {
+                    temp_testblock['resources'][level_4]['average'] += (temp_testblock['resources'][level_4]['total'] - level_4_data['average']) / temp_testblock['resources'][level_4]['total'];
+                    temp_testblock['resources'][level_4]['min'] += (temp_testblock['resources'][level_4]['total'] - level_4_data['min']) / temp_testblock['resources'][level_4]['total'];
+                    temp_testblock['resources'][level_4]['max'] += (temp_testblock['resources'][level_4]['total'] - level_4_data['max']) / temp_testblock['resources'][level_4]['total'];
                   }
-                  temp_testblock['resources'][resource_name]['length']++;
+                  temp_testblock['resources'][level_4]['length']++;
+                } else {
+                  // IO & Network
+                  for (var x = 0; x < level_4_data.length; x++) {
+                    if (temp_testblock['resources'][level_4]['total'][x] != 0) {
+                      temp_testblock['resources'][level_4]['average'] += (temp_testblock['resources'][level_4]['total'][x] - level_4_data['average'][x]) / temp_testblock['resources'][level_4]['total'][x];
+                      temp_testblock['resources'][level_4]['min'] += (temp_testblock['resources'][level_4]['total'][x] - level_4_data['min'][x]) / temp_testblock['resources'][level_4]['total'][x];
+                      temp_testblock['resources'][level_4]['max'] += (temp_testblock['resources'][level_4]['total'][x] - level_4_data['max'][x]) / temp_testblock['resources'][level_4]['total'][x];
+                    }
+                    temp_testblock['resources'][level_4]['length']++;
+                  }
                 }
               });
-              // Path length & Obstacle distance
-            } else {
-              if (!(resource_name in data_compare_plot[testblock_name])) {
-                data_compare_plot[testblock_name][resource_name] = {};
-              }
-              if (!(node_name in data_compare_plot[testblock_name][resource_name])) {
-                data_compare_plot[testblock_name][resource_name][node_name] = {};
-              }
-              data_compare_plot[testblock_name][resource_name][node_name][test_name] = node_resources;
-              if (temp_testblock[resource_name]['total'] != 0) {
-                if (resource_name === 'obstacle_distance') {
-                  temp_testblock[resource_name]['current'] += node_resources / temp_testblock[resource_name]['total'];
-                } else {
-                  temp_testblock[resource_name]['current'] += (temp_testblock[resource_name]['total'] - node_resources) / temp_testblock[resource_name]['total'];
-                }
-              }
-              temp_testblock[resource_name]['length']++;
             }
           });
-        } else {
-          // Time
-          if (!(resource_name in data_compare_plot[testblock_name])) {
-            data_compare_plot[testblock_name][resource_name] = {}
-          }
-          data_compare_plot[testblock_name][resource_name][test_name] = resource_data;
-          if (temp_testblock[resource_name]['total'] != 0) {
-            temp_testblock[resource_name]['current'] += (temp_testblock[resource_name]['total'] - resource_data) / temp_testblock[resource_name]['total'];
-          }
-          temp_testblock[resource_name]['length']++;
         }
       });
     });
 
     var temp_categories = {
-      resources: 0,
-      time: 0,
-      path_length: 0,
-      obstacle_distance: 0
+      resources: {
+        min: 0,
+        max: 0,
+        average: 0
+      },
+      time: {
+        min: 0,
+        max: 0,
+        average: 0
+      },
+      path_length: {
+        min: 0,
+        max: 0,
+        average: 0
+      },
+      obstacle_distance: {
+        min: 0,
+        max: 0,
+        average: 0
+      }
     };
 
     var count_resource_categories = 0;
-    var temp_efficiency = 0;
 
     $.each(temp_testblock, function (metric, metric_data) {
       if (metric === 'resources') {
         $.each(metric_data, function (res_name, res_data) {
           // Resources
           if (res_data['length'] != 0) {
-            temp_categories[metric] += res_data['current'] / res_data['length'];
+            temp_categories[metric]['average'] += res_data['average'] / res_data['length'];
+            temp_categories[metric]['min'] += res_data['min'] / res_data['length'];
+            temp_categories[metric]['max'] += res_data['max'] / res_data['length'];
             count_resource_categories++;
           }
         });
       } else {
         // Time & Path length & Obstacle distance
         if (metric_data['length'] != 0) {
-          temp_categories[metric] = metric_data['current'] / metric_data['length'];
+          temp_categories[metric]['average'] = metric_data['average'] / metric_data['length'];
+          temp_categories[metric]['min'] = metric_data['min'] / metric_data['length'];
+          temp_categories[metric]['max'] = metric_data['max'] / metric_data['length'];
         }
       }
     });
+    var temp_resources = {};
+    var temp_speed = {};
+    var temp_efficiency = {};
 
-    var temp_resources = temp_categories['resources'] / count_resource_categories;
-    var temp_speed = temp_categories['time'];
+    temp_resources['average'] = temp_categories['resources']['average'] / count_resource_categories;
+    temp_resources['min'] = temp_categories['resources']['min'] / count_resource_categories;
+    temp_resources['max'] = temp_categories['resources']['max'] / count_resource_categories;
 
-    if (temp_categories['path_length'] != 0 && temp_categories['obstacle_distance'] != 0) {
-      temp_efficiency = (temp_categories['path_length'] + temp_categories['obstacle_distance']) / 2;
+    temp_speed['average'] = temp_categories['time']['average'];
+    temp_speed['min'] = temp_categories['time']['min'];
+    temp_speed['max'] = temp_categories['time']['max'];
+
+    if (temp_categories['path_length']['average'] != 0 && temp_categories['obstacle_distance']['average'] != 0) {
+      temp_efficiency['average'] = (temp_categories['path_length']['average'] + temp_categories['obstacle_distance']['average']) / 2;
+      temp_efficiency['min'] = (temp_categories['path_length']['min'] + temp_categories['obstacle_distance']['min']) / 2;
+      temp_efficiency['max'] = (temp_categories['path_length']['max'] + temp_categories['obstacle_distance']['max']) / 2;
     } else {
-      temp_efficiency = (temp_categories['path_length'] + temp_categories['obstacle_distance']);
+      temp_efficiency['average'] = temp_categories['path_length']['average'] + temp_categories['obstacle_distance']['average'];
+      temp_efficiency['min'] = temp_categories['path_length']['min'] + temp_categories['obstacle_distance']['min'];
+      temp_efficiency['max'] = temp_categories['path_length']['max'] + temp_categories['obstacle_distance']['max'];
     }
 
-    results['speed'].push(temp_speed * WEIGHT_SPEED);
-    results['efficiency'].push(temp_efficiency * WEIGHT_EFFICIENCY);
-    results['resources'].push(temp_resources * WEIGHT_RESOURCES);
+    results['speed']['average'].push(temp_speed['average'] * WEIGHT_SPEED);
+    results['speed']['min'].push(temp_speed['min'] * WEIGHT_SPEED);
+    results['speed']['max'].push(temp_speed['max'] * WEIGHT_SPEED);
 
-    category_results['speed'] = round(temp_speed * WEIGHT_SPEED, 3);
-    category_results['efficiency'] = round(temp_efficiency * WEIGHT_EFFICIENCY, 3);
-    category_results['resources'] = round(temp_resources * WEIGHT_RESOURCES, 3);
+    results['efficiency']['average'].push(temp_efficiency['average'] * WEIGHT_EFFICIENCY);
+    results['efficiency']['min'].push(temp_efficiency['min'] * WEIGHT_EFFICIENCY);
+    results['efficiency']['max'].push(temp_efficiency['max'] * WEIGHT_EFFICIENCY);
+
+    results['resources']['average'].push(temp_resources['average'] * WEIGHT_RESOURCES);
+    results['resources']['min'].push(temp_resources['min'] * WEIGHT_RESOURCES);
+    results['resources']['max'].push(temp_resources['max'] * WEIGHT_RESOURCES);
+
+    category_results['speed']['average'] = round(temp_speed['average'] * WEIGHT_SPEED, 1);
+    category_results['speed']['min'] = round(temp_speed['min'] * WEIGHT_SPEED, 1);
+    category_results['speed']['max'] = round(temp_speed['max'] * WEIGHT_SPEED, 1);
+
+    category_results['efficiency']['average'] = round(temp_efficiency['average'] * WEIGHT_EFFICIENCY, 1);
+    category_results['efficiency']['min'] = round(temp_efficiency['min'] * WEIGHT_EFFICIENCY, 1);
+    category_results['efficiency']['max'] = round(temp_efficiency['max'] * WEIGHT_EFFICIENCY, 1);
+
+    category_results['resources']['average'] = round(temp_resources['average'] * WEIGHT_RESOURCES, 1);
+    category_results['resources']['min'] = round(temp_resources['min'] * WEIGHT_RESOURCES, 1);
+    category_results['resources']['max'] = round(temp_resources['max'] * WEIGHT_RESOURCES, 1);
 
     var category_count = 0;
     $.each(category_results, function (name, value) {
-      if (value != 0) {
+      if (value['average'] != 0) {
         category_count++;
       }
     });
-
-    var final_results = round((temp_speed * WEIGHT_SPEED + temp_efficiency * WEIGHT_EFFICIENCY + temp_resources * WEIGHT_RESOURCES) / category_count, 3);
+    var final_results = {};
+    final_results['average'] = round((temp_speed['average'] * WEIGHT_SPEED + temp_efficiency['average'] * WEIGHT_EFFICIENCY + temp_resources['average'] * WEIGHT_RESOURCES) / category_count, 1);
+    final_results['min'] = round((temp_speed['min'] * WEIGHT_SPEED + temp_efficiency['min'] * WEIGHT_EFFICIENCY + temp_resources['min'] * WEIGHT_RESOURCES) / category_count, 1);
+    final_results['max'] = round((temp_speed['max'] * WEIGHT_SPEED + temp_efficiency['max'] * WEIGHT_EFFICIENCY + temp_resources['max'] * WEIGHT_RESOURCES) / category_count, 1);
 
     data_overview.push({
       name: test_name,
       data: [{
         x: 0,
-        y: final_results,
+        y: final_results['average'],
+        min: final_results['min'],
+        max: final_results['max'],
         robot: test_list[test_name]['robot'],
         planer: test_list[test_name]['planer_id'],
         planning_method: test_list[test_name]['planning_method'],
@@ -292,7 +373,9 @@ function compareTests(tests) {
       name: test_name,
       data: [{
         x: 0,
-        y: category_results['speed'],
+        y: category_results['speed']['average'],
+        min: category_results['speed']['min'],
+        max: category_results['speed']['max'],
         robot: test_list[test_name]['robot'],
         planer: test_list[test_name]['planer_id'],
         planning_method: test_list[test_name]['planning_method'],
@@ -304,7 +387,9 @@ function compareTests(tests) {
       name: test_name,
       data: [{
         x: 0,
-        y: category_results['efficiency'],
+        y: category_results['efficiency']['average'],
+        min: category_results['efficiency']['min'],
+        max: category_results['efficiency']['max'],
         robot: test_list[test_name]['robot'],
         planer: test_list[test_name]['planer_id'],
         planning_method: test_list[test_name]['planning_method'],
@@ -316,7 +401,9 @@ function compareTests(tests) {
       name: test_name,
       data: [{
         x: 0,
-        y: category_results['resources'],
+        y: category_results['resources']['average'],
+        min: category_results['resources']['min'],
+        max: category_results['resources']['max'],
         robot: test_list[test_name]['robot'],
         planer: test_list[test_name]['planer_id'],
         planning_method: test_list[test_name]['planning_method'],
@@ -454,25 +541,28 @@ function compareTests(tests) {
 }
 
 function changeWeight(category, weight) {
-
-  var final_results = [];
+  var final_results = {
+    average: []
+  };
   var results_temp = jQuery.extend(true, {}, results);
 
-  for (var i = 0; i < results_temp[category].length; i++) {
-    results_temp[category][i] *= weight;
-    chart_compare_category_speed.series[i].setData([round(results_temp['speed'][i], 3)]);
-    chart_compare_category_efficiency.series[i].setData([round(results_temp['efficiency'][i], 3)]);
-    chart_compare_category_resources.series[i].setData([round(results_temp['resources'][i], 3)]);
+  for (var i = 0; i < results_temp[category]['average'].length; i++) {
+    results_temp[category]['average'][i] *= weight;
+    results_temp[category]['min'][i] *= weight;
+    results_temp[category]['max'][i] *= weight;
+    chart_compare_category_speed.series[i].setData([round(results_temp['speed']['average'][i], 1)]);
+    chart_compare_category_efficiency.series[i].setData([round(results_temp['efficiency']['average'][i], 1)]);
+    chart_compare_category_resources.series[i].setData([round(results_temp['resources']['average'][i], 1)]);
 
     var category_count = 0;
     $.each(results_temp, function (name, value) {
-      if (value != 0) {
+      if (value['average'] != 0) {
         category_count++;
       }
     });
 
-    final_results.push(round((results_temp['speed'][i] + results_temp['efficiency'][i] + results_temp['resources'][i]) / category_count, 3));
-    chart_compare_overview.series[i].setData([final_results[i]]);
+    final_results['average'].push(round((results_temp['speed']['average'][i] + results_temp['efficiency']['average'][i] + results_temp['resources']['average'][i]) / category_count, 1));
+    chart_compare_overview.series[i].setData([final_results['average'][i]]);
   }
   showBestTest();
 }
@@ -527,7 +617,7 @@ function showBestTest() {
       results['total']['name'] = data.name;
     }
   });
-  // TODO: Display points in table ???
+
   speed.empty();
   efficiency.empty();
   resources.empty();

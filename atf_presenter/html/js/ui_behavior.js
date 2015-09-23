@@ -29,7 +29,7 @@ $(document).ready(function () {
     size: 4
   });
 
-  compare_test_option.find('.selectpicker').prop('disabled', true).selectpicker('refresh);')
+  compare_test_option.find('.selectpicker').prop('disabled', true).selectpicker('refresh);');
 
   // Load test list from storage (if available)
   if (getDataFromStorage('test_list')) {
