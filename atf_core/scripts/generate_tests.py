@@ -60,7 +60,6 @@ class GenerateTests:
         self.test_list = {}
 
         # Empty folders
-        """
         if os.path.exists(rospkg.RosPack().get_path("atf_core") + "/test/generated/recording/"):
             shutil.rmtree(rospkg.RosPack().get_path("atf_core") + "/test/generated/recording/")
         os.makedirs(rospkg.RosPack().get_path("atf_core") + "/test/generated/recording/")
@@ -81,7 +80,7 @@ class GenerateTests:
             if os.path.exists(self.yaml_output):
                 shutil.rmtree(self.yaml_output)
             os.makedirs(self.yaml_output)
-        """
+
         self.generate_test_list()
 
     def generate_tests(self):
