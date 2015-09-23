@@ -1,21 +1,6 @@
 $(document).ready(function () {
 
-  // Extending jQuery.when
-  if (jQuery.when.all === undefined) {
-    jQuery.when.all = function (deferreds) {
-      var deferred = new jQuery.Deferred();
-
-      $.when.apply(jQuery, deferreds).then(
-        function () {
-          deferred.resolve(Array.prototype.slice.call(arguments));
-        },
-        function () {
-          deferred.fail(Array.prototype.slice.call(arguments));
-        }
-      );
-      return deferred;
-    }
-  }
+  document.getElementById('file_input').addEventListener('change', handleFileSelect, false);
 
   $('#button_compare').prop('disabled', true);
   var compare_test_option = $('#compare_test_option');
@@ -37,29 +22,62 @@ $(document).ready(function () {
   }
 });
 
-$(document).on('change', '.btn-file :file', function () {
-  $('#button_compare').prop('disabled', true);
-  var labels = [];
-  var input = $(this);
-  var numFiles = input.get(0).files ? input.get(0).files.length : 1;
-  for (var files = 0; files < input.get(0).files.length; files++) {
-    if (input.get(0).files[files].name.indexOf('.json') === -1) {
-      bootbox.alert('Select only .json files!');
-      return;
-    }
-    labels.push(input.get(0).files[files].name.split('.')[0]);
-  }
-  if ($.inArray('test_list', labels) === -1) {
-    bootbox.alert('You have to select the test_list.yaml file!');
-    return;
-  }
-  input.trigger('fileselect', [numFiles, labels]);
-});
-
-$('.btn-file :file').on('fileselect', function (event, numFiles, labels) {
+function handleFileSelect(evt) {
   clearStorage();
-  getData('./data/', labels);
-});
+
+  var files = evt.target.files; // FileList object
+  var file_list = {};
+  var progressbar = $('#file_upload_progressbar');
+  var files_readed = 0;
+
+  progressbar.empty();
+  progressbar.css('width', '0%').attr('aria-valuenow', '0%');
+  progressbar.append('0%');
+
+  // Loop through the FileList
+  for (var i = 0, f; f = files[i]; i++) {
+
+    // Only process json files.
+    if (!f.type.match('json.*')) {
+      continue;
+    }
+
+    var reader = new FileReader();
+
+    reader.onload = (function (theFile) {
+      return function (e) {
+        files_readed++;
+        var percentLoaded = Math.round((files_readed / files.length) * 100);
+
+        file_list[theFile.name] = JSON.parse(e.target.result);
+
+        progressbar.empty();
+        progressbar.css('width', percentLoaded + '%').attr('aria-valuenow', percentLoaded);
+        progressbar.append(percentLoaded + '%');
+
+        if (theFile.name.contains('test_list')) {
+          file_list[theFile.name] = convertTestList(file_list[theFile.name]);
+        }
+
+        if (!writeDataToStorage(theFile.name.split('.')[0], file_list[theFile.name])) {
+          console.log('Writing to storage failed!');
+        } else {
+          console.log('Request suceeded');
+        }
+
+        if (Object.keys(file_list).length === files.length) {
+          if (!(file_list.hasOwnProperty('test_list.json'))) {
+            bootbox.alert('You have to select the test_list.json file!');
+          } else {
+            summarizeTests();
+            showTestList();
+          }
+        }
+      };
+    })(f);
+    reader.readAsText(f);
+  }
+}
 
 $('#test_list').on('click', '.btn', function (e) {
   e.preventDefault();

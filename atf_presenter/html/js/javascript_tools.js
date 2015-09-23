@@ -16,48 +16,8 @@ var results = {
   }
 };
 
-var progressbar_value = 0;
-
 function round(number, decimals) {
   return +(Math.round(number + 'e+' + decimals) + 'e-' + decimals);
-}
-
-function getData(folder, files) {
-  var list = [];
-  for (var x = 0; x < files.length; x++) {
-    var filename = files[x];
-    var total_files = files.length;
-    list.push($.getJSON(folder + filename + '.json')
-        .done(onJSONSuccess(filename, total_files))
-        .fail(onJSONFail(total_files))
-    );
-  }
-  $.when.all(list).always(function () {
-    summarizeTests();
-    showTestList();
-  });
-}
-
-function onJSONFail(file_length) {
-  return function (jqxhr, textStatus, error) {
-    var err = textStatus + ': ' + error;
-    console.log('Request failed: ' + err);
-    updateProgressbar(file_length);
-  };
-}
-
-function onJSONSuccess(filename, file_length) {
-  return function (data) {
-    if (filename.contains('test_list')) {
-      data = convertTestList(data);
-    }
-    if (!writeDataToStorage(filename, data)) {
-      console.log('Writing to storage failed!');
-    } else {
-      console.log('Request suceeded');
-    }
-    updateProgressbar(file_length);
-  };
 }
 
 function convertTestList(test_list) {
@@ -68,22 +28,6 @@ function convertTestList(test_list) {
     });
   });
   return new_test_list;
-}
-
-function updateProgressbar(file_length) {
-
-  var progressbar = $('#file_upload_progressbar');
-
-  if (progressbar.attr('aria-valuenow') >= 100) {
-    progressbar_value = 0;
-  }
-
-  progressbar_value += (1 / file_length) * 100;
-  var value = round(progressbar_value, 0);
-
-  progressbar.empty();
-  progressbar.css('width', value + '%').attr('aria-valuenow', value);
-  progressbar.append(value + '%');
 }
 
 function showTestList() {
