@@ -20,43 +20,21 @@ class GenerateTests:
         generation_config = self.load_yaml(rospkg.RosPack().get_path("atf_core") +
                                            "/config/test_generation_config.yaml")
 
-        self.test_suite_file = rospkg.RosPack().get_path(generation_config["test_suite_file"].split("/")[0]) + self.\
-            remove_pkgname(generation_config["test_suite_file"], generation_config["test_suite_file"].split("/")[0])
-
-        self.test_config_file = rospkg.RosPack().get_path(generation_config["test_config_file"].split("/")[0]) + self.\
-            remove_pkgname(generation_config["test_config_file"], generation_config["test_config_file"].split("/")[0])
-
-        self.bagfile_output = rospkg.RosPack().get_path(generation_config["bagfile_output"].split("/")[0]) + self.\
-            remove_pkgname(generation_config["bagfile_output"], generation_config["bagfile_output"].split("/")[0])
-
-        self.robot_config_path = rospkg.RosPack().get_path(generation_config["robot_config_path"].split("/")[0]) +\
-            self.remove_pkgname(generation_config["robot_config_path"],
-                                generation_config["robot_config_path"].split("/")[0])
-
-        self.test_application_path = rospkg.RosPack().get_path(generation_config["test_application_path"].
-                                                               split("/")[0]) +\
-            self.remove_pkgname(generation_config["test_application_path"],
-                                generation_config["test_application_path"].split("/")[0])
-
-        self.move_group_launch = rospkg.RosPack().get_path(generation_config["move_group_launch"].split("/")[0]) +\
-            self.remove_pkgname(generation_config["move_group_launch"],
-                                generation_config["move_group_launch"].split("/")[0])
+        self.test_suite_file = self.get_path(generation_config["test_suite_file"])
+        self.test_config_file = self.get_path(generation_config["test_config_file"])
+        self.bagfile_output = self.get_path(generation_config["bagfile_output"])
+        self.robot_config_path = self.get_path(generation_config["robot_config_path"])
+        self.test_application_path = self.get_path(generation_config["test_application_path"])
+        self.move_group_launch = self.get_path(generation_config["move_group_launch"])
 
         if generation_config["result_yaml_output"] != "":
-            self.yaml_output = rospkg.RosPack().get_path(generation_config["result_yaml_output"].split("/")[0]) + self.\
-                remove_pkgname(generation_config["result_yaml_output"],
-                               generation_config["result_yaml_output"].split("/")[0])
+            self.yaml_output = self.get_path(generation_config["result_yaml_output"])
         else:
             self.yaml_output = generation_config["result_yaml_output"]
 
-        self.json_output = rospkg.RosPack().get_path(generation_config["result_json_output"].split("/")[0]) + self.\
-            remove_pkgname(generation_config["result_json_output"],
-                           generation_config["result_json_output"].split("/")[0])
-
+        self.json_output = self.get_path(generation_config["result_json_output"])
         self.time_limit = generation_config["time_limit"]
-
         self.test_repetitions = generation_config["test_repetitions"]
-
         self.test_list = {}
 
         # Empty folders
@@ -95,9 +73,6 @@ class GenerateTests:
             param = em.param
 
             robot_config = self.load_yaml(self.robot_config_path + self.test_list[item]["robot"] + "/robot_config.yaml")
-            robot_bringup_launch = robot_config["robot_bringup_launch"]
-            robot_bringup = rospkg.RosPack().get_path(robot_bringup_launch.split("/")[0]) +\
-                self.remove_pkgname(robot_bringup_launch, robot_bringup_launch.split("/")[0])
 
             # Recording
             test_record = launch(
@@ -113,7 +88,7 @@ class GenerateTests:
                 param(name="recorder/bagfile_output", value=self.bagfile_output),
                 arg(name="robot", value=self.test_list[item]["robot"]),
                 arg(name="rc_path", value=self.robot_config_path),
-                include(arg(name="gui", value="false"), file=robot_bringup),
+                include(arg(name="gui", value="false"), file=self.get_path(robot_config["robot_bringup_launch"])),
                 include(file=self.move_group_launch),
                 node(param(name="robot_config_file", value="$(arg rc_path)$(arg robot)/robot_config.yaml"),
                      name="atf_recorder", pkg="atf_recorder", type="recorder_core.py", output="screen"),
@@ -208,6 +183,9 @@ class GenerateTests:
     @staticmethod
     def remove_pkgname(text, pkgname):
         return text[len(pkgname):]
+
+    def get_path(self, path):
+        return rospkg.RosPack().get_path(path.split("/")[0]) + self.remove_pkgname(path, path.split("/")[0])
 
 
 if __name__ == '__main__':
