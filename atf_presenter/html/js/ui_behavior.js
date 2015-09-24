@@ -28,7 +28,7 @@ function handleFileSelect(evt) {
   var files = evt.target.files; // FileList object
   var file_list = {};
   var progressbar = $('#file_upload_progressbar');
-  var files_readed = 0;
+  var files_read = 0;
 
   progressbar.empty();
   progressbar.css('width', '0%').attr('aria-valuenow', '0%');
@@ -38,31 +38,31 @@ function handleFileSelect(evt) {
   for (var i = 0, f; f = files[i]; i++) {
 
     // Only process json files.
-    if (!f.type.match('json.*')) {
+    if (f.name.indexOf('.json') === -1) {
       continue;
     }
 
     var reader = new FileReader();
 
-    reader.onload = (function (theFile) {
+    reader.onload = (function (file) {
       return function (e) {
-        files_readed++;
-        var percentLoaded = Math.round((files_readed / files.length) * 100);
+        files_read++;
+        var percentLoaded = Math.round((files_read / files.length) * 100);
 
-        file_list[theFile.name] = JSON.parse(e.target.result);
+        file_list[file.name] = JSON.parse(e.target.result);
 
         progressbar.empty();
         progressbar.css('width', percentLoaded + '%').attr('aria-valuenow', percentLoaded);
         progressbar.append(percentLoaded + '%');
 
-        if (theFile.name.contains('test_list')) {
-          file_list[theFile.name] = convertTestList(file_list[theFile.name]);
+        if (file.name.indexOf('test_list') != -1) {
+          file_list[file.name] = convertTestList(file_list[file.name]);
         }
 
-        if (!writeDataToStorage(theFile.name.split('.')[0], file_list[theFile.name])) {
+        if (!writeDataToStorage(file.name.split('.')[0], file_list[file.name])) {
           console.log('Writing to storage failed!');
         } else {
-          console.log('Request suceeded');
+          console.log('Request succeeded');
         }
 
         if (Object.keys(file_list).length === files.length) {
