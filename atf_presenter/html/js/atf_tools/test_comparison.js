@@ -1,25 +1,13 @@
 var TestComparison = {
-  results: {
-    speed: {
-      min: [],
-      max: [],
-      average: []
-    },
-    resources: {
-      min: [],
-      max: [],
-      average: []
-    },
-    efficiency: {
-      min: [],
-      max: [],
-      average: []
-    }
+  results: {},
+  categories: ['total', 'speed', 'resources', 'efficiency'],
+  charts: {
+    ids: [],
+    data: {}
   },
-  chart_compare_overview: {},
-  chart_compare_category_speed: {},
-  chart_compare_category_efficiency: {},
-  chart_compare_category_resources: {},
+  weightSpeed: 100,
+  weightResources: 100,
+  weightEfficiency: 100,
   getMaximum: function (files) {
     var max = {};
     $.each(files, function (index, test_name) {
@@ -74,40 +62,13 @@ var TestComparison = {
     return max;
   },
   compare: function (files) {
+    var test_list = FileStorage.readData('test_list');
+
     var compare_tests = $('#compare_tests');
     var configuration_div = compare_tests.find('#compare_configuration');
-
-    var test_list = FileStorage.readData('test_list');
-    var this_class = this;
-
-    var data_overview = [];
-    var data_categories = {
-      speed: [],
-      efficiency: [],
-      resources: []
-    };
-
-    this.results = {
-      speed: {
-        min: [],
-        max: [],
-        average: []
-      },
-      resources: {
-        min: [],
-        max: [],
-        average: []
-      },
-      efficiency: {
-        min: [],
-        max: [],
-        average: []
-      }
-    };
-
-    var WEIGHT_SPEED = 100;
-    var WEIGHT_RESOURCES = 100;
-    var WEIGHT_EFFICIENCY = 100;
+    configuration_div.empty();
+    configuration_div.append('<li><b>Scene config: </b>' + test_list[files[0]]['scene_config'] + '</li>' +
+      '<li><b>Test config: </b>' + test_list[files[0]]['test_config'] + '</li>');
 
     var plot_tooltip = {
       'formatter': function () {
@@ -135,427 +96,10 @@ var TestComparison = {
       }
     };
 
-    configuration_div.empty();
-    configuration_div.append('<li><b>Scene config: </b>' + test_list[files[0]]['scene_config'] + '</li>' +
-      '<li><b>Test config: </b>' + test_list[files[0]]['test_config'] + '</li>');
+    this.results = this.computePoints(test_list, files);
+    this.charts = this.createCharts(plot_tooltip);
 
-    var max_values = TestComparison.getMaximum(files);
-
-    $.each(files, function (index, test_name) {
-
-      var category_results = {
-        speed: {
-          min: 0,
-          max: 0,
-          average: 0
-        },
-        efficiency: {
-          min: 0,
-          max: 0,
-          average: 0
-        },
-        resources: {
-          min: 0,
-          max: 0,
-          average: 0
-        }
-      };
-
-      var test_results = FileStorage.readData(test_name);
-      var temp_testblock = {
-        time: {
-          length: 0,
-          min: 0,
-          max: 0,
-          average: 0,
-          total: max_values['time']
-        },
-        path_length: {
-          length: 0,
-          min: 0,
-          max: 0,
-          average: 0,
-          total: max_values['path_length']
-        },
-        obstacle_distance: {
-          length: 0,
-          min: 0,
-          max: 0,
-          average: 0,
-          total: max_values['obstacle_distance']
-        },
-        resources: {
-          cpu: {
-            length: 0,
-            min: 0,
-            max: 0,
-            average: 0,
-            total: max_values['cpu']
-          },
-          mem: {
-            length: 0,
-            min: 0,
-            max: 0,
-            average: 0,
-            total: max_values['mem']
-          },
-          io: {
-            length: 0,
-            min: 0,
-            max: 0,
-            average: 0,
-            total: max_values['io']
-          },
-          network: {
-            length: 0,
-            min: 0,
-            max: 0,
-            average: 0,
-            total: max_values['network']
-          }
-        }
-      };
-
-      $.each(test_results, function (testblock_name, testblock_data) {
-        $.each(testblock_data, function (level_2, level_2_data) {
-          if (level_2_data.hasOwnProperty('max')) {
-            // Time
-            if (temp_testblock[level_2]['total'] != 0) {
-              temp_testblock[level_2]['average'] += (temp_testblock[level_2]['total'] - level_2_data['average']) / temp_testblock[level_2]['total'];
-              temp_testblock[level_2]['min'] += (temp_testblock[level_2]['total'] - level_2_data['min']) / temp_testblock[level_2]['total'];
-              temp_testblock[level_2]['max'] += (temp_testblock[level_2]['total'] - level_2_data['max']) / temp_testblock[level_2]['total'];
-            }
-            temp_testblock[level_2]['length']++;
-          } else {
-            $.each(level_2_data, function (level_3, level_3_data) {
-              if (level_3_data.hasOwnProperty('max')) {
-                // Path length & obstacle distance
-                if (temp_testblock[level_2]['total'] != 0) {
-                  if (level_2 === 'obstacle_distance') {
-                    temp_testblock[level_2]['average'] += level_3_data['average'] / temp_testblock[level_2]['total'];
-                    temp_testblock[level_2]['min'] += level_3_data['min'] / temp_testblock[level_2]['total'];
-                    temp_testblock[level_2]['max'] += level_3_data['max'] / temp_testblock[level_2]['total'];
-                  } else {
-                    temp_testblock[level_2]['average'] += (temp_testblock[level_2]['total'] - level_3_data['average']) / temp_testblock[level_2]['total'];
-                    temp_testblock[level_2]['min'] += (temp_testblock[level_2]['total'] - level_3_data['min']) / temp_testblock[level_2]['total'];
-                    temp_testblock[level_2]['max'] += (temp_testblock[level_2]['total'] - level_3_data['max']) / temp_testblock[level_2]['total'];
-                  }
-                }
-                temp_testblock[level_2]['length']++;
-              } else {
-                $.each(level_3_data, function (level_4, level_4_data) {
-                  // Resources
-                  if (typeof level_4_data['max'][0] === 'undefined') {
-                    // CPU & Mem
-                    if (temp_testblock['resources'][level_4]['total'] != 0) {
-                      temp_testblock['resources'][level_4]['average'] += (temp_testblock['resources'][level_4]['total'] - level_4_data['average']) / temp_testblock['resources'][level_4]['total'];
-                      temp_testblock['resources'][level_4]['min'] += (temp_testblock['resources'][level_4]['total'] - level_4_data['min']) / temp_testblock['resources'][level_4]['total'];
-                      temp_testblock['resources'][level_4]['max'] += (temp_testblock['resources'][level_4]['total'] - level_4_data['max']) / temp_testblock['resources'][level_4]['total'];
-                    }
-                    temp_testblock['resources'][level_4]['length']++;
-                  } else {
-                    // IO & Network
-                    for (var x = 0; x < level_4_data.length; x++) {
-                      if (temp_testblock['resources'][level_4]['total'][x] != 0) {
-                        temp_testblock['resources'][level_4]['average'] += (temp_testblock['resources'][level_4]['total'][x] - level_4_data['average'][x]) / temp_testblock['resources'][level_4]['total'][x];
-                        temp_testblock['resources'][level_4]['min'] += (temp_testblock['resources'][level_4]['total'][x] - level_4_data['min'][x]) / temp_testblock['resources'][level_4]['total'][x];
-                        temp_testblock['resources'][level_4]['max'] += (temp_testblock['resources'][level_4]['total'][x] - level_4_data['max'][x]) / temp_testblock['resources'][level_4]['total'][x];
-                      }
-                      temp_testblock['resources'][level_4]['length']++;
-                    }
-                  }
-                });
-              }
-            });
-          }
-        });
-      });
-
-      var temp_categories = {
-        resources: {
-          min: 0,
-          max: 0,
-          average: 0
-        },
-        time: {
-          min: 0,
-          max: 0,
-          average: 0
-        },
-        path_length: {
-          min: 0,
-          max: 0,
-          average: 0
-        },
-        obstacle_distance: {
-          min: 0,
-          max: 0,
-          average: 0
-        }
-      };
-
-      var count_resource_categories = 0;
-
-      $.each(temp_testblock, function (metric, metric_data) {
-        if (metric === 'resources') {
-          $.each(metric_data, function (res_name, res_data) {
-            // Resources
-            if (res_data['length'] != 0) {
-              temp_categories[metric]['average'] += res_data['average'] / res_data['length'];
-              temp_categories[metric]['min'] += res_data['min'] / res_data['length'];
-              temp_categories[metric]['max'] += res_data['max'] / res_data['length'];
-              count_resource_categories++;
-            }
-          });
-        } else {
-          // Time & Path length & Obstacle distance
-          if (metric_data['length'] != 0) {
-            temp_categories[metric]['average'] = metric_data['average'] / metric_data['length'];
-            temp_categories[metric]['min'] = metric_data['min'] / metric_data['length'];
-            temp_categories[metric]['max'] = metric_data['max'] / metric_data['length'];
-          }
-        }
-      });
-      var temp_resources = {};
-      var temp_speed = {};
-      var temp_efficiency = {};
-
-      temp_resources['average'] = temp_categories['resources']['average'] / count_resource_categories;
-      temp_resources['min'] = temp_categories['resources']['min'] / count_resource_categories;
-      temp_resources['max'] = temp_categories['resources']['max'] / count_resource_categories;
-
-      temp_speed['average'] = temp_categories['time']['average'];
-      temp_speed['min'] = temp_categories['time']['min'];
-      temp_speed['max'] = temp_categories['time']['max'];
-
-      if (temp_categories['path_length']['average'] != 0 && temp_categories['obstacle_distance']['average'] != 0) {
-        temp_efficiency['average'] = (temp_categories['path_length']['average'] + temp_categories['obstacle_distance']['average']) / 2;
-        temp_efficiency['min'] = (temp_categories['path_length']['min'] + temp_categories['obstacle_distance']['min']) / 2;
-        temp_efficiency['max'] = (temp_categories['path_length']['max'] + temp_categories['obstacle_distance']['max']) / 2;
-      } else {
-        temp_efficiency['average'] = temp_categories['path_length']['average'] + temp_categories['obstacle_distance']['average'];
-        temp_efficiency['min'] = temp_categories['path_length']['min'] + temp_categories['obstacle_distance']['min'];
-        temp_efficiency['max'] = temp_categories['path_length']['max'] + temp_categories['obstacle_distance']['max'];
-      }
-
-      this_class.results['speed']['average'].push(temp_speed['average'] * WEIGHT_SPEED);
-      this_class.results['speed']['min'].push(temp_speed['min'] * WEIGHT_SPEED);
-      this_class.results['speed']['max'].push(temp_speed['max'] * WEIGHT_SPEED);
-
-      this_class.results['efficiency']['average'].push(temp_efficiency['average'] * WEIGHT_EFFICIENCY);
-      this_class.results['efficiency']['min'].push(temp_efficiency['min'] * WEIGHT_EFFICIENCY);
-      this_class.results['efficiency']['max'].push(temp_efficiency['max'] * WEIGHT_EFFICIENCY);
-
-      this_class.results['resources']['average'].push(temp_resources['average'] * WEIGHT_RESOURCES);
-      this_class.results['resources']['min'].push(temp_resources['min'] * WEIGHT_RESOURCES);
-      this_class.results['resources']['max'].push(temp_resources['max'] * WEIGHT_RESOURCES);
-
-      category_results['speed']['average'] = (temp_speed['average'] * WEIGHT_SPEED).round(1);
-      category_results['speed']['min'] = (temp_speed['min'] * WEIGHT_SPEED).round(1);
-      category_results['speed']['max'] = (temp_speed['max'] * WEIGHT_SPEED).round(1);
-
-      category_results['efficiency']['average'] = (temp_efficiency['average'] * WEIGHT_EFFICIENCY).round(1);
-      category_results['efficiency']['min'] = (temp_efficiency['min'] * WEIGHT_EFFICIENCY).round(1);
-      category_results['efficiency']['max'] = (temp_efficiency['max'] * WEIGHT_EFFICIENCY).round(1);
-
-      category_results['resources']['average'] = (temp_resources['average'] * WEIGHT_RESOURCES).round(1);
-      category_results['resources']['min'] = (temp_resources['min'] * WEIGHT_RESOURCES).round(1);
-      category_results['resources']['max'] = (temp_resources['max'] * WEIGHT_RESOURCES).round(1);
-
-      var category_count = 0;
-      $.each(category_results, function (name, value) {
-        if (value['average'] != 0) {
-          category_count++;
-        }
-      });
-      var final_results = {};
-      final_results['average'] = ((temp_speed['average'] * WEIGHT_SPEED + temp_efficiency['average'] * WEIGHT_EFFICIENCY + temp_resources['average'] * WEIGHT_RESOURCES) / category_count).round(1);
-      final_results['min'] = ((temp_speed['min'] * WEIGHT_SPEED + temp_efficiency['min'] * WEIGHT_EFFICIENCY + temp_resources['min'] * WEIGHT_RESOURCES) / category_count).round(1);
-      final_results['max'] = ((temp_speed['max'] * WEIGHT_SPEED + temp_efficiency['max'] * WEIGHT_EFFICIENCY + temp_resources['max'] * WEIGHT_RESOURCES) / category_count).round(1);
-
-      data_overview.push({
-        name: test_name,
-        data: [{
-          x: 0,
-          y: final_results['average'],
-          min: final_results['min'],
-          max: final_results['max'],
-          robot: test_list[test_name]['robot'],
-          planer: test_list[test_name]['planer_id'],
-          planning_method: test_list[test_name]['planning_method'],
-          jump_threshold: test_list[test_name]['jump_threshold'],
-          eef_step: test_list[test_name]['eef_step']
-        }]
-      });
-      data_categories['speed'].push({
-        name: test_name,
-        data: [{
-          x: 0,
-          y: category_results['speed']['average'],
-          min: category_results['speed']['min'],
-          max: category_results['speed']['max'],
-          robot: test_list[test_name]['robot'],
-          planer: test_list[test_name]['planer_id'],
-          planning_method: test_list[test_name]['planning_method'],
-          jump_threshold: test_list[test_name]['jump_threshold'],
-          eef_step: test_list[test_name]['eef_step']
-        }]
-      });
-      data_categories['efficiency'].push({
-        name: test_name,
-        data: [{
-          x: 0,
-          y: category_results['efficiency']['average'],
-          min: category_results['efficiency']['min'],
-          max: category_results['efficiency']['max'],
-          robot: test_list[test_name]['robot'],
-          planer: test_list[test_name]['planer_id'],
-          planning_method: test_list[test_name]['planning_method'],
-          jump_threshold: test_list[test_name]['jump_threshold'],
-          eef_step: test_list[test_name]['eef_step']
-        }]
-      });
-      data_categories['resources'].push({
-        name: test_name,
-        data: [{
-          x: 0,
-          y: category_results['resources']['average'],
-          min: category_results['resources']['min'],
-          max: category_results['resources']['max'],
-          robot: test_list[test_name]['robot'],
-          planer: test_list[test_name]['planer_id'],
-          planning_method: test_list[test_name]['planning_method'],
-          jump_threshold: test_list[test_name]['jump_threshold'],
-          eef_step: test_list[test_name]['eef_step']
-        }]
-      });
-    });
-
-    this_class.chart_compare_overview = new Highcharts.Chart({
-      chart: {
-        renderTo: 'overview',
-        defaultSeriesType: 'column',
-        type: 'column',
-        zoomType: 'xy'
-      },
-      title: {
-        text: ''
-      },
-      xAxis: {
-        labels: {
-          enabled: false
-        },
-        minTickInterval: 0
-      },
-      yAxis: {
-        title: {
-          text: 'Percentage [%]'
-        }
-      },
-      tooltip: plot_tooltip,
-      series: data_overview,
-      plotOptions: {
-        column: {
-          pointPadding: 0,
-          groupPadding: 0,
-          borderWidth: 0
-        }
-      }
-    });
-    this_class.chart_compare_category_speed = new Highcharts.Chart({
-      chart: {
-        renderTo: 'speed',
-        defaultSeriesType: 'column',
-        type: 'column',
-        zoomType: 'xy'
-      },
-      title: {
-        text: ''
-      },
-      yAxis: {
-        title: {
-          text: 'Percentage [%]'
-        }
-      },
-      xAxis: {
-        labels: {
-          enabled: false
-        },
-        minTickInterval: 0
-      },
-      tooltip: plot_tooltip,
-      series: data_categories['speed'],
-      plotOptions: {
-        column: {
-          pointPadding: 0,
-          groupPadding: 0,
-          borderWidth: 0
-        }
-      }
-    });
-    this_class.chart_compare_category_efficiency = new Highcharts.Chart({
-      chart: {
-        renderTo: 'efficiency',
-        defaultSeriesType: 'column',
-        type: 'column',
-        zoomType: 'xy'
-      },
-      title: {
-        text: ''
-      },
-      yAxis: {
-        title: {
-          text: 'Percentage [%]'
-        }
-      },
-      xAxis: {
-        labels: {
-          enabled: false
-        },
-        minTickInterval: 0
-      },
-      tooltip: plot_tooltip,
-      series: data_categories['efficiency'],
-      plotOptions: {
-        column: {
-          pointPadding: 0,
-          groupPadding: 0,
-          borderWidth: 0
-        }
-      }
-    });
-    this_class.chart_compare_category_resources = new Highcharts.Chart({
-      chart: {
-        renderTo: 'resources',
-        defaultSeriesType: 'column',
-        type: 'column',
-        zoomType: 'xy'
-      },
-      title: {
-        text: ''
-      },
-      yAxis: {
-        title: {
-          text: 'Percentage [%]'
-        }
-      },
-      xAxis: {
-        labels: {
-          enabled: false
-        },
-        minTickInterval: 0
-      },
-      tooltip: plot_tooltip,
-      series: data_categories['resources'],
-      plotOptions: {
-        column: {
-          pointPadding: 0,
-          groupPadding: 0,
-          borderWidth: 0
-        }
-      }
-    });
-    this_class.getBestTests();
+    //this.getBestTests();
   },
   changeWeight: function (category, weight) {
     var final_results = {
@@ -643,5 +187,255 @@ var TestComparison = {
     efficiency.append(results['efficiency']['name']);
     resources.append(results['resources']['name']);
     total.append(results['total']['name']);
+  },
+  computePoints: function (test_list, files) {
+    var this_class = this;
+    var results = {};
+    var max_values = this.getMaximum(files);
+
+    $.each(this.categories, function (index, category_name) {
+      results[category_name] = {
+        min: [],
+        max: [],
+        average: []
+      };
+    });
+
+    // Iterate through selected tests
+    $.each(files, function (index, test_name) {
+      var test_results = FileStorage.readData(test_name);
+
+      var temp_testblock = {};
+      var temp_metrics = {};
+      var count_resource_categories = 0;
+
+      $.each(TestList.metrics, function (metric_name, metric_data) {
+        if (!temp_metrics.hasOwnProperty(metric_name)) {
+          temp_metrics[metric_name] = {
+            min: 0,
+            max: 0,
+            average: 0
+          };
+        }
+        if (metric_data.length === 0) {
+          temp_testblock[metric_name] = {
+            length: 0,
+            min: 0,
+            max: 0,
+            average: 0,
+            total: max_values[metric_name]
+          };
+        } else {
+          temp_testblock[metric_name] = {};
+          $.each(metric_data, function (index, sub_metric_name) {
+            temp_testblock[metric_name][sub_metric_name] = {
+              length: 0,
+              min: 0,
+              max: 0,
+              average: 0,
+              total: max_values[sub_metric_name]
+            };
+          });
+        }
+      });
+
+      // Iterate through all testblocks
+      $.each(test_results, function (testblock_name, testblock_data) {
+        $.each(testblock_data, function (level_2, level_2_data) {
+          if (level_2_data.hasOwnProperty('max')) {
+            // Time
+            if (temp_testblock[level_2]['total'] != 0) {
+              temp_testblock[level_2]['average'] += (temp_testblock[level_2]['total'] - level_2_data['average']) / temp_testblock[level_2]['total'];
+              temp_testblock[level_2]['min'] += (temp_testblock[level_2]['total'] - level_2_data['min']) / temp_testblock[level_2]['total'];
+              temp_testblock[level_2]['max'] += (temp_testblock[level_2]['total'] - level_2_data['max']) / temp_testblock[level_2]['total'];
+            }
+            temp_testblock[level_2]['length']++;
+          } else {
+            $.each(level_2_data, function (level_3, level_3_data) {
+              if (level_3_data.hasOwnProperty('max')) {
+                // Path length & obstacle distance
+                if (temp_testblock[level_2]['total'] != 0) {
+                  if (level_2 === 'obstacle_distance') {
+                    temp_testblock[level_2]['average'] += level_3_data['average'] / temp_testblock[level_2]['total'];
+                    temp_testblock[level_2]['min'] += level_3_data['min'] / temp_testblock[level_2]['total'];
+                    temp_testblock[level_2]['max'] += level_3_data['max'] / temp_testblock[level_2]['total'];
+                  } else {
+                    temp_testblock[level_2]['average'] += (temp_testblock[level_2]['total'] - level_3_data['average']) / temp_testblock[level_2]['total'];
+                    temp_testblock[level_2]['min'] += (temp_testblock[level_2]['total'] - level_3_data['min']) / temp_testblock[level_2]['total'];
+                    temp_testblock[level_2]['max'] += (temp_testblock[level_2]['total'] - level_3_data['max']) / temp_testblock[level_2]['total'];
+                  }
+                }
+                temp_testblock[level_2]['length']++;
+              } else {
+                $.each(level_3_data, function (level_4, level_4_data) {
+                  // Resources
+                  if (typeof level_4_data['max'][0] === 'undefined') {
+                    // CPU & Mem
+                    if (temp_testblock['resources'][level_4]['total'] != 0) {
+                      temp_testblock['resources'][level_4]['average'] += (temp_testblock['resources'][level_4]['total'] - level_4_data['average']) / temp_testblock['resources'][level_4]['total'];
+                      temp_testblock['resources'][level_4]['min'] += (temp_testblock['resources'][level_4]['total'] - level_4_data['min']) / temp_testblock['resources'][level_4]['total'];
+                      temp_testblock['resources'][level_4]['max'] += (temp_testblock['resources'][level_4]['total'] - level_4_data['max']) / temp_testblock['resources'][level_4]['total'];
+                    }
+                    temp_testblock['resources'][level_4]['length']++;
+                  } else {
+                    // IO & Network
+                    for (var x = 0; x < level_4_data.length; x++) {
+                      if (temp_testblock['resources'][level_4]['total'][x] != 0) {
+                        temp_testblock['resources'][level_4]['average'] += (temp_testblock['resources'][level_4]['total'][x] - level_4_data['average'][x]) / temp_testblock['resources'][level_4]['total'][x];
+                        temp_testblock['resources'][level_4]['min'] += (temp_testblock['resources'][level_4]['total'][x] - level_4_data['min'][x]) / temp_testblock['resources'][level_4]['total'][x];
+                        temp_testblock['resources'][level_4]['max'] += (temp_testblock['resources'][level_4]['total'][x] - level_4_data['max'][x]) / temp_testblock['resources'][level_4]['total'][x];
+                      }
+                      temp_testblock['resources'][level_4]['length']++;
+                    }
+                  }
+                });
+              }
+            });
+          }
+        });
+      });
+      //TODO: Remove real metric names
+      $.each(temp_testblock, function (metric, metric_data) {
+        if (metric === 'resources') {
+          $.each(metric_data, function (res_name, res_data) {
+            // Resources
+            if (res_data['length'] != 0) {
+              temp_metrics[metric]['average'] += res_data['average'] / res_data['length'];
+              temp_metrics[metric]['min'] += res_data['min'] / res_data['length'];
+              temp_metrics[metric]['max'] += res_data['max'] / res_data['length'];
+              count_resource_categories++;
+            }
+          });
+        } else {
+          // Time & Path length & Obstacle distance
+          if (metric_data['length'] != 0) {
+            temp_metrics[metric]['average'] = metric_data['average'] / metric_data['length'];
+            temp_metrics[metric]['min'] = metric_data['min'] / metric_data['length'];
+            temp_metrics[metric]['max'] = metric_data['max'] / metric_data['length'];
+          }
+        }
+      });
+
+      results['resources']['average'].push(temp_metrics['resources']['average'] / count_resource_categories * this_class.weightResources);
+      results['resources']['min'].push(temp_metrics['resources']['min'] / count_resource_categories * this_class.weightResources);
+      results['resources']['max'].push(temp_metrics['resources']['max'] / count_resource_categories * this_class.weightResources);
+
+      results['speed']['average'].push(temp_metrics['time']['average'] * this_class.weightSpeed);
+      results['speed']['min'].push(temp_metrics['time']['min'] * this_class.weightSpeed);
+      results['speed']['max'].push(temp_metrics['time']['max'] * this_class.weightSpeed);
+
+      if (temp_metrics['path_length']['average'] != 0 && temp_metrics['obstacle_distance']['average'] != 0) {
+        results['efficiency']['average'].push(((temp_metrics['path_length']['average'] + temp_metrics['obstacle_distance']['average']) / 2) * this_class.weightEfficiency);
+        results['efficiency']['min'].push(((temp_metrics['path_length']['min'] + temp_metrics['obstacle_distance']['min']) / 2) * this_class.weightEfficiency);
+        results['efficiency']['max'].push(((temp_metrics['path_length']['max'] + temp_metrics['obstacle_distance']['max']) / 2) * this_class.weightEfficiency);
+      } else {
+        results['efficiency']['average'].push((temp_metrics['path_length']['average'] + temp_metrics['obstacle_distance']['average']) * this_class.weightEfficiency);
+        results['efficiency']['min'].push((temp_metrics['path_length']['min'] + temp_metrics['obstacle_distance']['min']) * this_class.weightEfficiency);
+        results['efficiency']['max'].push((temp_metrics['path_length']['max'] + temp_metrics['obstacle_distance']['max']) * this_class.weightEfficiency);
+      }
+
+      var category_count = 0;
+      $.each(results, function (name, value) {
+        if (value['average'] != 0 && name != 'total') {
+          category_count++;
+        }
+      });
+
+      results['total']['average'].push((results['speed']['average'][results['speed']['average'].length - 1] +
+        results['efficiency']['average'][results['efficiency']['average'].length - 1] +
+        results['resources']['average'][results['resources']['average'].length - 1]) / category_count);
+      results['total']['min'].push((results['speed']['min'][results['speed']['min'].length - 1] +
+        results['efficiency']['min'][results['efficiency']['min'].length - 1] +
+        results['resources']['min'][results['resources']['min'].length - 1]) / category_count);
+      results['total']['max'].push((results['speed']['max'][results['speed']['max'].length - 1] +
+        results['efficiency']['max'][results['efficiency']['max'].length - 1] +
+        results['resources']['max'][results['resources']['max'].length - 1]) / category_count);
+
+      //Save chart data
+      $.each(results, function (category, data) {
+        if (!this_class.charts['data'].hasOwnProperty(category)) {
+          this_class.charts['data'][category] = [];
+        }
+        this_class.charts['data'][category].push({
+          name: test_name,
+          data: [{
+            x: 0,
+            y: results[category]['average'][results[category]['average'].length - 1].round(1),
+            min: results[category]['min'][results[category]['min'].length - 1].round(1),
+            max: results[category]['max'][results[category]['max'].length - 1].round(1),
+            robot: test_list[test_name]['robot'],
+            planer: test_list[test_name]['planer_id'],
+            planning_method: test_list[test_name]['planning_method'],
+            jump_threshold: test_list[test_name]['jump_threshold'],
+            eef_step: test_list[test_name]['eef_step']
+          }]
+        });
+      });
+
+    });
+    return results;
+  },
+  createCharts: function (plot_tooltip) {
+    var charts = {};
+    var category_div = $('#categories_tab');
+    var category_tabs = category_div.find('.nav-tabs');
+    var category_tabs_content = category_div.find('.tab-content');
+    category_tabs.empty();
+    category_tabs_content.empty();
+    var active = true;
+    var class_active = '';
+
+    $.each(this.charts['data'], function (category, data) {
+      if (!charts.hasOwnProperty('ids')) {
+        charts['ids'] = [];
+      }
+      if (category != 'total') {
+        if (active) {
+          class_active = 'active';
+          active = false;
+        } else {
+          class_active = '';
+        }
+        //TODO: Capitalize first letter of category
+        //TODO: Add weight buttons & result overview div
+        category_tabs.append('<li role="presentation" class="' + class_active + '"><a href="#' + category + '_tab"' +
+          'aria-controls="' + category + '_tab" role="tab" data-toggle="tab">' + category + '</a></li>');
+        category_tabs_content.append('<div role="tabpanel" class="tab-pane ' + class_active + '" id="' + category + '_tab">' +
+          '<div id="' + category + '" class="plot"></div></div>');
+      }
+
+      charts['ids'].push(new Highcharts.Chart({
+        chart: {
+          renderTo: category,
+          defaultSeriesType: 'column',
+          type: 'column',
+          zoomType: 'xy'
+        },
+        title: {
+          text: ''
+        },
+        xAxis: {
+          labels: {
+            enabled: false
+          },
+          minTickInterval: 0
+        },
+        yAxis: {
+          title: {
+            text: 'Percentage [%]'
+          }
+        },
+        tooltip: plot_tooltip,
+        series: data,
+        plotOptions: {
+          column: {
+            pointPadding: 0,
+            groupPadding: 0,
+            borderWidth: 0
+          }
+        }
+      }));
+    });
+    return charts;
   }
 };

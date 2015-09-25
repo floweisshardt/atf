@@ -18,6 +18,7 @@ $(document).ready(function () {
 
   // Load test list from storage (if available)
   if (FileStorage.readData('test_list')) {
+    TestList.metrics = FileStorage.readData('metrics');
     TestList.show();
   }
 });

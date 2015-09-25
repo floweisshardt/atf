@@ -1,5 +1,6 @@
 var TestList = {
   name: 'test_list',
+  metrics: {},
   convert: function (data) {
     var new_test_list = {};
     $.each(data, function (index, values) {
@@ -91,6 +92,7 @@ var TestList = {
   summarize: function () {
     var test_list = FileStorage.readData(this.name);
     var this_class = this;
+    var metrics = {};
 
     $.each(test_list, function (test_name, test_config) {
       var test_data_complete = {};
@@ -135,6 +137,10 @@ var TestList = {
             if (!(level_2 in test_data_complete[level_1])) {
               test_data_complete[level_1][level_2] = {};
             }
+
+            // Get metrics
+            if(!metrics.hasOwnProperty(level_2)) metrics[level_2] = [];
+
             if (level_2_data instanceof Object) {
               $.each(level_2_data, function (level_3, level_3_data) {
                 if (!(level_3 in test_data_complete[level_1][level_2])) {
@@ -144,7 +150,7 @@ var TestList = {
                 if (level_3_data instanceof Object) {
                   // Resourcen
                   $.each(level_3_data, function (level_4, level_4_data) {
-
+                    if(metrics[level_2].indexOf(level_4) === -1) metrics[level_2].push(level_4);
                     if (!(level_4 in test_data_complete[level_1][level_2][level_3])) {
                       test_data_complete[level_1][level_2][level_3][level_4] = {};
                       test_data_complete[level_1][level_2][level_3][level_4]['max'] = [];
@@ -268,6 +274,10 @@ var TestList = {
         FileStorage.writeData(test_name, test_data_complete);
       }
     });
+
+    FileStorage.removeData('metrics');
+    FileStorage.writeData('metrics', metrics);
+    this.metrics = metrics;
   },
   checkForErrors: function (file) {
     var error = '';
