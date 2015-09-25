@@ -17,24 +17,38 @@ from copy import deepcopy, copy
 
 class GenerateTests:
     def __init__(self):
+        self.print_output = "Generation done!"
+
         generation_config = self.load_yaml(rospkg.RosPack().get_path("atf_core") +
                                            "/config/test_generation_config.yaml")
+        try:
+            self.test_suite_file = self.get_path(generation_config["test_suite_file"])
+            self.test_config_file = self.get_path(generation_config["test_config_file"])
+            self.bagfile_output = self.get_path(generation_config["bagfile_output"])
+            self.robot_config_path = self.get_path(generation_config["robot_config_path"])
+            self.test_application_path = self.get_path(generation_config["test_application_path"])
+            self.move_group_launch = self.get_path(generation_config["move_group_launch"])
 
-        self.test_suite_file = self.get_path(generation_config["test_suite_file"])
-        self.test_config_file = self.get_path(generation_config["test_config_file"])
-        self.bagfile_output = self.get_path(generation_config["bagfile_output"])
-        self.robot_config_path = self.get_path(generation_config["robot_config_path"])
-        self.test_application_path = self.get_path(generation_config["test_application_path"])
-        self.move_group_launch = self.get_path(generation_config["move_group_launch"])
+            if generation_config["result_yaml_output"] != "":
+                self.yaml_output = self.get_path(generation_config["result_yaml_output"])
+            else:
+                self.yaml_output = generation_config["result_yaml_output"]
 
-        if generation_config["result_yaml_output"] != "":
-            self.yaml_output = self.get_path(generation_config["result_yaml_output"])
-        else:
-            self.yaml_output = generation_config["result_yaml_output"]
+            self.json_output = self.get_path(generation_config["result_json_output"])
+            self.time_limit = generation_config["time_limit"]
+            self.test_repetitions = generation_config["test_repetitions"]
+        except KeyError:
+            self.test_suite_file = ""
+            self.test_config_file = ""
+            self.bagfile_output = ""
+            self.robot_config_path = ""
+            self.test_application_path = ""
+            self.move_group_launch = ""
+            self.yaml_output = ""
+            self.json_output = ""
+            self.time_limit = 0
+            self.test_repetitions = 0
 
-        self.json_output = self.get_path(generation_config["result_json_output"])
-        self.time_limit = generation_config["time_limit"]
-        self.test_repetitions = generation_config["test_repetitions"]
         self.test_list = {}
 
         # Empty folders
@@ -126,7 +140,7 @@ class GenerateTests:
             with open(rospkg.RosPack().get_path("atf_core") + "/test/generated/analysing/" + item + ".test", "w") as f:
                 f.write(xmlstr)
 
-        print "Generation done!"
+        print self.print_output
 
     def generate_test_list(self):
         test_list_org = {}
@@ -156,8 +170,12 @@ class GenerateTests:
             stream = file(self.yaml_output + "/test_list.yaml", 'w')
             yaml.dump(deepcopy(self.list_to_array(test_list_org)), stream)
 
-        stream = file(self.json_output + "/test_list.json", 'w')
-        json.dump(self.list_to_array(test_list_org), stream)
+        if self.json_output != "":
+            stream = file(self.json_output + "/test_list.json", 'w')
+            json.dump(self.list_to_array(test_list_org), stream)
+        else:
+            print "Error: Output directory for .json files must be specified!"
+            self.print_output = "Generation failed!"
 
     def list_to_array(self, org_list):
         temp_list = self.natural_sort(copy(org_list))
@@ -175,10 +193,15 @@ class GenerateTests:
     def natural_sort_key(s, _nsre=re.compile('([0-9]+)')):
         return [int(text) if text.isdigit() else text.lower() for text in re.split(_nsre, s)]
 
-    @staticmethod
-    def load_yaml(filename):
-        with open(filename, 'r') as stream:
-            return yaml.load(stream)
+    def load_yaml(self, filename):
+        try:
+            with open(filename, 'r') as stream:
+                return yaml.load(stream)
+        except IOError:
+            if filename != "":
+                print "Error: File '" + filename + "' not found!"
+            self.print_output = "Generation failed!"
+            return {}
 
     @staticmethod
     def remove_pkgname(text, pkgname):
