@@ -16,9 +16,9 @@ var results = {
   }
 };
 
-function round(number, decimals) {
-  return +(Math.round(number + 'e+' + decimals) + 'e-' + decimals);
-}
+Number.prototype.round = function(places) {
+  return +(Math.round(this + 'e+' + places)  + 'e-' + places);
+};
 
 function convertTestList(test_list) {
   var new_test_list = {};
@@ -41,24 +41,27 @@ function summarizeTests() {
   $.each(test_list, function (test_name, test_config) {
     var test_data_complete = {};
     var errors = {
-      planning: 0,
+      planning: {},
       error: 0
     };
     $.each(test_config['subtests'], function(index, subtest_name) {
       var test_data = getDataFromStorage(subtest_name);
 
-      var error = checkforError(test_data);
-      if (error[0] === 'planning') {
-        errors['planning'] += 1;
-        return true;
-      } else if (error[0] === 'error') {
-        errors['error'] += 1;
-        return true;
-      }
-
       $.each(test_data, function (testblock_name, testblock) {
-        if (!(testblock_name in test_data_complete)) {
+        if (!(testblock_name in test_data_complete) && testblock_name != 'error') {
           test_data_complete[testblock_name] = {};
+        }
+
+        var error = checkforError(test_data);
+        if (error[0] === 'planning') {
+          if (!errors['planning'].hasOwnProperty(testblock_name)) {
+            errors['planning'][testblock_name] = 0;
+          }
+          errors['planning'][testblock_name] += 1;
+          return true;
+        } else if (error[0] === 'error') {
+          errors['error'] += 1;
+          return true;
         }
 
         $.each(testblock, function (metric_name, metric_data) {
@@ -192,12 +195,21 @@ function summarizeTests() {
     });
 
     // Check for errors
-    if (errors['planning'] === test_config['subtests'].length || (errors['error'] + errors['planning']) === test_config['subtests'].length) {
-      test_data_complete["status"] = "error";
-    } else if (errors['error'] === test_config['subtests'].length) {
-      test_data_complete["error"] = "An error occured outside monitored testblocks. Aborted analysis...";
+    $.each(errors['planning'], function (testblock_name, errors) {
+      if (errors === test_config['subtests'].length) {
+        console.log(test_name, testblock_name, 'planning');
+        test_data_complete[testblock_name]['status'] = 'error';
+        return false;
+      } else if ((errors['error'] + errors['planning']) === test_config['subtests'].length) {
+        console.log(test_name, 'both');
+        test_data_complete[testblock_name]['status'] = 'error';
+      }
+    });
+    if (errors['error'] === test_config['subtests'].length) {
+      console.log(test_name, 'error');
+      test_data_complete = {};
+      test_data_complete['error'] = 'An error occured outside monitored testblocks. Aborted analysis...';
     }
-
     removeDataFromStorage(test_name);
     writeDataToStorage(test_name, test_data_complete);
   });
@@ -507,6 +519,7 @@ function drawTestDetails(test_name) {
     if (testblock_data.hasOwnProperty('status') && testblock_data['status'] === 'error') {
       status_div.append('<div class="alert alert-danger" role="alert">Planning error in testblock "' + testblock_name + '"!</div>');
       error = true;
+      return false;
     } else if (testblock_name === 'error') {
       status_div.append('<div class="alert alert-danger" role="alert">An error occured outside monitored testblocks. Evaluation could not be finished!</div>');
       error = true;
@@ -541,9 +554,9 @@ function drawTestDetails(test_name) {
           name: testblock_name,
           data: [{
             x: 0,
-            y: round(level_2_data['average'], 3),
-            min: round(level_2_data['min'], 3),
-            max: round(level_2_data['max'], 3)
+            y: level_2_data['average'].round(3),
+            min: level_2_data['min'].round(3),
+            max: level_2_data['max'].round(3)
           }]
         });
       } else {
@@ -554,9 +567,9 @@ function drawTestDetails(test_name) {
               name: level_3,
               data: [{
                 x: 0,
-                y: round(level_3_data['average'], 3),
-                min: round(level_3_data['min'], 3),
-                max: round(level_3_data['max'], 3)
+                y: level_3_data['average'].round(3),
+                min: level_3_data['min'].round(3),
+                max: level_3_data['max'].round(3)
               }]
             });
           } else {
@@ -568,9 +581,9 @@ function drawTestDetails(test_name) {
                   name: level_3,
                   data: [{
                     x: 0,
-                    y: round(level_4_data['average'], 0),
-                    min: round(level_4_data['min'], 0),
-                    max: round(level_4_data['max'], 0)
+                    y: level_4_data['average'].round(0),
+                    min: level_4_data['min'].round(0),
+                    max: level_4_data['max'].round(0)
                   }]
                 });
               } else {
@@ -579,19 +592,19 @@ function drawTestDetails(test_name) {
                 // IO & Network
                 for (var i = 0; i < level_4_data['min'].length; i++) {
                   if (level_4 === 'io' && i > 1) {
-                    level_4_data['average'][i] = round(level_4_data['average'][i] / 1000, 0);
-                    level_4_data['min'][i] = round(level_4_data['min'][i] / 1000, 0);
-                    level_4_data['max'][i] = round(level_4_data['max'][i] / 1000, 0);
+                    level_4_data['average'][i] = (level_4_data['average'][i] / 1000).round(0);
+                    level_4_data['min'][i] = (level_4_data['min'][i] / 1000).round(0);
+                    level_4_data['max'][i] = (level_4_data['max'][i] / 1000).round(0);
                   } else if (level_4 === 'network' && i < 2) {
-                    level_4_data['average'][i] = round(level_4_data['average'][i] / 1000, 0);
-                    level_4_data['min'][i] = round(level_4_data['min'][i] / 1000, 0);
-                    level_4_data['max'][i] = round(level_4_data['max'][i] / 1000, 0);
+                    level_4_data['average'][i] = (level_4_data['average'][i] / 1000).round(0);
+                    level_4_data['min'][i] = (level_4_data['min'][i] / 1000).round(0);
+                    level_4_data['max'][i] = (level_4_data['max'][i] / 1000).round(0);
                   }
                   data.push({
                     x: i,
-                    y: round(level_4_data['average'][i], 0),
-                    min: round(level_4_data['min'][i], 0),
-                    max: round(level_4_data['max'][i], 0)
+                    y: level_4_data['average'][i].round(0),
+                    min: level_4_data['min'][i].round(0),
+                    max: level_4_data['max'][i].round(0)
                   });
                 }
                 test_data[level_4].push({

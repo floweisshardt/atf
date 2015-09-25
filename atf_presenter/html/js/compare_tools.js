@@ -332,17 +332,17 @@ function compareTests(tests) {
     results['resources']['min'].push(temp_resources['min'] * WEIGHT_RESOURCES);
     results['resources']['max'].push(temp_resources['max'] * WEIGHT_RESOURCES);
 
-    category_results['speed']['average'] = round(temp_speed['average'] * WEIGHT_SPEED, 1);
-    category_results['speed']['min'] = round(temp_speed['min'] * WEIGHT_SPEED, 1);
-    category_results['speed']['max'] = round(temp_speed['max'] * WEIGHT_SPEED, 1);
+    category_results['speed']['average'] = (temp_speed['average'] * WEIGHT_SPEED).round(1);
+    category_results['speed']['min'] = (temp_speed['min'] * WEIGHT_SPEED).round(1);
+    category_results['speed']['max'] = (temp_speed['max'] * WEIGHT_SPEED).round(1);
 
-    category_results['efficiency']['average'] = round(temp_efficiency['average'] * WEIGHT_EFFICIENCY, 1);
-    category_results['efficiency']['min'] = round(temp_efficiency['min'] * WEIGHT_EFFICIENCY, 1);
-    category_results['efficiency']['max'] = round(temp_efficiency['max'] * WEIGHT_EFFICIENCY, 1);
+    category_results['efficiency']['average'] = (temp_efficiency['average'] * WEIGHT_EFFICIENCY).round(1);
+    category_results['efficiency']['min'] = (temp_efficiency['min'] * WEIGHT_EFFICIENCY).round(1);
+    category_results['efficiency']['max'] = (temp_efficiency['max'] * WEIGHT_EFFICIENCY).round(1);
 
-    category_results['resources']['average'] = round(temp_resources['average'] * WEIGHT_RESOURCES, 1);
-    category_results['resources']['min'] = round(temp_resources['min'] * WEIGHT_RESOURCES, 1);
-    category_results['resources']['max'] = round(temp_resources['max'] * WEIGHT_RESOURCES, 1);
+    category_results['resources']['average'] = (temp_resources['average'] * WEIGHT_RESOURCES).round(1);
+    category_results['resources']['min'] = (temp_resources['min'] * WEIGHT_RESOURCES).round(1);
+    category_results['resources']['max'] = (temp_resources['max'] * WEIGHT_RESOURCES).round(1);
 
     var category_count = 0;
     $.each(category_results, function (name, value) {
@@ -351,9 +351,9 @@ function compareTests(tests) {
       }
     });
     var final_results = {};
-    final_results['average'] = round((temp_speed['average'] * WEIGHT_SPEED + temp_efficiency['average'] * WEIGHT_EFFICIENCY + temp_resources['average'] * WEIGHT_RESOURCES) / category_count, 1);
-    final_results['min'] = round((temp_speed['min'] * WEIGHT_SPEED + temp_efficiency['min'] * WEIGHT_EFFICIENCY + temp_resources['min'] * WEIGHT_RESOURCES) / category_count, 1);
-    final_results['max'] = round((temp_speed['max'] * WEIGHT_SPEED + temp_efficiency['max'] * WEIGHT_EFFICIENCY + temp_resources['max'] * WEIGHT_RESOURCES) / category_count, 1);
+    final_results['average'] = ((temp_speed['average'] * WEIGHT_SPEED + temp_efficiency['average'] * WEIGHT_EFFICIENCY + temp_resources['average'] * WEIGHT_RESOURCES) / category_count).round(1);
+    final_results['min'] = ((temp_speed['min'] * WEIGHT_SPEED + temp_efficiency['min'] * WEIGHT_EFFICIENCY + temp_resources['min'] * WEIGHT_RESOURCES) / category_count).round(1);
+    final_results['max'] = ((temp_speed['max'] * WEIGHT_SPEED + temp_efficiency['max'] * WEIGHT_EFFICIENCY + temp_resources['max'] * WEIGHT_RESOURCES) / category_count).round(1);
 
     data_overview.push({
       name: test_name,
@@ -550,9 +550,9 @@ function changeWeight(category, weight) {
     results_temp[category]['average'][i] *= weight;
     results_temp[category]['min'][i] *= weight;
     results_temp[category]['max'][i] *= weight;
-    chart_compare_category_speed.series[i].setData([round(results_temp['speed']['average'][i], 1)]);
-    chart_compare_category_efficiency.series[i].setData([round(results_temp['efficiency']['average'][i], 1)]);
-    chart_compare_category_resources.series[i].setData([round(results_temp['resources']['average'][i], 1)]);
+    chart_compare_category_speed.series[i].setData([(results_temp['speed']['average'][i]).round(1)]);
+    chart_compare_category_efficiency.series[i].setData([(results_temp['efficiency']['average'][i]).round(1)]);
+    chart_compare_category_resources.series[i].setData([(results_temp['resources']['average'][i]).round(1)]);
 
     var category_count = 0;
     $.each(results_temp, function (name, value) {
@@ -561,7 +561,7 @@ function changeWeight(category, weight) {
       }
     });
 
-    final_results['average'].push(round((results_temp['speed']['average'][i] + results_temp['efficiency']['average'][i] + results_temp['resources']['average'][i]) / category_count, 1));
+    final_results['average'].push(((results_temp['speed']['average'][i] + results_temp['efficiency']['average'][i] + results_temp['resources']['average'][i]) / category_count).round(1));
     chart_compare_overview.series[i].setData([final_results['average'][i]]);
   }
   showBestTest();
