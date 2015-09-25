@@ -17,74 +17,14 @@ $(document).ready(function () {
   compare_test_option.find('.selectpicker').prop('disabled', true).selectpicker('refresh);');
 
   // Load test list from storage (if available)
-  FileStorage.name = 'test_list';
-  if (FileStorage.readData()) {
-    showTestList();
+  if (FileStorage.readData('test_list')) {
+    TestList.show();
   }
 });
 
-function handleFileSelect(evt) {
-  FileStorage.clear();
-
-  var files = evt.target.files; // FileList object
-  var file_list = {};
-  var progressbar = $('#file_upload_progressbar');
-  var files_read = 0;
-
-  progressbar.empty();
-  progressbar.css('width', '0%').attr('aria-valuenow', '0%');
-  progressbar.append('0%');
-
-  // Loop through the FileList
-  for (var i = 0, f; f = files[i]; i++) {
-
-    // Only process json files.
-    if (f.name.indexOf('.json') === -1) {
-      continue;
-    }
-
-    var reader = new FileReader();
-
-    reader.onload = (function (file) {
-      return function (e) {
-        files_read++;
-        var percentLoaded = Math.round((files_read / files.length) * 100);
-
-        file_list[file.name] = JSON.parse(e.target.result);
-
-        progressbar.empty();
-        progressbar.css('width', percentLoaded + '%').attr('aria-valuenow', percentLoaded);
-        progressbar.append(percentLoaded + '%');
-
-        if (file.name.indexOf('test_list') != -1) {
-          file_list[file.name] = convertTestList(file_list[file.name]);
-        }
-        FileStorage.name = file.name.split('.')[0];
-        FileStorage.data = file_list[file.name];
-        if (!FileStorage.writeData()) {
-          console.log('Writing to storage failed!');
-        } else {
-          console.log('Request succeeded');
-        }
-
-        if (Object.keys(file_list).length === files.length) {
-          if (!(file_list.hasOwnProperty('test_list.json'))) {
-            bootbox.alert('You have to select the test_list.json file!');
-          } else {
-            summarizeTests();
-            showTestList();
-          }
-        }
-      };
-    })(f);
-    reader.readAsText(f);
-  }
-}
-
 $('#test_list').on('click', '.btn', function (e) {
   e.preventDefault();
-  var name = $(this).attr('data-name');
-  drawTestDetails(name);
+  TestList.showDetails($(this).attr('data-name'));
 });
 
 $('.nav-tabs').on('click', 'a', function (e) {
@@ -140,7 +80,7 @@ $('#compare_tests').find('#weight_control').on('click', '.weight_control_button'
         weight_input = $(this).parent().parent().find('.weight_control_value');
         weight_factor = 1 / weight_input.val();
         weight_input.prop('disabled', false);
-        changeWeight(weight_category, weight_factor);
+        TestComparison.changeWeight(weight_category, weight_factor);
       });
     }
     $(this).addClass('active');
@@ -148,7 +88,7 @@ $('#compare_tests').find('#weight_control').on('click', '.weight_control_button'
     weight_input = $(this).parent().parent().find('.weight_control_value');
     weight_factor = weight_input.val();
     weight_input.prop('disabled', true);
-    changeWeight(weight_category, weight_factor);
+    TestComparison.changeWeight(weight_category, weight_factor);
   } else {
     $(this).removeClass('active');
     weight_category = $(this).val();
@@ -160,7 +100,7 @@ $('#compare_tests').find('#weight_control').on('click', '.weight_control_button'
       weight_factor = 1 / weight_input.val();
     }
     weight_input.prop('disabled', false);
-    changeWeight(weight_category, weight_factor);
+    TestComparison.changeWeight(weight_category, weight_factor);
   }
 });
 
@@ -194,7 +134,7 @@ $(document).on('click', '#button_compare', function () {
   $(this).prop('disabled', true);
   compare_test_option_select_test.val('').selectpicker('refresh');
   compare_test_option_select_scene.val('').prop('disabled', true).selectpicker('refresh');
-  compareTests(tests);
+  TestComparison.compare(tests);
 });
 
 $('#compare_test_option')
