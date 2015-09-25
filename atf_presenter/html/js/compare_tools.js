@@ -14,7 +14,8 @@ function searchForMaximum(tests) {
     obstacle_distance: 0
   };
   $.each(tests, function (index, test_name) {
-    var test_results = getDataFromStorage(test_name);
+    FileStorage.name = test_name;
+    var test_results = FileStorage.readData();
 
     $.each(test_results, function (testblock_name, testblock_data) {
       $.each(testblock_data, function (level_2, level_2_data) {
@@ -60,7 +61,8 @@ function compareTests(tests) {
   var compare_tests = $('#compare_tests');
   var configuration_div = compare_tests.find('#compare_configuration');
 
-  var test_list = getDataFromStorage('test_list');
+  FileStorage.name = 'test_list';
+  var test_list = FileStorage.readData();
 
   var data_overview = [];
   var data_categories = {
@@ -143,7 +145,8 @@ function compareTests(tests) {
       }
     };
 
-    var test_results = getDataFromStorage(test_name);
+    FileStorage.name = test_name;
+    var test_results = FileStorage.readData();
     var temp_testblock = {
       time: {
         length: 0,

@@ -36,7 +36,8 @@ function showTestList() {
 }
 
 function summarizeTests() {
-  var test_list = getDataFromStorage('test_list');
+  FileStorage.name = 'test_list';
+  var test_list = FileStorage.readData();
 
   $.each(test_list, function (test_name, test_config) {
     var test_data_complete = {};
@@ -45,7 +46,8 @@ function summarizeTests() {
       error: 0
     };
     $.each(test_config['subtests'], function(index, subtest_name) {
-      var test_data = getDataFromStorage(subtest_name);
+      FileStorage.name = subtest_name;
+      var test_data = FileStorage.readData();
 
       $.each(test_data, function (testblock_name, testblock) {
         if (!(testblock_name in test_data_complete) && testblock_name != 'error') {
@@ -133,7 +135,8 @@ function summarizeTests() {
           }
         });
       });
-      removeDataFromStorage(subtest_name);
+      FileStorage.name = subtest_name;
+      FileStorage.removeData();
     });
     /*
     Level 1: Testblock name
@@ -197,26 +200,26 @@ function summarizeTests() {
     // Check for errors
     $.each(errors['planning'], function (testblock_name, errors) {
       if (errors === test_config['subtests'].length) {
-        console.log(test_name, testblock_name, 'planning');
         test_data_complete[testblock_name]['status'] = 'error';
         return false;
       } else if ((errors['error'] + errors['planning']) === test_config['subtests'].length) {
-        console.log(test_name, 'both');
         test_data_complete[testblock_name]['status'] = 'error';
       }
     });
     if (errors['error'] === test_config['subtests'].length) {
-      console.log(test_name, 'error');
       test_data_complete = {};
       test_data_complete['error'] = 'An error occured outside monitored testblocks. Aborted analysis...';
     }
-    removeDataFromStorage(test_name);
-    writeDataToStorage(test_name, test_data_complete);
+    FileStorage.name = test_name;
+    FileStorage.data = test_data_complete;
+    FileStorage.removeData();
+    FileStorage.writeData();
   });
 }
 
 function drawTestList() {
-  var test_list = getDataFromStorage('test_list');
+  FileStorage.name = 'test_list';
+  var test_list = FileStorage.readData();
   var test_list_div = $('#test_list_content').find('#test_list');
   var compare_test_option = $('#compare_test_option');
   var test_list_compare_selection_test = compare_test_option.find('#select_test_config');
@@ -238,7 +241,8 @@ function drawTestList() {
     var test_error;
     var button_disabled;
     var checkbox_disabled;
-    var test = getDataFromStorage(test_name);
+    FileStorage.name = test_name;
+    var test = FileStorage.readData();
 
     if (!test) {
       upload_status = '<span class="glyphicon glyphicon-alert" aria-hidden="true"></span><span class="sr-only">Error: </span> File not found!';
@@ -315,10 +319,12 @@ function drawTestDetails(test_name) {
   test_details.hide();
 
   // Get test data
-  var test_results = getDataFromStorage(test_name);
+  FileStorage.name = test_name;
+  var test_results = FileStorage.readData();
 
   // Get test list
-  var test_list = getDataFromStorage('test_list');
+  FileStorage.name = 'test_list';
+  var test_list = FileStorage.readData();
   var test_data = test_list[test_name];
 
   var configuration_div = test_detail_div.find('#detail_configuration');

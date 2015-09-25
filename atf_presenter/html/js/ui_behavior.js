@@ -17,13 +17,14 @@ $(document).ready(function () {
   compare_test_option.find('.selectpicker').prop('disabled', true).selectpicker('refresh);');
 
   // Load test list from storage (if available)
-  if (getDataFromStorage('test_list')) {
+  FileStorage.name = 'test_list';
+  if (FileStorage.readData()) {
     showTestList();
   }
 });
 
 function handleFileSelect(evt) {
-  clearStorage();
+  FileStorage.clear();
 
   var files = evt.target.files; // FileList object
   var file_list = {};
@@ -58,8 +59,9 @@ function handleFileSelect(evt) {
         if (file.name.indexOf('test_list') != -1) {
           file_list[file.name] = convertTestList(file_list[file.name]);
         }
-
-        if (!writeDataToStorage(file.name.split('.')[0], file_list[file.name])) {
+        FileStorage.name = file.name.split('.')[0];
+        FileStorage.data = file_list[file.name];
+        if (!FileStorage.writeData()) {
           console.log('Writing to storage failed!');
         } else {
           console.log('Request succeeded');
