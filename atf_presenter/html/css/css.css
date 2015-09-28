@@ -28,7 +28,7 @@ input[type="radio"], input[type="checkbox"] {
 
 .fixed-panel {
     min-height: 220px;
-    max-height: 220px;
+    max-height: 500px;
 }
 
 #file_upload_progressbar {
