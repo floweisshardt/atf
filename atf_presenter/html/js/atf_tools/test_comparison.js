@@ -112,16 +112,23 @@ var TestComparison = {
     this.getBestTests();
   },
   changeWeight: function (category, weight) {
+    var results_temp = $.extend(true, {}, this.results);
     var final_results = {};
     final_results['average'] = [];
     final_results['min'] = [];
     final_results['max'] = [];
-    var results_temp = jQuery.extend(true, {}, this.results);
 
-    for (var i = 0; i < results_temp[category]['average'].length; i++) {
-      results_temp[category]['average'][i] *= weight;
-      results_temp[category]['min'][i] *= weight;
-      results_temp[category]['max'][i] *= weight;
+    for (var i = 0; i < this.results[category]['average'].length; i++) {
+      if (weight != 0) {
+        this.results[category]['average'][i] *= weight;
+        this.results[category]['min'][i] *= weight;
+        this.results[category]['max'][i] *= weight;
+        results_temp = $.extend(true, {}, this.results);
+      } else {
+        results_temp[category]['average'][i] = 0;
+        results_temp[category]['min'][i] = 0;
+        results_temp[category]['max'][i] = 0;
+      }
 
       this.charts['ids'][category].series[i].setData([{
         y: results_temp[category]['average'][i].round(1),
@@ -134,10 +141,14 @@ var TestComparison = {
       temp['min'] = 0;
       temp['max'] = 0;
       $.each(this.categories, function (index, category) {
-        if (category != 'total') {
-          temp['average'] += results_temp[category]['average'][i];
-          temp['min'] += results_temp[category]['min'][i];
-          temp['max'] += results_temp[category]['max'][i];
+        var category_name;
+        if (category instanceof Object) category_name = Object.keys(category)[0];
+        else category_name = category;
+
+        if (category_name != 'total') {
+          temp['average'] += results_temp[category_name]['average'][i];
+          temp['min'] += results_temp[category_name]['min'][i];
+          temp['max'] += results_temp[category_name]['max'][i];
         }
       });
 
@@ -329,6 +340,8 @@ var TestComparison = {
         }
       });
 
+      console.log(temp_metrics);
+
       var count_categories = 0;
       $.each(categories, function (index, category) {
         if (category != 'total') {
@@ -368,16 +381,20 @@ var TestComparison = {
           else results[category]['max'].push(temp['max']);
         }
       });
-
-      results['total']['average'].push((results['speed']['average'][results['speed']['average'].length - 1] +
-        results['efficiency']['average'][results['efficiency']['average'].length - 1] +
-        results['resources']['average'][results['resources']['average'].length - 1]) / count_categories);
-      results['total']['min'].push((results['speed']['min'][results['speed']['min'].length - 1] +
-        results['efficiency']['min'][results['efficiency']['min'].length - 1] +
-        results['resources']['min'][results['resources']['min'].length - 1]) / count_categories);
-      results['total']['max'].push((results['speed']['max'][results['speed']['max'].length - 1] +
-        results['efficiency']['max'][results['efficiency']['max'].length - 1] +
-        results['resources']['max'][results['resources']['max'].length - 1]) / count_categories);
+      var temp = {};
+      temp['average'] = 0;
+      temp['min'] = 0;
+      temp['max'] = 0;
+      $.each(categories, function (index, name) {
+        if (name != 'total') {
+          temp['average'] += results[name]['average'][results[name]['average'].length - 1];
+          temp['min'] += results[name]['min'][results[name]['min'].length - 1];
+          temp['max'] += results[name]['max'][results[name]['max'].length - 1];
+        }
+      });
+      results['total']['average'].push(temp['average'] / count_categories);
+      results['total']['min'].push(temp['min'] / count_categories);
+      results['total']['max'].push(temp['max'] / count_categories);
 
       //Save chart data
       $.each(results, function (category, data) {
