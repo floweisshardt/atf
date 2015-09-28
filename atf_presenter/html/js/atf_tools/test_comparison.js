@@ -1,13 +1,22 @@
 var TestComparison = {
   results: {},
-  categories: ['total', 'speed', 'resources', 'efficiency'],
+  categories: [
+    'total',
+    {speed: ['time']},
+    {resources: {
+      resources: ['cpu', 'mem', 'io', 'network']
+    }},
+    {efficiency: ['path_length', 'obstacle_distance']}
+  ],
   charts: {
-    ids: [],
+    ids: {},
     data: {}
   },
-  weightSpeed: 100,
-  weightResources: 100,
-  weightEfficiency: 100,
+  weight: {
+    speed: 100,
+    resources: 100,
+    efficiency: 100
+  },
   getMaximum: function (files) {
     var max = {};
     $.each(files, function (index, test_name) {
@@ -63,6 +72,7 @@ var TestComparison = {
   },
   compare: function (files) {
     var test_list = FileStorage.readData('test_list');
+    this.charts['data'] = {};
 
     var compare_tests = $('#compare_tests');
     var configuration_div = compare_tests.find('#compare_configuration');
@@ -99,106 +109,109 @@ var TestComparison = {
     this.results = this.computePoints(test_list, files);
     this.charts = this.createCharts(plot_tooltip);
 
-    //this.getBestTests();
+    this.getBestTests();
   },
   changeWeight: function (category, weight) {
-    var final_results = {
-      average: []
-    };
+    var final_results = {};
+    final_results['average'] = [];
+    final_results['min'] = [];
+    final_results['max'] = [];
     var results_temp = jQuery.extend(true, {}, this.results);
 
     for (var i = 0; i < results_temp[category]['average'].length; i++) {
       results_temp[category]['average'][i] *= weight;
       results_temp[category]['min'][i] *= weight;
       results_temp[category]['max'][i] *= weight;
-      this.chart_compare_category_speed.series[i].setData([(results_temp['speed']['average'][i]).round(1)]);
-      this.chart_compare_category_efficiency.series[i].setData([(results_temp['efficiency']['average'][i]).round(1)]);
-      this.chart_compare_category_resources.series[i].setData([(results_temp['resources']['average'][i]).round(1)]);
 
-      var category_count = 0;
-      $.each(results_temp, function (name, value) {
-        if (value['average'] != 0) {
-          category_count++;
+      this.charts['ids'][category].series[i].setData([{
+        y: results_temp[category]['average'][i].round(1),
+        min: results_temp[category]['min'][i].round(1),
+        max: results_temp[category]['max'][i].round(1)
+      }]);
+
+      var temp = {};
+      temp['average'] = 0;
+      temp['min'] = 0;
+      temp['max'] = 0;
+      $.each(this.categories, function (index, category) {
+        if (category != 'total') {
+          temp['average'] += results_temp[category]['average'][i];
+          temp['min'] += results_temp[category]['min'][i];
+          temp['max'] += results_temp[category]['max'][i];
         }
       });
 
-      final_results['average'].push(((results_temp['speed']['average'][i] + results_temp['efficiency']['average'][i] + results_temp['resources']['average'][i]) / category_count).round(1));
-      this.chart_compare_overview.series[i].setData([final_results['average'][i]]);
+      final_results['average'].push((temp['average'] / (this.categories.length - 1)).round(1));
+      final_results['min'].push((temp['min'] / (this.categories.length - 1)).round(1));
+      final_results['max'].push((temp['max'] / (this.categories.length - 1)).round(1));
+
+      this.charts['ids']['total'].series[i].setData([{
+        y: final_results['average'][i],
+        min: final_results['min'][i],
+        max: final_results['max'][i]
+      }]);
     }
     this.getBestTests();
   },
   getBestTests: function () {
-    var results = {
-      speed: {
-        name: '',
-        value: 0
-      },
-      efficiency: {
-        name: '',
-        value: 0
-      },
-      resources: {
-        name: '',
-        value: 0
-      },
-      total: {
-        name: '',
-        value: 0
-      }
-    };
-
+    var results = {};
     var compare_tests = $('#compare_tests').find('#test_results');
-    var speed = compare_tests.find('#result_overview_speed');
-    var efficiency = compare_tests.find('#result_overview_efficiency');
-    var resources = compare_tests.find('#result_overview_resources');
-    var total = compare_tests.find('#result_overview_total');
+    var this_class = this;
 
-    $.each(this.chart_compare_category_speed.series, function (index, data) {
-      if (data['data'][0].y > results['speed']['value']) {
-        results['speed']['value'] = data['data'][0].y;
-        results['speed']['name'] = data.name;
-      }
-    });
-    $.each(this.chart_compare_category_efficiency.series, function (index, data) {
-      if (data['data'][0].y > results['efficiency']['value']) {
-        results['efficiency']['value'] = data['data'][0].y;
-        results['efficiency']['name'] = data.name;
-      }
-    });
-    $.each(this.chart_compare_category_resources.series, function (index, data) {
-      if (data['data'][0].y > results['resources']['value']) {
-        results['resources']['value'] = data['data'][0].y;
-        results['resources']['name'] = data.name;
-      }
-    });
-    $.each(this.chart_compare_overview.series, function (index, data) {
-      if (data['data'][0].y > results['total']['value']) {
-        results['total']['value'] = data['data'][0].y;
-        results['total']['name'] = data.name;
-      }
-    });
+    $.each(this.categories, function (index, category) {
+      var category_name;
+      if (category instanceof Object) category_name = Object.keys(category)[0];
+      else category_name = category;
 
-    speed.empty();
-    efficiency.empty();
-    resources.empty();
-    total.empty();
+      if (!results.hasOwnProperty(category_name)) {
+        results[category_name] = {
+          name: '',
+          value: 0
+        };
+      }
+      var div = compare_tests.find('#result_overview_' + category_name);
+      div.empty();
 
-    speed.append(results['speed']['name']);
-    efficiency.append(results['efficiency']['name']);
-    resources.append(results['resources']['name']);
-    total.append(results['total']['name']);
+      $.each(this_class.charts['ids'][category_name].series, function (index, data) {
+        if (data['data'][0].y > results[category_name]['value']) {
+          results[category_name]['value'] = data['data'][0].y;
+          results[category_name]['name'] = data.name;
+        }
+      });
+      div.append(results[category_name]['name']);
+    });
   },
   computePoints: function (test_list, files) {
     var this_class = this;
     var results = {};
+    var metrics = {};
+    var categories = [];
     var max_values = this.getMaximum(files);
 
-    $.each(this.categories, function (index, category_name) {
+    $.each(this.categories, function (index, category) {
+      var category_name;
+      if (category instanceof Object) {
+        category_name = Object.keys(category)[0];
+        $.each(category, function (category_name, data) {
+          if (Array.isArray(data)) {
+            $.each(data, function (index, metric) {
+              if (!metrics.hasOwnProperty(metric)) metrics[metric] = [];
+            });
+          } else {
+            $.each(data, function (metric_name, metric_data) {
+              if (!metrics.hasOwnProperty(metric_name)) metrics[metric_name] = metric_data;
+            });
+          }
+        });
+      }
+      else category_name = category;
+
       results[category_name] = {
         min: [],
         max: [],
         average: []
       };
+      categories.push(category_name);
     });
 
     // Iterate through selected tests
@@ -209,7 +222,7 @@ var TestComparison = {
       var temp_metrics = {};
       var count_resource_categories = 0;
 
-      $.each(TestList.metrics, function (metric_name, metric_data) {
+      $.each(metrics, function (metric_name, metric_data) {
         if (!temp_metrics.hasOwnProperty(metric_name)) {
           temp_metrics[metric_name] = {
             min: 0,
@@ -246,8 +259,8 @@ var TestComparison = {
             // Time
             if (temp_testblock[level_2]['total'] != 0) {
               temp_testblock[level_2]['average'] += (temp_testblock[level_2]['total'] - level_2_data['average']) / temp_testblock[level_2]['total'];
-              temp_testblock[level_2]['min'] += (temp_testblock[level_2]['total'] - level_2_data['min']) / temp_testblock[level_2]['total'];
-              temp_testblock[level_2]['max'] += (temp_testblock[level_2]['total'] - level_2_data['max']) / temp_testblock[level_2]['total'];
+              temp_testblock[level_2]['max'] += (temp_testblock[level_2]['total'] - level_2_data['min']) / temp_testblock[level_2]['total'];
+              temp_testblock[level_2]['min'] += (temp_testblock[level_2]['total'] - level_2_data['max']) / temp_testblock[level_2]['total'];
             }
             temp_testblock[level_2]['length']++;
           } else {
@@ -261,8 +274,8 @@ var TestComparison = {
                     temp_testblock[level_2]['max'] += level_3_data['max'] / temp_testblock[level_2]['total'];
                   } else {
                     temp_testblock[level_2]['average'] += (temp_testblock[level_2]['total'] - level_3_data['average']) / temp_testblock[level_2]['total'];
-                    temp_testblock[level_2]['min'] += (temp_testblock[level_2]['total'] - level_3_data['min']) / temp_testblock[level_2]['total'];
-                    temp_testblock[level_2]['max'] += (temp_testblock[level_2]['total'] - level_3_data['max']) / temp_testblock[level_2]['total'];
+                    temp_testblock[level_2]['max'] += (temp_testblock[level_2]['total'] - level_3_data['min']) / temp_testblock[level_2]['total'];
+                    temp_testblock[level_2]['min'] += (temp_testblock[level_2]['total'] - level_3_data['max']) / temp_testblock[level_2]['total'];
                   }
                 }
                 temp_testblock[level_2]['length']++;
@@ -271,21 +284,21 @@ var TestComparison = {
                   // Resources
                   if (typeof level_4_data['max'][0] === 'undefined') {
                     // CPU & Mem
-                    if (temp_testblock['resources'][level_4]['total'] != 0) {
-                      temp_testblock['resources'][level_4]['average'] += (temp_testblock['resources'][level_4]['total'] - level_4_data['average']) / temp_testblock['resources'][level_4]['total'];
-                      temp_testblock['resources'][level_4]['min'] += (temp_testblock['resources'][level_4]['total'] - level_4_data['min']) / temp_testblock['resources'][level_4]['total'];
-                      temp_testblock['resources'][level_4]['max'] += (temp_testblock['resources'][level_4]['total'] - level_4_data['max']) / temp_testblock['resources'][level_4]['total'];
+                    if (temp_testblock[level_2][level_4]['total'] != 0) {
+                      temp_testblock[level_2][level_4]['average'] += (temp_testblock[level_2][level_4]['total'] - level_4_data['average']) / temp_testblock[level_2][level_4]['total'];
+                      temp_testblock[level_2][level_4]['max'] += (temp_testblock[level_2][level_4]['total'] - level_4_data['min']) / temp_testblock[level_2][level_4]['total'];
+                      temp_testblock[level_2][level_4]['min'] += (temp_testblock[level_2][level_4]['total'] - level_4_data['max']) / temp_testblock[level_2][level_4]['total'];
                     }
-                    temp_testblock['resources'][level_4]['length']++;
+                    temp_testblock[level_2][level_4]['length']++;
                   } else {
                     // IO & Network
                     for (var x = 0; x < level_4_data.length; x++) {
-                      if (temp_testblock['resources'][level_4]['total'][x] != 0) {
-                        temp_testblock['resources'][level_4]['average'] += (temp_testblock['resources'][level_4]['total'][x] - level_4_data['average'][x]) / temp_testblock['resources'][level_4]['total'][x];
-                        temp_testblock['resources'][level_4]['min'] += (temp_testblock['resources'][level_4]['total'][x] - level_4_data['min'][x]) / temp_testblock['resources'][level_4]['total'][x];
-                        temp_testblock['resources'][level_4]['max'] += (temp_testblock['resources'][level_4]['total'][x] - level_4_data['max'][x]) / temp_testblock['resources'][level_4]['total'][x];
+                      if (temp_testblock[level_2][level_4]['total'][x] != 0) {
+                        temp_testblock[level_2][level_4]['average'] += (temp_testblock[level_2][level_4]['total'][x] - level_4_data['average'][x]) / temp_testblock[level_2][level_4]['total'][x];
+                        temp_testblock[level_2][level_4]['max'] += (temp_testblock[level_2][level_4]['total'][x] - level_4_data['min'][x]) / temp_testblock[level_2][level_4]['total'][x];
+                        temp_testblock[level_2][level_4]['min'] += (temp_testblock[level_2][level_4]['total'][x] - level_4_data['max'][x]) / temp_testblock[level_2][level_4]['total'][x];
                       }
-                      temp_testblock['resources'][level_4]['length']++;
+                      temp_testblock[level_2][level_4]['length']++;
                     }
                   }
                 });
@@ -294,9 +307,9 @@ var TestComparison = {
           }
         });
       });
-      //TODO: Remove real metric names
+
       $.each(temp_testblock, function (metric, metric_data) {
-        if (metric === 'resources') {
+        if (!metric_data.hasOwnProperty('average')) {
           $.each(metric_data, function (res_name, res_data) {
             // Resources
             if (res_data['length'] != 0) {
@@ -316,40 +329,55 @@ var TestComparison = {
         }
       });
 
-      results['resources']['average'].push(temp_metrics['resources']['average'] / count_resource_categories * this_class.weightResources);
-      results['resources']['min'].push(temp_metrics['resources']['min'] / count_resource_categories * this_class.weightResources);
-      results['resources']['max'].push(temp_metrics['resources']['max'] / count_resource_categories * this_class.weightResources);
+      var count_categories = 0;
+      $.each(categories, function (index, category) {
+        if (category != 'total') {
+          var temp = {
+            average: 0,
+            min: 0,
+            max: 0
+          };
 
-      results['speed']['average'].push(temp_metrics['time']['average'] * this_class.weightSpeed);
-      results['speed']['min'].push(temp_metrics['time']['min'] * this_class.weightSpeed);
-      results['speed']['max'].push(temp_metrics['time']['max'] * this_class.weightSpeed);
-
-      if (temp_metrics['path_length']['average'] != 0 && temp_metrics['obstacle_distance']['average'] != 0) {
-        results['efficiency']['average'].push(((temp_metrics['path_length']['average'] + temp_metrics['obstacle_distance']['average']) / 2) * this_class.weightEfficiency);
-        results['efficiency']['min'].push(((temp_metrics['path_length']['min'] + temp_metrics['obstacle_distance']['min']) / 2) * this_class.weightEfficiency);
-        results['efficiency']['max'].push(((temp_metrics['path_length']['max'] + temp_metrics['obstacle_distance']['max']) / 2) * this_class.weightEfficiency);
-      } else {
-        results['efficiency']['average'].push((temp_metrics['path_length']['average'] + temp_metrics['obstacle_distance']['average']) * this_class.weightEfficiency);
-        results['efficiency']['min'].push((temp_metrics['path_length']['min'] + temp_metrics['obstacle_distance']['min']) * this_class.weightEfficiency);
-        results['efficiency']['max'].push((temp_metrics['path_length']['max'] + temp_metrics['obstacle_distance']['max']) * this_class.weightEfficiency);
-      }
-
-      var category_count = 0;
-      $.each(results, function (name, value) {
-        if (value['average'] != 0 && name != 'total') {
-          category_count++;
+          if (category === 'resources') {
+            temp['average'] = (temp_metrics['resources']['average'] / count_resource_categories) * this_class.weight[category];
+            temp['min'] = (temp_metrics['resources']['min'] / count_resource_categories) * this_class.weight[category];
+            temp['max'] = (temp_metrics['resources']['max'] / count_resource_categories) * this_class.weight[category];
+          } else if (category === 'speed') {
+            temp['average'] = temp_metrics['time']['average'] * this_class.weight[category];
+            temp['min'] = temp_metrics['time']['min'] * this_class.weight[category];
+            temp['max'] = temp_metrics['time']['max'] * this_class.weight[category];
+          } else if (category === 'efficiency') {
+            if (temp_metrics['path_length']['average'] != 0 && temp_metrics['obstacle_distance']['average'] != 0) {
+              temp['average'] = ((temp_metrics['path_length']['average'] + temp_metrics['obstacle_distance']['average']) / 2) * this_class.weight[category];
+              temp['min'] = ((temp_metrics['path_length']['min'] + temp_metrics['obstacle_distance']['min']) / 2) * this_class.weight[category];
+              temp['max'] = ((temp_metrics['path_length']['max'] + temp_metrics['obstacle_distance']['max']) / 2) * this_class.weight[category];
+            } else {
+              temp['average'] = (temp_metrics['path_length']['average'] + temp_metrics['obstacle_distance']['average']) * this_class.weight[category];
+              temp['min'] = (temp_metrics['path_length']['min'] + temp_metrics['obstacle_distance']['min']) * this_class.weight[category];
+              temp['max'] = (temp_metrics['path_length']['max'] + temp_metrics['obstacle_distance']['max']) * this_class.weight[category];
+            }
+          }
+          if (isNaN(temp['average'])) results[category]['average'].push(0);
+          else {
+            results[category]['average'].push(temp['average']);
+            count_categories++;
+          }
+          if (isNaN(temp['min'])) results[category]['min'].push(0);
+          else results[category]['min'].push(temp['min']);
+          if (isNaN(temp['max'])) results[category]['max'].push(0);
+          else results[category]['max'].push(temp['max']);
         }
       });
 
       results['total']['average'].push((results['speed']['average'][results['speed']['average'].length - 1] +
         results['efficiency']['average'][results['efficiency']['average'].length - 1] +
-        results['resources']['average'][results['resources']['average'].length - 1]) / category_count);
+        results['resources']['average'][results['resources']['average'].length - 1]) / count_categories);
       results['total']['min'].push((results['speed']['min'][results['speed']['min'].length - 1] +
         results['efficiency']['min'][results['efficiency']['min'].length - 1] +
-        results['resources']['min'][results['resources']['min'].length - 1]) / category_count);
+        results['resources']['min'][results['resources']['min'].length - 1]) / count_categories);
       results['total']['max'].push((results['speed']['max'][results['speed']['max'].length - 1] +
         results['efficiency']['max'][results['efficiency']['max'].length - 1] +
-        results['resources']['max'][results['resources']['max'].length - 1]) / category_count);
+        results['resources']['max'][results['resources']['max'].length - 1]) / count_categories);
 
       //Save chart data
       $.each(results, function (category, data) {
@@ -377,18 +405,25 @@ var TestComparison = {
   },
   createCharts: function (plot_tooltip) {
     var charts = {};
+    charts['ids'] = {};
+    charts['data'] = this.charts['data'];
+    
     var category_div = $('#categories_tab');
     var category_tabs = category_div.find('.nav-tabs');
     var category_tabs_content = category_div.find('.tab-content');
     category_tabs.empty();
     category_tabs_content.empty();
+    
+    var weight_control_buttons = $('#weight_control').find('.panel-body');
+    weight_control_buttons.empty();
+
+    var test_results = $('#test_results').find('.table tbody');
+    test_results.empty();
+    
     var active = true;
     var class_active = '';
 
     $.each(this.charts['data'], function (category, data) {
-      if (!charts.hasOwnProperty('ids')) {
-        charts['ids'] = [];
-      }
       if (category != 'total') {
         if (active) {
           class_active = 'active';
@@ -396,15 +431,22 @@ var TestComparison = {
         } else {
           class_active = '';
         }
-        //TODO: Capitalize first letter of category
-        //TODO: Add weight buttons & result overview div
+        //Create category tab
         category_tabs.append('<li role="presentation" class="' + class_active + '"><a href="#' + category + '_tab"' +
-          'aria-controls="' + category + '_tab" role="tab" data-toggle="tab">' + category + '</a></li>');
+          'aria-controls="' + category + '_tab" role="tab" data-toggle="tab">' + category.capitalize() + '</a></li>');
         category_tabs_content.append('<div role="tabpanel" class="tab-pane ' + class_active + '" id="' + category + '_tab">' +
           '<div id="' + category + '" class="plot"></div></div>');
-      }
+        
+        //Create weight control button
+        weight_control_buttons.append('<div class="input-group"><span class="input-group-btn">' +
+          '<button type="button" class="btn btn-primary weight_control_button" value="' + category + '">' + category.capitalize() + '</button>' +
+          '</span><input type="text" class="form-control weight_control_value" placeholder="' + category.capitalize() + ' weight value" value="1.5">' +
+          '</div><div class="placeholder"></div>');
 
-      charts['ids'].push(new Highcharts.Chart({
+        //Create test result table entries
+        test_results.append('<tr><td>' + category.capitalize() + '</td><td id="result_overview_' + category + '"></td></tr>');
+      }
+      charts['ids'][category] = new Highcharts.Chart({
         chart: {
           renderTo: category,
           defaultSeriesType: 'column',
@@ -434,8 +476,12 @@ var TestComparison = {
             borderWidth: 0
           }
         }
-      }));
+      });
     });
+
+    //Create test result table total entry
+    test_results.append('<tr><td>Total</td><td id="result_overview_total"></td></tr>');
+
     return charts;
   }
 };
