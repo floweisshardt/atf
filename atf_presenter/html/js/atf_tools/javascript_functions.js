@@ -1,5 +1,9 @@
-Number.prototype.round = function(places) {
+Number.prototype.round = function (places) {
   return +(Math.round(this + 'e+' + places)  + 'e-' + places);
+};
+
+String.prototype.capitalize = function () {
+  return this[0].toUpperCase() + this.substring(1);
 };
 
 function handleFileSelect(evt) {
