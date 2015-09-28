@@ -70,11 +70,13 @@ $('#compare_tests').find('#weight_control').on('click', '.weight_control_button'
   var weight_factor;
   var weight_category;
 
+  var weight_control_buttons = $('#compare_tests').find('#weight_control .weight_control_button');
+
   if (!$(this).hasClass('active')) {
     var active_buttons = $(this).parent().parent().parent().find('.active');
     var active = active_buttons.length;
 
-    if (active === 2) {
+    if (active === (weight_control_buttons.length - 1)) {
       active_buttons.each(function () {
         $(this).removeClass('active');
         weight_category = $(this).val();

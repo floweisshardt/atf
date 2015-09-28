@@ -1,13 +1,10 @@
 var TestComparison = {
   results: {},
-  categories: [
-    'total',
-    {speed: ['time']},
-    {resources: {
-      resources: ['cpu', 'mem', 'io', 'network']
-    }},
-    {efficiency: ['path_length', 'obstacle_distance']}
-  ],
+  categories: {
+    speed: ['time'],
+    resources: ['resources'],
+    efficiency: ['path_length', 'obstacle_distance']
+  },
   charts: {
     ids: {},
     data: {}
@@ -113,10 +110,11 @@ var TestComparison = {
   },
   changeWeight: function (category, weight) {
     var results_temp = $.extend(true, {}, this.results);
-    var final_results = {};
-    final_results['average'] = [];
-    final_results['min'] = [];
-    final_results['max'] = [];
+    var final_results = {
+      average: [],
+      min: [],
+      max: []
+    };
 
     for (var i = 0; i < this.results[category]['average'].length; i++) {
       if (weight != 0) {
@@ -140,10 +138,7 @@ var TestComparison = {
       temp['average'] = 0;
       temp['min'] = 0;
       temp['max'] = 0;
-      $.each(this.categories, function (index, category) {
-        var category_name;
-        if (category instanceof Object) category_name = Object.keys(category)[0];
-        else category_name = category;
+      $.each(Object.keys(this.charts['data']), function (index, category_name) {
 
         if (category_name != 'total') {
           temp['average'] += results_temp[category_name]['average'][i];
@@ -152,9 +147,9 @@ var TestComparison = {
         }
       });
 
-      final_results['average'].push((temp['average'] / (this.categories.length - 1)).round(1));
-      final_results['min'].push((temp['min'] / (this.categories.length - 1)).round(1));
-      final_results['max'].push((temp['max'] / (this.categories.length - 1)).round(1));
+      final_results['average'].push((temp['average'] / (Object.keys(this.charts['data']).length - 1)).round(1));
+      final_results['min'].push((temp['min'] / (Object.keys(this.charts['data']).length - 1)).round(1));
+      final_results['max'].push((temp['max'] / (Object.keys(this.charts['data']).length - 1)).round(1));
 
       this.charts['ids']['total'].series[i].setData([{
         y: final_results['average'][i],
@@ -169,10 +164,7 @@ var TestComparison = {
     var compare_tests = $('#compare_tests').find('#test_results');
     var this_class = this;
 
-    $.each(this.categories, function (index, category) {
-      var category_name;
-      if (category instanceof Object) category_name = Object.keys(category)[0];
-      else category_name = category;
+    $.each(Object.keys(this.charts['data']), function (index, category_name) {
 
       if (!results.hasOwnProperty(category_name)) {
         results[category_name] = {
@@ -195,34 +187,23 @@ var TestComparison = {
   computePoints: function (test_list, files) {
     var this_class = this;
     var results = {};
-    var metrics = {};
+    results['total'] = {
+      average: [],
+      min: [],
+      max: []
+    };
     var categories = [];
+    categories.push('total');
     var max_values = this.getMaximum(files);
+    var metrics_to_category = {};
 
-    $.each(this.categories, function (index, category) {
-      var category_name;
-      if (category instanceof Object) {
-        category_name = Object.keys(category)[0];
-        $.each(category, function (category_name, data) {
-          if (Array.isArray(data)) {
-            $.each(data, function (index, metric) {
-              if (!metrics.hasOwnProperty(metric)) metrics[metric] = [];
-            });
-          } else {
-            $.each(data, function (metric_name, metric_data) {
-              if (!metrics.hasOwnProperty(metric_name)) metrics[metric_name] = metric_data;
-            });
-          }
-        });
+    // Get the metrics needed for each category
+    $.each(this.categories, function (category_name, data) {
+      for (var x = 0; x < data.length; x++) {
+        if (!metrics_to_category.hasOwnProperty(data[x])) {
+          metrics_to_category[data[x]] = category_name;
+        }
       }
-      else category_name = category;
-
-      results[category_name] = {
-        min: [],
-        max: [],
-        average: []
-      };
-      categories.push(category_name);
     });
 
     // Iterate through selected tests
@@ -230,44 +211,21 @@ var TestComparison = {
       var test_results = FileStorage.readData(test_name);
 
       var temp_testblock = {};
-      var temp_metrics = {};
-      var count_resource_categories = 0;
-
-      $.each(metrics, function (metric_name, metric_data) {
-        if (!temp_metrics.hasOwnProperty(metric_name)) {
-          temp_metrics[metric_name] = {
-            min: 0,
-            max: 0,
-            average: 0
-          };
-        }
-        if (metric_data.length === 0) {
-          temp_testblock[metric_name] = {
-            length: 0,
-            min: 0,
-            max: 0,
-            average: 0,
-            total: max_values[metric_name]
-          };
-        } else {
-          temp_testblock[metric_name] = {};
-          $.each(metric_data, function (index, sub_metric_name) {
-            temp_testblock[metric_name][sub_metric_name] = {
-              length: 0,
-              min: 0,
-              max: 0,
-              average: 0,
-              total: max_values[sub_metric_name]
-            };
-          });
-        }
-      });
 
       // Iterate through all testblocks
       $.each(test_results, function (testblock_name, testblock_data) {
         $.each(testblock_data, function (level_2, level_2_data) {
           if (level_2_data.hasOwnProperty('max')) {
             // Time
+            if (!temp_testblock.hasOwnProperty(level_2)) {
+              temp_testblock[level_2] = {
+                length: 0,
+                total: max_values[level_2],
+                min: 0,
+                max: 0,
+                average: 0
+              };
+            }
             if (temp_testblock[level_2]['total'] != 0) {
               temp_testblock[level_2]['average'] += (temp_testblock[level_2]['total'] - level_2_data['average']) / temp_testblock[level_2]['total'];
               temp_testblock[level_2]['max'] += (temp_testblock[level_2]['total'] - level_2_data['min']) / temp_testblock[level_2]['total'];
@@ -278,6 +236,15 @@ var TestComparison = {
             $.each(level_2_data, function (level_3, level_3_data) {
               if (level_3_data.hasOwnProperty('max')) {
                 // Path length & obstacle distance
+                if (!temp_testblock.hasOwnProperty(level_2)) {
+                  temp_testblock[level_2] = {
+                    length: 0,
+                    total: max_values[level_2],
+                    min: 0,
+                    max: 0,
+                    average: 0
+                  };
+                }
                 if (temp_testblock[level_2]['total'] != 0) {
                   if (level_2 === 'obstacle_distance') {
                     temp_testblock[level_2]['average'] += level_3_data['average'] / temp_testblock[level_2]['total'];
@@ -293,8 +260,20 @@ var TestComparison = {
               } else {
                 $.each(level_3_data, function (level_4, level_4_data) {
                   // Resources
+                  if (!temp_testblock.hasOwnProperty(level_2)) {
+                    temp_testblock[level_2] = {};
+                  }
                   if (typeof level_4_data['max'][0] === 'undefined') {
                     // CPU & Mem
+                    if (!temp_testblock[level_2].hasOwnProperty(level_4)) {
+                      temp_testblock[level_2][level_4] = {
+                        length: 0,
+                        min: 0,
+                        max: 0,
+                        average: 0,
+                        total: max_values[level_4]
+                      };
+                    }
                     if (temp_testblock[level_2][level_4]['total'] != 0) {
                       temp_testblock[level_2][level_4]['average'] += (temp_testblock[level_2][level_4]['total'] - level_4_data['average']) / temp_testblock[level_2][level_4]['total'];
                       temp_testblock[level_2][level_4]['max'] += (temp_testblock[level_2][level_4]['total'] - level_4_data['min']) / temp_testblock[level_2][level_4]['total'];
@@ -303,7 +282,16 @@ var TestComparison = {
                     temp_testblock[level_2][level_4]['length']++;
                   } else {
                     // IO & Network
-                    for (var x = 0; x < level_4_data.length; x++) {
+                    if (!temp_testblock[level_2].hasOwnProperty(level_4)) {
+                      temp_testblock[level_2][level_4] = {
+                        length: 0,
+                        min: 0,
+                        max: 0,
+                        average: 0,
+                        total: max_values[level_4]
+                      };
+                    }
+                    for (var x = 0; x < level_4_data['max'].length; x++) {
                       if (temp_testblock[level_2][level_4]['total'][x] != 0) {
                         temp_testblock[level_2][level_4]['average'] += (temp_testblock[level_2][level_4]['total'][x] - level_4_data['average'][x]) / temp_testblock[level_2][level_4]['total'][x];
                         temp_testblock[level_2][level_4]['max'] += (temp_testblock[level_2][level_4]['total'][x] - level_4_data['min'][x]) / temp_testblock[level_2][level_4]['total'][x];
@@ -319,7 +307,17 @@ var TestComparison = {
         });
       });
 
+      var temp_metrics = {};
+      var count_resource_categories = 0;
+
       $.each(temp_testblock, function (metric, metric_data) {
+        if (!temp_metrics.hasOwnProperty(metric)) {
+          temp_metrics[metric] = {
+            average: 0,
+            min: 0,
+            max: 0
+          };
+        }
         if (!metric_data.hasOwnProperty('average')) {
           $.each(metric_data, function (res_name, res_data) {
             // Resources
@@ -340,9 +338,19 @@ var TestComparison = {
         }
       });
 
-      console.log(temp_metrics);
+      //Get categories from metrics data
+      $.each(temp_metrics, function (metric_name) {
+        var category = metrics_to_category[metric_name];
+        if ($.inArray(category, categories) === -1) {
+          categories.push(category);
+          results[category] = {
+            average: [],
+            min: [],
+            max: []
+          };
+        }
+      });
 
-      var count_categories = 0;
       $.each(categories, function (index, category) {
         if (category != 'total') {
           var temp = {
@@ -370,21 +378,17 @@ var TestComparison = {
               temp['max'] = (temp_metrics['path_length']['max'] + temp_metrics['obstacle_distance']['max']) * this_class.weight[category];
             }
           }
-          if (isNaN(temp['average'])) results[category]['average'].push(0);
-          else {
-            results[category]['average'].push(temp['average']);
-            count_categories++;
-          }
-          if (isNaN(temp['min'])) results[category]['min'].push(0);
-          else results[category]['min'].push(temp['min']);
-          if (isNaN(temp['max'])) results[category]['max'].push(0);
-          else results[category]['max'].push(temp['max']);
+          results[category]['average'].push(temp['average']);
+          results[category]['min'].push(temp['min']);
+          results[category]['max'].push(temp['max']);
         }
       });
+
       var temp = {};
       temp['average'] = 0;
       temp['min'] = 0;
       temp['max'] = 0;
+
       $.each(categories, function (index, name) {
         if (name != 'total') {
           temp['average'] += results[name]['average'][results[name]['average'].length - 1];
@@ -392,9 +396,10 @@ var TestComparison = {
           temp['max'] += results[name]['max'][results[name]['max'].length - 1];
         }
       });
-      results['total']['average'].push(temp['average'] / count_categories);
-      results['total']['min'].push(temp['min'] / count_categories);
-      results['total']['max'].push(temp['max'] / count_categories);
+
+      results['total']['average'].push(temp['average'] / (categories.length - 1));
+      results['total']['min'].push(temp['min'] / (categories.length - 1));
+      results['total']['max'].push(temp['max'] / (categories.length - 1));
 
       //Save chart data
       $.each(results, function (category, data) {
