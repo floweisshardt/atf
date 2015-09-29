@@ -137,7 +137,7 @@ $(document).on('click', '#button_compare', function () {
   $(this).prop('disabled', true);
   compare_test_option_select_test.val('').selectpicker('refresh');
   compare_test_option_select_scene.val('').prop('disabled', true).selectpicker('refresh');
-  TestComparison.compare(tests);
+  TestComparison.compareTests(tests);
 });
 
 $('#compare_test_option')
