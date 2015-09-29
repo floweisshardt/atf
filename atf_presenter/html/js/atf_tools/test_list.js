@@ -289,7 +289,6 @@ var TestList = {
     test_detail_div.find('.modal-title').html('Details Testsuite ' + test_name_split[0].replace(/^\D+/g, '') + ' - Test ' + test_name_split[1].replace(/^\D+/g, ''));
     var test_details = test_detail_div.find('#detail_panel');
     var test_details_tab_content = test_details.find('.tab-content');
-
     test_details.hide();
 
     // Get test data
@@ -338,6 +337,7 @@ var TestList = {
       path_length: [],
       obstacle_distance: []
     };
+
     var plot_options = {
       cpu: {
         chart: {
@@ -482,15 +482,17 @@ var TestList = {
         tooltip: plot_tooltip
       }
     };
-    var time_data = [];
 
     configuration_div.append('<li><b>Scene config:</b> ' + test_data['scene_config'] + '</li>' +
       '<li><b>Test config:</b> ' + test_data['test_config'] + '</li>' +
       '<li><b>Robot:</b> ' + test_data['robot'] + '</li>' +
       '<li><b>Planer ID:</b> ' + test_data['planer_id'] + '</li>' +
       '<li><b>Planning Method:</b> ' + test_data['planning_method'] + '</li>' +
+      '<li><b>Test repetitions:</b> ' + test_data['test_repetitions'] + '</li>' +
       '<li><b>Jump threshold:</b> ' + test_data['jump_threshold'] + '</li>' +
       '<li><b>EEF_step:</b> ' + test_data['eef_step'] + '</li>');
+
+    var data_per_test = {};
 
     $.each(test_results, function (testblock_name, testblock_data) {
 
@@ -504,15 +506,6 @@ var TestList = {
         return false;
       }
 
-      var test_data = {
-        cpu: [],
-        mem: [],
-        io: [],
-        network: [],
-        path_length: [],
-        obstacle_distance: []
-      };
-
       var active_class;
       if (first_entry) {
         test_details.find('.nav-tabs').empty();
@@ -522,13 +515,18 @@ var TestList = {
       } else
         active_class = '';
 
+      //TODO: Only when testblock has data per testblock
+
       test_details.find('.nav-tabs').append('<li role="presentation" class="' + active_class + '"><a href="#details_' + testblock_name + '" aria-controls="details_' + testblock_name + '" role="tab" data-toggle="tab">' + testblock_name + '</a></li>');
       test_details.find('.tab-content').append('<div role="tabpanel" class="tab-pane ' + active_class + '" id="details_' + testblock_name + '"></div>');
+
+      var data_per_testblock = {};
 
       $.each(testblock_data, function (level_2, level_2_data) {
         if (level_2_data.hasOwnProperty('max')) {
           // Time
-          time_data.push({
+          if (!data_per_test.hasOwnProperty(level_2)) data_per_test[level_2] = [];
+          data_per_test[level_2].push({
             name: testblock_name,
             data: [{
               x: 0,
@@ -541,7 +539,8 @@ var TestList = {
           $.each(level_2_data, function (level_3, level_3_data) {
             if (level_3_data.hasOwnProperty('max')) {
               // Path length & obstacle distance
-              test_data[level_2].push({
+              if (!data_per_testblock.hasOwnProperty(level_2)) data_per_testblock[level_2] = [];
+              data_per_testblock[level_2].push({
                 name: level_3,
                 data: [{
                   x: 0,
@@ -555,7 +554,8 @@ var TestList = {
                 // Resources
                 if (typeof level_4_data['max'][0] === 'undefined') {
                   // CPU & Mem
-                  test_data[level_4].push({
+                  if (!data_per_testblock.hasOwnProperty(level_4)) data_per_testblock[level_4] = [];
+                  data_per_testblock[level_4].push({
                     name: level_3,
                     data: [{
                       x: 0,
@@ -568,6 +568,7 @@ var TestList = {
                   var data = [];
 
                   // IO & Network
+                  if (!data_per_testblock.hasOwnProperty(level_4)) data_per_testblock[level_4] = [];
                   for (var i = 0; i < level_4_data['min'].length; i++) {
                     if (level_4 === 'io' && i > 1) {
                       level_4_data['average'][i] = (level_4_data['average'][i] / 1000).round(0);
@@ -585,7 +586,7 @@ var TestList = {
                       max: level_4_data['max'][i].round(0)
                     });
                   }
-                  test_data[level_4].push({
+                  data_per_testblock[level_4].push({
                     name: level_3,
                     data: data
                   });
@@ -596,7 +597,7 @@ var TestList = {
         }
       });
 
-      $.each(test_data, function (metric_name, data) {
+      $.each(data_per_testblock, function (metric_name, data) {
         if (data.length != 0) {
           test_details.show();
 
@@ -618,22 +619,24 @@ var TestList = {
         }
       });
     });
-    if (time_data.length != 0) {
-      test_details.show();
 
-      var details_time = $('#details_time');
-      details_time.empty().append('<div class="panel panel-primary"><div class="panel-heading"></div>' +
-        '<div class="panel-body"><div id="details_time_content" class="plot"></div></div></div>');
-      $('#details_time_content').highcharts({
-        chart: plot_options['time']['chart'],
-        title: plot_options['time']['title'],
-        xAxis: plot_options['time']['xAxis'],
-        yAxis: plot_options['time']['yAxis'],
-        tooltip: plot_options['time']['tooltip'],
-        series: time_data,
-        plotOptions: plot_options['time']['plotOptions']
+    var details_per_test_panel = $('#details_per_test');
+    details_per_test_panel.empty();
+
+    $.each(data_per_test, function (metric_name, data) {
+      if (data.length != 0) test_details.show();
+      details_per_test_panel.append('<div class="panel panel-primary"><div class="panel-heading"></div>' +
+      '<div class="panel-body"><div id="details_' + metric_name + '_content" class="plot"></div></div></div>');
+      $('#details_' + metric_name + '_content').highcharts({
+        chart: plot_options[metric_name]['chart'],
+        title: plot_options[metric_name]['title'],
+        xAxis: plot_options[metric_name]['xAxis'],
+        yAxis: plot_options[metric_name]['yAxis'],
+        tooltip: plot_options[metric_name]['tooltip'],
+        series: data,
+        plotOptions: plot_options[metric_name]['plotOptions']
       });
-    }
+    });
 
     if (!error) {
       status_div.append('<div class="alert alert-success" role="alert">No error during evaluation!</div>');
