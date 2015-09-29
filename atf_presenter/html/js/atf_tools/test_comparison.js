@@ -1,5 +1,5 @@
 var TestComparison = {
-  results: {},
+  backup_storage: {},
   categories: {
     speed: ['time'],
     resources: ['resources'],
@@ -75,10 +75,12 @@ var TestComparison = {
     var configuration_div = compare_tests.find('#compare_configuration');
     configuration_div.empty();
     configuration_div.append('<li><b>Scene config: </b>' + test_list[files[0]]['scene_config'] + '</li>' +
-      '<li><b>Test config: </b>' + test_list[files[0]]['test_config'] + '</li>');
+      '<li><b>Test config: </b>' + test_list[files[0]]['test_config'] + '</li>' +
+      '<li><b>Test repetitions: </b>' + test_list[files[0]]['test_repetitions'] + '</li>');
 
     var plot_tooltip = {
-      'formatter': function () {
+      formatter: function () {
+        if (this.series.name.indexOf('error') != -1) return false;
         var div = $('#test_configuration_details');
         var details_head = div.find('.panel-heading');
         var details_body = div.find('.panel-body');
@@ -97,9 +99,9 @@ var TestComparison = {
           '<b>Maximum: </b>' + o.max + '%');
 
         return '<b>' + this.series.name + '</b><br>' +
-          'Average: ' + this.y + '<br>' +
-          'Minimum: ' + o.min + '<br>' +
-          'Maximum: ' + o.max + '<br>';
+          'Maximum: ' + o.max + '%<br>' +
+          'Average: ' + this.y + '%<br>' +
+          'Minimum: ' + o.min + '%<br>';
       }
     };
 
@@ -109,54 +111,66 @@ var TestComparison = {
     this.getBestTests();
   },
   changeWeight: function (category, weight) {
-    var results_temp = $.extend(true, {}, this.results);
+    var this_class = this;
+    var results_temp = $.extend(true, {}, this.charts['data']);
+    this.backup_storage = $.extend(true, {}, this.charts['data']);
+
     var final_results = {
-      average: [],
-      min: [],
-      max: []
+      average: 0,
+      min: 0,
+      max: 0
     };
-
-    for (var i = 0; i < this.results[category]['average'].length; i++) {
+    $.each(this.charts['data'][category], function (index, data) {
+      //TODO: Error graphs have no y, min, max...
       if (weight != 0) {
-        this.results[category]['average'][i] *= weight;
-        this.results[category]['min'][i] *= weight;
-        this.results[category]['max'][i] *= weight;
-        results_temp = $.extend(true, {}, this.results);
+        this_class.backup_storage[category][index]['data'][0]['y'] *= weight;
+        this_class.backup_storage[category][index]['data'][0]['min'] *= weight;
+        this_class.backup_storage[category][index]['data'][0]['max'] *= weight;
+        results_temp  = $.extend(true, {}, this_class.backup_storage);
       } else {
-        results_temp[category]['average'][i] = 0;
-        results_temp[category]['min'][i] = 0;
-        results_temp[category]['max'][i] = 0;
+        results_temp[category][index]['data'][0]['y'] = 0;
+        results_temp[category][index]['data'][0]['max'] = 0;
+        results_temp[category][index]['data'][0]['min'] = 0;
       }
-
-      this.charts['ids'][category].series[i].setData([{
-        y: results_temp[category]['average'][i].round(1),
-        min: results_temp[category]['min'][i].round(1),
-        max: results_temp[category]['max'][i].round(1)
-      }]);
+      console.log(results_temp[category][index]['data'][0]['y']);
+      if (data.name.indexOf('error') === -1) {
+        this_class.charts['ids'][category].series[index].setData([{
+          y: results_temp[category][index]['data'][0]['y'].round(1),
+          min: results_temp[category][index]['data'][0]['min'].round(1),
+          max: results_temp[category][index]['data'][0]['max'].round(1)
+        }]);
+      } else {
+        this_class.charts['ids'][category].series[index].setData([results_temp[category][index]['data'][0]['min'].round(1),
+          results_temp[category][index]['data'][0]['max'].round(1)]);
+      }
 
       var temp = {};
       temp['average'] = 0;
       temp['min'] = 0;
       temp['max'] = 0;
-      $.each(Object.keys(this.charts['data']), function (index, category_name) {
+      $.each(Object.keys(this_class.charts['data']), function (idx, category_name) {
 
         if (category_name != 'total') {
-          temp['average'] += results_temp[category_name]['average'][i];
-          temp['min'] += results_temp[category_name]['min'][i];
-          temp['max'] += results_temp[category_name]['max'][i];
+          temp['average'] += results_temp[category_name][index]['data'][0]['y'];
+          temp['min'] += results_temp[category_name][index]['data'][0]['min'];
+          temp['max'] += results_temp[category_name][index]['data'][0]['max'];
         }
       });
 
-      final_results['average'].push((temp['average'] / (Object.keys(this.charts['data']).length - 1)).round(1));
-      final_results['min'].push((temp['min'] / (Object.keys(this.charts['data']).length - 1)).round(1));
-      final_results['max'].push((temp['max'] / (Object.keys(this.charts['data']).length - 1)).round(1));
+      final_results['average'] = (temp['average'] / (Object.keys(this_class.charts['data']).length - 1)).round(1);
+      final_results['min'] = (temp['min'] / (Object.keys(this_class.charts['data']).length - 1)).round(1);
+      final_results['max'] = (temp['max'] / (Object.keys(this_class.charts['data']).length - 1)).round(1);
 
-      this.charts['ids']['total'].series[i].setData([{
-        y: final_results['average'][i],
-        min: final_results['min'][i],
-        max: final_results['max'][i]
-      }]);
-    }
+      if (data.name.indexOf('error') === -1) {
+        this_class.charts['ids']['total'].series[index].setData([{
+          y: final_results['average'],
+          min: final_results['min'],
+          max: final_results['max']
+        }]);
+      } else {
+        this_class.charts['ids']['total'].series[index].setData([final_results['min'], final_results['max']]);
+      }
+    });
     this.getBestTests();
   },
   getBestTests: function () {
@@ -176,15 +190,39 @@ var TestComparison = {
       div.empty();
 
       $.each(this_class.charts['ids'][category_name].series, function (index, data) {
-        if (data['data'][0].y > results[category_name]['value']) {
-          results[category_name]['value'] = data['data'][0].y;
-          results[category_name]['name'] = data.name;
+        if (data.name.indexOf('error') === -1) {
+          if (data['data'][0].y > results[category_name]['value']) {
+            results[category_name]['value'] = data['data'][0].y;
+            results[category_name]['name'] = data.name;
+          }
         }
       });
       div.append(results[category_name]['name']);
     });
   },
-  ratingAlgorithm: function (test_list, test_name, test_results, categories, max_values, metrics_in_category) {
+  ratingAlgorithm: function (test_results, max_values) {
+    var results = {
+      total: {
+        average: 0,
+        min: 0,
+        max: 0
+      }
+    };
+
+    var categories = [];
+    categories.push('total');
+
+    var metrics_in_category = {};
+
+    // Get the metrics needed for each category
+    $.each(this.categories, function (category_name, data) {
+      for (var x = 0; x < data.length; x++) {
+        if (!metrics_in_category.hasOwnProperty(data[x])) {
+          metrics_in_category[data[x]] = category_name;
+        }
+      }
+    });
+
     var temp_testblock = {};
     var this_class = this;
 
@@ -319,10 +357,10 @@ var TestComparison = {
       var category = metrics_in_category[metric_name];
       if ($.inArray(category, categories) === -1) {
         categories.push(category);
-        this_class.results[category] = {
-          average: [],
-          min: [],
-          max: []
+        results[category] = {
+          average: 0,
+          min: 0,
+          max: 0
         };
       }
     });
@@ -354,9 +392,9 @@ var TestComparison = {
             temp['max'] = (temp_metrics['path_length']['max'] + temp_metrics['obstacle_distance']['max']) * this_class.weight[category];
           }
         }
-        this_class.results[category]['average'].push(temp['average']);
-        this_class.results[category]['min'].push(temp['min']);
-        this_class.results[category]['max'].push(temp['max']);
+        results[category]['average'] = temp['average'];
+        results[category]['min'] = temp['min'];
+        results[category]['max'] = temp['max'];
       }
     });
 
@@ -367,63 +405,50 @@ var TestComparison = {
 
     $.each(categories, function (index, name) {
       if (name != 'total') {
-        temp['average'] += this_class.results[name]['average'][this_class.results[name]['average'].length - 1];
-        temp['min'] += this_class.results[name]['min'][this_class.results[name]['min'].length - 1];
-        temp['max'] += this_class.results[name]['max'][this_class.results[name]['max'].length - 1];
+        temp['average'] += results[name]['average'];
+        temp['min'] += results[name]['min'];
+        temp['max'] += results[name]['max'];
       }
     });
 
-    this.results['total']['average'].push(temp['average'] / (categories.length - 1));
-    this.results['total']['min'].push(temp['min'] / (categories.length - 1));
-    this.results['total']['max'].push(temp['max'] / (categories.length - 1));
+    results['total']['average'] = temp['average'] / (categories.length - 1);
+    results['total']['min'] = temp['min'] / (categories.length - 1);
+    results['total']['max'] = temp['max'] / (categories.length - 1);
 
-    //Save chart data
-    $.each(this.results, function (category, data) {
-      if (!this_class.charts['data'].hasOwnProperty(category)) {
-        this_class.charts['data'][category] = [];
-      }
-      this_class.charts['data'][category].push({
-        name: test_name,
-        data: [{
-          x: 0,
-          y: this_class.results[category]['average'][this_class.results[category]['average'].length - 1].round(1),
-          min: this_class.results[category]['min'][this_class.results[category]['min'].length - 1].round(1),
-          max: this_class.results[category]['max'][this_class.results[category]['max'].length - 1].round(1),
-          robot: test_list[test_name]['robot'],
-          planer: test_list[test_name]['planer_id'],
-          planning_method: test_list[test_name]['planning_method'],
-          jump_threshold: test_list[test_name]['jump_threshold'],
-          eef_step: test_list[test_name]['eef_step']
-        }]
-      });
-    });
+    return results;
   },
   computePoints: function (test_list, files) {
-    this.results = {};
-    this.results['total'] = {
-      average: [],
-      min: [],
-      max: []
-    };
-
     var this_class = this;
-    var categories = [];
-    categories.push('total');
     var max_values = this.getMaximum(files);
-    var metrics_in_category = {};
-
-    // Get the metrics needed for each category
-    $.each(this.categories, function (category_name, data) {
-      for (var x = 0; x < data.length; x++) {
-        if (!metrics_in_category.hasOwnProperty(data[x])) {
-          metrics_in_category[data[x]] = category_name;
-        }
-      }
-    });
 
     // Iterate through selected tests
     $.each(files, function (index, test_name) {
-      this_class.ratingAlgorithm(test_list, test_name, FileStorage.readData(test_name), categories, max_values, metrics_in_category);
+      var results = this_class.ratingAlgorithm(FileStorage.readData(test_name), max_values);
+
+      //Save chart data
+      $.each(results, function (category, data) {
+        if (!this_class.charts['data'].hasOwnProperty(category)) {
+          this_class.charts['data'][category] = [];
+        }
+        this_class.charts['data'][category].push({
+          name: test_name,
+          data: [{
+            x: 0,
+            y: results[category]['average'].round(1),
+            min: results[category]['min'].round(1),
+            max: results[category]['max'].round(1),
+            robot: test_list[test_name]['robot'],
+            planer: test_list[test_name]['planer_id'],
+            planning_method: test_list[test_name]['planning_method'],
+            jump_threshold: test_list[test_name]['jump_threshold'],
+            eef_step: test_list[test_name]['eef_step']
+          }]
+        }, {
+          name: test_name + ' error',
+          type: 'errorbar',
+          data: [[results[category]['min'].round(1), results[category]['max'].round(1)]]
+        });
+      });
     });
   },
   createCharts: function (plot_tooltip) {
@@ -442,6 +467,11 @@ var TestComparison = {
 
     var test_results = $('#test_results').find('.table tbody');
     test_results.empty();
+
+    $('#compare_tab_total').addClass('active');
+    $('#compare_tab_categories').removeClass('active');
+    $('#total_tab').addClass('active');
+    category_div.removeClass('active');
     
     var active = true;
     var class_active = '';
@@ -454,6 +484,7 @@ var TestComparison = {
         } else {
           class_active = '';
         }
+
         //Create category tab
         category_tabs.append('<li role="presentation" class="' + class_active + '"><a href="#' + category + '_tab"' +
           'aria-controls="' + category + '_tab" role="tab" data-toggle="tab">' + category.capitalize() + '</a></li>');

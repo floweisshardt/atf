@@ -308,7 +308,7 @@ var TestList = {
     var error = false;
 
     var plot_tooltip = {
-      'formatter': function () {
+      formatter: function () {
         var o = this.point.options;
 
         return '<b>' + this.series.name + '</b><br>' +
@@ -506,20 +506,6 @@ var TestList = {
         return false;
       }
 
-      var active_class;
-      if (first_entry) {
-        test_details.find('.nav-tabs').empty();
-        test_details.find('.tab-content').empty();
-        active_class = 'active';
-        first_entry = false;
-      } else
-        active_class = '';
-
-      //TODO: Only when testblock has data per testblock
-
-      test_details.find('.nav-tabs').append('<li role="presentation" class="' + active_class + '"><a href="#details_' + testblock_name + '" aria-controls="details_' + testblock_name + '" role="tab" data-toggle="tab">' + testblock_name + '</a></li>');
-      test_details.find('.tab-content').append('<div role="tabpanel" class="tab-pane ' + active_class + '" id="details_' + testblock_name + '"></div>');
-
       var data_per_testblock = {};
 
       $.each(testblock_data, function (level_2, level_2_data) {
@@ -559,9 +545,9 @@ var TestList = {
                     name: level_3,
                     data: [{
                       x: 0,
-                      y: level_4_data['average'].round(0),
-                      min: level_4_data['min'].round(0),
-                      max: level_4_data['max'].round(0)
+                      y: level_4_data['average'].round(2),
+                      min: level_4_data['min'].round(2),
+                      max: level_4_data['max'].round(2)
                     }]
                   });
                 } else {
@@ -596,6 +582,20 @@ var TestList = {
           });
         }
       });
+
+      if (Object.keys(data_per_testblock).length != 0) {
+        var active_class;
+        if (first_entry) {
+          test_details.find('.nav-tabs').empty();
+          test_details.find('.tab-content').empty();
+          active_class = 'active';
+          first_entry = false;
+        } else
+          active_class = '';
+
+        test_details.find('.nav-tabs').append('<li role="presentation" class="' + active_class + '"><a href="#details_' + testblock_name + '" aria-controls="details_' + testblock_name + '" role="tab" data-toggle="tab">' + testblock_name + '</a></li>');
+        test_details.find('.tab-content').append('<div role="tabpanel" class="tab-pane ' + active_class + '" id="details_' + testblock_name + '"></div>');
+      }
 
       $.each(data_per_testblock, function (metric_name, data) {
         if (data.length != 0) {
