@@ -58,6 +58,7 @@ $('.table').find('#test_list').on('click', 'input', function () {
     }
   }
   var checked = $(this).parent().parent().parent().parent().parent().find('input:checked').length;
+  $('#text_selection').find('span').html(checked);
   if (checked > 1) {
     $('#button_compare').prop('disabled', false);
   } else {
@@ -137,6 +138,7 @@ $(document).on('click', '#button_compare', function () {
   $(this).prop('disabled', true);
   compare_test_option_select_test.val('').selectpicker('refresh');
   compare_test_option_select_scene.val('').prop('disabled', true).selectpicker('refresh');
+  $('#text_selection').find('span').html('0');
   TestComparison.compareTests(tests);
 });
 
@@ -178,6 +180,7 @@ $('#compare_test_option')
         }
       }
     });
+    $('#text_selection').find('span').html(checked);
     if (checked > 1) {
       $('#button_compare').prop('disabled', false);
     } else {
