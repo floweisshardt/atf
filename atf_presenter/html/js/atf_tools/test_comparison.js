@@ -7,7 +7,8 @@ var TestComparison = {
   },
   charts: {
     ids: {},
-    data: {}
+    data: {},
+    invisible: []
   },
   weight: {
     speed: 100,
@@ -106,7 +107,7 @@ var TestComparison = {
     };
 
     this.computePoints(test_list, files);
-    this.charts = this.createCharts(plot_tooltip);
+    this.createCharts(plot_tooltip);
     this.backup_storage = $.extend(true, {}, this.charts['data']);
 
     this.getBestTests();
@@ -136,6 +137,8 @@ var TestComparison = {
 
     var temp_testblock = {};
     var this_class = this;
+
+    //TODO: Use math.mean for calculation
 
     // Iterate through all testblocks
     $.each(test_results, function (testblock_name, testblock_data) {
@@ -366,10 +369,8 @@ var TestComparison = {
     });
   },
   createCharts: function (plot_tooltip) {
-    var charts = {};
-    charts['ids'] = {};
-    charts['data'] = this.charts['data'];
-    
+    var this_class = this;
+
     var category_div = $('#categories_tab');
     var category_tabs = category_div.find('.nav-tabs');
     var category_tabs_content = category_div.find('.tab-content');
@@ -414,7 +415,7 @@ var TestComparison = {
         //Create test result table entries
         test_results.append('<tr><td>' + category.capitalize() + '</td><td id="result_overview_' + category + '"></td></tr>');
       }
-      charts['ids'][category] = new Highcharts.Chart({
+      this_class.charts['ids'][category] = new Highcharts.Chart({
         chart: {
           renderTo: category,
           defaultSeriesType: 'column',
@@ -442,6 +443,13 @@ var TestComparison = {
             pointPadding: 0,
             groupPadding: 0,
             borderWidth: 0
+          },
+          series: {
+            events: {
+              legendItemClick: function() {
+                TestComparison.getBestTests(this.name, !this.visible);
+              }
+            }
           }
         }
       });
@@ -449,8 +457,6 @@ var TestComparison = {
 
     //Create test result table total entry
     test_results.append('<tr><td>Total</td><td id="result_overview_total"></td></tr>');
-
-    return charts;
   },
   changeWeight: function (category, weight) {
     var this_class = this;
@@ -534,11 +540,10 @@ var TestComparison = {
     });
     this.getBestTests();
   },
-  getBestTests: function () {
+  getBestTests: function (name, visible) {
     var results = {};
     var compare_tests = $('#compare_tests').find('#test_results');
     var this_class = this;
-
     $.each(Object.keys(this.charts['data']), function (index, category_name) {
 
       if (!results.hasOwnProperty(category_name)) {
@@ -552,9 +557,15 @@ var TestComparison = {
 
       $.each(this_class.charts['ids'][category_name].series, function (index, data) {
         if (data.name.indexOf('variation') === -1) {
-          if (data['data'][0].y > results[category_name]['value']) {
-            results[category_name]['value'] = data['data'][0].y;
-            results[category_name]['name'] = data.name;
+          if (data.name === name && visible === true && $.inArray(name, this_class.charts['invisible']) != -1) {
+            this_class.charts['invisible'].splice($.inArray(name, this_class.charts['invisible']), 1);
+
+          } else if (data.name === name && visible === false && $.inArray(name, this_class.charts['invisible']) === -1) {
+            this_class.charts['invisible'].push(name);
+          }
+          if (data['data'][0].y > results[category_name]['value'] && this_class.charts['invisible'].indexOf(data.name) === -1) {
+              results[category_name]['value'] = data['data'][0].y;
+              results[category_name]['name'] = data.name;
           }
         }
       });
