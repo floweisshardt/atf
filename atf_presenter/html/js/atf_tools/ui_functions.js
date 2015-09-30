@@ -82,7 +82,11 @@ $('#compare_tests').find('#weight_control').on('click', '.weight_control_button'
         $(this).removeClass('active');
         weight_category = $(this).val();
         weight_input = $(this).parent().parent().find('.weight_control_value');
-        weight_factor = 1 / weight_input.val();
+        if (weight_input.val() === '0') {
+          weight_factor = 1;
+        } else {
+          weight_factor = 1 / weight_input.val();
+        }
         weight_input.prop('disabled', false);
         TestComparison.changeWeight(weight_category, weight_factor);
       });
