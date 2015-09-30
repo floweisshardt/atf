@@ -138,8 +138,6 @@ var TestComparison = {
     var temp_testblock = {};
     var this_class = this;
 
-    //TODO: Use math.mean for calculation
-
     // Iterate through all testblocks
     $.each(test_results, function (testblock_name, testblock_data) {
       $.each(testblock_data, function (level_2, level_2_data) {
@@ -147,44 +145,40 @@ var TestComparison = {
           // Time
           if (!temp_testblock.hasOwnProperty(level_2)) {
             temp_testblock[level_2] = {
-              length: 0,
               total: max_values[level_2],
-              min: 0,
-              max: 0,
-              average: 0
+              min: [],
+              max: [],
+              average: []
             };
           }
           if (temp_testblock[level_2]['total'] != 0) {
-            temp_testblock[level_2]['average'] += (temp_testblock[level_2]['total'] - level_2_data['average']) / temp_testblock[level_2]['total'];
-            temp_testblock[level_2]['max'] += (temp_testblock[level_2]['total'] - level_2_data['min']) / temp_testblock[level_2]['total'];
-            temp_testblock[level_2]['min'] += (temp_testblock[level_2]['total'] - level_2_data['max']) / temp_testblock[level_2]['total'];
+            temp_testblock[level_2]['average'].push((temp_testblock[level_2]['total'] - level_2_data['average']) / temp_testblock[level_2]['total']);
+            temp_testblock[level_2]['max'].push((temp_testblock[level_2]['total'] - level_2_data['min']) / temp_testblock[level_2]['total']);
+            temp_testblock[level_2]['min'].push((temp_testblock[level_2]['total'] - level_2_data['max']) / temp_testblock[level_2]['total']);
           }
-          temp_testblock[level_2]['length']++;
         } else {
           $.each(level_2_data, function (level_3, level_3_data) {
             if (level_3_data.hasOwnProperty('max')) {
               // Path length & obstacle distance
               if (!temp_testblock.hasOwnProperty(level_2)) {
                 temp_testblock[level_2] = {
-                  length: 0,
                   total: max_values[level_2],
-                  min: 0,
-                  max: 0,
-                  average: 0
+                  min: [],
+                  max: [],
+                  average: []
                 };
               }
               if (temp_testblock[level_2]['total'] != 0) {
                 if (level_2 === 'obstacle_distance') {
-                  temp_testblock[level_2]['average'] += level_3_data['average'] / temp_testblock[level_2]['total'];
-                  temp_testblock[level_2]['min'] += level_3_data['min'] / temp_testblock[level_2]['total'];
-                  temp_testblock[level_2]['max'] += level_3_data['max'] / temp_testblock[level_2]['total'];
+                  temp_testblock[level_2]['average'].push(level_3_data['average'] / temp_testblock[level_2]['total']);
+                  temp_testblock[level_2]['min'].push(level_3_data['min'] / temp_testblock[level_2]['total']);
+                  temp_testblock[level_2]['max'].push(level_3_data['max'] / temp_testblock[level_2]['total']);
                 } else {
-                  temp_testblock[level_2]['average'] += (temp_testblock[level_2]['total'] - level_3_data['average']) / temp_testblock[level_2]['total'];
-                  temp_testblock[level_2]['max'] += (temp_testblock[level_2]['total'] - level_3_data['min']) / temp_testblock[level_2]['total'];
-                  temp_testblock[level_2]['min'] += (temp_testblock[level_2]['total'] - level_3_data['max']) / temp_testblock[level_2]['total'];
+                  temp_testblock[level_2]['average'].push((temp_testblock[level_2]['total'] - level_3_data['average']) / temp_testblock[level_2]['total']);
+                  temp_testblock[level_2]['max'].push((temp_testblock[level_2]['total'] - level_3_data['min']) / temp_testblock[level_2]['total']);
+                  temp_testblock[level_2]['min'].push((temp_testblock[level_2]['total'] - level_3_data['max']) / temp_testblock[level_2]['total']);
                 }
               }
-              temp_testblock[level_2]['length']++;
             } else {
               $.each(level_3_data, function (level_4, level_4_data) {
                 // Resources
@@ -195,37 +189,34 @@ var TestComparison = {
                   // CPU & Mem
                   if (!temp_testblock[level_2].hasOwnProperty(level_4)) {
                     temp_testblock[level_2][level_4] = {
-                      length: 0,
-                      min: 0,
-                      max: 0,
-                      average: 0,
-                      total: max_values[level_4]
+                      total: max_values[level_4],
+                      min: [],
+                      max: [],
+                      average: []
                     };
                   }
                   if (temp_testblock[level_2][level_4]['total'] != 0) {
-                    temp_testblock[level_2][level_4]['average'] += (temp_testblock[level_2][level_4]['total'] - level_4_data['average']) / temp_testblock[level_2][level_4]['total'];
-                    temp_testblock[level_2][level_4]['max'] += (temp_testblock[level_2][level_4]['total'] - level_4_data['min']) / temp_testblock[level_2][level_4]['total'];
-                    temp_testblock[level_2][level_4]['min'] += (temp_testblock[level_2][level_4]['total'] - level_4_data['max']) / temp_testblock[level_2][level_4]['total'];
+                    temp_testblock[level_2][level_4]['average'].push((temp_testblock[level_2][level_4]['total'] - level_4_data['average']) / temp_testblock[level_2][level_4]['total']);
+                    temp_testblock[level_2][level_4]['max'].push((temp_testblock[level_2][level_4]['total'] - level_4_data['min']) / temp_testblock[level_2][level_4]['total']);
+                    temp_testblock[level_2][level_4]['min'].push((temp_testblock[level_2][level_4]['total'] - level_4_data['max']) / temp_testblock[level_2][level_4]['total']);
                   }
                   temp_testblock[level_2][level_4]['length']++;
                 } else {
                   // IO & Network
                   if (!temp_testblock[level_2].hasOwnProperty(level_4)) {
                     temp_testblock[level_2][level_4] = {
-                      length: 0,
-                      min: 0,
-                      max: 0,
-                      average: 0,
-                      total: max_values[level_4]
+                      total: max_values[level_4],
+                      min: [],
+                      max: [],
+                      average: []
                     };
                   }
                   for (var x = 0; x < level_4_data['max'].length; x++) {
                     if (temp_testblock[level_2][level_4]['total'][x] != 0) {
-                      temp_testblock[level_2][level_4]['average'] += (temp_testblock[level_2][level_4]['total'][x] - level_4_data['average'][x]) / temp_testblock[level_2][level_4]['total'][x];
-                      temp_testblock[level_2][level_4]['max'] += (temp_testblock[level_2][level_4]['total'][x] - level_4_data['min'][x]) / temp_testblock[level_2][level_4]['total'][x];
-                      temp_testblock[level_2][level_4]['min'] += (temp_testblock[level_2][level_4]['total'][x] - level_4_data['max'][x]) / temp_testblock[level_2][level_4]['total'][x];
+                      temp_testblock[level_2][level_4]['average'].push((temp_testblock[level_2][level_4]['total'][x] - level_4_data['average'][x]) / temp_testblock[level_2][level_4]['total'][x]);
+                      temp_testblock[level_2][level_4]['max'].push((temp_testblock[level_2][level_4]['total'][x] - level_4_data['min'][x]) / temp_testblock[level_2][level_4]['total'][x]);
+                      temp_testblock[level_2][level_4]['min'].push((temp_testblock[level_2][level_4]['total'][x] - level_4_data['max'][x]) / temp_testblock[level_2][level_4]['total'][x]);
                     }
-                    temp_testblock[level_2][level_4]['length']++;
                   }
                 }
               });
@@ -236,32 +227,30 @@ var TestComparison = {
     });
 
     var temp_metrics = {};
-    var count_resource_categories = 0;
 
     $.each(temp_testblock, function (metric, metric_data) {
       if (!temp_metrics.hasOwnProperty(metric)) {
         temp_metrics[metric] = {
-          average: 0,
-          min: 0,
-          max: 0
+          average: [],
+          min: [],
+          max: []
         };
       }
       if (!metric_data.hasOwnProperty('average')) {
         $.each(metric_data, function (res_name, res_data) {
           // Resources
-          if (res_data['length'] != 0) {
-            temp_metrics[metric]['average'] += res_data['average'] / res_data['length'];
-            temp_metrics[metric]['min'] += res_data['min'] / res_data['length'];
-            temp_metrics[metric]['max'] += res_data['max'] / res_data['length'];
-            count_resource_categories++;
+          if (res_data['average'].length != 0) {
+            temp_metrics[metric]['average'].push(math.mean(res_data['average']));
+            temp_metrics[metric]['min'].push(math.mean(res_data['min']));
+            temp_metrics[metric]['max'].push(math.mean(res_data['max']));
           }
         });
       } else {
         // Time & Path length & Obstacle distance
-        if (metric_data['length'] != 0) {
-          temp_metrics[metric]['average'] = metric_data['average'] / metric_data['length'];
-          temp_metrics[metric]['min'] = metric_data['min'] / metric_data['length'];
-          temp_metrics[metric]['max'] = metric_data['max'] / metric_data['length'];
+        if (metric_data['average'].length != 0) {
+          temp_metrics[metric]['average'] = math.mean(metric_data['average']);
+          temp_metrics[metric]['min'] = math.mean(metric_data['min']);
+          temp_metrics[metric]['max'] = math.mean(metric_data['max']);
         }
       }
     });
@@ -288,9 +277,9 @@ var TestComparison = {
         };
 
         if (category === 'resources') {
-          temp['average'] = (temp_metrics['resources']['average'] / count_resource_categories) * this_class.weight[category];
-          temp['min'] = (temp_metrics['resources']['min'] / count_resource_categories) * this_class.weight[category];
-          temp['max'] = (temp_metrics['resources']['max'] / count_resource_categories) * this_class.weight[category];
+          temp['average'] = math.mean(temp_metrics['resources']['average']) * this_class.weight[category];
+          temp['min'] = math.mean(temp_metrics['resources']['min']) * this_class.weight[category];
+          temp['max'] = math.mean(temp_metrics['resources']['max']) * this_class.weight[category];
         } else if (category === 'speed') {
           temp['average'] = temp_metrics['time']['average'] * this_class.weight[category];
           temp['min'] = temp_metrics['time']['min'] * this_class.weight[category];
@@ -313,21 +302,21 @@ var TestComparison = {
     });
 
     var temp = {};
-    temp['average'] = 0;
-    temp['min'] = 0;
-    temp['max'] = 0;
+    temp['average'] = [];
+    temp['min'] = [];
+    temp['max'] = [];
 
     $.each(categories, function (index, name) {
       if (name != 'total') {
-        temp['average'] += results[name]['average'];
-        temp['min'] += results[name]['min'];
-        temp['max'] += results[name]['max'];
+        temp['average'].push(results[name]['average']);
+        temp['min'].push(results[name]['min']);
+        temp['max'].push(results[name]['max']);
       }
     });
 
-    results['total']['average'] = temp['average'] / (categories.length - 1);
-    results['total']['min'] = temp['min'] / (categories.length - 1);
-    results['total']['max'] = temp['max'] / (categories.length - 1);
+    results['total']['average'] = math.mean(temp['average']);
+    results['total']['min'] = math.mean(temp['min']);
+    results['total']['max'] = math.mean(temp['max']);
 
     return results;
   },
@@ -500,22 +489,25 @@ var TestComparison = {
         }]);
       }
 
-      var temp = {};
-      temp['average'] = 0;
-      temp['min'] = 0;
-      temp['max'] = 0;
+      var temp = {
+        average: [],
+        min: [],
+        max: []
+      };
+
+      //Calculate final results
       if (data.name.indexOf('variation') === -1) {
         $.each(Object.keys(this_class.charts['data']), function (idx, category_name) {
           if (category_name != 'total') {
-            temp['average'] += results_temp[category_name][index]['data'][0]['y'];
-            temp['min'] += results_temp[category_name][index]['data'][0]['min'];
-            temp['max'] += results_temp[category_name][index]['data'][0]['max'];
+            temp['average'].push(results_temp[category_name][index]['data'][0]['y']);
+            temp['min'].push(results_temp[category_name][index]['data'][0]['min']);
+            temp['max'].push(results_temp[category_name][index]['data'][0]['max']);
           }
         });
 
-        final_results['average'] = (temp['average'] / (Object.keys(this_class.charts['data']).length - 1)).round(1);
-        final_results['min'] = (temp['min'] / (Object.keys(this_class.charts['data']).length - 1)).round(1);
-        final_results['max'] = (temp['max'] / (Object.keys(this_class.charts['data']).length - 1)).round(1);
+        final_results['average'] = math.mean(temp['average']).round(1);
+        final_results['min'] = math.mean(temp['min']).round(1);
+        final_results['max'] = math.mean(temp['max']).round(1);
 
         this_class.charts['ids']['total'].series[index].setData([{
           y: final_results['average'],
@@ -525,12 +517,12 @@ var TestComparison = {
       } else {
         $.each(Object.keys(this_class.charts['data']), function (idx, category_name) {
           if (category_name != 'total') {
-            temp['min'] += results_temp[category_name][index]['data'][0]['low'];
-            temp['max'] += results_temp[category_name][index]['data'][0]['high'];
+            temp['min'].push(results_temp[category_name][index]['data'][0]['low']);
+            temp['max'].push(results_temp[category_name][index]['data'][0]['high']);
           }
         });
-        final_results['min'] = (temp['min'] / (Object.keys(this_class.charts['data']).length - 1)).round(1);
-        final_results['max'] = (temp['max'] / (Object.keys(this_class.charts['data']).length - 1)).round(1);
+        final_results['min'] = math.mean(temp['min']).round(1);
+        final_results['max'] = math.mean(temp['max']).round(1);
 
         this_class.charts['ids']['total'].series[index].setData([{
           low: final_results['min'],
