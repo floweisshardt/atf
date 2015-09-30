@@ -80,7 +80,7 @@ var TestComparison = {
 
     var plot_tooltip = {
       formatter: function () {
-        if (this.series.name.indexOf('error') != -1) return false;
+        if (this.series.name.indexOf('variation') != -1) return false;
         var div = $('#test_configuration_details');
         var details_head = div.find('.panel-heading');
         var details_body = div.find('.panel-body');
