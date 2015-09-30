@@ -17,10 +17,11 @@ from copy import deepcopy, copy
 
 
 class GenerateTests:
-    def __init__(self, config):
+    def __init__(self, arguments):
 
         self.print_output = "Generation done!"
-        generation_config = self.load_yaml(config)
+        self.arguments = arguments
+        generation_config = self.load_yaml(self.arguments[1])
         try:
             self.test_suite_file = self.get_path(generation_config["test_suite_file"])
             self.test_config_file = self.get_path(generation_config["test_config_file"])
@@ -52,13 +53,13 @@ class GenerateTests:
         self.test_list = {}
 
         # Empty folders
-        if os.path.exists(rospkg.RosPack().get_path("atf_core") + "/test/generated/recording/"):
-            shutil.rmtree(rospkg.RosPack().get_path("atf_core") + "/test/generated/recording/")
-        os.makedirs(rospkg.RosPack().get_path("atf_core") + "/test/generated/recording/")
+        if os.path.exists(self.arguments[2] + "recording/"):
+            shutil.rmtree(self.arguments[2] + "recording/")
+        os.makedirs(self.arguments[2] + "recording/")
 
-        if os.path.exists(rospkg.RosPack().get_path("atf_core") + "/test/generated/analysing/"):
-            shutil.rmtree(rospkg.RosPack().get_path("atf_core") + "/test/generated/analysing/")
-        os.makedirs(rospkg.RosPack().get_path("atf_core") + "/test/generated/analysing/")
+        if os.path.exists(self.arguments[2] + "analysing/"):
+            shutil.rmtree(self.arguments[2] + "analysing/")
+        os.makedirs(self.arguments[2] + "analysing/")
 
         if os.path.exists(self.bagfile_output):
             shutil.rmtree(self.bagfile_output)
@@ -112,7 +113,7 @@ class GenerateTests:
             )
 
             xmlstr = minidom.parseString(ElementTree.tostring(test_record)).toprettyxml(indent="    ")
-            with open(rospkg.RosPack().get_path("atf_core") + "/test/generated/recording/" + item + ".test", "w") as f:
+            with open(self.arguments[2] + "recording/" + item + ".test", "w") as f:
                 f.write(xmlstr)
 
             # Analysing
@@ -137,7 +138,7 @@ class GenerateTests:
             )
 
             xmlstr = minidom.parseString(ElementTree.tostring(test_analyse)).toprettyxml(indent="    ")
-            with open(rospkg.RosPack().get_path("atf_core") + "/test/generated/analysing/" + item + ".test", "w") as f:
+            with open(self.arguments[2] + "analysing/" + item + ".test", "w") as f:
                 f.write(xmlstr)
 
         print self.print_output
@@ -216,4 +217,4 @@ class GenerateTests:
 
 
 if __name__ == '__main__':
-    GenerateTests(sys.argv[1]).generate_tests()
+    GenerateTests(sys.argv).generate_tests()
