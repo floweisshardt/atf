@@ -214,17 +214,17 @@ var TestList = {
                     if (typeof level_5_data[0][0] === "undefined") {
                       // CPU & Mem
                       var value = 0;
-                      if (level_5 == 'max') value = math.max(level_5_data);
-                      else if (level_5 == 'min') value = math.min(level_5_data);
-                      else if (level_5 == 'average') value = math.mean(level_5_data);
+                      if (level_5 === 'max') value = math.max(level_5_data);
+                      else if (level_5 === 'min') value = math.min(level_5_data);
+                      else if (level_5 === 'average') value = math.mean(level_5_data);
                       test_data_complete[level_1][level_2][level_3][level_4][level_5] = value
                     } else {
                       // IO & Network
                       $.each(level_5_data, function (level_6, level_6_data) {
                         var value = 0;
-                        if (level_5 == 'max') value = math.max(level_6_data);
-                        else if (level_5 == 'min') value = math.min(level_6_data);
-                        else if (level_5 == 'average') value = math.mean(level_6_data);
+                        if (level_5 === 'max') value = math.max(level_6_data);
+                        else if (level_5 === 'min') value = math.min(level_6_data);
+                        else if (level_5 === 'average') value = math.mean(level_6_data);
                         test_data_complete[level_1][level_2][level_3][level_4][level_5][level_6] = value
                       });
                     }
@@ -232,18 +232,18 @@ var TestList = {
                 } else {
                   // Path length & obstacle distance
                   var value = 0;
-                  if (level_4 == 'max') value = math.max(level_4_data);
-                  else if (level_4 == 'min') value = math.min(level_4_data);
-                  else if (level_4 == 'average') value = math.mean(level_4_data);
+                  if (level_4 === 'max') value = math.max(level_4_data);
+                  else if (level_4 === 'min') value = math.min(level_4_data);
+                  else if (level_4 === 'average') value = math.mean(level_4_data);
                   test_data_complete[level_1][level_2][level_3][level_4] = value
                 }
               });
             } else {
               // Time
               var value = 0;
-              if (level_3 == 'max') value = math.max(level_3_data);
-              else if (level_3 == 'min') value = math.min(level_3_data);
-              else if (level_3 == 'average') value = math.mean(level_3_data);
+              if (level_3 === 'max') value = math.max(level_3_data);
+              else if (level_3 === 'min') value = math.min(level_3_data);
+              else if (level_3 === 'average') value = math.mean(level_3_data);
               test_data_complete[level_1][level_2][level_3] = value
             }
           });
@@ -259,10 +259,12 @@ var TestList = {
           test_data_complete[testblock_name]['status'] = 'error';
         }
       });
+
       if (errors['error'] === test_config['subtests'].length) {
         test_data_complete = {};
         test_data_complete['error'] = 'An error occured outside monitored testblocks. Aborted analysis...';
       }
+
       FileStorage.removeData(test_name);
       if (Object.keys(test_data_complete).length != 0) {
         FileStorage.writeData(test_name, test_data_complete);
