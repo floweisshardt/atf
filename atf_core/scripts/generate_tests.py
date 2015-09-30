@@ -28,7 +28,7 @@ class GenerateTests:
             self.bagfile_output = self.get_path(generation_config["bagfile_output"])
             self.robot_config_path = self.get_path(generation_config["robot_config_path"])
             self.test_application_path = self.get_path(generation_config["test_application_path"])
-            self.move_group_launch = self.get_path(generation_config["move_group_launch"])
+            self.additional_launch_file = self.get_path(generation_config["additional_launch_file"])
 
             if generation_config["result_yaml_output"] != "":
                 self.yaml_output = self.get_path(generation_config["result_yaml_output"])
@@ -44,7 +44,7 @@ class GenerateTests:
             self.bagfile_output = ""
             self.robot_config_path = ""
             self.test_application_path = ""
-            self.move_group_launch = ""
+            self.additional_launch_file = ""
             self.yaml_output = ""
             self.json_output = ""
             self.time_limit = 0
@@ -104,7 +104,7 @@ class GenerateTests:
                 arg(name="robot", value=self.test_list[item]["robot"]),
                 arg(name="rc_path", value=self.robot_config_path),
                 include(arg(name="gui", value="false"), file=self.get_path(robot_config["robot_bringup_launch"])),
-                include(file=self.move_group_launch),
+                include(file=self.additional_launch_file),
                 node(param(name="robot_config_file", value="$(arg rc_path)$(arg robot)/robot_config.yaml"),
                      name="atf_recorder", pkg="atf_recorder", type="recorder_core.py", output="screen"),
                 node(name="obstacle_distance_node", pkg="atf_recorder_plugins", type="obstacle_distance_node",
