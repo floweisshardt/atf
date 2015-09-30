@@ -309,6 +309,7 @@ var TestList = {
 
     var plot_tooltip = {
       formatter: function () {
+        if (this.series.name.indexOf('variation') != -1) return false;
         var o = this.point.options;
 
         return '<b>' + this.series.name + '</b><br>' +
@@ -330,12 +331,7 @@ var TestList = {
         'Errors received',
         'Errors sent',
         'Packets dropped: Received',
-        'Packets dropped: Sent'],
-      cpu: [],
-      mem: [],
-      time: [],
-      path_length: [],
-      obstacle_distance: []
+        'Packets dropped: Sent']
     };
 
     var plot_options = {
@@ -520,6 +516,13 @@ var TestList = {
               min: level_2_data['min'].round(3),
               max: level_2_data['max'].round(3)
             }]
+          }, {
+            name: testblock_name + '_variation',
+            type: 'errorbar',
+            data: [{
+              low: level_2_data['min'].round(3),
+              high: level_2_data['max'].round(3)
+            }]
           });
         } else {
           $.each(level_2_data, function (level_3, level_3_data) {
@@ -533,6 +536,13 @@ var TestList = {
                   y: level_3_data['average'].round(3),
                   min: level_3_data['min'].round(3),
                   max: level_3_data['max'].round(3)
+                }]
+              }, {
+                name: level_3 + '_variation',
+                type: 'errorbar',
+                data: [{
+                  low: level_3_data['min'].round(3),
+                  high: level_3_data['max'].round(3)
                 }]
               });
             } else {
@@ -549,9 +559,17 @@ var TestList = {
                       min: level_4_data['min'].round(2),
                       max: level_4_data['max'].round(2)
                     }]
+                  }, {
+                    name: level_3 + '_variation',
+                    type: 'errorbar',
+                    data: [{
+                      low: level_4_data['min'].round(3),
+                      high: level_4_data['max'].round(3)
+                    }]
                   });
                 } else {
                   var data = [];
+                  var data_variation = [];
 
                   // IO & Network
                   if (!data_per_testblock.hasOwnProperty(level_4)) data_per_testblock[level_4] = [];
@@ -571,10 +589,18 @@ var TestList = {
                       min: level_4_data['min'][i].round(0),
                       max: level_4_data['max'][i].round(0)
                     });
+                    data_variation.push({
+                      low: level_4_data['min'][i].round(0),
+                      high: level_4_data['max'][i].round(0)
+                    });
                   }
                   data_per_testblock[level_4].push({
                     name: level_3,
                     data: data
+                  }, {
+                    name: level_3 + '_variation',
+                    type: 'errorbar',
+                    data: data_variation
                   });
                 }
               });
@@ -604,8 +630,8 @@ var TestList = {
           var testblock_tab_content = test_details_tab_content.find('#details_' + testblock_name);
           testblock_tab_content.append('<div class="panel panel-info"><div class="panel-heading"></div>' +
             '<div class="panel-body"><div id="details_' + testblock_name + '_' + metric_name + '_content" class="plot"></div></div></div>');
-
-          plot_options[metric_name]['xAxis']['categories'] = categories[metric_name];
+          if (categories.hasOwnProperty(metric_name)) plot_options[metric_name]['xAxis']['categories'] = categories[metric_name];
+          else plot_options[metric_name]['xAxis']['categories'] = [];
 
           $('#details_' + testblock_name).find('#details_' + testblock_name + '_' + metric_name + '_content').highcharts({
             chart: plot_options[metric_name]['chart'],
