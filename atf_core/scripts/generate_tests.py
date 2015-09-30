@@ -8,6 +8,7 @@ import os
 import lxml.etree
 import lxml.builder
 import shutil
+import sys
 
 from xml.etree import ElementTree
 from xml.dom import minidom
@@ -16,11 +17,10 @@ from copy import deepcopy, copy
 
 
 class GenerateTests:
-    def __init__(self):
-        self.print_output = "Generation done!"
+    def __init__(self, config):
 
-        generation_config = self.load_yaml(rospkg.RosPack().get_path("atf_core") +
-                                           "/config/test_generation_config.yaml")
+        self.print_output = "Generation done!"
+        generation_config = self.load_yaml(config)
         try:
             self.test_suite_file = self.get_path(generation_config["test_suite_file"])
             self.test_config_file = self.get_path(generation_config["test_config_file"])
@@ -59,7 +59,7 @@ class GenerateTests:
         if os.path.exists(rospkg.RosPack().get_path("atf_core") + "/test/generated/analysing/"):
             shutil.rmtree(rospkg.RosPack().get_path("atf_core") + "/test/generated/analysing/")
         os.makedirs(rospkg.RosPack().get_path("atf_core") + "/test/generated/analysing/")
-
+        """
         if os.path.exists(self.bagfile_output):
             shutil.rmtree(self.bagfile_output)
         os.makedirs(self.bagfile_output)
@@ -72,6 +72,7 @@ class GenerateTests:
             if os.path.exists(self.yaml_output):
                 shutil.rmtree(self.yaml_output)
             os.makedirs(self.yaml_output)
+        """
 
         self.generate_test_list()
 
@@ -146,7 +147,6 @@ class GenerateTests:
         test_list_org = {}
 
         test_data = self.load_yaml(self.test_suite_file)
-
         for suite in test_data:
 
             suite_data = copy(test_data[suite])
@@ -217,4 +217,4 @@ class GenerateTests:
 
 
 if __name__ == '__main__':
-    GenerateTests().generate_tests()
+    GenerateTests(sys.argv[1]).generate_tests()

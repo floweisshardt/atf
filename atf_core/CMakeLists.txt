@@ -58,27 +58,3 @@ install(PROGRAMS
   scripts/test_builder.py
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
-
-#############
-## Testing ##
-#############
-
-if(CATKIN_ENABLE_TESTING)
-    find_package(rostest REQUIRED)
-
-    message("Generating test files ...")
-    execute_process(
-        COMMAND "${CMAKE_CURRENT_SOURCE_DIR}/scripts/generate_tests.py"
-        WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
-    )
-
-    file(GLOB TESTS_FILES RELATIVE ${PROJECT_SOURCE_DIR} test/generated/recording/*.test)
-    foreach(TEST ${TESTS_FILES})
-        add_rostest(${TEST})
-    endforeach()
-
-    file(GLOB TESTS_FILES RELATIVE ${PROJECT_SOURCE_DIR} test/generated/analysing/*.test)
-    foreach(TEST ${TESTS_FILES})
-        add_rostest(${TEST})
-    endforeach()
-endif()
