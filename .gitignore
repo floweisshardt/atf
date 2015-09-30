@@ -78,6 +78,8 @@ qtcreator-*
 # Catkin custom files
 CATKIN_IGNORE
 */.idea/*
+.idea/*
+*/data/*
 ts*_t*.json
 ts*_t*.yaml
 test_list.json
