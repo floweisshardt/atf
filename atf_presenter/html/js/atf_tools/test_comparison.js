@@ -107,98 +107,9 @@ var TestComparison = {
 
     this.computePoints(test_list, files);
     this.charts = this.createCharts(plot_tooltip);
-
-    this.getBestTests();
-  },
-  changeWeight: function (category, weight) {
-    var this_class = this;
-    var results_temp = $.extend(true, {}, this.charts['data']);
     this.backup_storage = $.extend(true, {}, this.charts['data']);
 
-    var final_results = {
-      average: 0,
-      min: 0,
-      max: 0
-    };
-    $.each(this.charts['data'][category], function (index, data) {
-      //TODO: Error graphs have no y, min, max...
-      if (weight != 0) {
-        this_class.backup_storage[category][index]['data'][0]['y'] *= weight;
-        this_class.backup_storage[category][index]['data'][0]['min'] *= weight;
-        this_class.backup_storage[category][index]['data'][0]['max'] *= weight;
-        results_temp  = $.extend(true, {}, this_class.backup_storage);
-      } else {
-        results_temp[category][index]['data'][0]['y'] = 0;
-        results_temp[category][index]['data'][0]['max'] = 0;
-        results_temp[category][index]['data'][0]['min'] = 0;
-      }
-      console.log(results_temp[category][index]['data'][0]['y']);
-      if (data.name.indexOf('error') === -1) {
-        this_class.charts['ids'][category].series[index].setData([{
-          y: results_temp[category][index]['data'][0]['y'].round(1),
-          min: results_temp[category][index]['data'][0]['min'].round(1),
-          max: results_temp[category][index]['data'][0]['max'].round(1)
-        }]);
-      } else {
-        this_class.charts['ids'][category].series[index].setData([results_temp[category][index]['data'][0]['min'].round(1),
-          results_temp[category][index]['data'][0]['max'].round(1)]);
-      }
-
-      var temp = {};
-      temp['average'] = 0;
-      temp['min'] = 0;
-      temp['max'] = 0;
-      $.each(Object.keys(this_class.charts['data']), function (idx, category_name) {
-
-        if (category_name != 'total') {
-          temp['average'] += results_temp[category_name][index]['data'][0]['y'];
-          temp['min'] += results_temp[category_name][index]['data'][0]['min'];
-          temp['max'] += results_temp[category_name][index]['data'][0]['max'];
-        }
-      });
-
-      final_results['average'] = (temp['average'] / (Object.keys(this_class.charts['data']).length - 1)).round(1);
-      final_results['min'] = (temp['min'] / (Object.keys(this_class.charts['data']).length - 1)).round(1);
-      final_results['max'] = (temp['max'] / (Object.keys(this_class.charts['data']).length - 1)).round(1);
-
-      if (data.name.indexOf('error') === -1) {
-        this_class.charts['ids']['total'].series[index].setData([{
-          y: final_results['average'],
-          min: final_results['min'],
-          max: final_results['max']
-        }]);
-      } else {
-        this_class.charts['ids']['total'].series[index].setData([final_results['min'], final_results['max']]);
-      }
-    });
     this.getBestTests();
-  },
-  getBestTests: function () {
-    var results = {};
-    var compare_tests = $('#compare_tests').find('#test_results');
-    var this_class = this;
-
-    $.each(Object.keys(this.charts['data']), function (index, category_name) {
-
-      if (!results.hasOwnProperty(category_name)) {
-        results[category_name] = {
-          name: '',
-          value: 0
-        };
-      }
-      var div = compare_tests.find('#result_overview_' + category_name);
-      div.empty();
-
-      $.each(this_class.charts['ids'][category_name].series, function (index, data) {
-        if (data.name.indexOf('error') === -1) {
-          if (data['data'][0].y > results[category_name]['value']) {
-            results[category_name]['value'] = data['data'][0].y;
-            results[category_name]['name'] = data.name;
-          }
-        }
-      });
-      div.append(results[category_name]['name']);
-    });
   },
   ratingAlgorithm: function (test_results, max_values) {
     var results = {
@@ -444,9 +355,12 @@ var TestComparison = {
             eef_step: test_list[test_name]['eef_step']
           }]
         }, {
-          name: test_name + ' error',
+          name: test_name + '_variation',
           type: 'errorbar',
-          data: [[results[category]['min'].round(1), results[category]['max'].round(1)]]
+          data: [{
+            low: results[category]['min'].round(1),
+            high: results[category]['max'].round(1)
+          }]
         });
       });
     });
@@ -537,5 +451,114 @@ var TestComparison = {
     test_results.append('<tr><td>Total</td><td id="result_overview_total"></td></tr>');
 
     return charts;
+  },
+  changeWeight: function (category, weight) {
+    var this_class = this;
+    var results_temp = $.extend(true, {}, this.charts['data']);
+
+    var final_results = {
+      average: 0,
+      min: 0,
+      max: 0
+    };
+    $.each(this.charts['data'][category], function (index, data) {
+      if (data.name.indexOf('variation') === -1) {
+        if (weight != 0) {
+          this_class.backup_storage[category][index]['data'][0]['y'] *= weight;
+          this_class.backup_storage[category][index]['data'][0]['min'] *= weight;
+          this_class.backup_storage[category][index]['data'][0]['max'] *= weight;
+          results_temp = $.extend(true, {}, this_class.backup_storage);
+        } else {
+          results_temp[category][index]['data'][0]['y'] = 0;
+          results_temp[category][index]['data'][0]['max'] = 0;
+          results_temp[category][index]['data'][0]['min'] = 0;
+        }
+        this_class.charts['ids'][category].series[index].setData([{
+          y: results_temp[category][index]['data'][0]['y'].round(1),
+          min: results_temp[category][index]['data'][0]['min'].round(1),
+          max: results_temp[category][index]['data'][0]['max'].round(1)
+        }]);
+
+      } else {
+        if (weight != 0) {
+          this_class.backup_storage[category][index]['data'][0]['low'] *= weight;
+          this_class.backup_storage[category][index]['data'][0]['high'] *= weight;
+          results_temp = $.extend(true, {}, this_class.backup_storage);
+        } else {
+          results_temp[category][index]['data'][0]['low'] = 0;
+          results_temp[category][index]['data'][0]['high'] = 0;
+        }
+        this_class.charts['ids'][category].series[index].setData([{
+          low: results_temp[category][index]['data'][0]['low'].round(1),
+          high: results_temp[category][index]['data'][0]['high'].round(1)
+        }]);
+      }
+
+      var temp = {};
+      temp['average'] = 0;
+      temp['min'] = 0;
+      temp['max'] = 0;
+      if (data.name.indexOf('variation') === -1) {
+        $.each(Object.keys(this_class.charts['data']), function (idx, category_name) {
+          if (category_name != 'total') {
+            temp['average'] += results_temp[category_name][index]['data'][0]['y'];
+            temp['min'] += results_temp[category_name][index]['data'][0]['min'];
+            temp['max'] += results_temp[category_name][index]['data'][0]['max'];
+          }
+        });
+
+        final_results['average'] = (temp['average'] / (Object.keys(this_class.charts['data']).length - 1)).round(1);
+        final_results['min'] = (temp['min'] / (Object.keys(this_class.charts['data']).length - 1)).round(1);
+        final_results['max'] = (temp['max'] / (Object.keys(this_class.charts['data']).length - 1)).round(1);
+
+        this_class.charts['ids']['total'].series[index].setData([{
+          y: final_results['average'],
+          min: final_results['min'],
+          max: final_results['max']
+        }]);
+      } else {
+        $.each(Object.keys(this_class.charts['data']), function (idx, category_name) {
+          if (category_name != 'total') {
+            temp['min'] += results_temp[category_name][index]['data'][0]['low'];
+            temp['max'] += results_temp[category_name][index]['data'][0]['high'];
+          }
+        });
+        final_results['min'] = (temp['min'] / (Object.keys(this_class.charts['data']).length - 1)).round(1);
+        final_results['max'] = (temp['max'] / (Object.keys(this_class.charts['data']).length - 1)).round(1);
+
+        this_class.charts['ids']['total'].series[index].setData([{
+          low: final_results['min'],
+          high: final_results['max']
+        }]);
+      }
+    });
+    this.getBestTests();
+  },
+  getBestTests: function () {
+    var results = {};
+    var compare_tests = $('#compare_tests').find('#test_results');
+    var this_class = this;
+
+    $.each(Object.keys(this.charts['data']), function (index, category_name) {
+
+      if (!results.hasOwnProperty(category_name)) {
+        results[category_name] = {
+          name: '',
+          value: 0
+        };
+      }
+      var div = compare_tests.find('#result_overview_' + category_name);
+      div.empty();
+
+      $.each(this_class.charts['ids'][category_name].series, function (index, data) {
+        if (data.name.indexOf('variation') === -1) {
+          if (data['data'][0].y > results[category_name]['value']) {
+            results[category_name]['value'] = data['data'][0].y;
+            results[category_name]['name'] = data.name;
+          }
+        }
+      });
+      div.append(results[category_name]['name']);
+    });
   }
 };
