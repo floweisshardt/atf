@@ -248,9 +248,9 @@ var TestComparison = {
       } else {
         // Time & Path length & Obstacle distance
         if (metric_data['average'].length != 0) {
-          temp_metrics[metric]['average'] = math.mean(metric_data['average']);
-          temp_metrics[metric]['min'] = math.mean(metric_data['min']);
-          temp_metrics[metric]['max'] = math.mean(metric_data['max']);
+          temp_metrics[metric]['average'].push(math.mean(metric_data['average']));
+          temp_metrics[metric]['min'].push(math.mean(metric_data['min']));
+          temp_metrics[metric]['max'].push(math.mean(metric_data['max']));
         }
       }
     });
@@ -281,19 +281,28 @@ var TestComparison = {
           temp['min'] = math.mean(temp_metrics['resources']['min']) * this_class.weight[category];
           temp['max'] = math.mean(temp_metrics['resources']['max']) * this_class.weight[category];
         } else if (category === 'speed') {
-          temp['average'] = temp_metrics['time']['average'] * this_class.weight[category];
-          temp['min'] = temp_metrics['time']['min'] * this_class.weight[category];
-          temp['max'] = temp_metrics['time']['max'] * this_class.weight[category];
+          temp['average'] = math.mean(temp_metrics['time']['average']) * this_class.weight[category];
+          temp['min'] = math.mean(temp_metrics['time']['min']) * this_class.weight[category];
+          temp['max'] = math.mean(temp_metrics['time']['max']) * this_class.weight[category];
         } else if (category === 'efficiency') {
-          if (temp_metrics['path_length']['average'] != 0 && temp_metrics['obstacle_distance']['average'] != 0) {
-            temp['average'] = ((temp_metrics['path_length']['average'] + temp_metrics['obstacle_distance']['average']) / 2) * this_class.weight[category];
-            temp['min'] = ((temp_metrics['path_length']['min'] + temp_metrics['obstacle_distance']['min']) / 2) * this_class.weight[category];
-            temp['max'] = ((temp_metrics['path_length']['max'] + temp_metrics['obstacle_distance']['max']) / 2) * this_class.weight[category];
-          } else {
-            temp['average'] = (temp_metrics['path_length']['average'] + temp_metrics['obstacle_distance']['average']) * this_class.weight[category];
-            temp['min'] = (temp_metrics['path_length']['min'] + temp_metrics['obstacle_distance']['min']) * this_class.weight[category];
-            temp['max'] = (temp_metrics['path_length']['max'] + temp_metrics['obstacle_distance']['max']) * this_class.weight[category];
+          var tp = {
+            average: [],
+            min: [],
+            max: []
+          };
+          if (temp_metrics.hasOwnProperty('path_length')) {
+            tp['average'].push(temp_metrics['path_length']['average']);
+            tp['min'].push(temp_metrics['path_length']['min']);
+            tp['max'].push(temp_metrics['path_length']['max']);
           }
+          if (temp_metrics.hasOwnProperty('obstacle_distance')) {
+            tp['average'].push(temp_metrics['obstacle_distance']['average']);
+            tp['min'].push(temp_metrics['obstacle_distance']['min']);
+            tp['max'].push(temp_metrics['obstacle_distance']['max']);
+          }
+          temp['average'] = math.mean(tp['average']) * this_class.weight[category];
+          temp['min'] = math.mean(tp['min']) * this_class.weight[category];
+          temp['max'] = math.mean(tp['max']) * this_class.weight[category];
         }
         results[category]['average'] = temp['average'];
         results[category]['min'] = temp['min'];
