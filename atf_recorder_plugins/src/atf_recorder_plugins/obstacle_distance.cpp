@@ -91,14 +91,16 @@ void ObstacleDistance::getPlanningScene() {
 ObstacleDistance::ObstacleDistance()
         : ros::NodeHandle() {
     PLANNING_SCENE_SERVICE = "get_planning_scene";
-    MAXIMAL_MINIMAL_DISTANCE = 5.0;
+    MAXIMAL_MINIMAL_DISTANCE = 5.0; //m
     double publish_frequency = 100.0; //Hz
     bool error = false;
 
     std::string joints_topic, robot_description;
+    std::vector<std::string> distance_topic;
     getParam(ros::this_node::getName() + "/obstacle_distance/joints", joints_topic);
     getParam(ros::this_node::getName() + "/obstacle_distance/robot_description", robot_description);
-    if (joints_topic == "" || robot_description == "") error = true;
+    getParam(ros::this_node::getName() + "/obstacle_distance/topics", distance_topic);
+    if (joints_topic == "" || robot_description == "" || distance_topic[0] == "") error = true;
 
     //Initialize planning scene monitor
     boost::shared_ptr<tf::TransformListener> tf_listener_(new tf::TransformListener(ros::Duration(2.0)));
@@ -112,7 +114,7 @@ ObstacleDistance::ObstacleDistance()
     if (!error) {
         //Initialize timer & subscriber
         joint_state_subscriber_ = subscribe(joints_topic, 1, &ObstacleDistance::joint_state_callback, this);
-        obstacle_distance_publisher_ = advertise<atf_msgs::ObstacleDistance>("/atf/obstacle_distance", 1);
+        obstacle_distance_publisher_ = advertise<atf_msgs::ObstacleDistance>(distance_topic[0], 1);
         obstacle_distance_timer_ = createTimer(ros::Duration(1 / publish_frequency),
                                                &ObstacleDistance::getDistanceToObstacles, this);
 
