@@ -19,16 +19,16 @@ class ATFRecorder:
     def __init__(self):
 
         bag_name = rosparam.get_param("/test_name")
-        self.robot_config_file = self.load_data(rosparam.get_param(rospy.get_name() + "/robot_config_file"))
+        self.robot_config_file = self.load_data(rosparam.get_param("/robot_config"))
 
-        if not os.path.exists(rosparam.get_param("/recorder/bagfile_output")):
-            os.makedirs(rosparam.get_param("/recorder/bagfile_output"))
+        if not os.path.exists(rosparam.get_param(rospy.get_name() + "/bagfile_output")):
+            os.makedirs(rosparam.get_param(rospy.get_name() + "/bagfile_output"))
 
         self.topic = "/atf/"
         self.lock_write = Lock()
-        self.bag = rosbag.Bag(rosparam.get_param("/recorder/bagfile_output") + bag_name + ".bag", 'w')
-        self.test_config = self.load_data(rosparam.get_param("/recorder/test_config_file"))[rosparam.get_param(
-            "/test_config")]
+        self.bag = rosbag.Bag(rosparam.get_param(rospy.get_name() + "/bagfile_output") + bag_name + ".bag", 'w')
+        self.test_config = self.load_data(rosparam.get_param(rospy.get_name() + "/test_config_file")
+                                          )[rosparam.get_param("/test_config")]
         recorder_config = self.load_data(rospkg.RosPack().get_path("atf_recorder_plugins") +
                                          "/config/recorder_config.yaml")
 
