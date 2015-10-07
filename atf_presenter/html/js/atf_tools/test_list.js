@@ -481,14 +481,12 @@ var TestList = {
       }
     };
 
-    configuration_div.append('<li><b>Scene config:</b> ' + test_data['scene_config'] + '</li>' +
-      '<li><b>Test config:</b> ' + test_data['test_config'] + '</li>' +
-      '<li><b>Robot:</b> ' + test_data['robot'] + '</li>' +
-      '<li><b>Planer ID:</b> ' + test_data['planer_id'] + '</li>' +
-      '<li><b>Planning Method:</b> ' + test_data['planning_method'] + '</li>' +
-      '<li><b>Test repetitions:</b> ' + test_data['test_repetitions'] + '</li>' +
-      '<li><b>Jump threshold:</b> ' + test_data['jump_threshold'] + '</li>' +
-      '<li><b>EEF_step:</b> ' + test_data['eef_step'] + '</li>');
+    $.each(test_data, function (name, data) {
+      if (name === 'subtests') {
+        return true;
+      }
+      configuration_div.append('<li><b>' + name.capitalize().replace('_', ' ') + ':</b> ' + test_data[name] + '</li>');
+    });
 
     var data_per_test = {};
 
