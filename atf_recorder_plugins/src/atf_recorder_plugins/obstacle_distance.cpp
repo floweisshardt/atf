@@ -108,10 +108,15 @@ ObstacleDistance::ObstacleDistance()
     double publish_frequency = 100.0; //Hz
     bool error = false;
 
+    std::string joints_topic, robot_description;
+    getParam(ros::this_node::getName() + "/obstacle_distance/joints", joints_topic);
+    getParam(ros::this_node::getName() + "/obstacle_distance/robot_description", robot_description);
+    if (joints_topic == "" || robot_description == "") error = true;
+
     //Initialize planning scene monitor
     boost::shared_ptr<tf::TransformListener> tf_listener_(new tf::TransformListener(ros::Duration(2.0)));
     try {
-        planning_scene_monitor_ = boost::make_shared<planning_scene_monitor::PlanningSceneMonitor>("robot_description",
+        planning_scene_monitor_ = boost::make_shared<planning_scene_monitor::PlanningSceneMonitor>(robot_description,
                                                                                                    tf_listener_);
     } catch (ros::InvalidNameException) {
         error = true;
@@ -119,7 +124,7 @@ ObstacleDistance::ObstacleDistance()
 
     if (!error) {
         //Initialize timer & subscriber
-        joint_state_subscriber_ = subscribe("joint_states", 1, &ObstacleDistance::joint_state_callback, this);
+        joint_state_subscriber_ = subscribe(joints_topic, 1, &ObstacleDistance::joint_state_callback, this);
         obstacle_distance_publisher_ = advertise<atf_msgs::ObstacleDistance>("/atf/obstacle_distance", 1);
         obstacle_distance_timer_ = createTimer(ros::Duration(1 / publish_frequency),
                                                &ObstacleDistance::getDistanceToObstacles, this);
@@ -131,7 +136,7 @@ ObstacleDistance::ObstacleDistance()
 
 int main (int argc, char **argv)
 {
-    ros::init (argc, argv, "obstacle_distance");
+    ros::init (argc, argv, "obstacle_distance_node");
 
     ObstacleDistance ob;
     ros::spin();
