@@ -47,8 +47,8 @@ class GenerateTests:
             self.additional_launch_file = ""
             self.yaml_output = ""
             self.json_output = ""
-            self.time_limit = 0
-            self.test_repetitions = 0
+            self.time_limit = 100
+            self.test_repetitions = 1
 
         self.test_list = {}
 
@@ -95,22 +95,31 @@ class GenerateTests:
                 param(name="test_name", value=item),
                 param(name="test_config", value=self.test_list[item]["test_config"]),
                 param(name="scene_config", value=self.test_list[item]["scene_config"]),
-                param(name="planer_id", value=self.test_list[item]["planer_id"]),
-                param(name="eef_step", value=str(self.test_list[item]["eef_step"])),
-                param(name="jump_threshold", value=str(self.test_list[item]["jump_threshold"])),
-                param(name="planning_method", value=self.test_list[item]["planning_method"]),
-                param(name="recorder/test_config_file", value=self.test_config_file),
-                param(name="recorder/bagfile_output", value=self.bagfile_output),
-                arg(name="robot", value=self.test_list[item]["robot"]),
-                arg(name="rc_path", value=self.robot_config_path),
-                include(arg(name="gui", value="false"), file=self.get_path(robot_config["robot_bringup_launch"])),
-                include(file=self.additional_launch_file),
-                node(param(name="robot_config_file", value="$(arg rc_path)$(arg robot)/robot_config.yaml"),
-                     name="atf_recorder", pkg="atf_recorder", type="recorder_core.py", output="screen"),
-                node(name="obstacle_distance_node", pkg="atf_recorder_plugins", type="obstacle_distance_node",
-                     output="screen"),
-                include(file=self.test_application_path)
+                param(name="robot_config", value=self.robot_config_path + self.test_list[item]["robot"] +
+                      "/robot_config.yaml")
             )
+
+            for config_param in self.test_list[item]:
+                if config_param == "test_config" or config_param == "scene_config" or config_param == "robot":
+                    continue
+                test_record.append(param(name=config_param, value=str(self.test_list[item][config_param])))
+
+            test_record.append(arg(name="robot", value=self.test_list[item]["robot"]))
+            test_record.append(arg(name="rc_path", value=self.robot_config_path))
+
+            if robot_config["robot_bringup_launch"] != "":
+                test_record.append(include(arg(name="gui", value="false"),
+                                           file=self.get_path(robot_config["robot_bringup_launch"])))
+
+            if self.additional_launch_file != "":
+                test_record.append(include(file=self.additional_launch_file))
+
+            test_record.append(node(param(name="/test_config_file", value=self.test_config_file),
+                                    param(name="/bagfile_output", value=self.bagfile_output),
+                                    name="atf_recorder", pkg="atf_recorder", type="recorder_core.py", output="screen"))
+            test_record.append(node(name="obstacle_distance_node", pkg="atf_recorder_plugins",
+                                    type="obstacle_distance_node", output="screen"))
+            test_record.append(include(file=self.test_application_path))
 
             xmlstr = minidom.parseString(ElementTree.tostring(test_record)).toprettyxml(indent="    ")
             with open(self.arguments[2] + "recording/" + item + ".test", "w") as f:
