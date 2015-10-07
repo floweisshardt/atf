@@ -80,8 +80,6 @@ CATKIN_IGNORE
 */.idea/*
 .idea/*
 */data/*
-ts*_t*.json
 ts*_t*.yaml
-test_list.json
+*.json
 test_list.yaml
-*/results/*
