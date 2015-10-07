@@ -13,8 +13,7 @@
 #include <atf_msgs/ObstacleDistance.h>
 #include <atf_msgs/ObstacleDistanceLink.h>
 
-class ObstacleDistance : public ros::NodeHandle
-{
+class ObstacleDistance : public ros::NodeHandle {
 public:
     ObstacleDistance();
 
@@ -29,7 +28,9 @@ private:
     sensor_msgs::JointState current_joint_states_;
 
     void joint_state_callback(const sensor_msgs::JointStatePtr &joint_states);
-    void getDistanceToObstacles(const ros::TimerEvent&);
+
+    void getDistanceToObstacles(const ros::TimerEvent &);
+
     void getPlanningScene();
 
 };
