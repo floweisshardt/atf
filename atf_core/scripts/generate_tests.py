@@ -119,7 +119,8 @@ class GenerateTests:
                                     name="atf_recorder", pkg="atf_recorder", type="recorder_core.py", output="screen"))
             test_record.append(node(name="obstacle_distance_node", pkg="atf_recorder_plugins",
                                     type="obstacle_distance_node", output="screen"))
-            test_record.append(include(file=self.test_application_path))
+            test_record.append(include(arg(name="time_limit", value=str(self.time_limit)),
+                                       file=self.test_application_path))
 
             xmlstr = minidom.parseString(ElementTree.tostring(test_record)).toprettyxml(indent="    ")
             with open(self.arguments[2] + "recording/" + item + ".test", "w") as f:
