@@ -79,6 +79,12 @@ var TestComparison = {
       '<li><b>Test config: </b>' + test_list[files[0]]['test_config'] + '</li>' +
       '<li><b>Test repetitions: </b>' + test_list[files[0]]['test_repetitions'] + '</li>');
 
+    var div = $('#test_configuration_details');
+    var details_head = div.find('.panel-heading');
+    var details_body = div.find('.panel-body');
+    details_head.empty();
+    details_body.empty();
+
     var plot_tooltip = {
       formatter: function () {
         if (this.series.name.indexOf('variation') != -1) return false;
