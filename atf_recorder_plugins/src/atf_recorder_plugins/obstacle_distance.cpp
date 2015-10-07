@@ -94,7 +94,7 @@ void ObstacleDistance::joint_state_callback(const sensor_msgs::JointStatePtr &jo
 
 void ObstacleDistance::getPlanningScene()
 {
-    while(ros::ok())
+    while (ros::ok())
     {
         planning_scene_monitor_->requestPlanningSceneState(PLANNING_SCENE_SERVICE);
     }
@@ -106,21 +106,30 @@ ObstacleDistance::ObstacleDistance()
     PLANNING_SCENE_SERVICE = "get_planning_scene";
     MAXIMAL_MINIMAL_DISTANCE = 5.0;
     double publish_frequency = 100.0; //Hz
+    bool error = false;
 
     //Initialize planning scene monitor
     boost::shared_ptr<tf::TransformListener> tf_listener_(new tf::TransformListener(ros::Duration(2.0)));
-    planning_scene_monitor_ =  boost::make_shared<planning_scene_monitor::PlanningSceneMonitor>("robot_description", tf_listener_);
+    try {
+        planning_scene_monitor_ = boost::make_shared<planning_scene_monitor::PlanningSceneMonitor>("robot_description",
+                                                                                                   tf_listener_);
+    } catch (ros::InvalidNameException) {
+        error = true;
+    }
 
-    //Initialize timer & subscriber
-    joint_state_subscriber_ = subscribe("joint_states", 1, &ObstacleDistance::joint_state_callback, this);
-    obstacle_distance_publisher_ = advertise<atf_msgs::ObstacleDistance>("/atf/obstacle_distance", 1);
-    obstacle_distance_timer_ = createTimer(ros::Duration(1/publish_frequency), &ObstacleDistance::getDistanceToObstacles, this);
+    if (!error) {
+        //Initialize timer & subscriber
+        joint_state_subscriber_ = subscribe("joint_states", 1, &ObstacleDistance::joint_state_callback, this);
+        obstacle_distance_publisher_ = advertise<atf_msgs::ObstacleDistance>("/atf/obstacle_distance", 1);
+        obstacle_distance_timer_ = createTimer(ros::Duration(1 / publish_frequency),
+                                               &ObstacleDistance::getDistanceToObstacles, this);
 
-    //Initialize thread for updating the planning scene
-    boost::thread* ps_thread = new boost::thread(&ObstacleDistance::getPlanningScene, this);
+        //Initialize thread for updating the planning scene
+        boost::thread *ps_thread = new boost::thread(&ObstacleDistance::getPlanningScene, this);
+    }
 }
 
-int main(int argc, char **argv)
+int main (int argc, char **argv)
 {
     ros::init (argc, argv, "obstacle_distance");
 
