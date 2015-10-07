@@ -109,24 +109,6 @@ var TestComparison = {
       }
     };
 
-    /*
-     "planer_id": "SBLkConfigDefault",
-     "planning_method": "cartesian",
-     "test_repetitions": 5,
-     "scene_config": "scene_1",
-     "jump_threshold": 2,
-     "subtests": [
-     "ts1_t1_1",
-     "ts1_t1_2",
-     "ts1_t1_3",
-     "ts1_t1_4",
-     "ts1_t1_5"
-     ],
-     "test_config": "test_1",
-     "eef_step": 0.01,
-     "robot": "cob4-2"
-     */
-
     this.computePoints(test_list, files);
     this.createCharts(plot_tooltip);
     this.backup_storage = $.extend(true, {}, this.charts['data']);
