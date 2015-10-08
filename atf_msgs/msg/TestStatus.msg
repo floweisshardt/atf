@@ -1,0 +1,4 @@
+string test_name
+uint8 status_recording
+uint8 status_analysing
+uint8 total

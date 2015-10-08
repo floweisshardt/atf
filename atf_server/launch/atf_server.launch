@@ -1,0 +1,7 @@
+<?xml version="1.0"?>
+<launch>
+
+    <include file="$(find rosbridge_server)/launch/rosbridge_websocket.launch"/>
+    <node name="atf_server" pkg="atf_server" type="atf_server.py" output="screen"/>
+
+</launch>
