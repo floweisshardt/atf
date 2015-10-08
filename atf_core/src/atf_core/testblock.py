@@ -13,7 +13,7 @@ class Testblock:
 
         self.transition = None
         self.metrics = metrics
-        
+
         self.m = StateMachine(self.testblock_name)
         self.m.add_state(Status.PURGED, self.purged_state)
         self.m.add_state(Status.ACTIVE, self.active_state)
@@ -47,7 +47,7 @@ class Testblock:
     def stop(self):
         for metric in self.metrics:
             metric.stop()
-    
+
     def get_state(self):
         return self.m.get_current_state()
 
