@@ -78,7 +78,7 @@ class GenerateTests:
 
     def generate_tests(self):
 
-        for idx, item in enumerate(self.test_list):
+        for item in self.test_list:
             # Create .test file
             em = lxml.builder.ElementMaker()
             launch = em.launch
@@ -92,12 +92,14 @@ class GenerateTests:
 
             # Recording
             test_record = launch(
+                include(file="$(find atf_server)/launch/atf_server.launch"),
                 param(name="use_sim_time", value="true"),
                 param(name="test_name", value=item),
                 param(name="test_config", value=self.test_list[item]["test_config"]),
                 param(name="scene_config", value=self.test_list[item]["scene_config"]),
                 param(name="robot_config", value=self.robot_config_path + self.test_list[item]["robot"] +
-                      "/robot_config.yaml")
+                      "/robot_config.yaml"),
+                param(name="number_of_tests", value=str(len(self.test_list)))
             )
 
             for config_param in self.test_list[item]:
@@ -137,12 +139,14 @@ class GenerateTests:
             param = em.param
 
             test_analyse = launch(
+                include(file="$(find atf_server)/launch/atf_server.launch"),
                 param(name="use_sim_time", value="true"),
                 param(name="analysing/test_name", value=item),
                 param(name="analysing/test_config", value=self.test_list[item]["test_config"]),
                 param(name="analysing/test_config_file", value=self.test_config_file),
                 param(name="analysing/result_yaml_output", value=self.yaml_output),
                 param(name="analysing/result_json_output", value=self.json_output),
+                param(name="number_of_tests", value=str(len(self.test_list))),
                 test({'test-name': "test_analysing", 'pkg': "atf_core", 'type': "test_builder.py",
                       'time-limit': str(self.time_limit)}),
                 node(name="player", pkg="rosbag", type="play", output="screen", args="--delay=5.0 --clock " +

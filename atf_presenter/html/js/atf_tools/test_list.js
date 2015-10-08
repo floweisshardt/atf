@@ -481,7 +481,7 @@ var TestList = {
       }
     };
 
-    $.each(test_data, function (name, data) {
+    $.each(test_data, function (name) {
       if (name === 'subtests') {
         return true;
       }

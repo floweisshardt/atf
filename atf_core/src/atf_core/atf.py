@@ -4,7 +4,7 @@ import rosparam
 import json
 import yaml
 
-from atf_msgs.msg import Status
+from atf_msgs.msg import *
 from copy import copy
 
 
@@ -16,6 +16,16 @@ class ATF:
         self.error_outside_testblock = False
         self.testblock_error = {}
         self.test_name = rosparam.get_param("/analysing/test_name")
+        self.number_of_tests = rosparam.get_param("/number_of_tests")
+
+        self.test_status_publisher = rospy.Publisher("atf/test_status", TestStatus, queue_size=1)
+
+        test_status = TestStatus
+        test_status.test_name = self.test_name
+        test_status.status_analysing = 1
+        test_status.total = self.number_of_tests
+
+        self.test_status_publisher.publish(test_status)
 
     def check_states(self):
         running_testblocks = copy(self.testblocks)
@@ -64,6 +74,13 @@ class ATF:
                         else:
                             item.exit()
                             break
+
+        test_status = TestStatus
+        test_status.test_name = self.test_name
+        test_status.status_analysing = 2
+        test_status.total = self.number_of_tests
+
+        self.test_status_publisher.publish(test_status)
 
         filename = rosparam.get_param("/analysing/result_json_output") + self.test_name + ".json"
         stream = file(filename, 'w')

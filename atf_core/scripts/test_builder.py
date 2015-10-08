@@ -34,7 +34,7 @@ class TestBuilder:
             metrics = []
 
             for metric in config_data[testblock_name]:
-                metric_return = getattr(atf_metrics, metrics_data[metric]["handler"])()\
+                metric_return = getattr(atf_metrics, metrics_data[metric]["handler"])() \
                     .parse_parameter(config_data[testblock_name][metric])
                 if type(metric_return) == list:
                     for value in metric_return:
@@ -54,9 +54,9 @@ class TestBuilder:
 
 
 class TestAnalysing(unittest.TestCase):
-
     def test_Analysing(self):
         TestBuilder()
+
 
 if __name__ == '__main__':
     rospy.init_node('test_analysing')
