@@ -20,7 +20,7 @@ class ATF:
 
         self.test_status_publisher = rospy.Publisher("atf/test_status", TestStatus, queue_size=1)
 
-        test_status = TestStatus
+        test_status = TestStatus()
         test_status.test_name = self.test_name
         test_status.status_analysing = 1
         test_status.total = self.number_of_tests
@@ -75,7 +75,7 @@ class ATF:
                             item.exit()
                             break
 
-        test_status = TestStatus
+        test_status = TestStatus()
         test_status.test_name = self.test_name
         test_status.status_analysing = 2
         test_status.total = self.number_of_tests
