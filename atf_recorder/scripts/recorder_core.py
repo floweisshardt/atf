@@ -13,7 +13,6 @@ from threading import Lock
 from atf_msgs.msg import *
 from atf_recorder.srv import *
 from atf_recorder import BagfileWriter
-from std_msgs.msg import Bool
 
 
 class ATFRecorder:
@@ -51,45 +50,34 @@ class ATFRecorder:
             msg_type = rostopic.get_topic_class(topic, blocking=True)[0]
             rospy.Subscriber(topic, msg_type, self.global_topic_callback, queue_size=5, callback_args=topic)
 
-        self.test_status_publisher = rospy.Publisher(self.topic + "test_status", Bool, queue_size=1)
+        self.test_status_publisher = rospy.Publisher(self.topic + "test_status", TestStatus, queue_size=1)
         rospy.Service(self.topic + "recorder_command", RecorderCommand, self.command_callback)
-        i = 0
-        while i < 2:
-            print self.test_status_publisher.get_num_connections()
-            rospy.sleep(1)
-            i += 1
 
-        # test_status = TestStatus
-        # test_status.test_name = self.bag_name
-        # test_status.status_recording = 1
-        # test_status.status_analysing = 0
-        # test_status.total = self.number_of_tests
+        # Wait for subscriber
+        num_subscriber = self.test_status_publisher.get_num_connections()
+        while num_subscriber == 0:
+            num_subscriber = self.test_status_publisher.get_num_connections()
 
-        rospy.loginfo("Publish")
-        test_status = Bool
-        test_status.data = True
+        test_status = TestStatus()
+        test_status.test_name = self.bag_name
+        test_status.status_recording = 1
+        test_status.status_analysing = 0
+        test_status.total = self.number_of_tests
+
         self.test_status_publisher.publish(test_status)
-        rospy.sleep(0.1)
 
-    def __enter__(self):
-        return self
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
+    def shutdown(self):
         self.lock_write.acquire()
         self.bag.close()
         self.lock_write.release()
 
-        test_status = TestStatus
+        test_status = TestStatus()
         test_status.test_name = self.bag_name
         test_status.status_recording = 2
         test_status.status_analysing = 0
         test_status.total = self.number_of_tests
 
-        rospy.loginfo("Publish")
-        test_status = Bool
-        test_status.data = True
         self.test_status_publisher.publish(test_status)
-        rospy.sleep(0.1)
 
     def create_testblock_list(self):
         testblock_list = {}
@@ -180,6 +168,6 @@ class ATFRecorder:
 
 if __name__ == "__main__":
     rospy.init_node('atf_recorder')
-    with ATFRecorder():
-        while not rospy.is_shutdown():
-            pass
+    atf = ATFRecorder()
+    rospy.on_shutdown(atf.shutdown)
+    rospy.spin()
