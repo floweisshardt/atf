@@ -11,7 +11,8 @@
         // -----------------
 
         var ros = new ROSLIB.Ros({
-            url: 'ws://10.0.1.215:9090'
+            //url: 'ws://10.0.1.215:9090'
+            url: 'ws://localhost:9090'
         });
 
         ros.on('connection', function () {
@@ -32,7 +33,7 @@
         var listener = new ROSLIB.Topic({
             ros: ros,
             name: 'atf/test_status',
-            messageType: 'std_msgs/Bool'
+            messageType: 'atf_msgs/TestStatus'
         });
 
         listener.subscribe(function (message) {

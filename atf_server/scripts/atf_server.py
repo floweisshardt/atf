@@ -1,20 +1,17 @@
 #!/usr/bin/env python
 import rospy
 import yaml
-import rostopic
 
 from atf_msgs.msg import *
-from std_msgs.msg import Bool
 
 
 class ATFServer:
     def __init__(self):
-        rospy.Subscriber("/atf/test_status", Bool, self.status_update_callback, queue_size=1)
+        rospy.Subscriber("/atf/test_status", TestStatus, self.status_update_callback, queue_size=1)
         self.total = 0
 
     def status_update_callback(self, data):
-        print data.data
-        rospy.loginfo("Update")
+        print data.test_name, data.status_recording, data.status_analysing, data.total
         """
         test_list = self.load_data("/home/fmw-fk/test.yaml")
         self.total = data.total
@@ -42,6 +39,5 @@ class ATFServer:
 
 if __name__ == "__main__":
     rospy.init_node('atf_server')
-    rospy.loginfo("Start SERVER")
     ATFServer()
     rospy.spin()
