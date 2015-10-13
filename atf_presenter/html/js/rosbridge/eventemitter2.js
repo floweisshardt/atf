@@ -51,7 +51,7 @@
       return [];
     }
     var listeners=[], leaf, len, branch, xTree, xxTree, isolatedBranch, endReached,
-        typeLength = type.length, currentType = type[i], nextType = type[i+1];
+      typeLength = type.length, currentType = type[i], nextType = type[i+1];
     if (i === typeLength && tree._listeners) {
       //
       // If at the end of the event(s) list and the tree has listeners
@@ -200,10 +200,12 @@
 
               tree._listeners.warned = true;
               console.error('(node) warning: possible EventEmitter memory ' +
-                            'leak detected. %d listeners added. ' +
-                            'Use emitter.setMaxListeners() to increase limit.',
-                            tree._listeners.length);
-              console.trace();
+                'leak detected. %d listeners added. ' +
+                'Use emitter.setMaxListeners() to increase limit.',
+                tree._listeners.length);
+              if(console.trace){
+                console.trace();
+              }
             }
           }
         }
@@ -392,10 +394,12 @@
 
           this._events[type].warned = true;
           console.error('(node) warning: possible EventEmitter memory ' +
-                        'leak detected. %d listeners added. ' +
-                        'Use emitter.setMaxListeners() to increase limit.',
-                        this._events[type].length);
-          console.trace();
+            'leak detected. %d listeners added. ' +
+            'Use emitter.setMaxListeners() to increase limit.',
+            this._events[type].length);
+          if(console.trace){
+            console.trace();
+          }
         }
       }
     }
@@ -486,6 +490,26 @@
       }
     }
 
+    function recursivelyGarbageCollect(root) {
+      if (root === undefined) {
+        return;
+      }
+      var keys = Object.keys(root);
+      for (var i in keys) {
+        var key = keys[i];
+        var obj = root[key];
+        if ((obj instanceof Function) || (typeof obj !== "object"))
+          continue;
+        if (Object.keys(obj).length > 0) {
+          recursivelyGarbageCollect(root[key]);
+        }
+        if (Object.keys(obj).length === 0) {
+          delete root[key];
+        }
+      }
+    }
+    recursivelyGarbageCollect(this.listenerTree);
+
     return this;
   };
 
@@ -523,7 +547,7 @@
       }
     }
     else {
-      if (!this._events[type]) return this;
+      if (!this._events || !this._events[type]) return this;
       this._events[type] = null;
     }
     return this;
@@ -558,7 +582,7 @@
   };
 
   if (typeof define === 'function' && define.amd) {
-     // AMD. Register as an anonymous module.
+    // AMD. Register as an anonymous module.
     define(function() {
       return EventEmitter;
     });

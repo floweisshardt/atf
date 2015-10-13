@@ -28,11 +28,6 @@ $('#test_list').on('click', '.btn', function (e) {
   TestList.showDetails($(this).attr('data-name'));
 });
 
-$('.nav-tabs').on('click', 'a', function (e) {
-  e.preventDefault();
-  $(this).tab('show');
-});
-
 $('.table').find('#test_list').on('click', 'input', function () {
   if ($(this).is(':checked')) {
     var test_config = $(this).parent().parent().parent().parent().find('.test_config').html();
@@ -192,3 +187,7 @@ $('#compare_test_option')
     }
   }
 );
+
+$(document).on('click', '#connect_to_rosmaster', function () {
+  ros.connectToServer();
+});
