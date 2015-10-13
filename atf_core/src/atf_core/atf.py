@@ -20,6 +20,11 @@ class ATF:
 
         self.test_status_publisher = rospy.Publisher("atf/test_status", TestStatus, queue_size=1)
 
+        # Wait for subscriber
+        num_subscriber = self.test_status_publisher.get_num_connections()
+        while num_subscriber == 0:
+            num_subscriber = self.test_status_publisher.get_num_connections()
+
         test_status = TestStatus()
         test_status.test_name = self.test_name
         test_status.status_analysing = 1
@@ -89,4 +94,4 @@ class ATF:
         filename = rosparam.get_param("/analysing/result_yaml_output") + self.test_name + ".yaml"
         if not filename == "":
             stream = file(filename, 'w')
-            yaml.dump(doc, stream)
+            yaml.dump(doc, stream, default_flow_style=False)
