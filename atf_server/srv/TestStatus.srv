@@ -1,4 +1,0 @@
-bool request
----
-string[] list
-TestStatusDetails[] status

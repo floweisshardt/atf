@@ -1,1 +1,0 @@
-int8[] test_status
