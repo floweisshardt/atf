@@ -1,4 +1,4 @@
 string test_name
-uint8 status_recording
-uint8 status_analysing
-uint64 total
+int8 status_recording
+int8 status_analysing
+int64 total
