@@ -3,7 +3,7 @@ a {
     color: #000;
 }
 
-#test_list_content, #panel_detail_resources, #panel_detail_path_length, #panel_detail_time, #panel_compare_detail_resources, #panel_compare_detail_path_length, #panel_compare_detail_time {
+#test_list_content, #panel_detail_resources, #panel_detail_path_length, #panel_detail_time, #test_status_panel {
     display: none;
 }
 

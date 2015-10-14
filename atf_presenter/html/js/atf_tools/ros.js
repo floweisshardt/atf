@@ -1,14 +1,23 @@
 var ros = {
-  //url: 'ws://10.0.1.215:9090',
-  url: 'ws://localhost:9090',
+  url: '',
   roscore: {},
   service_server: {},
   service_request: {},
   test_update: {},
   tests_total: 0,
   connection_timeout: 0,
+  connection_attempts: 10,
+  connection_lost: false,
   connectToServer: function () {
     var this_class = this;
+    var connect_status = $('#connect_status');
+    var connect_status_label = $('#connect_status_label');
+    var service_status = $('#service_status');
+    var abort_connection = $('#abort_connection');
+    var refresh_status_list = $('#refresh_status_list');
+
+    this.url = 'ws://' + $('#ros_master_ip').val() + ':9090';
+    abort_connection.prop('disabled', false);
 
     this.roscore = new ROSLIB.Ros({
       url: this.url
@@ -26,7 +35,26 @@ var ros = {
 
     this.roscore.on('connection', function () {
       console.log('Connected to websocket server.');
+      connect_status.removeClass('alert-success')
+        .removeClass('alert-danger')
+        .removeClass('alert-warning')
+        .empty()
+        .show()
+        .addClass('alert-success')
+        .append('Connection established!');
+
+      connect_status_label.removeClass('label-success')
+        .removeClass('label-danger')
+        .addClass('label-success');
+
+      service_status.removeClass('label-success')
+        .removeClass('label-danger')
+        .addClass('label-danger');
+
+      abort_connection.prop('disabled', true);
+
       this_class.connection_timeout = 0;
+      this_class.connection_lost = true;
       this_class.callService();
     });
 
@@ -36,7 +64,39 @@ var ros = {
 
     this.roscore.on('close', function () {
       console.log('Connection to websocket server closed.');
-      if (this_class.connection_timeout === 5) {
+
+      var msg = '';
+      if (this_class.connection_lost) msg = 'Connection lost!';
+      else msg = 'Connection could not be established!';
+
+      connect_status.removeClass('alert-success')
+        .removeClass('alert-danger')
+        .removeClass('alert-warning')
+        .empty()
+        .show()
+        .addClass('alert-danger')
+        .append(msg + ' Reconnecting... (' + parseInt(this_class.connection_timeout + 1) + ')');
+
+      connect_status_label.removeClass('label-success')
+        .removeClass('label-danger')
+        .addClass('label-danger');
+
+      service_status.removeClass('label-success')
+        .removeClass('label-danger')
+        .addClass('label-danger');
+
+      if (this_class.connection_timeout === this_class.connection_attempts) {
+        connect_status.removeClass('alert-success')
+          .removeClass('alert-danger')
+          .removeClass('alert-warning')
+          .empty()
+          .show()
+          .addClass('alert-danger')
+          .append(msg);
+
+        abort_connection.prop('disabled', true);
+        refresh_status_list.prop('disabled', true);
+
         return true;
       } else this_class.connection_timeout++;
       this_class.connectToServer();
@@ -44,13 +104,55 @@ var ros = {
   },
   callService: function () {
     var this_class = this;
+    var service_status = $('#service_status');
     this.test_update = {};
+
     this.service_server.callService(this.request, function (res) {
-      $.each(res.status, function (index, data) {
-        this_class.tests_total = data.total;
-        this_class.test_update[data.test_name] = [data.status_recording, data.status_analysing];
+      service_status.removeClass('label-success')
+        .removeClass('label-danger')
+        .addClass('label-success');
+
+      $.each(res['status'], function (index, data) {
+        this_class.tests_total = data['total'];
+        this_class.test_update[data['test_name']] = [data['status_recording'], data['status_analysing']];
       });
-      console.log(this_class.test_update);
+      this_class.buildStatusList();
+    }, function () {
+      service_status.removeClass('label-success')
+        .removeClass('label-danger')
+        .addClass('label-danger');
+      this_class.callService();
     });
+  },
+  buildStatusList: function () {
+    var status_panel = $('#test_status_panel');
+    var test_counter = $('#test_counter');
+    var test_status_list = $('#test_status_list');
+    var refresh_status_list = $('#refresh_status_list');
+
+    status_panel.show();
+    test_counter.empty().show();
+    test_status_list.empty();
+    refresh_status_list.prop('disabled', false);
+
+    var finished = 0;
+
+    $.each(this.test_update, function (name, status) {
+      var status_record, status_analyse;
+      if (status[0] === 0) status_record = '<span class="glyphicon glyphicon-time" title="Waiting" aria-hidden="true"></span><span class="sr-only">Waiting</span>';
+      else if (status[0] === 1) status_record = '<span class="glyphicon glyphicon-hourglass" title="Running" aria-hidden="true"></span><span class="sr-only">Running</span>';
+      else if (status[0] === 2) status_record = '<span class="glyphicon glyphicon-ok" title="Finished" aria-hidden="true"></span><span class="sr-only">Finished</span>';
+
+      if (status[1] === 0) status_analyse = '<span class="glyphicon glyphicon-time" title="Waiting" aria-hidden="true"></span><span class="sr-only">Waiting</span>';
+      else if (status[1] === 1) status_analyse = '<span class="glyphicon glyphicon-hourglass" title="Running" aria-hidden="true"></span><span class="sr-only">Running</span>';
+      else if (status[1] === 2) status_analyse = '<span class="glyphicon glyphicon-ok" title="Finished" aria-hidden="true"></span><span class="sr-only">Finished</span>';
+
+      test_status_list.append('<tr><td>' + name + '</td>' +
+        '<td>' + status_record + '</td>' +
+        '<td>' + status_analyse + '</td></tr>');
+      if ((status[0] + status[1]) === 4) finished++;
+    });
+
+    test_counter.append('<b>Tests finished:</b> ' + finished + ' / ' + this.tests_total);
   }
 };
