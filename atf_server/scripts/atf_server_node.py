@@ -9,9 +9,16 @@ from atf_server.srv import *
 
 class ATFServer:
     def __init__(self):
-        rospy.Subscriber("/atf/test_status", TestStatus, self.status_update_callback, queue_size=1)
-        rospy.Service("atf/get_test_status", GetTestStatus, self.status_service_callback)
         self.test_status_list = rosparam.get_param("status_list")
+
+        sub = rospy.Subscriber("/atf/test_status", TestStatus, self.status_update_callback, queue_size=1)
+
+        # Wait for publisher
+        num_subscriber = sub.get_num_connections()
+        while num_subscriber == 0:
+            num_subscriber = sub.get_num_connections()
+
+        rospy.Service("atf/get_test_status", GetTestStatus, self.status_service_callback)
 
     def status_update_callback(self, data):
 
