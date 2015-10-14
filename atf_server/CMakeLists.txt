@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 2.8.3)
-project(atf_recorder)
+project(atf_server)
 
 find_package(catkin REQUIRED COMPONENTS
     rospy
@@ -8,15 +8,13 @@ find_package(catkin REQUIRED COMPONENTS
     atf_msgs
 )
 
-catkin_python_setup()
-
-#######################################
-## Declare ROS messages and services ##
-#######################################
+################################################
+## Declare ROS messages, services and actions ##
+################################################
 
 add_service_files(
     FILES
-        RecorderCommand.srv
+        GetTestStatus.srv
 )
 
 generate_messages(
@@ -41,12 +39,12 @@ catkin_package(CATKIN_DEPENDS
 ###########
 
 include_directories(
-    ${catkin_INCLUDE_DIRS}
+  ${catkin_INCLUDE_DIRS}
 )
 
 install(
     PROGRAMS
-        scripts/atf_recorder.py
+        scripts/atf_server_node.py
     DESTINATION
         ${CATKIN_PACKAGE_BIN_DESTINATION}
 )

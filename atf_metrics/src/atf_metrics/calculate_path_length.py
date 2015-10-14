@@ -35,7 +35,7 @@ class CalculatePathLength:
         :param measured_frame: name of the second frame. The distance will be measured in relation to the root_frame.
         :type  measured_frame: string
         """
-        
+
         self.active = False
         self.root_frame = root_frame
         self.measured_frame = measured_frame
@@ -48,7 +48,7 @@ class CalculatePathLength:
 
         self.listener = tf.TransformListener()
 
-        rospy.Timer(rospy.Duration.from_sec(1/self.tf_sampling_freq), self.record_tf)
+        rospy.Timer(rospy.Duration.from_sec(1 / self.tf_sampling_freq), self.record_tf)
 
     def start(self):
         self.active = True
@@ -68,7 +68,7 @@ class CalculatePathLength:
                 self.listener.waitForTransform(self.root_frame,
                                                self.measured_frame,
                                                rospy.Time(0),
-                                               rospy.Duration.from_sec(2/self.tf_sampling_freq))
+                                               rospy.Duration.from_sec(2 / self.tf_sampling_freq))
                 (trans, rot) = self.listener.lookupTransform(self.root_frame, self.measured_frame, rospy.Time(0))
 
             except (tf.Exception, tf.LookupException, tf.ConnectivityException, Exception), e:
@@ -80,8 +80,8 @@ class CalculatePathLength:
                     self.first_value = False
                     return
 
-                path_increment = math.sqrt((trans[0] - self.trans_old[0])**2 + (trans[1] - self.trans_old[1])**2 +
-                                           (trans[2] - self.trans_old[2])**2)
+                path_increment = math.sqrt((trans[0] - self.trans_old[0]) ** 2 + (trans[1] - self.trans_old[1]) ** 2 +
+                                           (trans[2] - self.trans_old[2]) ** 2)
                 self.path_length += path_increment
 
                 self.trans_old = trans

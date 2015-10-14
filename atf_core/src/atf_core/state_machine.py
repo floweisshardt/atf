@@ -7,6 +7,7 @@ from threading import Thread
 def threaded(fn):
     def wrapper(*args, **kwargs):
         Thread(target=fn, args=args, kwargs=kwargs).start()
+
     return wrapper
 
 
@@ -48,7 +49,7 @@ class StateMachine:
             new_state = self.handler()
             if new_state in self.endStates:
                 self.handler = self.handlers[new_state]
-                break 
+                break
             else:
                 self.handler = self.handlers[new_state]
             rospy.loginfo("SM '" + self.name + "' in state " + str(self.get_current_state()))

@@ -28,11 +28,6 @@ $('#test_list').on('click', '.btn', function (e) {
   TestList.showDetails($(this).attr('data-name'));
 });
 
-$('.nav-tabs').on('click', 'a', function (e) {
-  e.preventDefault();
-  $(this).tab('show');
-});
-
 $('.table').find('#test_list').on('click', 'input', function () {
   if ($(this).is(':checked')) {
     var test_config = $(this).parent().parent().parent().parent().find('.test_config').html();
@@ -192,3 +187,33 @@ $('#compare_test_option')
     }
   }
 );
+
+$(document).on('click', '#connect_to_rosmaster', function () {
+
+  var connect_status = $('#connect_status');
+  var status_panel = $('#test_status_panel');
+  var test_counter = $('#test_counter');
+  var test_status_list = $('#test_status_list');
+
+  connect_status.removeClass('alert-success')
+    .removeClass('alert-danger')
+    .removeClass('alert-warning')
+    .empty()
+    .show()
+    .addClass('alert-warning')
+    .append('Connecting...');
+  status_panel.hide();
+  test_counter.empty();
+  test_status_list.empty();
+
+  ros.connection_timeout = 0;
+  ros.connectToServer();
+});
+
+$(document).on('click', '#abort_connection', function () {
+  ros.connection_timeout = ros.connection_attempts;
+});
+
+$(document).on('click', '#refresh_status_list', function () {
+  ros.callService();
+});

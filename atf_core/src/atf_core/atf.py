@@ -4,7 +4,7 @@ import rosparam
 import json
 import yaml
 
-from atf_msgs.msg import Status
+from atf_msgs.msg import *
 from copy import copy
 
 
@@ -16,6 +16,21 @@ class ATF:
         self.error_outside_testblock = False
         self.testblock_error = {}
         self.test_name = rosparam.get_param("/analysing/test_name")
+        self.number_of_tests = rosparam.get_param("/number_of_tests")
+
+        self.test_status_publisher = rospy.Publisher("atf/test_status", TestStatus, queue_size=1)
+
+        # Wait for subscriber
+        num_subscriber = self.test_status_publisher.get_num_connections()
+        while num_subscriber == 0:
+            num_subscriber = self.test_status_publisher.get_num_connections()
+
+        test_status = TestStatus()
+        test_status.test_name = self.test_name
+        test_status.status_analysing = 1
+        test_status.total = self.number_of_tests
+
+        self.test_status_publisher.publish(test_status)
 
     def check_states(self):
         running_testblocks = copy(self.testblocks)
@@ -65,6 +80,13 @@ class ATF:
                             item.exit()
                             break
 
+        test_status = TestStatus()
+        test_status.test_name = self.test_name
+        test_status.status_analysing = 2
+        test_status.total = self.number_of_tests
+
+        self.test_status_publisher.publish(test_status)
+
         filename = rosparam.get_param("/analysing/result_json_output") + self.test_name + ".json"
         stream = file(filename, 'w')
         json.dump(copy(doc), stream)
@@ -72,4 +94,4 @@ class ATF:
         filename = rosparam.get_param("/analysing/result_yaml_output") + self.test_name + ".yaml"
         if not filename == "":
             stream = file(filename, 'w')
-            yaml.dump(doc, stream)
+            yaml.dump(doc, stream, default_flow_style=False)
