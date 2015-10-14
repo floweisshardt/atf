@@ -30,19 +30,13 @@ public:
     }
 };
 
-void ObstacleDistance::getDistanceToObstacles(const ros::TimerEvent &) {
+void ObstacleDistance::updatedScene(planning_scene_monitor::PlanningSceneMonitor::SceneUpdateType type) {
+
     planning_scene_monitor::LockedPlanningSceneRO ps(planning_scene_monitor_);
     planning_scene::PlanningScenePtr planning_scene_ptr = ps->diff();
 
     CreateCollisionWorld collision_world(planning_scene_ptr->getWorldNonConst());
     robot_state::RobotState robot_state(planning_scene_ptr->getCurrentState());
-
-    for (int i = 0; i < current_joint_states_.name.size(); i++) {
-        robot_state.setVariablePosition(current_joint_states_.name[i], current_joint_states_.position[i]);
-    }
-
-    robot_state.update();
-    robot_state.updateCollisionBodyTransforms();
 
     CreateCollisionRobot collision_robot(robot_state.getRobotModel());
     std::vector<boost::shared_ptr<fcl::CollisionObject> > robot_obj, world_obj;
@@ -78,29 +72,17 @@ void ObstacleDistance::getDistanceToObstacles(const ros::TimerEvent &) {
     obstacle_distance_publisher_.publish(ob);
 }
 
-void ObstacleDistance::joint_state_callback(const sensor_msgs::JointStatePtr &joint_states) {
-    current_joint_states_ = *joint_states;
-}
-
-void ObstacleDistance::getPlanningScene() {
-    while (ros::ok()) {
-        planning_scene_monitor_->requestPlanningSceneState(PLANNING_SCENE_SERVICE);
-    }
-}
-
 ObstacleDistance::ObstacleDistance()
         : ros::NodeHandle() {
-    PLANNING_SCENE_SERVICE = "get_planning_scene";
     MAXIMAL_MINIMAL_DISTANCE = 5.0; //m
-    double publish_frequency = 100.0; //Hz
+    double update_frequency = 100.0; //Hz
     bool error = false;
 
-    std::string joints_topic, robot_description;
+    std::string robot_description;
     std::vector<std::string> distance_topic;
-    getParam(ros::this_node::getName() + "/obstacle_distance/joints", joints_topic);
     getParam(ros::this_node::getName() + "/obstacle_distance/robot_description", robot_description);
     getParam(ros::this_node::getName() + "/obstacle_distance/topics", distance_topic);
-    if (joints_topic == "" || robot_description == "" || distance_topic[0] == "") error = true;
+    if (robot_description == "" || distance_topic[0] == "") error = true;
 
     //Initialize planning scene monitor
     boost::shared_ptr<tf::TransformListener> tf_listener_(new tf::TransformListener(ros::Duration(2.0)));
@@ -111,15 +93,15 @@ ObstacleDistance::ObstacleDistance()
         error = true;
     }
 
-    if (!error) {
-        //Initialize timer & subscriber
-        joint_state_subscriber_ = subscribe(joints_topic, 1, &ObstacleDistance::joint_state_callback, this);
-        obstacle_distance_publisher_ = advertise<atf_msgs::ObstacleDistance>(distance_topic[0], 1);
-        obstacle_distance_timer_ = createTimer(ros::Duration(1 / publish_frequency),
-                                               &ObstacleDistance::getDistanceToObstacles, this);
+    planning_scene_monitor_->setStateUpdateFrequency(update_frequency);
+    planning_scene_monitor_->startSceneMonitor();
+    planning_scene_monitor_->startWorldGeometryMonitor();
+    planning_scene_monitor_->startStateMonitor();
 
-        //Initialize thread for updating the planning scene
-        boost::thread *ps_thread = new boost::thread(&ObstacleDistance::getPlanningScene, this);
+    planning_scene_monitor_->addUpdateCallback(boost::bind(&ObstacleDistance::updatedScene, this, _1));
+
+    if (!error) {
+        obstacle_distance_publisher_ = advertise<atf_msgs::ObstacleDistance>(distance_topic[0], 1);
     }
 }
 
