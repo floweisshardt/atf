@@ -3,6 +3,9 @@ $(document).ready(function () {
   document.getElementById('file_input').addEventListener('change', handleFileSelect, false);
 
   $('#button_compare').prop('disabled', true);
+  $('#abort_connection').prop('disabled', true);
+  $('#refresh_status_list').prop('disabled', true);
+
   var compare_test_option = $('#compare_test_option');
 
   compare_test_option.find('#select_test_config').selectpicker({

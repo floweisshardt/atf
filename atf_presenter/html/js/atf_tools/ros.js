@@ -85,6 +85,8 @@ var ros = {
         .removeClass('label-danger')
         .addClass('label-danger');
 
+      refresh_status_list.prop('disabled', true);
+
       if (this_class.connection_timeout === this_class.connection_attempts) {
         connect_status.removeClass('alert-success')
           .removeClass('alert-danger')
@@ -95,10 +97,10 @@ var ros = {
           .append(msg);
 
         abort_connection.prop('disabled', true);
-        refresh_status_list.prop('disabled', true);
 
         return true;
       } else this_class.connection_timeout++;
+
       this_class.connectToServer();
     });
   },
@@ -121,6 +123,7 @@ var ros = {
       service_status.removeClass('label-success')
         .removeClass('label-danger')
         .addClass('label-danger');
+      $('#refresh_status_list').prop('disabled', true);
       this_class.callService();
     });
   },
