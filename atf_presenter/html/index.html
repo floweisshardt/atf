@@ -50,18 +50,19 @@
 
 <div class='container-fluid'>
     <div class='row'>
-        <div class='col-sm-9 col-sm-offset-1 col-md-10 col-md-offset-1 main'>
+        <div class='col-sm-3 col-md-2 sidebar'>
+            <ul class='nav nav-pills nav-stacked' id='tab_menu'>
+                <li role="presentation"><a href='#' data-target='#test_status' data-toggle='modal'>
+                    Live test status
+                </a></li>
+                <li role="presentation"><a href='#' data-target='#configurator' data-toggle='modal'>
+                    Configurator
+                </a></li>
+            </ul>
+        </div>
+        <div class='col-sm-9 col-sm-offset-3 col-md-10 col-md-offset-2 main'>
+            <!--<div class='col-sm-9 col-sm-offset-1 col-md-10 col-md-offset-1 main'>-->
             <div class='tab-pane'>
-                <div class='panel panel-primary'>
-                    <div class='panel-heading'>Test status</div>
-                    <div class='panel-body panel-fixed'>
-                        <p>Check the current status of the tests.</p>
-
-                        <button type='button' class='btn btn-primary' data-target='#test_status' data-toggle='modal'>
-                            Test status
-                        </button>
-                    </div>
-                </div>
                 <div class='panel panel-primary'>
                     <div class='panel-heading'>Upload files</div>
                     <div class='panel-body panel-fixed'>
@@ -277,11 +278,11 @@
             <!-- BODY -->
             <div class='modal-body'>
                 <div class='panel panel-primary'>
-                    <div class='panel-heading'>Server adress</div>
+                    <div class='panel-heading'>Server address</div>
                     <div class='panel-body'>
                         <div class="input-group placeholder">
                             <span class="input-group-addon">ws://</span>
-                            <input id="ros_master_ip" type="text" class="form-control" placeholder="Server ip adress"
+                            <input id="ros_master_ip" type="text" class="form-control" placeholder="Server ip address"
                                    value="10.0.1.215">
                             <span class="input-group-addon">:9090</span>
                         </div>

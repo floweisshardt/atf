@@ -220,3 +220,13 @@ $(document).on('click', '#abort_connection', function () {
 $(document).on('click', '#refresh_status_list', function () {
   ros.callService();
 });
+
+$('.sidebar > ul.nav li a')
+  .mouseenter(function (e) {
+    $(this).parent().siblings().removeClass('active').end().addClass('active');
+    e.preventDefault();
+  })
+  .mouseleave(function (e) {
+    $(this).parent().removeClass('active');
+    e.preventDefault();
+  });
