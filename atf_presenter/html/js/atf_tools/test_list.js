@@ -143,7 +143,7 @@ var TestList = {
                 }
 
                 if (level_3_data instanceof Object) {
-                  // Resourcen
+                  // Resources
                   $.each(level_3_data, function (level_4, level_4_data) {
                     if (!(level_4 in test_data_complete[level_1][level_2][level_3])) {
                       test_data_complete[level_1][level_2][level_3][level_4] = {};
