@@ -223,7 +223,7 @@ $(document).on('click', '#refresh_status_list', function () {
 
 $('.sidebar > ul.nav li a')
   .mouseenter(function (e) {
-    $(this).parent().siblings().removeClass('active').end().addClass('active');
+    $(this).parent().addClass('active');
     e.preventDefault();
   })
   .mouseleave(function (e) {
