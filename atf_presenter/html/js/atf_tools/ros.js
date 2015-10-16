@@ -144,16 +144,16 @@ var ros = {
       var status_record, status_analyse;
       if (status[0] === 0) status_record = '<span class="glyphicon glyphicon-hourglass" title="Waiting" aria-hidden="true"></span><span class="sr-only">Waiting</span>';
       else if (status[0] === 1) status_record = '<span class="glyphicon glyphicon-cog" title="Running" aria-hidden="true"></span><span class="sr-only">Running</span>';
-      else if (status[0] === 2) status_record = '<span class="glyphicon glyphicon-ok" title="Finished" aria-hidden="true"></span><span class="sr-only">Finished</span>';
+      else if (status[0] === 3) status_record = '<span class="glyphicon glyphicon-ok" title="Finished" aria-hidden="true"></span><span class="sr-only">Finished</span>';
 
       if (status[1] === 0) status_analyse = '<span class="glyphicon glyphicon-hourglass" title="Waiting" aria-hidden="true"></span><span class="sr-only">Waiting</span>';
       else if (status[1] === 1) status_analyse = '<span class="glyphicon glyphicon-cog" title="Running" aria-hidden="true"></span><span class="sr-only">Running</span>';
-      else if (status[1] === 2) status_analyse = '<span class="glyphicon glyphicon-ok" title="Finished" aria-hidden="true"></span><span class="sr-only">Finished</span>';
+      else if (status[1] === 3) status_analyse = '<span class="glyphicon glyphicon-ok" title="Finished" aria-hidden="true"></span><span class="sr-only">Finished</span>';
 
       test_status_list.append('<tr><td>' + name + '</td>' +
         '<td>' + status_record + '</td>' +
         '<td>' + status_analyse + '</td></tr>');
-      if ((status[0] + status[1]) === 4) finished++;
+      if ((status[0] + status[1]) === 6) finished++;
     });
 
     test_counter.append('<b>Tests finished:</b> ' + finished + ' / ' + this.tests_total);
