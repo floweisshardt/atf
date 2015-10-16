@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 2.8.3)
-project(atf_server)
+project(atf_status_server)
 
 find_package(catkin REQUIRED COMPONENTS
     rospy
@@ -44,7 +44,7 @@ include_directories(
 
 install(
     PROGRAMS
-        scripts/atf_server_node.py
+        scripts/atf_status_server_node.py
     DESTINATION
         ${CATKIN_PACKAGE_BIN_DESTINATION}
 )

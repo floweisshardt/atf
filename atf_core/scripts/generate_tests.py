@@ -90,7 +90,7 @@ class GenerateTests:
             # Recording
             test_record = launch(
                 include(arg(name="test_status_list", value=self.arguments[2] + "test_status.yaml"),
-                        file="$(find atf_server)/launch/atf_server.launch"),
+                        file="$(find atf_status_server)/launch/atf_status_server.launch"),
                 param(name="use_sim_time", value="true"),
                 param(name="test_name", value=item),
                 param(name="test_config", value=self.test_list[item]["test_config"]),
@@ -138,7 +138,7 @@ class GenerateTests:
 
             test_analyse = launch(
                 include(arg(name="test_status_list", value=self.arguments[2] + "test_status.yaml"),
-                        file="$(find atf_server)/launch/atf_server.launch"),
+                        file="$(find atf_status_server)/launch/atf_status_server.launch"),
                 param(name="use_sim_time", value="true"),
                 param(name="analysing/test_name", value=item),
                 param(name="analysing/test_config", value=self.test_list[item]["test_config"]),

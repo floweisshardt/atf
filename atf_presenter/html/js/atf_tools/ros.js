@@ -26,7 +26,7 @@ var ros = {
     this.service_server = new ROSLIB.Service({
       ros: this_class.roscore,
       name: 'atf/get_test_status',
-      serviceType: 'atf_server/GetTestStatus'
+      serviceType: 'atf_status_server/GetTestStatus'
     });
 
     this.service_request = new ROSLIB.ServiceRequest({

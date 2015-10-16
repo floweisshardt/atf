@@ -4,7 +4,7 @@ import yaml
 import rosparam
 
 from atf_msgs.msg import *
-from atf_server.srv import *
+from atf_status_server.srv import *
 
 
 class ATFServer:
@@ -67,6 +67,6 @@ class ATFServer:
 
 
 if __name__ == "__main__":
-    rospy.init_node('atf_server')
+    rospy.init_node('atf_status_server')
     ATFServer()
     rospy.spin()
