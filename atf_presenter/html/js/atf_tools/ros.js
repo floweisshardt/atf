@@ -153,7 +153,7 @@ var ros = {
       test_status_list.append('<tr><td>' + name + '</td>' +
         '<td>' + status_record + '</td>' +
         '<td>' + status_analyse + '</td></tr>');
-      if ((status[0] + status[1]) === 6) finished++;
+      if ((status[0] === 3 && status[1]) === 3) finished++;
     });
 
     test_counter.append('<b>Tests finished:</b> ' + finished + ' / ' + this.tests_total);
