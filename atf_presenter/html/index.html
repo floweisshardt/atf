@@ -335,6 +335,61 @@
     </div>
 </div>
 
+<!-- Configurator popup -->
+<div id='configurator' class='modal fade' role='dialog'>
+    <div class='modal-dialog modal-lg' role='document'>
+        <div class='modal-content'>
+
+            <!-- HEADER -->
+            <div class='modal-header'>
+                <button type='button' class='close' data-dismiss='modal'>&times;</button>
+                <h4 class='modal-title'>Configurator</h4>
+            </div>
+
+            <!-- BODY -->
+            <div class='modal-body'>
+                <!-- Nav tabs -->
+                <ul class="nav nav-tabs" role="tablist">
+                    <li role="presentation" class="active"><a href="#test_config" aria-controls="test_config" role="tab"
+                                                              data-toggle="tab">Test config</a></li>
+                    <li role="presentation"><a href="#scene_config" aria-controls="scene_config" role="tab"
+                                               data-toggle="tab">Scene config</a></li>
+                    <li role="presentation"><a href="#test_suite_config" aria-controls="test_suite_config" role="tab"
+                                               data-toggle="tab">Test suite config</a></li>
+                    <li role="presentation"><a href="#test_generation_config" aria-controls="test_generation_config"
+                                               role="tab" data-toggle="tab">Test generation config</a></li>
+                    <li role="presentation"><a href="#robot_config" aria-controls="robot_config" role="tab"
+                                               data-toggle="tab">Robot config</a></li>
+                </ul>
+
+                <!-- Tab panes -->
+                <div class="tab-content">
+                    <div role="tabpanel" class="tab-pane active" id="test_config">
+                        <div class="row">
+                            <div class="form-group form-group-options col-xs-11 col-sm-8 col-md-4">
+                                <div class="placeholder"></div>
+                                <button type='button' class='btn btn-primary' id='add_test'>Add new test</button>
+                                <button type='button' class='btn btn-primary' id='remove_test'>Remove last test</button>
+                                <br/>
+                                <div class="placeholder"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div role="tabpanel" class="tab-pane" id="scene_config">...</div>
+                    <div role="tabpanel" class="tab-pane" id="test_suite_config">...</div>
+                    <div role="tabpanel" class="tab-pane" id="test_generation_config">...</div>
+                    <div role="tabpanel" class="tab-pane" id="robot_config">...</div>
+                </div>
+            </div>
+
+            <!-- FOOTER -->
+            <div class='modal-footer'>
+                <button type='button' class='btn btn-primary' data-dismiss='modal'>Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- JavaScript
 ================================================== -->
 <!-- Placed at the end of the document so the page load faster -->
