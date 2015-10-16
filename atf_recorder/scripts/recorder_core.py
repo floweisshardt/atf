@@ -73,7 +73,7 @@ class ATFRecorder:
 
         test_status = TestStatus()
         test_status.test_name = self.bag_name
-        test_status.status_recording = 2
+        test_status.status_recording = 3
         test_status.status_analysing = 0
         test_status.total = self.number_of_tests
 

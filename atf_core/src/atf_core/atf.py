@@ -82,7 +82,7 @@ class ATF:
 
         test_status = TestStatus()
         test_status.test_name = self.test_name
-        test_status.status_analysing = 2
+        test_status.status_analysing = 3
         test_status.total = self.number_of_tests
 
         self.test_status_publisher.publish(test_status)
