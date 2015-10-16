@@ -235,7 +235,7 @@ $('.sidebar > ul.nav li a')
 $(document).on('click', 'div.form-group-options .add_entry', function () {
   var sInputGroupHtml = $(this).parent().parent().parent().parent().html();
   var sInputGroupClasses = $(this).parent().parent().parent().parent().attr('class');
-  $(this).parent().parent().parent().parent().parent().append('<div class="' + sInputGroupClasses + '">' + sInputGroupHtml + '</div>');
+  $(this).parent().parent().parent().parent().parent().append('<div class="' + sInputGroupClasses + ' add_entry">' + sInputGroupHtml + '</div>');
   $(this).remove();
 });
 
@@ -257,9 +257,6 @@ $(document).on('click', '#add_test', function () {
     '<li><a href="#" class="add_entry">Add entry</a></li>' +
     '<li><a href="#" class="add_array">Add array</a></li>' +
     '</ul>' +
-    '<button class="btn btn-default input-group-addon-remove" type="button">' +
-    '<span class="glyphicon glyphicon-remove"></span>' +
-    '</button>' +
     '</span>' +
     '</div>' +
     '</div>');
