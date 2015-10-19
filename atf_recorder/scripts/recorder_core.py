@@ -50,7 +50,7 @@ class ATFRecorder:
             msg_type = rostopic.get_topic_class(topic, blocking=True)[0]
             rospy.Subscriber(topic, msg_type, self.global_topic_callback, queue_size=5, callback_args=topic)
 
-        self.test_status_publisher = rospy.Publisher(self.topic + "test_status", TestStatus, queue_size=1)
+        self.test_status_publisher = rospy.Publisher(self.topic + "test_status", TestStatus, queue_size=10)
         rospy.Service(self.topic + "recorder_command", RecorderCommand, self.command_callback)
 
         # Wait for subscriber

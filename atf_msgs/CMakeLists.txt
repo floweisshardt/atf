@@ -20,6 +20,7 @@ add_message_files(
         Network.msg
         Resources.msg
         TestStatus.msg
+        TestblockStatus.msg
         NodeResources.msg
         ObstacleDistance.msg
         ObstacleDistanceLink.msg

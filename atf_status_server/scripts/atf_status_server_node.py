@@ -11,7 +11,7 @@ class ATFServer:
     def __init__(self):
         self.test_status_list = rosparam.get_param("status_list")
 
-        sub = rospy.Subscriber("/atf/test_status", TestStatus, self.status_update_callback, queue_size=1)
+        sub = rospy.Subscriber("/atf/test_status", TestStatus, self.status_update_callback, queue_size=10)
 
         # Wait for publisher
         num_subscriber = sub.get_num_connections()
@@ -27,13 +27,22 @@ class ATFServer:
         except IOError:
             test_list = {}
 
+        # New test
         if data.test_name not in test_list:
-            test_list[data.test_name] = [data.status_recording, data.status_analysing]
+            test_list[data.test_name] = {"status": [data.status_recording, data.status_analysing],
+                                         "testblock": {}
+                                         }
             test_list["total"] = data.total
-        elif data.status_analysing != 0:
-            test_list[data.test_name][1] = data.status_analysing
+
+        # Recording
         elif data.status_analysing == 0:
-            test_list[data.test_name][0] = data.status_recording
+            test_list[data.test_name]["status"][0] = data.status_recording
+
+        # Analysing
+        elif data.status_analysing != 0:
+            test_list[data.test_name]["status"][1] = data.status_analysing
+            if len(data.testblock) != 0:
+                test_list[data.test_name]["testblock"][data.testblock[0].name] = data.testblock[0].status
 
         self.save_data(self.test_status_list, test_list)
 
@@ -58,8 +67,13 @@ class ATFServer:
                 if test != "total":
                     data = TestStatus()
                     data.test_name = test
-                    data.status_recording = test_list[test][0]
-                    data.status_analysing = test_list[test][1]
+                    data.status_recording = test_list[test]["status"][0]
+                    data.status_analysing = test_list[test]["status"][1]
+                    for testblock in test_list[test]["testblock"]:
+                        block = TestblockStatus()
+                        block.name = testblock
+                        block.status = test_list[test]["testblock"][testblock]
+                        data.testblock.append(block)
                     data.total = test_list["total"]
                     req_list.status.append(data)
 

@@ -18,7 +18,7 @@ class ATF:
         self.test_name = rosparam.get_param("/analysing/test_name")
         self.number_of_tests = rosparam.get_param("/number_of_tests")
 
-        self.test_status_publisher = rospy.Publisher("atf/test_status", TestStatus, queue_size=1)
+        self.test_status_publisher = rospy.Publisher("atf/test_status", TestStatus, queue_size=10)
 
         # Wait for subscriber
         num_subscriber = self.test_status_publisher.get_num_connections()
@@ -37,6 +37,19 @@ class ATF:
         while not rospy.is_shutdown() and not self.error:
             for testblock in self.testblocks:
                 try:
+                    test_status = TestStatus()
+                    test_status.test_name = self.test_name
+                    test_status.status_analysing = 1
+
+                    testblock_status = TestblockStatus()
+                    testblock_status.name = testblock.testblock_name
+                    testblock_status.status = testblock.get_state()
+
+                    test_status.testblock.append(testblock_status)
+                    test_status.total = self.number_of_tests
+
+                    self.test_status_publisher.publish(test_status)
+
                     if testblock.get_state() == Status.ERROR:
                         self.testblock_error[testblock.testblock_name] = Status.ERROR
                         rospy.loginfo("An error occured during analysis in '" + testblock.testblock_name +
@@ -62,6 +75,20 @@ class ATF:
         else:
             for item in self.testblocks:
                 name = item.testblock_name
+
+                test_status = TestStatus()
+                test_status.test_name = self.test_name
+                test_status.status_analysing = 1
+
+                testblock_status = TestblockStatus()
+                testblock_status.name = item.testblock_name
+                testblock_status.status = item.get_state()
+
+                test_status.testblock.append(testblock_status)
+                test_status.total = self.number_of_tests
+
+                self.test_status_publisher.publish(test_status)
+
                 if name in self.testblock_error:
                     doc.update({name: {"status": "error"}})
                 else:

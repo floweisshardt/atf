@@ -113,10 +113,12 @@ var ros = {
       service_status.removeClass('label-success')
         .removeClass('label-danger')
         .addClass('label-success');
-
       $.each(res['status'], function (index, data) {
         this_class.tests_total = data['total'];
-        this_class.test_update[data['test_name']] = [data['status_recording'], data['status_analysing']];
+        this_class.test_update[data['test_name']] = {
+          'status': [data['status_recording'], data['status_analysing']],
+          'testblock': data['testblock']
+        };
       });
       this_class.buildStatusList();
     }, function () {
@@ -140,20 +142,28 @@ var ros = {
 
     var finished = 0;
 
-    $.each(this.test_update, function (name, status) {
-      var status_record, status_analyse;
-      if (status[0] === 0) status_record = '<span class="glyphicon glyphicon-hourglass" title="Waiting" aria-hidden="true"></span><span class="sr-only">Waiting</span>';
-      else if (status[0] === 1) status_record = '<span class="glyphicon glyphicon-cog" title="Running" aria-hidden="true"></span><span class="sr-only">Running</span>';
-      else if (status[0] === 3) status_record = '<span class="glyphicon glyphicon-ok" title="Finished" aria-hidden="true"></span><span class="sr-only">Finished</span>';
+    $.each(this.test_update, function (name, data) {
+      var status_record, status_analyse = '';
+      if (data['status'][0] === 0) status_record = '<span class="glyphicon glyphicon-hourglass" title="Waiting" aria-hidden="true"></span><span class="sr-only">Waiting</span>';
+      else if (data['status'][0] === 1) status_record = '<span class="glyphicon glyphicon-cog" title="Running" aria-hidden="true"></span><span class="sr-only">Running</span>';
+      else if (data['status'][0] === 3) status_record = '<span class="glyphicon glyphicon-ok" title="Finished" aria-hidden="true"></span><span class="sr-only">Finished</span>';
 
-      if (status[1] === 0) status_analyse = '<span class="glyphicon glyphicon-hourglass" title="Waiting" aria-hidden="true"></span><span class="sr-only">Waiting</span>';
-      else if (status[1] === 1) status_analyse = '<span class="glyphicon glyphicon-cog" title="Running" aria-hidden="true"></span><span class="sr-only">Running</span>';
-      else if (status[1] === 3) status_analyse = '<span class="glyphicon glyphicon-ok" title="Finished" aria-hidden="true"></span><span class="sr-only">Finished</span>';
+      if (data['status'][1] === 0) status_analyse = '<span class="glyphicon glyphicon-hourglass" title="Waiting" aria-hidden="true"></span><span class="sr-only">Waiting</span>';
+      else {
+        $.each(data['testblock'], function (index, testblock_data) {
+          if (testblock_data['status'] === 0) status_analyse += '<span class="glyphicon glyphicon-hourglass" title="' + testblock_data['name'] + ': Waiting" aria-hidden="true"></span><span class="sr-only">' + testblock_data['name'] + ': Waiting</span>';
+          else if (testblock_data['status'] === 1) status_analyse += '<span class="glyphicon glyphicon-cog" title="' + testblock_data['name'] + ': Running" aria-hidden="true"></span><span class="sr-only">' + testblock_data['name'] + ': Running</span>';
+          else if (testblock_data['status'] === 2) status_analyse += '<span class="glyphicon glyphicon-pause" title="' + testblock_data['name'] + ': Paused" aria-hidden="true"></span><span class="sr-only">' + testblock_data['name'] + ': Paused</span>';
+          else if (testblock_data['status'] === 3) status_analyse += '<span class="glyphicon glyphicon-ok" title="' + testblock_data['name'] + ': Finished" aria-hidden="true"></span><span class="sr-only">' + testblock_data['name'] + ': Finished</span>';
+          else if (testblock_data['status'] === 4) status_analyse +='<span class="glyphicon glyphicon-remove" title="' + testblock_data['name'] + ': Error" aria-hidden="true"></span><span class="sr-only">' + testblock_data['name'] + ': Error</span>';
+        });
+      }
+      //else if (status[1] === 3) status_analyse = '<span class="glyphicon glyphicon-ok" title="Finished" aria-hidden="true"></span><span class="sr-only">Finished</span>';
 
       test_status_list.append('<tr><td>' + name + '</td>' +
         '<td>' + status_record + '</td>' +
         '<td>' + status_analyse + '</td></tr>');
-      if ((status[0] === 3 && status[1]) === 3) finished++;
+      if ((data['status'][0] === 3 && data['status'][1]) === 3) finished++;
     });
 
     test_counter.append('<b>Tests finished:</b> ' + finished + ' / ' + this.tests_total);
