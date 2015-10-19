@@ -79,7 +79,6 @@ function handleFileSelectDropbox() {
         $.get(file.link + '?callback', 'jsonp',  function (data) {
           files_read++;
           var percentLoaded = Math.round((files_read / files.length) * 100);
-          console.log(file.name);
           file_list[file.name] = JSON.parse(data);
 
           progressbar.empty();
