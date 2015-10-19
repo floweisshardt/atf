@@ -158,7 +158,6 @@ var ros = {
           else if (testblock_data['status'] === 4) status_analyse +='<span class="glyphicon glyphicon-remove" title="' + testblock_data['name'] + ': Error" aria-hidden="true"></span><span class="sr-only">' + testblock_data['name'] + ': Error</span>';
         });
       }
-      //else if (status[1] === 3) status_analyse = '<span class="glyphicon glyphicon-ok" title="Finished" aria-hidden="true"></span><span class="sr-only">Finished</span>';
 
       test_status_list.append('<tr><td>' + name + '</td>' +
         '<td>' + status_record + '</td>' +
