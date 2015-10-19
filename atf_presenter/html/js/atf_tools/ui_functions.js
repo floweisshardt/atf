@@ -1,6 +1,7 @@
 $(document).ready(function () {
 
   document.getElementById('file_input').addEventListener('change', handleFileSelect, false);
+  document.getElementById('file_input_dropbox').addEventListener('click', handleFileSelectDropbox, false);
 
   $('#button_compare').prop('disabled', true);
   $('#abort_connection').prop('disabled', true);

@@ -69,9 +69,11 @@
                         <p>Select all test files (.json) which are listed in the 'test_list.json' file and the
                             'test_list.json' itself.</p>
 
-                        <div class='btn btn-primary btn-file placeholder'>
+                        <b>From local storage:</b> <div class='btn btn-primary btn-file placeholder'>
                             Browse <input id='file_input' type='file' multiple>
-                        </div>
+                        </div><br />
+                        <b>From dropbox:</b> <div class='btn btn-primary btn-file placeholder' id='file_input_dropbox'>
+                        Browse</div>
                         <div class='progress'>
                             <div id='file_upload_progressbar' class='progress-bar' role='progressbar' aria-valuenow='0'
                                  aria-valuemin='0' aria-valuemax='100'>
@@ -401,6 +403,7 @@
 <script type='text/javascript' src='js/bootstrap/bootbox.min.js'></script>
 <script type="text/javascript" src="js/rosbridge/eventemitter2.min.js"></script>
 <script type="text/javascript" src="js/rosbridge/roslib.min.js"></script>
+<script type="text/javascript" src="https://www.dropbox.com/static/api/2/dropins.js" id="dropboxjs" data-app-key="jr1ooron8singw1"></script>
 
 <!-- IE10 viewport hack for Surface/desktop Windows 8 bug -->
 <script type='text/javascript' src='js/js_workarounds/ie10-viewport-bug-workaround.min.js'></script>
