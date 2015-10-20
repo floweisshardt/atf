@@ -52,10 +52,10 @@
     <div class='row'>
         <div class='col-sm-3 col-md-2 sidebar'>
             <ul class='nav nav-pills nav-stacked' id='tab_menu'>
-                <li role="presentation"><a href='#' data-target='#test_status' data-toggle='modal'>
+                <li role='presentation'><a href='#' data-target='#test_status' data-toggle='modal'>
                     Live test status
                 </a></li>
-                <li role="presentation"><a href='#' data-target='#configurator' data-toggle='modal'>
+                <li role='presentation'><a href='#' data-target='#configurator' data-toggle='modal'>
                     Configurator
                 </a></li>
             </ul>
@@ -102,7 +102,7 @@
                                 title='Select scene config...'></select>
 
                         <div class='placeholder'></div>
-                        <div id="text_selection"><b>Tests selected:</b> <span>0</span></div>
+                        <div id='text_selection'><b>Tests selected:</b> <span>0</span></div>
                     </div>
                 </div>
                 <div class='panel panel-primary' id='test_list_content'>
@@ -203,12 +203,12 @@
                     <div class='panel-body' id='compare_results'>
 
                         <ul class='nav nav-tabs nav-justified' role='tablist'>
-                            <li id="compare_tab_total" role='presentation' class='active'><a href='#total_tab'
+                            <li id='compare_tab_total' role='presentation' class='active'><a href='#total_tab'
                                                                                              aria-controls='total_tab'
                                                                                              role='tab'
                                                                                              data-toggle='tab'>Total</a>
                             </li>
-                            <li id="compare_tab_categories" role='presentation'><a href='#categories_tab'
+                            <li id='compare_tab_categories' role='presentation'><a href='#categories_tab'
                                                                                    aria-controls='categories_tab'
                                                                                    role='tab'
                                                                                    data-toggle='tab'>Categories</a></li>
@@ -282,11 +282,11 @@
                 <div class='panel panel-primary'>
                     <div class='panel-heading'>Server address</div>
                     <div class='panel-body'>
-                        <div class="input-group placeholder">
-                            <span class="input-group-addon">ws://</span>
-                            <input id="ros_master_ip" type="text" class="form-control" placeholder="Server ip address"
-                                   value="10.0.1.215">
-                            <span class="input-group-addon">:9090</span>
+                        <div class='input-group placeholder'>
+                            <span class='input-group-addon'>ws://</span>
+                            <input id='ros_master_ip' type='text' class='form-control' placeholder='Server ip address'
+                                   value='10.0.1.215'>
+                            <span class='input-group-addon'>:9090</span>
                         </div>
                         <button id='connect_to_rosmaster' type='button' class='btn btn-primary placeholder'>Connect
                         </button>
@@ -351,36 +351,54 @@
             <!-- BODY -->
             <div class='modal-body'>
                 <!-- Nav tabs -->
-                <ul class="nav nav-tabs" role="tablist">
-                    <li role="presentation" class="active"><a href="#test_config" aria-controls="test_config" role="tab"
-                                                              data-toggle="tab">Test config</a></li>
-                    <li role="presentation"><a href="#scene_config" aria-controls="scene_config" role="tab"
-                                               data-toggle="tab">Scene config</a></li>
-                    <li role="presentation"><a href="#test_suite_config" aria-controls="test_suite_config" role="tab"
-                                               data-toggle="tab">Test suite config</a></li>
-                    <li role="presentation"><a href="#test_generation_config" aria-controls="test_generation_config"
-                                               role="tab" data-toggle="tab">Test generation config</a></li>
-                    <li role="presentation"><a href="#robot_config" aria-controls="robot_config" role="tab"
-                                               data-toggle="tab">Robot config</a></li>
+                <ul class='nav nav-tabs' role='tablist'>
+                    <li role='presentation' class='active'><a href='#test_config' aria-controls='test_config' role='tab'
+                                                              data-toggle='tab'>Test config</a></li>
+                    <li role='presentation'><a href='#scene_config' aria-controls='scene_config' role='tab'
+                                               data-toggle='tab'>Scene config</a></li>
+                    <li role='presentation'><a href='#test_suite_config' aria-controls='test_suite_config' role='tab'
+                                               data-toggle='tab'>Test suite config</a></li>
+                    <li role='presentation'><a href='#test_generation_config' aria-controls='test_generation_config'
+                                               role='tab' data-toggle='tab'>Test generation config</a></li>
+                    <li role='presentation'><a href='#robot_config' aria-controls='robot_config' role='tab'
+                                               data-toggle='tab'>Robot config</a></li>
                 </ul>
 
                 <!-- Tab panes -->
-                <div class="tab-content">
-                    <div role="tabpanel" class="tab-pane active" id="test_config">
-                        <div class="row">
-                            <div class="form-group form-group-options col-xs-11 col-sm-8 col-md-4">
-                                <div class="placeholder"></div>
+                <div class='tab-content'>
+                    <div role='tabpanel' class='tab-pane active' id='test_config'>
+                        <div class='row'>
+                            <div class='form-group form-group-options col-xs-11 col-sm-8 col-md-4'>
+                                <div class='placeholder'></div>
                                 <button type='button' class='btn btn-primary' id='add_test'>Add new test</button>
                                 <button type='button' class='btn btn-primary' id='remove_test'>Remove last test</button>
                                 <br/>
-                                <div class="placeholder"></div>
+                                <div class='placeholder'></div>
+                                <div class='test'>
+                                    <div class='input-group'>
+                                        <input type='text' class='form-control' placeholder='Test name'>
+                                        <span class='input-group-btn'>
+                                            <button class='btn btn-default dropdown-toggle input-group-addon-remove' type='button'>
+                                                <span class='glyphicon glyphicon-minus'></span>
+                                            </button>
+                                            <button class='btn btn-default dropdown-toggle input-group-addon-add' type='button'  id='dropdownMenu' data-toggle='dropdown' aria-haspopup='true' aria-expanded='true'>
+                                                <span class='glyphicon glyphicon-plus'></span>
+                                                <span class='caret'></span>
+                                            </button>
+                                            <ul class='dropdown-menu' aria-labelledby='dropdownMenu'>
+                                                <li><a href='#' class='add_entry'>Add entry</a></li>
+                                                <li><a href='#' class='add_array'>Add array</a></li>
+                                            </ul>
+                                        </span>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
-                    <div role="tabpanel" class="tab-pane" id="scene_config">...</div>
-                    <div role="tabpanel" class="tab-pane" id="test_suite_config">...</div>
-                    <div role="tabpanel" class="tab-pane" id="test_generation_config">...</div>
-                    <div role="tabpanel" class="tab-pane" id="robot_config">...</div>
+                    <div role='tabpanel' class='tab-pane' id='scene_config'>...</div>
+                    <div role='tabpanel' class='tab-pane' id='test_suite_config'>...</div>
+                    <div role='tabpanel' class='tab-pane' id='test_generation_config'>...</div>
+                    <div role='tabpanel' class='tab-pane' id='robot_config'>...</div>
                 </div>
             </div>
 
@@ -395,21 +413,29 @@
 <!-- JavaScript
 ================================================== -->
 <!-- Placed at the end of the document so the page load faster -->
-<script type='text/javascript' src='js/js_tools/jquery-1.11.3.min.js'></script>
-<script type='text/javascript' src='js/bootstrap/bootstrap.min.js'></script>
+<script type='text/javascript' src='https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js'></script>
+<script>if (typeof jQuery === 'undefined') {
+    document.write(decodeURI('%3Cscript%20src%3D%22js/js_tools/jquery-1.11.3.min.js%22%3E%3C/script%3E'));
+}
+</script>
+<script src='https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/js/bootstrap.min.js'></script>
+<script>if (typeof Alert === 'undefined') {
+    document.write(decodeURI('%3Cscript%20src%3D%22js/bootstrap/bootstrap.min.js%22%3E%3C/script%3E'));
+}
+</script>
 <script type='text/javascript' src='js/highcharts/highcharts.min.js'></script>
 <script type='text/javascript' src='js/highcharts/highcharts-more.min.js'></script>
 <script type='text/javascript' src='js/bootstrap/bootstrap-select.min.js'></script>
 <script type='text/javascript' src='js/bootstrap/bootbox.min.js'></script>
-<script type="text/javascript" src="js/rosbridge/eventemitter2.min.js"></script>
-<script type="text/javascript" src="js/rosbridge/roslib.min.js"></script>
-<script type="text/javascript" src="https://www.dropbox.com/static/api/2/dropins.js" id="dropboxjs" data-app-key="jr1ooron8singw1"></script>
+<script type='text/javascript' src='js/rosbridge/eventemitter2.min.js'></script>
+<script type='text/javascript' src='js/rosbridge/roslib.min.js'></script>
+<script type='text/javascript' src='https://www.dropbox.com/static/api/2/dropins.js' id='dropboxjs' data-app-key='jr1ooron8singw1'></script>
 
 <!-- IE10 viewport hack for Surface/desktop Windows 8 bug -->
 <script type='text/javascript' src='js/js_workarounds/ie10-viewport-bug-workaround.min.js'></script>
 
 <!-- Other javascript files -->
-<script type="text/javascript" src="js/js_tools/math.min.js"></script>
+<script type='text/javascript' src='js/js_tools/math.min.js'></script>
 <script type='text/javascript' src='js/atf_tools/file_storage.js'></script>
 <script type='text/javascript' src='js/atf_tools/test_list.js'></script>
 <script type='text/javascript' src='js/atf_tools/javascript_functions.js'></script>
