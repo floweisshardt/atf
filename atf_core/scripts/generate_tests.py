@@ -36,7 +36,8 @@ class GenerateTests:
                 self.yaml_output = generation_config["result_yaml_output"]
 
             self.json_output = self.get_path(generation_config["result_json_output"])
-            self.time_limit = generation_config["time_limit"]
+            self.time_limit_recording = generation_config["time_limit_recording"]
+            self.time_limit_analysing = generation_config["time_limit_analysing"]
             self.test_repetitions = generation_config["test_repetitions"]
         except KeyError:
             self.test_suite_file = ""
@@ -47,7 +48,8 @@ class GenerateTests:
             self.additional_launch_file = ""
             self.yaml_output = ""
             self.json_output = ""
-            self.time_limit = 100
+            self.time_limit_recording = 0
+            self.time_limit_analysing = 0
             self.test_repetitions = 1
 
         self.test_list = {}
@@ -122,7 +124,7 @@ class GenerateTests:
                                         "/robot_config.yaml"))
             test_record.append(node(name="obstacle_distance_node", pkg="atf_recorder_plugins",
                                     type="obstacle_distance_node", output="screen"))
-            test_record.append(include(arg(name="time_limit", value=str(self.time_limit)),
+            test_record.append(include(arg(name="time_limit", value=str(self.time_limit_recording)),
                                        file=self.test_application_path))
 
             for params in robot_config["additional_parameter"]:
@@ -153,7 +155,7 @@ class GenerateTests:
                 param(name="analysing/result_json_output", value=self.json_output),
                 param(name="number_of_tests", value=str(len(self.test_list))),
                 test({'test-name': "test_analysing", 'pkg': "atf_core", 'type': "test_builder.py",
-                      'time-limit': str(self.time_limit)}),
+                      'time-limit': str(self.time_limit_analysing)}),
                 node(name="player", pkg="rosbag", type="play", output="screen", args="--delay=5.0 --clock " +
                                                                                      self.bagfile_output + item +
                                                                                      ".bag")
