@@ -1,10 +1,12 @@
 $(document).ready(function () {
 
   document.getElementById('file_input').addEventListener('change', handleFileSelect, false);
+  document.getElementById('file_input_dropbox').addEventListener('click', handleFileSelectDropbox, false);
 
   $('#button_compare').prop('disabled', true);
   $('#abort_connection').prop('disabled', true);
   $('#refresh_status_list').prop('disabled', true);
+  $('#remove_test').prop('disabled', true);
 
   var compare_test_option = $('#compare_test_option');
 
@@ -230,3 +232,50 @@ $('.sidebar > ul.nav li a')
     $(this).parent().removeClass('active');
     e.preventDefault();
   });
+
+$(document).on('click', 'div.form-group-options .add_entry', function () {
+  $('.form-group-options').find('.test').append('<div class="input-group">' +
+    '<input type="text" class="form-control" placeholder="Test name">' +
+    '<span class="input-group-btn">' +
+    '<button class="btn btn-default dropdown-toggle input-group-addon-add" type="button"  id="dropdownMenu' + dropdown + '" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">' +
+    '<span class="glyphicon glyphicon-plus"></span>' +
+    '<span class="caret"></span>' +
+    '</button>' +
+    '<ul class="dropdown-menu" aria-labelledby="dropdownMenu' + dropdown + '">' +
+    '<li><a href="#" class="add_entry">Add entry</a></li>' +
+    '<li><a href="#" class="add_array">Add array</a></li>' +
+    '</ul>' +
+    '</span>' +
+    '</div>');
+  $(this).remove();
+});
+
+$(document).on('click', 'div.form-group-options .input-group-addon-remove', function () {
+  $(this).parent().parent().remove();
+});
+
+$(document).on('click', '#add_test', function () {
+  var dropdown = $('.test').length++;
+  $('.form-group-options').append('<div class="test">' +
+    '<div class="input-group">' +
+    '<input type="text" class="form-control" placeholder="Test name">' +
+    '<span class="input-group-btn">' +
+    '<button class="btn btn-default dropdown-toggle input-group-addon-add" type="button"  id="dropdownMenu' + dropdown + '" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">' +
+    '<span class="glyphicon glyphicon-plus"></span>' +
+    '<span class="caret"></span>' +
+    '</button>' +
+    '<ul class="dropdown-menu" aria-labelledby="dropdownMenu' + dropdown + '">' +
+    '<li><a href="#" class="add_entry">Add entry</a></li>' +
+    '<li><a href="#" class="add_array">Add array</a></li>' +
+    '</ul>' +
+    '</span>' +
+    '</div>' +
+    '</div>');
+  $('#remove_test').prop('disabled', false);
+});
+
+$(document).on('click', '#remove_test', function () {
+  var test = $('.test');
+  test.last().remove();
+  if (test.length === 1) $(this).prop('disabled', true);
+});

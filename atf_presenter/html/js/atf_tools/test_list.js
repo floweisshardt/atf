@@ -123,10 +123,10 @@ var TestList = {
            Level 1: Testblock name
            Level 2: Metric name
            Level 3: - resources: node name
-           - obstacle_distance / path_length: link name
-           - time: values (min, max, average)
+                    - obstacle_distance / path_length: link name
+                    - time: values (min, max, average)
            Level 4: - resources: resource name
-           - obstacle_distance / path_length: values (min, max, average)
+                    - obstacle_distance / path_length: values (min, max, average)
            Level 5: - resources: values (min, max, average)
            Level 6: - resources io / network: category values
            */
@@ -211,7 +211,11 @@ var TestList = {
                 if (!(Array.isArray(level_4_data))) {
                   // Resources
                   $.each(level_4_data, function (level_5, level_5_data) {
-                    if (typeof level_5_data[0][0] === "undefined") {
+                    if (typeof level_5_data[0] === 'undefined') {
+                      delete test_data_complete[level_1][level_2][level_3][level_4];
+                      return true;
+                    }
+                    if (typeof level_5_data[0][0] === 'undefined') {
                       // CPU & Mem
                       var value = 0;
                       if (level_5 === 'max') value = math.max(level_5_data);
