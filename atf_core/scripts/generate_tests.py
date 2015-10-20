@@ -124,6 +124,13 @@ class GenerateTests:
                                     type="obstacle_distance_node", output="screen"))
             test_record.append(include(arg(name="time_limit", value=str(self.time_limit)),
                                        file=self.test_application_path))
+
+            for params in robot_config["additional_parameter"]:
+                test_record.append(param(name=str(params["name"]), value=str(params["value"])))
+
+            for args in robot_config["additional_arguments"]:
+                test_record.append(arg(name=str(args["name"]), value=str(args["value"])))
+
             xmlstr = minidom.parseString(ElementTree.tostring(test_record)).toprettyxml(indent="    ")
             with open(self.arguments[2] + "recording/" + item + ".test", "w") as f:
                 f.write(xmlstr)
