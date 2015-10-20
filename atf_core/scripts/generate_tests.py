@@ -109,8 +109,7 @@ class GenerateTests:
             test_record.append(arg(name="rc_path", value=self.robot_config_path))
 
             if robot_config["robot_bringup_launch"] != "":
-                test_record.append(include(arg(name="gui", value="false"),
-                                           file=self.get_path(robot_config["robot_bringup_launch"])))
+                test_record.append(include(file=self.get_path(robot_config["robot_bringup_launch"])))
 
             if self.additional_launch_file != "":
                 test_record.append(include(file=self.additional_launch_file))
@@ -157,7 +156,7 @@ class GenerateTests:
             with open(self.arguments[2] + "analysing/" + item + ".test", "w") as f:
                 f.write(xmlstr)
 
-        print self.print_output
+        print "-- " + self.print_output
 
     def generate_test_list(self):
         test_list_org = {}
