@@ -35,22 +35,3 @@ input[type="radio"], input[type="checkbox"] {
     width: 0;
     min-width: 2em
 }
-
-div.input-group-btn:last-child span.input-group-addon-remove {
-    display: none;
-}
-
-div.input-group-btn:last-child span.input-group-addon-add {
-    display: block;
-}
-
-.entry {
-    margin-left: 20px;
-    margin-top: 10px;
-}
-.test {
-    margin-bottom: 10px;
-}
-.test .input-group-btn:nth-child(2) .input-group-addon-remove {
-    <!--display: none;-->
-}
