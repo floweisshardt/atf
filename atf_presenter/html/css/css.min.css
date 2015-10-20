@@ -44,7 +44,7 @@ div.input-group-btn:last-child span.input-group-addon-add {
     display: block;
 }
 
-.add_entry {
+.entry {
     margin-left: 20px;
     margin-top: 10px;
 }
@@ -52,6 +52,5 @@ div.input-group-btn:last-child span.input-group-addon-add {
     margin-bottom: 10px;
 }
 .test .input-group-btn:nth-child(2) .input-group-addon-remove {
-    height: 200px;
     <!--display: none;-->
 }

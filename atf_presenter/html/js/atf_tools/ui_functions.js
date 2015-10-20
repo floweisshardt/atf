@@ -234,9 +234,19 @@ $('.sidebar > ul.nav li a')
   });
 
 $(document).on('click', 'div.form-group-options .add_entry', function () {
-  var sInputGroupHtml = $(this).parent().parent().parent().parent().html();
-  var sInputGroupClasses = $(this).parent().parent().parent().parent().attr('class');
-  $(this).parent().parent().parent().parent().parent().append('<div class="' + sInputGroupClasses + ' add_entry">' + sInputGroupHtml + '</div>');
+  $('.form-group-options').find('.test').append('<div class="input-group">' +
+    '<input type="text" class="form-control" placeholder="Test name">' +
+    '<span class="input-group-btn">' +
+    '<button class="btn btn-default dropdown-toggle input-group-addon-add" type="button"  id="dropdownMenu' + dropdown + '" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">' +
+    '<span class="glyphicon glyphicon-plus"></span>' +
+    '<span class="caret"></span>' +
+    '</button>' +
+    '<ul class="dropdown-menu" aria-labelledby="dropdownMenu' + dropdown + '">' +
+    '<li><a href="#" class="add_entry">Add entry</a></li>' +
+    '<li><a href="#" class="add_array">Add array</a></li>' +
+    '</ul>' +
+    '</span>' +
+    '</div>');
   $(this).remove();
 });
 
