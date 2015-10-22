@@ -93,15 +93,15 @@ ObstacleDistance::ObstacleDistance()
         error = true;
     }
 
-    planning_scene_monitor_->setStateUpdateFrequency(update_frequency);
-    planning_scene_monitor_->startSceneMonitor();
-    planning_scene_monitor_->startWorldGeometryMonitor();
-    planning_scene_monitor_->startStateMonitor();
-
-    planning_scene_monitor_->addUpdateCallback(boost::bind(&ObstacleDistance::updatedScene, this, _1));
+    obstacle_distance_publisher_ = advertise<atf_msgs::ObstacleDistance>(distance_topic[0], 1);
 
     if (!error) {
-        obstacle_distance_publisher_ = advertise<atf_msgs::ObstacleDistance>(distance_topic[0], 1);
+        planning_scene_monitor_->setStateUpdateFrequency(update_frequency);
+        planning_scene_monitor_->startSceneMonitor();
+        planning_scene_monitor_->startWorldGeometryMonitor();
+        planning_scene_monitor_->startStateMonitor();
+
+        planning_scene_monitor_->addUpdateCallback(boost::bind(&ObstacleDistance::updatedScene, this, _1));
     }
 }
 
