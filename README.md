@@ -1,1 +1,2 @@
-# atf [![Build Status](https://travis-ci.org/koellsch/atf.svg)](https://travis-ci.org/koellsch/atf)
+# atf
+[![Build Status](https://travis-ci.org/koellsch/atf.svg)](https://travis-ci.org/koellsch/atf)
