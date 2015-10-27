@@ -20,6 +20,8 @@ class ATFServer:
 
         rospy.Service("atf/get_test_status", GetTestStatus, self.status_service_callback)
 
+        rospy.loginfo("ATF server started!")
+
     def status_update_callback(self, data):
 
         try:

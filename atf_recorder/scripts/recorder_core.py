@@ -76,6 +76,8 @@ class ATFRecorder:
 
         self.test_status_publisher.publish(test_status)
 
+        rospy.loginfo("ATF recorder started!")
+
     def shutdown(self):
         self.lock_write.acquire()
         self.bag.close()
