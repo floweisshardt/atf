@@ -62,4 +62,5 @@ link_directories(
 
 
 add_executable(obstacle_distance_node src/${PROJECT_NAME}/obstacle_distance.cpp include/${PROJECT_NAME}/obstacle_distance.h)
+add_dependencies(obstacle_distance_node ${catkin_EXPORTED_TARGETS})
 target_link_libraries(obstacle_distance_node ${catkin_LIBRARIES} ${LIBFCL_LIBRARIES})
