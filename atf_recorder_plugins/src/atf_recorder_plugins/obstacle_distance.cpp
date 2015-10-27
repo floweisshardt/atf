@@ -102,7 +102,7 @@ ObstacleDistance::ObstacleDistance()
         planning_scene_monitor_->startStateMonitor();
 
         planning_scene_monitor_->addUpdateCallback(boost::bind(&ObstacleDistance::updatedScene, this, _1));
-        ROSINFO("Obstacle distance node started!");
+        ROS_INFO("Obstacle distance node started!");
     }
 }
 
