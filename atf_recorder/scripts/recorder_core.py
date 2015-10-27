@@ -45,17 +45,20 @@ class ATFRecorder:
         self.active_sections = []
         self.requested_topics = []
         self.testblock_list = self.create_testblock_list()
-		
-		# Wait for obstacle_distance node
-		ob_sub = rospy.Subscriber("/atf/obstacle_distance", ObstacleDistance, self.global_topic_callback, queue_size=5, callback_args="/atf/obstacle_distance")
-		num_subscriber = ob_sub.get_num_connections()
+
+        # Wait for obstacle_distance node
+        rospy.loginfo("Waiting for obstacle distance node...")
+        ob_sub = rospy.Subscriber("/atf/obstacle_distance", ObstacleDistance, self.global_topic_callback, queue_size=1,
+                                  callback_args="/atf/obstacle_distance")
+
+        num_subscriber = ob_sub.get_num_connections()
         while num_subscriber == 0:
             num_subscriber = ob_sub.get_num_connections()
 
         for topic in self.get_topics():
-			if topic != "/atf/obstacle_distance":
-				msg_type = rostopic.get_topic_class(topic, blocking=True)[0]
-				rospy.Subscriber(topic, msg_type, self.global_topic_callback, queue_size=5, callback_args=topic)
+            if topic != "/atf/obstacle_distance":
+                msg_type = rostopic.get_topic_class(topic, blocking=True)[0]
+                rospy.Subscriber(topic, msg_type, self.global_topic_callback, queue_size=5, callback_args=topic)
 
         self.test_status_publisher = rospy.Publisher(self.topic + "test_status", TestStatus, queue_size=10)
         rospy.Service(self.topic + "recorder_command", RecorderCommand, self.command_callback)
