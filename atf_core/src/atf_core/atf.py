@@ -34,7 +34,7 @@ class ATF:
 
     def check_states(self):
         running_testblocks = copy(self.testblocks)
-        while not rospy.is_shutdown() and not self.error:
+        while not rospy.is_shutdown() and not self.error and len(running_testblocks) != 0:
             for testblock in self.testblocks:
                 try:
                     test_status = TestStatus()
@@ -60,8 +60,6 @@ class ATF:
                         running_testblocks.remove(testblock)
                 except ValueError:
                     pass
-            if len(running_testblocks) == 0:
-                break
 
         if rospy.is_shutdown():
             self.error_outside_testblock = True
