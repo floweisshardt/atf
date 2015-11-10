@@ -5,11 +5,13 @@ import rosparam
 
 from atf_msgs.msg import *
 from atf_status_server.srv import *
+from threading import Lock
 
 
 class ATFServer:
     def __init__(self):
         self.test_status_list = rosparam.get_param("status_list")
+        self.yaml_lock = Lock()
 
         sub = rospy.Subscriber("/atf/test_status", TestStatus, self.status_update_callback, queue_size=10)
 
@@ -48,17 +50,19 @@ class ATFServer:
 
         self.save_data(self.test_status_list, test_list)
 
-    @staticmethod
-    def load_data(filename):
+    def load_data(self, filename):
+        self.yaml_lock.acquire()
         with open(filename, 'r') as stream:
             doc = yaml.load(stream)
 
+        self.yaml_lock.release()
         return doc
 
-    @staticmethod
-    def save_data(filename, data):
+    def save_data(self, filename, data):
+        self.yaml_lock.acquire()
         stream = file(filename, 'w')
         yaml.dump(data, stream, default_flow_style=False)
+        self.yaml_lock.release()
 
     def status_service_callback(self, req):
         if req:
