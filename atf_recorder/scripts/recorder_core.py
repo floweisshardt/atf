@@ -31,7 +31,7 @@ class ATFRecorder:
         self.test_config = self.load_data(rosparam.get_param(rospy.get_name() + "/test_config_file")
                                           )[rosparam.get_param("/test_config")]
         recorder_config = self.load_data(rospkg.RosPack().get_path("atf_recorder_plugins") +
-                                         "/config/recorder_config.yaml")
+                                         "/config/recorder_plugins.yaml")
 
         self.BfW = BagfileWriter(self.bag, self.lock_write)
 
