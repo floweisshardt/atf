@@ -6,13 +6,15 @@ from atf_msgs.msg import *
 
 
 class RecordingManager:
-    def __init__(self, name):
+    def __init__(self, name=""):
         """
         Class for managing recordings.
         :param name: The name of the testblock you want to record.
         :type name: str
         :return:
         """
+        if name == "":
+            raise NameError("No testblock name defined!")
         self.name = name
         self.topic = "/atf/"
         rospy.wait_for_service(self.topic + "recorder_command")
