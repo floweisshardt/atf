@@ -39,6 +39,7 @@ class CalculateTime:
 
     @staticmethod
     def pause():
+        # TODO: Implement pause time calculation
         pass
 
     @staticmethod
