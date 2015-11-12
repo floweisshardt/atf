@@ -40,6 +40,13 @@ class CalculateDistanceToObstacles:
         self.active = False
         self.finished = True
 
+    def pause(self):
+        self.active = False
+
+    @staticmethod
+    def purge():
+        pass
+
     def get_distance(self, data):
         if self.active:
             for link in data.links:

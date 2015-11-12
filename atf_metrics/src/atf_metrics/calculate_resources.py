@@ -58,6 +58,13 @@ class CalculateResources:
         self.active = False
         self.finished = True
 
+    def pause(self):
+        self.active = False
+
+    @staticmethod
+    def purge():
+        pass
+
     def process_resource_data(self, msg):
         if self.active:
             for node in msg.nodes:
