@@ -41,6 +41,10 @@ class CalculateTime:
     def pause():
         pass
 
+    @staticmethod
+    def purge():
+        pass
+
     def get_result(self):
         if self.finished:
             return "time", round((self.stop_time.to_sec() - self.start_time.to_sec()), 3)
