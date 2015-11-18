@@ -2,3 +2,4 @@ from calculate_path_length import CalculatePathLength, CalculatePathLengthParamH
 from calculate_time import CalculateTime, CalculateTimeParamHandler
 from calculate_resources import CalculateResources, CalculateResourcesParamHandler
 from calculate_distance_to_obstacles import CalculateDistanceToObstacles, CalculateDistanceToObstaclesParamHandler
+# from example import Example, ExampleParamHandler

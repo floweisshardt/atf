@@ -6,3 +6,5 @@ resources:
   handler: CalculateResourcesParamHandler
 obstacle_distance:
   handler: CalculateDistanceToObstaclesParamHandler
+# example:
+#   handler: ExampleParamHandler
