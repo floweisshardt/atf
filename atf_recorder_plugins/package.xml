@@ -15,16 +15,8 @@
     <license>LGPL</license>
 
     <buildtool_depend>catkin</buildtool_depend>
-    <buildtool_depend>pkg-config</buildtool_depend>
-
     <depend>atf_msgs</depend>
+    <depend>atf_recorder</depend>
     <depend>rospy</depend>
-    <depend>boost</depend>
-    <depend>roscpp</depend>
-    <depend>moveit_core</depend>
-    <depend>moveit_ros_planning_interface</depend>
-    <depend>tf</depend>
-    <depend>fcl</depend>
-    <depend>pkg-config</depend>
 
 </package>

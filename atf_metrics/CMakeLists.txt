@@ -3,6 +3,7 @@ project(atf_metrics)
 
 find_package(catkin REQUIRED COMPONENTS
     rospy
+    obstacle_distance
 )
 
 catkin_python_setup()
@@ -13,6 +14,7 @@ catkin_python_setup()
 
 catkin_package(CATKIN_DEPENDS
     rospy
+    obstacle_distance
 )
 
 ###########
