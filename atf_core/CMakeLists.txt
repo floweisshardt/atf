@@ -4,6 +4,11 @@ project(atf_core)
 find_package(catkin REQUIRED COMPONENTS
     rospy
     atf_msgs
+    atf_recorder
+    atf_metrics
+    atf_recorder_plugins
+    atf_status_server
+    obstacle_distance
 )
 
 catkin_python_setup()
@@ -15,6 +20,11 @@ catkin_python_setup()
 catkin_package(CATKIN_DEPENDS
     rospy
     atf_msgs
+    atf_recorder
+    atf_metrics
+    atf_recorder_plugins
+    atf_status_server
+    obstacle_distance
 )
 
 ###########
