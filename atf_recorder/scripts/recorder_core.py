@@ -38,8 +38,11 @@ class ATFRecorder:
         # Init metric recorder
         self.recorder_plugin_list = []
         for (key, value) in recorder_config.iteritems():
-            self.recorder_plugin_list.append(getattr(atf_recorder_plugins, value)(self.topic, self.test_config,
-                                                                                  self.lock_write, self.bag))
+            self.recorder_plugin_list.append(getattr(atf_recorder_plugins, value)(self.topic,
+                                                                                  self.test_config,
+                                                                                  self.robot_config_file,
+                                                                                  self.lock_write,
+                                                                                  self.bag))
 
         self.topic_pipeline = []
         self.active_sections = []
