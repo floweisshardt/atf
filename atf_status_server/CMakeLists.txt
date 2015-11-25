@@ -6,6 +6,7 @@ find_package(catkin REQUIRED COMPONENTS
     message_generation
     std_msgs
     atf_msgs
+    rosbridge_server
 )
 
 ################################################
@@ -32,6 +33,7 @@ catkin_package(CATKIN_DEPENDS
     rospy
     std_msgs
     atf_msgs
+    rosbridge_server
 )
 
 ###########
