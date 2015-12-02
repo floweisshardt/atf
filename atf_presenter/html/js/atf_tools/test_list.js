@@ -255,7 +255,9 @@ var TestList = {
       });
 
       // Check for errors
+      var test_failed = 0;
       $.each(errors['planning'], function (testblock_name, errors) {
+        test_failed += errors;
         if (errors === test_config['subtests'].length) {
           test_data_complete[testblock_name]['status'] = 'error';
           return false;
@@ -263,7 +265,7 @@ var TestList = {
           test_data_complete[testblock_name]['status'] = 'error';
         }
       });
-
+      test_failed += errors['error'];
       if (errors['error'] === test_config['subtests'].length) {
         test_data_complete = {};
         test_data_complete['error'] = 'An error occured outside monitored testblocks. Aborted analysis...';
@@ -271,9 +273,12 @@ var TestList = {
 
       FileStorage.removeData(test_name);
       if (Object.keys(test_data_complete).length != 0) {
+        test_list[test_name]['tests_failed'] = test_failed;
         FileStorage.writeData(test_name, test_data_complete);
       }
     });
+    FileStorage.removeData(this.name);
+    FileStorage.writeData(this.name, test_list);
   },
   checkForErrors: function (file) {
     var error = '';
@@ -486,9 +491,7 @@ var TestList = {
     };
 
     $.each(test_data, function (name) {
-      if (name === 'subtests') {
-        return true;
-      }
+      if (name === 'subtests') return true;
       configuration_div.append('<li><b>' + name.capitalize().replace('_', ' ') + ':</b> ' + test_data[name] + '</li>');
     });
 
@@ -656,7 +659,7 @@ var TestList = {
     $.each(data_per_test, function (metric_name, data) {
       if (data.length != 0) test_details.show();
       details_per_test_panel.append('<div class="panel panel-primary"><div class="panel-heading"></div>' +
-      '<div class="panel-body"><div id="details_' + metric_name + '_content" class="plot"></div></div></div>');
+        '<div class="panel-body"><div id="details_' + metric_name + '_content" class="plot"></div></div></div>');
       $('#details_' + metric_name + '_content').highcharts({
         chart: plot_options[metric_name]['chart'],
         title: plot_options[metric_name]['title'],

@@ -21,49 +21,49 @@ var TestComparison = {
       var test_results = FileStorage.readData(test_name);
 
       $.each(test_results, function (testblock_name, testblock_data) {
-        $.each(testblock_data, function (level_2, level_2_data) {
-          if (level_2_data.hasOwnProperty('max')) {
-            // Time
-            if (!max.hasOwnProperty(level_2)) max[level_2] = 0;
-            if (level_2_data['max'] > max[level_2]) {
-              max[level_2] = level_2_data['max'];
-            }
-          } else {
-            $.each(level_2_data, function (level_3, level_3_data) {
-              if (level_3_data.hasOwnProperty('max')) {
-                // Path length & obstacle distance
-                if (!max.hasOwnProperty(level_2)) max[level_2] = 0;
-                if (level_3_data['max'] > max[level_2]) {
-                  max[level_2] = level_3_data['max'];
-                }
-              } else {
-                $.each(level_3_data, function (level_4, level_4_data) {
-                  // Resources
-                  if (typeof level_4_data['max'][0] === 'undefined') {
-                    // CPU & Mem
-                    if (!max.hasOwnProperty(level_4)) max[level_4] = 0;
-                    if (level_4_data['max'] > max[level_4]) {
-                      max[level_4] = level_4_data['max'];
-                    }
-                  } else {
-                    // IO & Network
-                    if (!max.hasOwnProperty(level_4)) {
-                      max[level_4] = [];
-                      for (var i = 0; i < level_4_data['max'].length; i++) {
-                        max[level_4].push(0);
-                      }
-                    }
-                    $.each(level_4_data['max'], function (index, value) {
-                      if (value > max[level_4][index]) {
-                        max[level_4][index] = value;
-                      }
-                    });
-                  }
-                });
+          $.each(testblock_data, function (level_2, level_2_data) {
+            if (level_2_data.hasOwnProperty('max')) {
+              // Time
+              if (!max.hasOwnProperty(level_2)) max[level_2] = 0;
+              if (level_2_data['max'] > max[level_2]) {
+                max[level_2] = level_2_data['max'];
               }
-            });
-          }
-        });
+            } else {
+              $.each(level_2_data, function (level_3, level_3_data) {
+                if (level_3_data.hasOwnProperty('max')) {
+                  // Path length & obstacle distance
+                  if (!max.hasOwnProperty(level_2)) max[level_2] = 0;
+                  if (level_3_data['max'] > max[level_2]) {
+                    max[level_2] = level_3_data['max'];
+                  }
+                } else {
+                  $.each(level_3_data, function (level_4, level_4_data) {
+                    // Resources
+                    if (typeof level_4_data['max'][0] === 'undefined') {
+                      // CPU & Mem
+                      if (!max.hasOwnProperty(level_4)) max[level_4] = 0;
+                      if (level_4_data['max'] > max[level_4]) {
+                        max[level_4] = level_4_data['max'];
+                      }
+                    } else {
+                      // IO & Network
+                      if (!max.hasOwnProperty(level_4)) {
+                        max[level_4] = [];
+                        for (var i = 0; i < level_4_data['max'].length; i++) {
+                          max[level_4].push(0);
+                        }
+                      }
+                      $.each(level_4_data['max'], function (index, value) {
+                        if (value > max[level_4][index]) {
+                          max[level_4][index] = value;
+                        }
+                      });
+                    }
+                  });
+                }
+              });
+            }
+          });
       });
     });
     return max;
@@ -121,7 +121,7 @@ var TestComparison = {
 
     this.getBestTests();
   },
-  ratingAlgorithm: function (test_results, max_values) {
+  ratingAlgorithm: function (test_config, test_results, max_values) {
     var results = {
       total: {
         average: 0,
@@ -313,9 +313,9 @@ var TestComparison = {
           temp['min'] = math.mean(tp['min']) * this_class.weight[category];
           temp['max'] = math.mean(tp['max']) * this_class.weight[category];
         }
-        results[category]['average'] = temp['average'];
-        results[category]['min'] = temp['min'];
-        results[category]['max'] = temp['max'];
+        results[category]['average'] = temp['average'] * (test_config['test_repetitions'] - test_config['tests_failed']) / test_config['test_repetitions'];
+        results[category]['min'] = temp['min'] * (test_config['test_repetitions'] - test_config['tests_failed']) / test_config['test_repetitions'];
+        results[category]['max'] = temp['max'] * (test_config['test_repetitions'] - test_config['tests_failed']) / test_config['test_repetitions'];
       }
     });
 
@@ -344,7 +344,7 @@ var TestComparison = {
 
     // Iterate through selected tests
     $.each(files, function (index, test_name) {
-      var results = this_class.ratingAlgorithm(FileStorage.readData(test_name), max_values);
+      var results = this_class.ratingAlgorithm(test_list[test_name], FileStorage.readData(test_name), max_values);
 
       //Save chart data
       $.each(results, function (category, data) {
@@ -362,7 +362,8 @@ var TestComparison = {
             planer_id: test_list[test_name]['planer_id'],
             planning_method: test_list[test_name]['planning_method'],
             jump_threshold: test_list[test_name]['jump_threshold'],
-            eef_step: test_list[test_name]['eef_step']
+            eef_step: test_list[test_name]['eef_step'],
+            tests_failed: test_list[test_name]['tests_failed'] + ' / ' + test_list[test_name]['test_repetitions']
           }]
         }, {
           name: test_name + '_variation',
@@ -383,7 +384,7 @@ var TestComparison = {
     var category_tabs_content = category_div.find('.tab-content');
     category_tabs.empty();
     category_tabs_content.empty();
-    
+
     var weight_control_buttons = $('#weight_control').find('.panel-body');
     weight_control_buttons.empty();
 
@@ -394,7 +395,7 @@ var TestComparison = {
     $('#compare_tab_categories').removeClass('active');
     $('#total_tab').addClass('active');
     category_div.removeClass('active');
-    
+
     var active = true;
     var class_active = '';
 
@@ -412,7 +413,7 @@ var TestComparison = {
           'aria-controls="' + category + '_tab" role="tab" data-toggle="tab">' + category.capitalize() + '</a></li>');
         category_tabs_content.append('<div role="tabpanel" class="tab-pane ' + class_active + '" id="' + category + '_tab">' +
           '<div id="' + category + '" class="plot"></div></div>');
-        
+
         //Create weight control button
         weight_control_buttons.append('<div class="input-group"><span class="input-group-btn">' +
           '<button type="button" class="btn btn-primary weight_control_button" value="' + category + '">' + category.capitalize() + '</button>' +
@@ -453,7 +454,7 @@ var TestComparison = {
           },
           series: {
             events: {
-              legendItemClick: function() {
+              legendItemClick: function () {
                 TestComparison.getBestTests(this.name, !this.visible);
               }
             }
@@ -577,8 +578,8 @@ var TestComparison = {
             this_class.charts['invisible'].push(name);
           }
           if (data['data'][0].y > results[category_name]['value'] && this_class.charts['invisible'].indexOf(data.name) === -1) {
-              results[category_name]['value'] = data['data'][0].y;
-              results[category_name]['name'] = data.name;
+            results[category_name]['value'] = data['data'][0].y;
+            results[category_name]['name'] = data.name;
           }
         }
       });
