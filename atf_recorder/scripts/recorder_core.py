@@ -50,7 +50,7 @@ class ATFRecorder:
         self.testblock_list = self.create_testblock_list()
 
         # Wait for obstacle_distance node
-        rospy.loginfo("Waiting for obstacle distance node...")
+        rospy.loginfo(rospy.get_name() + ": Waiting for obstacle distance node...")
         ob_sub = rospy.Subscriber("/atf/obstacle_distance", ObstacleDistance, self.global_topic_callback, queue_size=1,
                                   callback_args="/atf/obstacle_distance")
 
@@ -79,7 +79,7 @@ class ATFRecorder:
 
         self.test_status_publisher.publish(test_status)
 
-        rospy.loginfo("ATF recorder started!")
+        rospy.loginfo(rospy.get_name() + ": Node started!")
 
     def shutdown(self):
         self.lock_write.acquire()
@@ -106,6 +106,18 @@ class ATFRecorder:
                     else:
                         for topic in self.robot_config_file[metric]["topics"]:
                             testblock_list[testblock].append(topic)
+                else:
+                    try:
+                        if "topics" in self.test_config[testblock][metric]:
+                            try:
+                                testblock_list[testblock]
+                            except KeyError:
+                                testblock_list[testblock] = self.test_config[testblock][metric]["topics"]
+                            else:
+                                for topic in self.test_config[testblock][metric]["topics"]:
+                                    testblock_list[testblock].append(topic)
+                    except TypeError:
+                        pass
 
         return testblock_list
 
@@ -174,10 +186,19 @@ class ATFRecorder:
         for item in self.test_config:
             for metric in self.test_config[item]:
                 if metric in self.robot_config_file:
+                    # Get topics from robot_config.yaml
                     for topic in self.robot_config_file[metric]["topics"]:
                         if topic not in topics:
                             topics.append(topic)
-
+                else:
+                    try:
+                        if "topics" in self.test_config[item][metric]:
+                            # Get topics from test_config.yaml
+                            for topic in self.test_config[item][metric]["topics"]:
+                                if topic not in topics:
+                                    topics.append(topic)
+                    except TypeError:
+                        pass
         return topics
 
 
