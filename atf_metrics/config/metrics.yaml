@@ -6,5 +6,7 @@ resources:
   handler: CalculateResourcesParamHandler
 obstacle_distance:
   handler: CalculateDistanceToObstaclesParamHandler
+publish_rate:
+  handler: CalculatePublishRateParamHandler
 # example:
 #   handler: ExampleParamHandler
