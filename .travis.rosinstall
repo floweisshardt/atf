@@ -1,0 +1,4 @@
+- git:
+    uri: 'https://github.com/ipa-fmw/obstacle_distance.git'
+    local-name: obstacle_distance
+    version: indigo_dev
