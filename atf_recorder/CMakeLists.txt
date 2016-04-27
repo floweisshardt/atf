@@ -46,7 +46,7 @@ include_directories(
 
 install(
     PROGRAMS
-        scripts/atf_recorder.py
+        scripts/recorder_core.py
     DESTINATION
         ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
