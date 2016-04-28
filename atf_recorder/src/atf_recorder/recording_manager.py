@@ -16,15 +16,18 @@ class RecordingManager:
         if name == "":
             raise NameError("No testblock name defined!")
         self.name = name
-        self.topic = "/atf/"
-        rospy.wait_for_service(self.topic + "recorder_command")
-        self.recorder_command = rospy.ServiceProxy(self.topic + "recorder_command", RecorderCommand)
+        self.ns = "/atf/"
+        rospy.loginfo("waiting for atf recorder service")
+        rospy.wait_for_service(self.ns + "recorder_command")
+        rospy.loginfo("found atf recorder service")
+        self.recorder_command = rospy.ServiceProxy(self.ns + "recorder_command", RecorderCommand)
 
     def start(self):
         """
         Starts the recording for the selected section.
         :return:
         """
+        rospy.loginfo("recording manager: start of testblock '%s'", self.name)
         result = self.recorder_command(self.name, Trigger(Trigger.ACTIVATE))
         if not result:
             rospy.logerr("Testblock name is not defined in test_config.yaml!")
@@ -34,6 +37,7 @@ class RecordingManager:
         Pauses the recording for the selected section.
         :return:
         """
+        rospy.loginfo("recording manager: pause of testblock '%s'", self.name)
         result = self.recorder_command(self.name, Trigger(Trigger.PAUSE))
         if not result:
             rospy.logerr("Testblock name is not defined in test_config.yaml!")
@@ -43,6 +47,7 @@ class RecordingManager:
         Stops the recording for the selected section.
         :return:
         """
+        rospy.loginfo("recording manager: stop of testblock '%s'", self.name)
         result = self.recorder_command(self.name, Trigger(Trigger.FINISH))
         if not result:
             rospy.logerr("Testblock name is not defined in test_config.yaml!")
@@ -52,6 +57,7 @@ class RecordingManager:
         Sends an error to the recorder.
         :return:
         """
+        rospy.loginfo("recording manager: error in testblock '%s'", self.name)
         result = self.recorder_command(self.name, Trigger(Trigger.ERROR))
         if not result:
             rospy.logerr("Testblock name is not defined in test_config.yaml!")

@@ -119,11 +119,11 @@ class GenerateTests:
             test_record.append(node(param(name="/test_config_file", value=self.test_config_file),
                                     param(name="/bagfile_output", value=self.bagfile_output),
                                     name="atf_recorder", pkg="atf_recorder", type="recorder_core.py", output="screen"))
-            test_record.append(rosparam(ns="obstacle_distance_node", command="load",
-                                        file=self.robot_config_path + self.test_list[item]["robot"] +
-                                        "/robot_config.yaml"))
-            test_record.append(node(name="obstacle_distance_node", pkg="obstacle_distance",
-                                    type="obstacle_distance_node", output="screen"))
+            #test_record.append(rosparam(ns="obstacle_distance_node", command="load",
+            #                            file=self.robot_config_path + self.test_list[item]["robot"] +
+            #                            "/robot_config.yaml"))
+            #test_record.append(node(name="obstacle_distance_node", pkg="obstacle_distance",
+            #                        type="obstacle_distance_node", output="screen"))
             test_record.append(include(arg(name="time_limit", value=str(self.time_limit_recording)),
                                        file=self.test_application_path))
 
