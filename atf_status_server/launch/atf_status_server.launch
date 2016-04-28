@@ -1,0 +1,8 @@
+<?xml version="1.0"?>
+<launch>
+    <arg name="test_status_list" />
+    <param name="status_list" value="$(arg test_status_list)" />
+    <include file="$(find rosbridge_server)/launch/rosbridge_websocket.launch"/>
+    <node name="atf_status_server" pkg="atf_status_server" type="atf_status_server_node.py" output="screen"/>
+
+</launch>

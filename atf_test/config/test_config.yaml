@@ -1,0 +1,17 @@
+# Definition of various tests
+test_1:
+  testblock_1:
+    time:
+  testblock_2:
+    time:
+    path_length:
+      - [base_link, gripper_right_grasp_link]
+      - [base_link, arm_right_3_link]
+test_2:
+  testblock_1:
+    time:
+  testblock_3:
+    time:
+    path_length:
+      - [base_link, gripper_right_grasp_link]
+      - [arm_right_1_link, gripper_right_grasp_link]

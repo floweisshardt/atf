@@ -1,0 +1,15 @@
+# Definition of various test suites
+testsuite_1:
+  scene_config:                 # You have to define at least one scene name
+    - "scene_1"
+  test_config:                  # You have to define at least one test name
+    - "test_1"
+  robot:                        # You have to define at least one robot name
+    - "robot_1"
+testsuite_2:
+  scene_config:
+    - "scene_2"
+  test_config:                  # You have to define at least one test name
+    - "test_2"
+  robot:                        # You have to define at least one robot name
+    - "robot_2"
