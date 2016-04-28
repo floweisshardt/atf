@@ -59,4 +59,4 @@ class Test(unittest.TestCase):
 
 if __name__ == '__main__':
     rospy.init_node('test_name')
-    rostest.rosrun('application', 'test_name', Test, sysargs=None)
+    rostest.rosrun('application', 'test_application', Test, sysargs=None)

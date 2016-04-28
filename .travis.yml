@@ -26,6 +26,7 @@ after_failure:
   - cd $CATKIN_WS
   - source devel/setup.bash
   - catkin_test_results --verbose
+  - cat build/Testing/Temporary/LastTest.log
   - sudo apt-get install tree
   - tree $CATKIN_WS/build/atf/atf_test
   - tree /tmp/atf_test
