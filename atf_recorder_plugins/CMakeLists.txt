@@ -26,3 +26,11 @@ catkin_package(CATKIN_DEPENDS
 include_directories(
     ${catkin_INCLUDE_DIRS}
 )
+
+#############
+## Install ##
+#############
+
+install(DIRECTORY config
+    DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
+)
