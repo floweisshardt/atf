@@ -12,7 +12,6 @@ env:
     - CATKIN_WS_UNDERLAY=~/catkin_ws_underlay
     - CATKIN_WS_UNDERLAY_SRC=${CATKIN_WS_UNDERLAY}/src
     - CI_ROS_DISTRO="indigo"
-    - ROS_PARALLEL_JOBS=-j1
     - DEFAULT_ROSINSTALL="https://raw.githubusercontent.com/ipa320/care-o-bot/${CI_ROS_DISTRO}_dev/.travis.rosinstall"
 
 install:
@@ -23,7 +22,12 @@ script:
   - wget https://raw.githubusercontent.com/ipa320/care-o-bot/${CI_ROS_DISTRO}_dev/.travis.script.sh
   - bash .travis.script.sh
 
-after_script:
+after_failure:
   - cd $CATKIN_WS
   - source devel/setup.bash
   - catkin_test_results --verbose
+  - sudo apt-get install tree
+  - tree $CATKIN_WS/build/atf/atf_test
+  - tree /tmp/atf_test
+  - ls -lh /tmp/atf_test/data/*.bag
+  - rosbag info /tmp/atf_test/data/ts1_t1_1.bag
