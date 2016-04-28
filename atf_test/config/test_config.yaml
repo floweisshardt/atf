@@ -1,29 +1,17 @@
 # Definition of various tests
 test_1:
-  planning:
+  testblock_1:
     time:
-#    resources:
-#      cpu: [rostest]
-#      mem: [rostest]
-#      io: [rostest]
-#      network: [rostest]
-  execution:
+  testblock_2:
     time:
     path_length:
       - [base_link, gripper_right_grasp_link]
       - [base_link, arm_right_3_link]
-    obstacle_distance:
-      - [gripper_right_grasp_link]
-      - [[arm_right_1_link, arm_right_4_link], [scene_3]]
-
 test_2:
-  planning:
+  testblock_1:
     time:
-  execution:
+  testblock_3:
     time:
     path_length:
       - [base_link, gripper_right_grasp_link]
       - [arm_right_1_link, gripper_right_grasp_link]
-    obstacle_distance:
-      - [gripper_right_grasp_link]
-      - [[arm_right_1_link, arm_right_4_link], [scene_3]]

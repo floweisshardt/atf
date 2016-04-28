@@ -11,19 +11,21 @@ from atf_recorder import RecordingManager
 
 class Application:
     def __init__(self):
-        self.testblock_planning = RecordingManager('planning')
-        self.testblock_execution = RecordingManager('execution')
+        self.testblock_1 = RecordingManager('testblock_1')
+        self.testblock_2 = RecordingManager('testblock_2')
+        self.testblock_3 = RecordingManager('testblock_3')
 
     def execute(self):
         # Example for recorder usage
-        self.testblock_planning.start()
+        self.testblock_1.start()
+        self.testblock_3.start()
         rospy.sleep(3)
         #self.recorder.error()
-        self.testblock_planning.stop()
-        self.testblock_execution.start()
+        self.testblock_1.stop()
+        self.testblock_2.start()
         rospy.sleep(5)
-        self.testblock_execution.stop()
-
+        self.testblock_2.stop()
+        self.testblock_3.stop()
 
 class Test(unittest.TestCase):
     def setUp(self):

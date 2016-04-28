@@ -1,12 +1,6 @@
 path_length:                                          # Topics for the metric 'path_length'
   topics:
     - "/tf"
-obstacle_distance:                                    # Topics for the metric 'obstacle_distance'. Do not alter!!!
-  topics:
-    - "/atf/obstacle_distance"
-  services:
-    - "/atf/get_obstacle_distance"
-  robot_description: "/robot_description"      # Name of the robot description
 robot_bringup_launch: ""          # Path to the robot bringup launch file
 wait_for_topics: []                                      # Names of the topics to wait for before beginning the test
 wait_for_services: []                                    # Names of the services to wait for before beginning the test
