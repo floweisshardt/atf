@@ -2,10 +2,20 @@
 testsuite_1:
   scene_config:                 # You have to define at least one scene name
     - "scene_1"
-    - "scene_2"
+#    - "scene_2"
   test_config:                  # You have to define at least one test name
     - "test_1"
-    - "test_2"
+#    - "test_2"
   robot:                        # You have to define at least one robot name
     - "robot_1"
-    - "robot_2"
+#    - "robot_2"
+#testsuite_2:
+#  scene_config:                 # You have to define at least one scene name
+#    - "scene_1"
+#    - "scene_3"
+#  test_config:                  # You have to define at least one test name
+#    - "test_1"
+#    - "test_2"
+#  robot:                        # You have to define at least one robot name
+#    - "robot_1"
+#    - "robot_2"

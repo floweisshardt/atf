@@ -22,3 +22,8 @@ install:
 script:
   - wget https://raw.githubusercontent.com/ipa320/care-o-bot/${CI_ROS_DISTRO}_dev/.travis.script.sh
   - bash .travis.script.sh
+
+after_script:
+  - cd $CATKIN_WS
+  - source devel/setup.bash
+  - catkin_test_results --verbose
