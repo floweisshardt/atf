@@ -19,7 +19,7 @@ from copy import deepcopy, copy
 class GenerateTests:
     def __init__(self, arguments):
 
-        self.print_output = "Generation done!"
+        self.print_output = "ATF: Test generation done!"
         self.arguments = arguments
         generation_config = self.load_yaml(self.arguments[1])
         try:
@@ -198,8 +198,9 @@ class GenerateTests:
             stream = file(self.json_output + "/test_list.json", 'w')
             json.dump(self.list_to_array(test_list_org), stream)
         else:
-            print "Error: Output directory for .json files must be specified!"
-            self.print_output = "Generation failed!"
+            error_message = "Error: Output directory for .json files must be specified!"
+            print error_message
+            self.print_output = "ATF: Test generation failed! " + error_message
 
     def list_to_array(self, org_list):
         temp_list = self.natural_sort(copy(org_list))
@@ -223,8 +224,10 @@ class GenerateTests:
                 return yaml.load(stream)
         except IOError:
             if filename != "":
-                print "Error: File '" + filename + "' not found!"
-            self.print_output = "Generation failed!"
+                error_message = "Error: File '" + filename + "' not found!"
+                print error_message
+            self.print_output = "ATF: Test generation failed! " + error_message
+            sys.exit(1)
             return {}
 
     @staticmethod

@@ -16,6 +16,6 @@
 
     <buildtool_depend>catkin</buildtool_depend>
     <depend>rospy</depend>
-    <depend>obstacle_distance</depend>
+    <!--depend>obstacle_distance</depend-->
 
 </package>

@@ -21,7 +21,7 @@
     <depend>atf_metrics</depend>
     <depend>atf_recorder_plugins</depend>
     <depend>atf_status_server</depend>
-    <depend>obstacle_distance</depend>
+    <!--depend>obstacle_distance</depend-->
     <test_depend>rostest</test_depend>
 
 </package>
