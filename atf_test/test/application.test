@@ -1,0 +1,8 @@
+<?xml version="1.0" ?>
+<launch>
+    <!-- Parameter 'use_sim_time' is set to true by default. If it should be false, set it here -->
+    <param name="use_sim_time" value="false" />
+
+    <arg name="time_limit" />
+    <test pkg="atf_test" test-name="test_name" time-limit="$(arg time_limit)" type="application.py" />
+</launch>
