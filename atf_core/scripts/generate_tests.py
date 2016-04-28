@@ -21,7 +21,7 @@ class GenerateTests:
 
         self.print_output = "ATF: Test generation done!"
         self.arguments = arguments
-        generation_config = self.load_yaml(self.arguments[1])
+        generation_config = self.load_yaml(self.get_path(self.arguments[1]))
         try:
             self.test_suite_file = self.get_path(generation_config["test_suite_file"])
             self.test_config_file = self.get_path(generation_config["test_config_file"])
@@ -55,10 +55,13 @@ class GenerateTests:
         self.test_list = {}
 
         # Empty folders
-        if os.path.exists(self.arguments[2]):
-            shutil.rmtree(self.arguments[2])
-        os.makedirs(self.arguments[2] + "recording/")
-        os.makedirs(self.arguments[2] + "analysing/")
+        self.test_generated_path = os.path.join(self.arguments[2], "test_generated")
+        self.test_generated_recording_path = os.path.join(self.test_generated_path, "recording")
+        self.test_generated_analysing_path = os.path.join(self.test_generated_path, "analysing")
+        if os.path.exists(self.test_generated_path):
+            shutil.rmtree(self.test_generated_path)
+        os.makedirs(self.test_generated_recording_path)
+        os.makedirs(self.test_generated_analysing_path)
 
         if os.path.exists(self.bagfile_output):
             shutil.rmtree(self.bagfile_output)
@@ -91,7 +94,7 @@ class GenerateTests:
 
             # Recording
             test_record = launch(
-                include(arg(name="test_status_list", value=self.arguments[2] + "test_status.yaml"),
+                include(arg(name="test_status_list", value=self.test_generated_recording_path + "/test_status.yaml"),
                         file="$(find atf_status_server)/launch/atf_status_server.launch"),
                 param(name="use_sim_time", value="true"),
                 param(name="test_name", value=item),
@@ -134,7 +137,8 @@ class GenerateTests:
                 test_record.append(arg(name=str(args["name"]), value=str(args["value"])))
 
             xmlstr = minidom.parseString(ElementTree.tostring(test_record)).toprettyxml(indent="    ")
-            with open(self.arguments[2] + "recording/" + item + ".test", "w") as f:
+            
+            with open(os.path.join(self.test_generated_recording_path, item) + ".test", "w") as f:
                 f.write(xmlstr)
 
             # Analysing
@@ -145,7 +149,7 @@ class GenerateTests:
             param = em.param
 
             test_analyse = launch(
-                include(arg(name="test_status_list", value=self.arguments[2] + "test_status.yaml"),
+                include(arg(name="test_status_list", value=self.test_generated_analysing_path + "/test_status.yaml"),
                         file="$(find atf_status_server)/launch/atf_status_server.launch"),
                 param(name="use_sim_time", value="true"),
                 param(name="analysing/test_name", value=item),
@@ -162,7 +166,7 @@ class GenerateTests:
             )
 
             xmlstr = minidom.parseString(ElementTree.tostring(test_analyse)).toprettyxml(indent="    ")
-            with open(self.arguments[2] + "analysing/" + item + ".test", "w") as f:
+            with open(os.path.join(self.test_generated_analysing_path, item) + ".test", "w") as f:
                 f.write(xmlstr)
 
         print "-- " + self.print_output
@@ -170,7 +174,7 @@ class GenerateTests:
     def generate_test_list(self):
         test_list_org = {}
 
-        test_data = self.load_yaml(self.test_suite_file)
+        test_data = self.load_yaml(self.get_path(self.test_suite_file))
         for suite in test_data:
 
             suite_data = copy(test_data[suite])
