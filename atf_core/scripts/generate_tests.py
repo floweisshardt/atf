@@ -55,7 +55,7 @@ class GenerateTests:
         self.test_list = {}
 
         # Empty folders
-        self.test_generated_path = os.path.join(self.arguments[2], "test_generated")
+        self.test_generated_path = os.path.join(rospkg.RosPack().get_path(self.arguments[2]), "test_generated")
         self.test_generated_recording_path = os.path.join(self.test_generated_path, "recording")
         self.test_generated_analysing_path = os.path.join(self.test_generated_path, "analysing")
         if os.path.exists(self.test_generated_path):

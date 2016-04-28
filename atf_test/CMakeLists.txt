@@ -24,53 +24,20 @@ install(PROGRAMS scripts/application.py
 ## Testing ##
 #############
 
+
 if(CATKIN_ENABLE_TESTING)
     find_package(rostest REQUIRED)
 
-    SET(PKGNAME ${PROJECT_NAME} CACHE STRING "The name of the package you want to generate the test files. If you do not set this variable all test files are generated.")
-    # SET(MAKETESTS "all" CACHE STRING "Choose which sort of tests you want to run (record, analyse, all). Default is 'all'.")
+    execute_process(
+        COMMAND rosrun atf_core generate_tests.py ${PROJECT_SOURCE_DIR}/config/test_generation_config.yaml ${PROJECT_NAME}
+    )
 
-    if(${PKGNAME} STREQUAL ${PROJECT_NAME})
-
-        message(STATUS "Generate test files ...")
-
-        set(OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/Testing/tests_generated/)
-        set(GENERATION_CONFIG ${CMAKE_CURRENT_SOURCE_DIR}/config/test_generation_config.yaml)
-
-        set(EXECUTE_ARGUMENTS ${GENERATION_CONFIG} ${OUTPUT_DIRECTORY})
-        set(EXECUTE_COMMAND ${atf_core_SOURCE_DIR}/scripts/generate_tests.py ${EXECUTE_ARGUMENTS})
-
-        execute_process(
-            COMMAND ${EXECUTE_COMMAND}
-            WORKING_DIRECTORY ${atf_core_SOURCE_DIR}
-            RESULT_VARIABLE res_var
-        )
-        if(NOT "${res_var}" STREQUAL "0")
-            message(FATAL_ERROR "'${EXECUTE_COMMAND}' failed.")
-        endif()
-
-        file(GLOB TESTS_FILES ${OUTPUT_DIRECTORY}recording/*.test)
-        foreach(TEST ${TESTS_FILES})
-            add_rostest(${TEST}
-                WORKING_DIRECTORY
-                    ${CMAKE_CURRENT_SOURCE_DIR}
-                PACKAGE
-                    ${PROJECT_NAME}
-                PKGDIR
-                    ${CMAKE_CURRENT_SOURCE_DIR}
-            )
-
-            string(REPLACE "/" ";" LIST ${TEST})
-            list(GET LIST -1 TEST_NAME)
-
-            add_rostest(${OUTPUT_DIRECTORY}analysing/${TEST_NAME}
-                WORKING_DIRECTORY
-                    ${CMAKE_CURRENT_SOURCE_DIR}
-                PACKAGE
-                    ${PROJECT_NAME}
-                PKGDIR
-                    ${CMAKE_CURRENT_SOURCE_DIR}
-            )
-        endforeach()
-    endif()
+    file(GLOB TESTS_FILES_RECORDING test_generated/recording/*.test)
+    file(GLOB TESTS_FILES_ANALYSING test_generated/analysing/*.test)
+    foreach(TEST ${TESTS_FILES_RECORDING})
+        add_rostest(${TEST})
+    endforeach()
+    foreach(TEST ${TESTS_FILES_ANALYSING})
+        add_rostest(${TEST})
+    endforeach()
 endif()
