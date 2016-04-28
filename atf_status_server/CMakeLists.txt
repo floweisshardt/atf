@@ -44,9 +44,17 @@ include_directories(
   ${catkin_INCLUDE_DIRS}
 )
 
+#############
+## Install ##
+#############
+
 install(
     PROGRAMS
         scripts/atf_status_server_node.py
     DESTINATION
         ${CATKIN_PACKAGE_BIN_DESTINATION}
+)
+
+install(DIRECTORY launch
+  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
 )
