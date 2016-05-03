@@ -1,14 +1,15 @@
-bagfile_output: "/tmp/atf_test/data/"                                 # Folder for bagfile output
 test_suite_file: "atf_test/config/test_suite.yaml"           # Path of the test_suite file
 test_config_file: "atf_test/config/test_config.yaml"         # Path of the test_config file
 robot_config_path: "atf_test/config/"                        # Folder which contains the robot_config files
-
-result_json_output: "/tmp/atf_test/results/"                            # Folder for the json files output
-result_yaml_output: ""                                               # Folder for the yaml files output
+test_repetitions: 2                                                  # Number of repetitions per test
 
 test_application_path: "atf_test/test/application.test"          # Path of the application test file
 additional_launch_file: "atf_test/launch/application.launch"     # Path of the additional launch file
 
+bagfile_output: "/tmp/atf_test/data/"                                 # Folder for bagfile output
+result_json_output: "/tmp/atf_test/results/"                            # Folder for the json files output
+result_yaml_output: "/tmp/atf_test/results/"                           # Folder for the yaml files output
+
 time_limit_recording: 20.0                                          # Time limit in seconds for recording (travis-ci has a maximum of 600s after which it will end the building process)
 time_limit_analysing: 20.0                                          # Time limit in seconds for analysing (travis-ci has a maximum of 600s after which it will end the building process)
-test_repetitions: 2                                                  # Number of repetitions per test
+time_limit_uploading: 60.0                                          # Time limit in seconds for uploading (travis-ci has a maximum of 600s after which it will end the building process)
