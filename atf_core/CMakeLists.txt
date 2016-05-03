@@ -43,6 +43,8 @@ install(
     PROGRAMS
         scripts/generate_tests.py
         scripts/test_builder.py
+        scripts/dropbox_uploader.sh
+        test/test_dropbox_uploader.py
     DESTINATION
         ${CATKIN_PACKAGE_BIN_DESTINATION}
 )

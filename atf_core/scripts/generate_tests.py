@@ -38,6 +38,7 @@ class GenerateTests:
             self.json_output = self.get_path(generation_config["result_json_output"])
             self.time_limit_recording = generation_config["time_limit_recording"]
             self.time_limit_analysing = generation_config["time_limit_analysing"]
+            self.time_limit_uploading = generation_config["time_limit_uploading"]
             self.test_repetitions = generation_config["test_repetitions"]
         except KeyError:
             self.test_suite_file = ""
@@ -50,12 +51,14 @@ class GenerateTests:
             self.json_output = ""
             self.time_limit_recording = 0
             self.time_limit_analysing = 0
+            self.time_limit_uploading = 0
             self.test_repetitions = 1
 
         self.test_list = {}
 
         # Empty folders
-        self.test_generated_path = os.path.join(rospkg.RosPack().get_path(self.arguments[2]), "test_generated")
+        self.package_name = self.arguments[2]
+        self.test_generated_path = os.path.join(rospkg.RosPack().get_path(self.package_name), "test_generated")
         self.test_generated_recording_path = os.path.join(self.test_generated_path, "recording")
         self.test_generated_analysing_path = os.path.join(self.test_generated_path, "analysing")
         if os.path.exists(self.test_generated_path):
@@ -81,7 +84,9 @@ class GenerateTests:
     def generate_tests(self):
 
         for item in self.test_list:
-            # Create .test file
+            robot_config = self.load_yaml(self.robot_config_path + self.test_list[item]["robot"] + "/robot_config.yaml")
+
+            # Recording
             em = lxml.builder.ElementMaker()
             launch = em.launch
             arg = em.arg
@@ -89,10 +94,7 @@ class GenerateTests:
             node = em.node
             param = em.param
             rosparam = em.rosparam
-
-            robot_config = self.load_yaml(self.robot_config_path + self.test_list[item]["robot"] + "/robot_config.yaml")
-
-            # Recording
+            
             test_record = launch(
                 include(arg(name="test_status_list", value=self.test_generated_recording_path + "/test_status.yaml"),
                         file="$(find atf_status_server)/launch/atf_status_server.launch"),
@@ -155,6 +157,7 @@ class GenerateTests:
                 param(name="analysing/test_name", value=item),
                 param(name="analysing/test_config", value=self.test_list[item]["test_config"]),
                 param(name="analysing/test_config_file", value=self.test_config_file),
+                param(name="analysing/test_generated_path", value=self.test_generated_path),
                 param(name="analysing/result_yaml_output", value=self.yaml_output),
                 param(name="analysing/result_json_output", value=self.json_output),
                 param(name="number_of_tests", value=str(len(self.test_list))),
@@ -167,6 +170,26 @@ class GenerateTests:
 
             xmlstr = minidom.parseString(ElementTree.tostring(test_analyse)).toprettyxml(indent="    ")
             with open(os.path.join(self.test_generated_analysing_path, item) + ".test", "w") as f:
+                f.write(xmlstr)
+            
+            # Uploading
+            em = lxml.builder.ElementMaker()
+            launch = em.launch
+            test = em.test
+            node = em.node
+            param = em.param
+
+            test_upload = launch(
+                test({'test-name': "test_uploading_data", 'pkg': "atf_core", 'type': "test_dropbox_uploader.py",
+                      'time-limit': str(self.time_limit_uploading), 'args': "-f " + os.path.join(rospkg.RosPack().get_path(self.package_name), "config/.dropbox_uploader") + " upload " + self.bagfile_output + " " + os.path.join(self.package_name, "data")}),
+
+                test({'test-name': "test_uploading_results", 'pkg': "atf_core", 'type': "test_dropbox_uploader.py",
+                      'time-limit': str(self.time_limit_uploading), 'args': "-f " + os.path.join(rospkg.RosPack().get_path(self.package_name), "config/.dropbox_uploader") + " upload " + self.json_output + " " + os.path.join(self.package_name, "results")})
+            )
+
+
+            xmlstr = minidom.parseString(ElementTree.tostring(test_upload)).toprettyxml(indent="    ")
+            with open(os.path.join(self.test_generated_path,  "upload.test"), "w") as f:
                 f.write(xmlstr)
 
         print "-- " + self.print_output
@@ -195,11 +218,11 @@ class GenerateTests:
                     self.test_list[test_name].update(temp[i])
 
         if self.yaml_output != "":
-            stream = file(self.yaml_output + "/test_list.yaml", 'w')
+            stream = file(self.test_generated_path + "/test_list.yaml", 'w')
             yaml.dump(deepcopy(self.list_to_array(test_list_org)), stream, default_flow_style=False)
 
         if self.json_output != "":
-            stream = file(self.json_output + "/test_list.json", 'w')
+            stream = file(self.test_generated_path + "/test_list.json", 'w')
             json.dump(self.list_to_array(test_list_org), stream)
         else:
             error_message = "Error: Output directory for .json files must be specified!"

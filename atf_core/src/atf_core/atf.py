@@ -3,6 +3,8 @@ import rospy
 import rosparam
 import json
 import yaml
+import shutil
+import os
 
 from atf_msgs.msg import *
 from copy import copy
@@ -111,6 +113,8 @@ class ATF:
         test_status.total = self.number_of_tests
 
         self.test_status_publisher.publish(test_status)
+
+        shutil.copy(os.path.join(rosparam.get_param("analysing/test_generated_path"), "test_list.json") , rosparam.get_param("/analysing/result_json_output"))
 
         filename = rosparam.get_param("/analysing/result_json_output") + self.test_name + ".json"
         stream = file(filename, 'w')
