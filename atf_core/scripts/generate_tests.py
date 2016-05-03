@@ -262,7 +262,6 @@ class GenerateTests:
         return text[len(pkgname):]
 
     def get_path(self, path):
-        print "path=", path
         try:
             rospkg.RosPack().get_path(path.split("/")[0]) + self.remove_pkgname(path, path.split("/")[0])
         except rospkg.common.ResourceNotFound:
