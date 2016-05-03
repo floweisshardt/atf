@@ -20,22 +20,23 @@ class GenerateTests:
     def __init__(self, arguments):
 
         self.print_output = "ATF: Test generation done!"
-        self.arguments = arguments
-        generation_config = self.load_yaml(self.get_path(self.arguments[1]))
+        self.package_name = arguments[1]
+        self.package_path = arguments[2]
+        generation_config = self.load_yaml(self.package_path + "/config/test_generation_config.yaml")
         try:
-            self.test_suite_file = self.get_path(generation_config["test_suite_file"])
-            self.test_config_file = self.get_path(generation_config["test_config_file"])
-            self.bagfile_output = self.get_path(generation_config["bagfile_output"])
-            self.robot_config_path = self.get_path(generation_config["robot_config_path"])
-            self.test_application_path = self.get_path(generation_config["test_application_path"])
-            self.additional_launch_file = self.get_path(generation_config["additional_launch_file"])
+            self.test_suite_file = os.path.join(self.package_path, generation_config["test_suite_file"])
+            self.test_config_file = os.path.join(self.package_path, generation_config["test_config_file"])
+            self.bagfile_output = os.path.join(self.package_path, generation_config["bagfile_output"])
+            self.robot_config_path = os.path.join(self.package_path, generation_config["robot_config_path"])
+            self.test_application_path = os.path.join(self.package_path, generation_config["test_application_path"])
+            self.additional_launch_file = os.path.join(self.package_path, generation_config["additional_launch_file"])
 
             if generation_config["result_yaml_output"] != "":
-                self.yaml_output = self.get_path(generation_config["result_yaml_output"])
+                self.yaml_output = os.path.join(self.package_path, generation_config["result_yaml_output"])
             else:
                 self.yaml_output = generation_config["result_yaml_output"]
 
-            self.json_output = self.get_path(generation_config["result_json_output"])
+            self.json_output = os.path.join(self.package_path, generation_config["result_json_output"])
             self.time_limit_recording = generation_config["time_limit_recording"]
             self.time_limit_analysing = generation_config["time_limit_analysing"]
             self.time_limit_uploading = generation_config["time_limit_uploading"]
@@ -57,8 +58,7 @@ class GenerateTests:
         self.test_list = {}
 
         # Empty folders
-        self.package_name = self.arguments[2]
-        self.test_generated_path = os.path.join(rospkg.RosPack().get_path(self.package_name), "test_generated")
+        self.test_generated_path = os.path.join(self.package_path, "test_generated")
         self.test_generated_recording_path = os.path.join(self.test_generated_path, "recording")
         self.test_generated_analysing_path = os.path.join(self.test_generated_path, "analysing")
         if os.path.exists(self.test_generated_path):
@@ -181,10 +181,10 @@ class GenerateTests:
 
             test_upload = launch(
                 test({'test-name': "test_uploading_data", 'pkg': "atf_core", 'type': "test_dropbox_uploader.py",
-                      'time-limit': str(self.time_limit_uploading), 'args': "-f " + os.path.join(rospkg.RosPack().get_path(self.package_name), "config/.dropbox_uploader_config") + " upload " + self.bagfile_output + " " + os.path.join(self.package_name, "data")}),
+                      'time-limit': str(self.time_limit_uploading), 'args': "-f " + os.path.join(self.package_path, "config/.dropbox_uploader_config") + " upload " + self.bagfile_output + " " + os.path.join(self.package_name, "data")}),
 
                 test({'test-name': "test_uploading_results", 'pkg': "atf_core", 'type': "test_dropbox_uploader.py",
-                      'time-limit': str(self.time_limit_uploading), 'args': "-f " + os.path.join(rospkg.RosPack().get_path(self.package_name), "config/.dropbox_uploader_config") + " upload " + self.json_output + " " + os.path.join(self.package_name, "results")})
+                      'time-limit': str(self.time_limit_uploading), 'args': "-f " + os.path.join(self.package_path, "config/.dropbox_uploader_config") + " upload " + self.json_output + " " + os.path.join(self.package_name, "results")})
             )
 
 
@@ -197,7 +197,7 @@ class GenerateTests:
     def generate_test_list(self):
         test_list_org = {}
 
-        test_data = self.load_yaml(self.get_path(self.test_suite_file))
+        test_data = self.load_yaml(self.test_suite_file)
         for suite in test_data:
 
             suite_data = copy(test_data[suite])
@@ -262,6 +262,7 @@ class GenerateTests:
         return text[len(pkgname):]
 
     def get_path(self, path):
+        print "path=", path
         try:
             rospkg.RosPack().get_path(path.split("/")[0]) + self.remove_pkgname(path, path.split("/")[0])
         except rospkg.common.ResourceNotFound:

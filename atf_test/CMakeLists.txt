@@ -28,7 +28,7 @@ if(CATKIN_ENABLE_TESTING)
     find_package(rostest REQUIRED)
 
     execute_process(
-        COMMAND rosrun atf_core generate_tests.py ${PROJECT_SOURCE_DIR}/config/test_generation_config.yaml ${PROJECT_NAME}
+        COMMAND python ${atf_core_SCRIPTS_DIR}/generate_tests.py ${PROJECT_NAME} ${PROJECT_SOURCE_DIR}
         RESULT_VARIABLE res_var
     )
     if(NOT "${res_var}" STREQUAL "0")

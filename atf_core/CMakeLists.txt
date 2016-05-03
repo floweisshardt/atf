@@ -27,6 +27,8 @@ catkin_package(CATKIN_DEPENDS
 #    obstacle_distance
 )
 
+catkin_package(CFG_EXTRAS atf_core-extras.cmake)
+
 ###########
 ## Build ##
 ###########
@@ -41,10 +43,16 @@ include_directories(
 
 install(
     PROGRAMS
-        scripts/generate_tests.py
         scripts/test_builder.py
         scripts/dropbox_uploader.sh
         test/test_dropbox_uploader.py
     DESTINATION
         ${CATKIN_PACKAGE_BIN_DESTINATION}
+)
+
+install(
+    FILES
+        scripts/generate_tests.py
+    DESTINATION
+        ${CATKIN_PACKAGE_SHARE_DESTINATION}/scripts
 )
