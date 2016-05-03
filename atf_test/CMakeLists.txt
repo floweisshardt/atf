@@ -24,13 +24,16 @@ install(PROGRAMS scripts/application.py
 ## Testing ##
 #############
 
-
 if(CATKIN_ENABLE_TESTING)
     find_package(rostest REQUIRED)
 
     execute_process(
         COMMAND rosrun atf_core generate_tests.py ${PROJECT_SOURCE_DIR}/config/test_generation_config.yaml ${PROJECT_NAME}
+        RESULT_VARIABLE res_var
     )
+    if(NOT "${res_var}" STREQUAL "0")
+      message(FATAL_ERROR "process failed res_var='${res_var}'")
+    endif()
 
     file(GLOB TESTS_FILES_RECORDING test_generated/recording/*.test)
     file(GLOB TESTS_FILES_ANALYSING test_generated/analysing/*.test)
@@ -40,4 +43,5 @@ if(CATKIN_ENABLE_TESTING)
     foreach(TEST ${TESTS_FILES_ANALYSING})
         add_rostest(${TEST})
     endforeach()
+    add_rostest(test_generated/upload.test)
 endif()

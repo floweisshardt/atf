@@ -181,10 +181,10 @@ class GenerateTests:
 
             test_upload = launch(
                 test({'test-name': "test_uploading_data", 'pkg': "atf_core", 'type': "test_dropbox_uploader.py",
-                      'time-limit': str(self.time_limit_uploading), 'args': "-f " + os.path.join(rospkg.RosPack().get_path(self.package_name), "config/.dropbox_uploader") + " upload " + self.bagfile_output + " " + os.path.join(self.package_name, "data")}),
+                      'time-limit': str(self.time_limit_uploading), 'args': "-f " + os.path.join(rospkg.RosPack().get_path(self.package_name), "config/.dropbox_uploader_config") + " upload " + self.bagfile_output + " " + os.path.join(self.package_name, "data")}),
 
                 test({'test-name': "test_uploading_results", 'pkg': "atf_core", 'type': "test_dropbox_uploader.py",
-                      'time-limit': str(self.time_limit_uploading), 'args': "-f " + os.path.join(rospkg.RosPack().get_path(self.package_name), "config/.dropbox_uploader") + " upload " + self.json_output + " " + os.path.join(self.package_name, "results")})
+                      'time-limit': str(self.time_limit_uploading), 'args': "-f " + os.path.join(rospkg.RosPack().get_path(self.package_name), "config/.dropbox_uploader_config") + " upload " + self.json_output + " " + os.path.join(self.package_name, "results")})
             )
 
 
