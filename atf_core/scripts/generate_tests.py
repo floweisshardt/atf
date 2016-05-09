@@ -188,13 +188,11 @@ class GenerateTests:
             param = em.param
 
             test_upload = launch()
-            print "self.upload_data", self.upload_data
             if self.upload_data:
                 test_upload.append(    
                     test({'test-name': "test_uploading_data", 'pkg': "atf_core", 'type': "test_dropbox_uploader.py",
                           'time-limit': str(self.time_limit_uploading), 'args': "-f " + os.path.join(self.package_path, "config/.dropbox_uploader_config") + " upload " + self.bagfile_output + " " + os.path.join(self.package_name, "data")}))
 
-            print "self.upload_result",     self.upload_result
             if self.upload_result:
                 test_upload.append(
                     test({'test-name': "test_uploading_results", 'pkg': "atf_core", 'type': "test_dropbox_uploader.py",
