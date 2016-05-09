@@ -93,6 +93,6 @@ class CalculatePathLength:
 
     def get_result(self):
         if self.finished:
-            return "path_length", {self.root_frame + " to " + self.measured_frame: round(self.path_length, 3)}
+            return "path_length", {self.root_frame + " to " + self.measured_frame: round(self.path_length, 3)}, True
         else:
             return False
