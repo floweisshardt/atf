@@ -64,6 +64,7 @@ class ATF:
                     pass
 
         if rospy.is_shutdown():
+            rospy.logerr("ATF: error outside of testblock")
             self.error_outside_testblock = True
 
         self.export_to_file()
@@ -94,6 +95,7 @@ class ATF:
                 else:
                     for metric in item.metrics:
                         result = metric.get_result()
+                        rospy.logwarn("result=%s", result)
                         if result is not False:
                             (m, data) = result
                             if name not in doc:
