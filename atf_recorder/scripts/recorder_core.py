@@ -59,9 +59,7 @@ class ATFRecorder:
         #while num_subscriber == 0:
         #    num_subscriber = ob_sub.get_num_connections()
 
-        for topic in self.get_topics():
-            if topic != "/atf/obstacle_distance":
-                rospy.Subscriber(topic, rospy.AnyMsg, self.global_topic_callback, queue_size=5, callback_args=topic)
+        rospy.Timer(rospy.Duration(1), self.create_subscriber_callback) # TODO check for double subscriptions
 
         self.test_status_publisher = rospy.Publisher(self.topic + "test_status", TestStatus, queue_size=10)
         rospy.Service(self.topic + "recorder_command", RecorderCommand, self.command_callback)
@@ -135,6 +133,15 @@ class ATFRecorder:
                 if topic not in self.requested_topics:
                     self.topic_pipeline.remove(topic)
 
+    def create_subscriber_callback(self, event): # TODO: check for double subscriptions
+        for t in self.get_topics():
+            try:
+                msg_class, _, _ = rostopic.get_topic_class(t)
+                msg = rospy.wait_for_message(t, msg_class)
+                rospy.Subscriber(t, msg_class, self.global_topic_callback, callback_args=t)
+            except Exception as e:
+                print e 
+
     def command_callback(self, msg):
 
         if (msg.trigger.trigger == Trigger.ACTIVATE and msg.name in self.active_sections) or \
@@ -171,15 +178,8 @@ class ATFRecorder:
         return doc
 
     def global_topic_callback(self, msg, name):
-        if name in self.topic_pipeline:
-            now = rospy.Time.from_sec(time.time())
-            try:
-                for item in msg.transforms:
-                    item.header.stamp = now
-            except AttributeError:
-                pass
-
-            self.BfW.write_to_bagfile(name, msg, now)
+        if name in self.topic_pipeline:        
+            self.BfW.write_to_bagfile(name, msg, rospy.Time.now())
 
     def get_topics(self):
         topics = []
