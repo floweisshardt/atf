@@ -98,7 +98,6 @@ class GenerateTests:
             test_record = launch(
                 include(arg(name="test_status_list", value=self.test_generated_recording_path + "/test_status.yaml"),
                         file="$(find atf_status_server)/launch/atf_status_server.launch"),
-                param(name="use_sim_time", value="true"),
                 param(name="test_name", value=item),
                 param(name="test_config", value=self.test_list[item]["test_config"]),
                 param(name="scene_config", value=self.test_list[item]["scene_config"]),
@@ -140,7 +139,7 @@ class GenerateTests:
 
             xmlstr = minidom.parseString(ElementTree.tostring(test_record)).toprettyxml(indent="    ")
             
-            with open(os.path.join(self.test_generated_recording_path, item) + ".test", "w") as f:
+            with open(os.path.join(self.test_generated_recording_path, "recording_" + item) + ".test", "w") as f:
                 f.write(xmlstr)
 
             # Analysing
@@ -153,7 +152,6 @@ class GenerateTests:
             test_analyse = launch(
                 include(arg(name="test_status_list", value=self.test_generated_analysing_path + "/test_status.yaml"),
                         file="$(find atf_status_server)/launch/atf_status_server.launch"),
-                param(name="use_sim_time", value="true"),
                 param(name="analysing/test_name", value=item),
                 param(name="analysing/test_config", value=self.test_list[item]["test_config"]),
                 param(name="analysing/test_config_file", value=self.test_config_file),
@@ -169,7 +167,7 @@ class GenerateTests:
             )
 
             xmlstr = minidom.parseString(ElementTree.tostring(test_analyse)).toprettyxml(indent="    ")
-            with open(os.path.join(self.test_generated_analysing_path, item) + ".test", "w") as f:
+            with open(os.path.join(self.test_generated_analysing_path, "analysing_" + item) + ".test", "w") as f:
                 f.write(xmlstr)
             
             # Uploading
