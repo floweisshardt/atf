@@ -14,7 +14,7 @@ import atf_metrics
 class TestBuilder:
     def __init__(self):
 
-        ATF(self.create_test_list()).check_states()
+        self.atf = ATF(self.create_test_list())
 
     def create_test_list(self):
         if not rosparam.get_param("/analysing/result_yaml_output") == "":
@@ -55,7 +55,8 @@ class TestBuilder:
 
 class TestAnalysing(unittest.TestCase):
     def test_Analysing(self):
-        TestBuilder()
+        tb = TestBuilder()
+        self.assertTrue(tb.atf.check_states(), "ATF: groundtruth missmatch")
 
 
 if __name__ == '__main__':

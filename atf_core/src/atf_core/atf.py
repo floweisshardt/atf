@@ -67,7 +67,7 @@ class ATF:
             rospy.logerr("ATF: error outside of testblock")
             self.error_outside_testblock = True
 
-        self.export_to_file()
+        return self.export_to_file()
 
     def export_to_file(self):
         doc = {}
@@ -97,7 +97,7 @@ class ATF:
                         result = metric.get_result()
                         rospy.logwarn("result=%s", result)
                         if result is not False:
-                            (m, data) = result
+                            (m, data, groundtruth) = result
                             if name not in doc:
                                 doc.update({name: {m: data}})
                             else:
@@ -126,3 +126,5 @@ class ATF:
         if not filename == "":
             stream = file(filename, 'w')
             yaml.dump(doc, stream, default_flow_style=False)
+        
+        return groundtruth

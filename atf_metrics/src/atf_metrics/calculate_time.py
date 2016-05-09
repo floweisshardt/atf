@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 import rospy
 import time
+import math
 
 
 class CalculateTimeParamHandler:
@@ -10,24 +11,24 @@ class CalculateTimeParamHandler:
         """
         self.params = []
 
-    @staticmethod
-    def parse_parameter(params):
+    def parse_parameter(self, params):
         """
         Method that returns the metric method with the given parameter.
         :param params: Parameter
         """
-
-        return CalculateTime()
+        return CalculateTime(params["groundtruth"], params["groundtruth_epsilon"])
 
 
 class CalculateTime:
-    def __init__(self):
+    def __init__(self, groundtruth_duration, groundtruth_epsilon):
         """
         Class for calculating the time between the trigger 'ACTIVATE' and 'FINISH' on the topic assigned to the
         testblock.
         """
         self.start_time = rospy.Time()
         self.stop_time = rospy.Time()
+        self.groundtruth_duration = groundtruth_duration
+        self.groundtruth_epsilon = groundtruth_epsilon
         self.finished = False
 
     def start(self):
@@ -48,6 +49,12 @@ class CalculateTime:
 
     def get_result(self):
         if self.finished:
-            return "time", round((self.stop_time.to_sec() - self.start_time.to_sec()), 3)
+            duration = round((self.stop_time.to_sec() - self.start_time.to_sec()), 3)
+            if math.fabs(self.groundtruth_duration - duration) <= self.groundtruth_epsilon:
+                groundtruth = True
+            else:
+                groundtruth = False
+            match_groundtruth = ()
+            return "time", duration, groundtruth
         else:
             return False
