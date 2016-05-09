@@ -23,6 +23,8 @@ class GenerateTests:
         self.package_name = arguments[1]
         self.package_path = arguments[2]
         generation_config = self.load_yaml(self.package_path + "/config/test_generation_config.yaml")
+        
+        # required parameters
         try:
             self.test_suite_file = os.path.join(self.package_path, generation_config["test_suite_file"])
             self.test_config_file = os.path.join(self.package_path, generation_config["test_config_file"])
@@ -41,19 +43,27 @@ class GenerateTests:
             self.time_limit_analysing = generation_config["time_limit_analysing"]
             self.time_limit_uploading = generation_config["time_limit_uploading"]
             self.test_repetitions = generation_config["test_repetitions"]
-        except KeyError:
-            self.test_suite_file = ""
-            self.test_config_file = ""
-            self.bagfile_output = ""
-            self.robot_config_path = ""
-            self.test_application_path = ""
-            self.additional_launch_file = ""
-            self.yaml_output = ""
-            self.json_output = ""
-            self.time_limit_recording = 0
-            self.time_limit_analysing = 0
-            self.time_limit_uploading = 0
-            self.test_repetitions = 1
+        except KeyError as e:
+            error_message = "Error: parsing test configuration failed. Missing Key: " + str(e)
+            print error_message
+            self.print_output = "ATF: Test generation failed! " + error_message
+            sys.exit(1)
+        
+        # optional parameters
+        try:
+            if type(generation_config["upload_data"]) is bool:
+                self.upload_data = generation_config["upload_data"]
+            else:
+                self.upload_data = False
+            if type(generation_config["upload_result"]) is bool:
+                self.upload_result = generation_config["upload_result"]
+            else:
+                self.upload_result = False
+        except KeyError as e:
+            error_message = "ATF: Warning: parsing test configuration incomplete. Missing Key: " + str(e)
+            print error_message
+            self.upload_data = False
+            self.upload_result = False
 
         self.test_list = {}
 
@@ -177,14 +187,18 @@ class GenerateTests:
             node = em.node
             param = em.param
 
-            test_upload = launch(
-                test({'test-name': "test_uploading_data", 'pkg': "atf_core", 'type': "test_dropbox_uploader.py",
-                      'time-limit': str(self.time_limit_uploading), 'args': "-f " + os.path.join(self.package_path, "config/.dropbox_uploader_config") + " upload " + self.bagfile_output + " " + os.path.join(self.package_name, "data")}),
+            test_upload = launch()
+            print "self.upload_data", self.upload_data
+            if self.upload_data:
+                test_upload.append(    
+                    test({'test-name': "test_uploading_data", 'pkg': "atf_core", 'type': "test_dropbox_uploader.py",
+                          'time-limit': str(self.time_limit_uploading), 'args': "-f " + os.path.join(self.package_path, "config/.dropbox_uploader_config") + " upload " + self.bagfile_output + " " + os.path.join(self.package_name, "data")}))
 
-                test({'test-name': "test_uploading_results", 'pkg': "atf_core", 'type': "test_dropbox_uploader.py",
-                      'time-limit': str(self.time_limit_uploading), 'args': "-f " + os.path.join(self.package_path, "config/.dropbox_uploader_config") + " upload " + self.json_output + " " + os.path.join(self.package_name, "results")})
-            )
-
+            print "self.upload_result",     self.upload_result
+            if self.upload_result:
+                test_upload.append(
+                    test({'test-name': "test_uploading_results", 'pkg': "atf_core", 'type': "test_dropbox_uploader.py",
+                          'time-limit': str(self.time_limit_uploading), 'args': "-f " + os.path.join(self.package_path, "config/.dropbox_uploader_config") + " upload " + self.json_output + " " + os.path.join(self.package_name, "results")}))
 
             xmlstr = minidom.parseString(ElementTree.tostring(test_upload)).toprettyxml(indent="    ")
             with open(os.path.join(self.test_generated_path,  "upload.test"), "w") as f:
