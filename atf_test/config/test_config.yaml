@@ -7,12 +7,13 @@ test_1:
       groundtruth: 5
       groundtruth_epsilon: 0.1
     path_length:
-      - [link1, link2]
-      - [link1, link3]
+      root_frame: link1
+      measured_frame: link3
 test_2:
   testblock_1:
     time:
   testblock_3:
     time:
     path_length:
-      - [link1, link2]
+      root_frame: link1
+      measured_frame: link2
