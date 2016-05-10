@@ -7,13 +7,12 @@ test_1:
       groundtruth: 5
       groundtruth_epsilon: 0.1
     path_length:
-      - [base_link, gripper_right_grasp_link]
-      - [base_link, arm_right_3_link]
+      - [link1, link2]
+      - [link1, link3]
 test_2:
   testblock_1:
     time:
   testblock_3:
     time:
     path_length:
-      - [base_link, gripper_right_grasp_link]
-      - [arm_right_1_link, gripper_right_grasp_link]
+      - [link1, link2]
