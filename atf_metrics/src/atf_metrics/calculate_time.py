@@ -16,18 +16,26 @@ class CalculateTimeParamHandler:
         Method that returns the metric method with the given parameter.
         :param params: Parameter
         """
-        return CalculateTime(params["groundtruth"], params["groundtruth_epsilon"])
+        try:
+            groundtruth = params["groundtruth"]
+            groundtruth_epsilon = params["groundtruth_epsilon"]
+        except Exception as e:
+            print e
+            rospy.logwarn("No groundtruth parameters given, skipping groundtruth evaluation")
+            groundtruth = None
+            groundtruth_epsilon = None
+        return CalculateTime(groundtruth, groundtruth_epsilon)
 
 
 class CalculateTime:
-    def __init__(self, groundtruth_duration, groundtruth_epsilon):
+    def __init__(self, groundtruth, groundtruth_epsilon):
         """
         Class for calculating the time between the trigger 'ACTIVATE' and 'FINISH' on the topic assigned to the
         testblock.
         """
         self.start_time = rospy.Time()
         self.stop_time = rospy.Time()
-        self.groundtruth_duration = groundtruth_duration
+        self.groundtruth = groundtruth
         self.groundtruth_epsilon = groundtruth_epsilon
         self.finished = False
 
@@ -48,13 +56,14 @@ class CalculateTime:
         pass
 
     def get_result(self):
+        groundtruth_result = False
         if self.finished:
             duration = round((self.stop_time.to_sec() - self.start_time.to_sec()), 3)
-            if math.fabs(self.groundtruth_duration - duration) <= self.groundtruth_epsilon:
-                groundtruth = True
+            if self.groundtruth != None and self.groundtruth_epsilon != None:
+                if math.fabs(self.groundtruth - duration) <= self.groundtruth_epsilon:
+                    groundtruth_result = True
             else:
-                groundtruth = False
-            match_groundtruth = ()
-            return "time", duration, groundtruth
+                groundtruth_result = True
+            return "time", duration, groundtruth_result
         else:
             return False

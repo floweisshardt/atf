@@ -71,6 +71,8 @@ class ATF:
 
     def export_to_file(self):
         doc = {}
+        groundtruth_result = True
+        groundtruth_error_message = "groundtruth missmatch for:"
         if self.error_outside_testblock:
             doc["error"] = "An error occured outside monitored testblocks. Aborted analysis..."
         else:
@@ -97,7 +99,7 @@ class ATF:
                         result = metric.get_result()
                         rospy.logwarn("result=%s", result)
                         if result is not False:
-                            (m, data, groundtruth) = result
+                            (m, data, gt) = result
                             if name not in doc:
                                 doc.update({name: {m: data}})
                             else:
@@ -105,6 +107,9 @@ class ATF:
                                     doc[name].update({m: data})
                                 else:
                                     doc[name][m].update(data)
+                            if not gt:
+                                groundtruth_result = False
+                                groundtruth_error_message += name + " " + m + "; "  
                         else:
                             item.exit()
                             break
@@ -127,4 +132,4 @@ class ATF:
             stream = file(filename, 'w')
             yaml.dump(doc, stream, default_flow_style=False)
         
-        return groundtruth
+        return groundtruth_result, groundtruth_error_message

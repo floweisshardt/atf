@@ -56,7 +56,7 @@ class TestBuilder:
 class TestAnalysing(unittest.TestCase):
     def test_Analysing(self):
         tb = TestBuilder()
-        self.assertTrue(tb.atf.check_states(), "ATF: groundtruth missmatch")
+        self.assertTrue(tb.atf.check_states()[0], tb.atf.check_states()[1])
 
 
 if __name__ == '__main__':

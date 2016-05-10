@@ -4,6 +4,8 @@ test_1:
     time:
   testblock_2:
     time:
+      groundtruth: 5
+      groundtruth_epsilon: 0.1
     path_length:
       - [base_link, gripper_right_grasp_link]
       - [base_link, arm_right_3_link]
