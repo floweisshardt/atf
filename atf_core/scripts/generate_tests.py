@@ -169,7 +169,7 @@ class GenerateTests:
                 param(name="analysing/result_yaml_output", value=self.yaml_output),
                 param(name="analysing/result_json_output", value=self.json_output),
                 param(name="number_of_tests", value=str(len(self.test_list))),
-                test({'test-name': "test_analysing", 'pkg': "atf_core", 'type': "test_builder.py",
+                test({'test-name': "test_analysing", 'pkg': "atf_core", 'type': "analyser.py",
                       'time-limit': str(self.time_limit_analysing)}),
                 node(name="player", pkg="rosbag", type="play", output="log", args="--delay=5.0 --clock " +
                                                                                      self.bagfile_output + item +

@@ -43,7 +43,7 @@ include_directories(
 
 install(
     PROGRAMS
-        scripts/test_builder.py
+        scripts/analyser.py
         scripts/dropbox_uploader.sh
         test/test_dropbox_uploader.py
     DESTINATION
