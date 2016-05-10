@@ -11,7 +11,7 @@ from atf_core import ATF, Testblock
 import atf_metrics
 
 
-class TestBuilder:
+class Analyser:
     def __init__(self):
 
         self.atf = ATF(self.create_test_list())
@@ -55,8 +55,9 @@ class TestBuilder:
 
 class TestAnalysing(unittest.TestCase):
     def test_Analysing(self):
-        tb = TestBuilder()
-        self.assertTrue(tb.atf.check_states()[0], tb.atf.check_states()[1])
+        analyser = Analyser()
+        result = analyser.atf.check_states()
+        self.assertTrue(result[0], result[1])
 
 
 if __name__ == '__main__':

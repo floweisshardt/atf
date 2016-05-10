@@ -54,7 +54,7 @@ class ATF:
 
                     if testblock.get_state() == Status.ERROR:
                         self.testblock_error[testblock.testblock_name] = Status.ERROR
-                        rospy.loginfo("An error occured during analysis in '" + testblock.testblock_name +
+                        rospy.logwarn("An error occured during analysis in '" + testblock.testblock_name +
                                       "', no useful " + "results available.")
                         self.error = True
                         break
@@ -72,7 +72,7 @@ class ATF:
     def export_to_file(self):
         doc = {}
         groundtruth_result = True
-        groundtruth_error_message = "groundtruth missmatch for:"
+        groundtruth_error_message = "groundtruth missmatch for: "
         if self.error_outside_testblock:
             doc["error"] = "An error occured outside monitored testblocks. Aborted analysis..."
         else:
@@ -97,19 +97,18 @@ class ATF:
                 else:
                     for metric in item.metrics:
                         result = metric.get_result()
-                        rospy.logwarn("result=%s", result)
                         if result is not False:
-                            (m, data, gt) = result
+                            (m, data, groundtruth_result, groundtruth, groundtruth_epsilon) = result
                             if name not in doc:
-                                doc.update({name: {m: data}})
+                                doc.update({name: {m: {"data":data, "groundtruth_result": groundtruth_result, "groundtruth": groundtruth, "groundtruth_epsilon": groundtruth_epsilon}}})
                             else:
                                 if m not in doc[name]:
-                                    doc[name].update({m: data})
+                                    doc[name].update({m: {"data":data, "groundtruth_result": groundtruth_result, "groundtruth": groundtruth, "groundtruth_epsilon": groundtruth_epsilon}})
                                 else:
                                     doc[name][m].update(data)
-                            if not gt:
+                            if not groundtruth_result:
                                 groundtruth_result = False
-                                groundtruth_error_message += name + " " + m + "; "  
+                                groundtruth_error_message += name + "(" + m + ": data=" + str(data) + ", groundtruth=" + str(groundtruth) + "+-" + str(groundtruth_epsilon) + "); "
                         else:
                             item.exit()
                             break

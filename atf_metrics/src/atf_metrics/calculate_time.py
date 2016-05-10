@@ -64,6 +64,6 @@ class CalculateTime:
                     groundtruth_result = True
             else:
                 groundtruth_result = True
-            return "time", duration, groundtruth_result
+            return "time", duration, groundtruth_result, self.groundtruth, self.groundtruth_epsilon
         else:
             return False
