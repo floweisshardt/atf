@@ -56,8 +56,8 @@ class Analyser:
 class TestAnalysing(unittest.TestCase):
     def test_Analysing(self):
         analyser = Analyser()
-        result = analyser.atf.check_states()
-        self.assertTrue(result[0], result[1])
+        groundtruth_result, groundtruth_error_message = analyser.atf.check_states()
+        self.assertTrue(groundtruth_result, groundtruth_error_message)
 
 
 if __name__ == '__main__':

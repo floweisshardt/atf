@@ -71,8 +71,8 @@ class ATF:
 
     def export_to_file(self):
         doc = {}
-        groundtruth_result = True
-        groundtruth_error_message = "groundtruth missmatch for: "
+        overall_groundtruth_result = True
+        overall_groundtruth_error_message = "groundtruth missmatch for: "
         if self.error_outside_testblock:
             doc["error"] = "An error occured outside monitored testblocks. Aborted analysis..."
         else:
@@ -107,8 +107,8 @@ class ATF:
                                 else:
                                     doc[name][m].update(data)
                             if not groundtruth_result:
-                                groundtruth_result = False
-                                groundtruth_error_message += name + "(" + m + ": data=" + str(data) + ", groundtruth=" + str(groundtruth) + "+-" + str(groundtruth_epsilon) + "); "
+                                overall_groundtruth_result = False
+                                overall_groundtruth_error_message += name + "(" + m + ": data=" + str(data) + ", groundtruth=" + str(groundtruth) + "+-" + str(groundtruth_epsilon) + "); "
                         else:
                             item.exit()
                             break
@@ -130,5 +130,5 @@ class ATF:
         if not filename == "":
             stream = file(filename, 'w')
             yaml.dump(doc, stream, default_flow_style=False)
-        
-        return groundtruth_result, groundtruth_error_message
+
+        return overall_groundtruth_result, overall_groundtruth_error_message

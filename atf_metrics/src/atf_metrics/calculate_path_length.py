@@ -9,24 +9,27 @@ class CalculatePathLengthParamHandler:
         """
         Class for returning the corresponding metric class with the given parameter.
         """
-        self.params = []
+        pass
 
     def parse_parameter(self, params):
         """
         Method that returns the metric method with the given parameter.
         :param params: Parameter
         """
-        self.params = params
+        try:
+            groundtruth = params["groundtruth"]
+            groundtruth_epsilon = params["groundtruth_epsilon"]
+        except Exception as e:
+            print e
+            rospy.logwarn("No groundtruth parameters given, skipping groundtruth evaluation")
+            groundtruth = None
+            groundtruth_epsilon = None
+
         metrics = []
-
-        for item in self.params:
-            metrics.append(CalculatePathLength(item[0], item[1]))
-
-        return metrics
-
+        return CalculatePathLength(params["root_frame"], params["measured_frame"], groundtruth, groundtruth_epsilon)
 
 class CalculatePathLength:
-    def __init__(self, root_frame, measured_frame):
+    def __init__(self, root_frame, measured_frame, groundtruth, groundtruth_epsilon):
         """
         Class for calculating the distance covered by the given frame in relation to a given root frame.
         The tf data is sent over the tf topic given in the robot_config.yaml.
@@ -44,6 +47,8 @@ class CalculatePathLength:
         self.first_value = True
         self.trans_old = []
         self.rot_old = []
+        self.groundtruth = groundtruth
+        self.groundtruth_epsilon = groundtruth_epsilon
         self.finished = False
 
         self.listener = tf.TransformListener()
@@ -92,7 +97,15 @@ class CalculatePathLength:
                 self.rot_old = rot
 
     def get_result(self):
+        groundtruth_result = False
         if self.finished:
-            return "path_length", {self.root_frame + " to " + self.measured_frame: round(self.path_length, 3)}, True
+            data = round(self.path_length, 3)
+            path_length = {self.root_frame + " to " + self.measured_frame: data}
+            if self.groundtruth != None and self.groundtruth_epsilon != None:
+                if math.fabs(self.groundtruth - data) <= self.groundtruth_epsilon:
+                    groundtruth_result = True
+            else:
+                groundtruth_result = True
+            return "path_length", data, groundtruth_result, self.groundtruth, self.groundtruth_epsilon
         else:
             return False

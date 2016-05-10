@@ -9,7 +9,7 @@ class CalculateTimeParamHandler:
         """
         Class for returning the corresponding metric class with the given parameter.
         """
-        self.params = []
+        pass
 
     def parse_parameter(self, params):
         """
@@ -58,12 +58,12 @@ class CalculateTime:
     def get_result(self):
         groundtruth_result = False
         if self.finished:
-            duration = round((self.stop_time.to_sec() - self.start_time.to_sec()), 3)
+            data = round((self.stop_time.to_sec() - self.start_time.to_sec()), 3)
             if self.groundtruth != None and self.groundtruth_epsilon != None:
-                if math.fabs(self.groundtruth - duration) <= self.groundtruth_epsilon:
+                if math.fabs(self.groundtruth - data) <= self.groundtruth_epsilon:
                     groundtruth_result = True
             else:
                 groundtruth_result = True
-            return "time", duration, groundtruth_result, self.groundtruth, self.groundtruth_epsilon
+            return "time", data, groundtruth_result, self.groundtruth, self.groundtruth_epsilon
         else:
             return False
