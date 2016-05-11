@@ -106,6 +106,7 @@ class CalculatePathLength:
                     groundtruth_result = True
             else:
                 groundtruth_result = True
-            return "path_length", data, groundtruth_result, self.groundtruth, self.groundtruth_epsilon
+            details = {"root_frame": self.root_frame, "measured_frame": self.measured_frame}
+            return "path_length", data, groundtruth_result, self.groundtruth, self.groundtruth_epsilon, details
         else:
             return False

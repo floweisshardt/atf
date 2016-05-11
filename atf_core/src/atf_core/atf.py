@@ -98,12 +98,12 @@ class ATF:
                     for metric in item.metrics:
                         result = metric.get_result()
                         if result is not False:
-                            (m, data, groundtruth_result, groundtruth, groundtruth_epsilon) = result
+                            (m, data, groundtruth_result, groundtruth, groundtruth_epsilon, details) = result
                             if name not in doc:
-                                doc.update({name: {m: {"data":data, "groundtruth_result": groundtruth_result, "groundtruth": groundtruth, "groundtruth_epsilon": groundtruth_epsilon}}})
+                                doc.update({name: {m: {"data":data, "groundtruth_result": groundtruth_result, "groundtruth": groundtruth, "groundtruth_epsilon": groundtruth_epsilon, "details": details}}})
                             else:
                                 if m not in doc[name]:
-                                    doc[name].update({m: {"data":data, "groundtruth_result": groundtruth_result, "groundtruth": groundtruth, "groundtruth_epsilon": groundtruth_epsilon}})
+                                    doc[name].update({m: {"data":data, "groundtruth_result": groundtruth_result, "groundtruth": groundtruth, "groundtruth_epsilon": groundtruth_epsilon, "details": details}})
                                 else:
                                     doc[name][m].update(data)
                             if not groundtruth_result:

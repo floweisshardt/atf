@@ -91,169 +91,92 @@ var TestList = {
   summarize: function () {
     var test_list = FileStorage.readData(this.name);
     var this_class = this;
+    //console.log("test_list=", test_list)
 
     $.each(test_list, function (test_name, test_config) {
+      //console.log("test_name=", test_name)
+      //console.log("test_config=", test_config)
       var test_data_complete = {};
       var errors = {
         planning: {},
         error: 0
       };
       $.each(test_config['subtests'], function (index, subtest_name) {
+        //console.log("subtest_name=", subtest_name)
         var test_data = FileStorage.readData(subtest_name);
+        //console.log("test_data=", test_data)
         if (!test_data) return true;
 
-        $.each(test_data, function (level_1, level_1_data) {
-          if (!(level_1 in test_data_complete) && level_1 != 'error') {
-            test_data_complete[level_1] = {};
+        $.each(test_data, function (testblock_name, testblock_data) {
+          //console.log("testblock_name=", testblock_name)
+          //console.log("testblock_data=", testblock_data)
+          if (!(testblock_name in test_data_complete) && testblock_name != 'error') {
+            test_data_complete[testblock_name] = {};
           }
 
           var error = this_class.checkForErrors(test_data);
           if (error[0] === 'planning') {
-            if (!errors['planning'].hasOwnProperty(level_1)) {
-              errors['planning'][level_1] = 0;
+            if (!errors['planning'].hasOwnProperty(testblock_name)) {
+              errors['planning'][testblock_name] = 0;
             }
-            errors['planning'][level_1] += 1;
+            errors['planning'][testblock_name] += 1;
             return true;
           } else if (error[0] === 'error') {
             errors['error'] += 1;
             return true;
           }
 
-          /*
-           Level 1: Testblock name
-           Level 2: Metric name
-           Level 3: - resources: node name
-                    - obstacle_distance / path_length: link name
-                    - time: values (min, max, average)
-           Level 4: - resources: resource name
-                    - obstacle_distance / path_length: values (min, max, average)
-           Level 5: - resources: values (min, max, average)
-           Level 6: - resources io / network: category values
-           */
-
-          $.each(level_1_data, function (level_2, level_2_data) {
-            if (!(level_2 in test_data_complete[level_1])) {
-              test_data_complete[level_1][level_2] = {};
+          $.each(testblock_data, function (metric_name, metric_data) {
+            //console.log("metric_name",metric_name)
+            //console.log("metric_data",metric_data)
+            if (!(metric_name in test_data_complete[testblock_name])) {
+              test_data_complete[testblock_name][metric_name] = {};
             }
 
-            if (level_2_data instanceof Object) {
-              $.each(level_2_data, function (level_3, level_3_data) {
-                if (!(level_3 in test_data_complete[level_1][level_2])) {
-                  test_data_complete[level_1][level_2][level_3] = {};
+
+            $.each(metric_data, function (metric_key_name, metric_key_data) {
+              //console.log("metric_key_name",metric_key_name)
+              //console.log("metric_key_data",metric_key_data)
+              
+              if (metric_key_name == 'data') {
+                // if key is data, we'll setup lists for max/min/average
+                if (!(metric_key_name in test_data_complete[testblock_name][metric_name])) {
+                  test_data_complete[testblock_name][metric_name][metric_key_name] = {};
                 }
-
-                if (level_3_data instanceof Object) {
-                  // Resources
-                  $.each(level_3_data, function (level_4, level_4_data) {
-                    if (!(level_4 in test_data_complete[level_1][level_2][level_3])) {
-                      test_data_complete[level_1][level_2][level_3][level_4] = {};
-                      test_data_complete[level_1][level_2][level_3][level_4]['max'] = [];
-                      test_data_complete[level_1][level_2][level_3][level_4]['min'] = [];
-                      test_data_complete[level_1][level_2][level_3][level_4]['average'] = [];
-                    }
-
-                    if (level_4_data['average'] instanceof Array) {
-                      // IO & Network
-                      if (test_data_complete[level_1][level_2][level_3][level_4]['max'].length === 0) {
-                        for (var x = 0; x < level_4_data['max'].length; x++) {
-                          test_data_complete[level_1][level_2][level_3][level_4]['max'].push([]);
-                          test_data_complete[level_1][level_2][level_3][level_4]['min'].push([]);
-                          test_data_complete[level_1][level_2][level_3][level_4]['average'].push([]);
-                        }
-                      }
-
-                      for (x = 0; x < level_4_data['max'].length; x++) {
-                        test_data_complete[level_1][level_2][level_3][level_4]['max'][x].push(level_4_data['max'][x]);
-                        test_data_complete[level_1][level_2][level_3][level_4]['min'][x].push(level_4_data['min'][x]);
-                        test_data_complete[level_1][level_2][level_3][level_4]['average'][x].push(level_4_data['average'][x]);
-                      }
-                      // CPU & Mem
-                    } else {
-                      test_data_complete[level_1][level_2][level_3][level_4]['max'].push(level_4_data['max']);
-                      test_data_complete[level_1][level_2][level_3][level_4]['min'].push(level_4_data['min']);
-                      test_data_complete[level_1][level_2][level_3][level_4]['average'].push(level_4_data['average']);
-                    }
-                  });
-                  // Path length & Obstacle distance
-                } else {
-                  if ($.isEmptyObject(test_data_complete[level_1][level_2][level_3])) {
-                    test_data_complete[level_1][level_2][level_3]['max'] = [];
-                    test_data_complete[level_1][level_2][level_3]['min'] = [];
-                    test_data_complete[level_1][level_2][level_3]['average'] = [];
-                  }
-                  test_data_complete[level_1][level_2][level_3]['max'].push(level_3_data);
-                  test_data_complete[level_1][level_2][level_3]['min'].push(level_3_data);
-                  test_data_complete[level_1][level_2][level_3]['average'].push(level_3_data);
-
+                
+                if ($.isEmptyObject(test_data_complete[testblock_name][metric_name][metric_key_name])) {
+                  test_data_complete[testblock_name][metric_name][metric_key_name]['values'] = [];
                 }
-              });
-            } else {
-              // Time
-              if ($.isEmptyObject(test_data_complete[level_1][level_2])) {
-                test_data_complete[level_1][level_2]['max'] = [];
-                test_data_complete[level_1][level_2]['min'] = [];
-                test_data_complete[level_1][level_2]['average'] = [];
+                test_data_complete[testblock_name][metric_name][metric_key_name]['values'].push(metric_key_data);
+              } else {
+                // if key is not data with max/min/average, we'll copy the original key_data
+                test_data_complete[testblock_name][metric_name][metric_key_name] = metric_key_data
               }
-              test_data_complete[level_1][level_2]['max'].push(level_2_data);
-              test_data_complete[level_1][level_2]['min'].push(level_2_data);
-              test_data_complete[level_1][level_2]['average'].push(level_2_data);
-            }
+            });
           });
         });
         FileStorage.removeData(subtest_name);
       });
 
-      $.each(test_data_complete, function (level_1, level_1_data) {
-        $.each(level_1_data, function (level_2, level_2_data) {
-          $.each(level_2_data, function (level_3, level_3_data) {
-            if (!(Array.isArray(level_3_data))) {
-              $.each(level_3_data, function (level_4, level_4_data) {
-                if (!(Array.isArray(level_4_data))) {
-                  // Resources
-                  $.each(level_4_data, function (level_5, level_5_data) {
-                    if (typeof level_5_data[0] === 'undefined') {
-                      delete test_data_complete[level_1][level_2][level_3][level_4];
-                      return true;
-                    }
-                    if (typeof level_5_data[0][0] === 'undefined') {
-                      // CPU & Mem
-                      var value = 0;
-                      if (level_5 === 'max') value = math.max(level_5_data);
-                      else if (level_5 === 'min') value = math.min(level_5_data);
-                      else if (level_5 === 'average') value = math.mean(level_5_data);
-                      test_data_complete[level_1][level_2][level_3][level_4][level_5] = value
-                    } else {
-                      // IO & Network
-                      $.each(level_5_data, function (level_6, level_6_data) {
-                        var value = 0;
-                        if (level_5 === 'max') value = math.max(level_6_data);
-                        else if (level_5 === 'min') value = math.min(level_6_data);
-                        else if (level_5 === 'average') value = math.mean(level_6_data);
-                        test_data_complete[level_1][level_2][level_3][level_4][level_5][level_6] = value
-                      });
-                    }
-                  });
-                } else {
-                  // Path length & obstacle distance
-                  var value = 0;
-                  if (level_4 === 'max') value = math.max(level_4_data);
-                  else if (level_4 === 'min') value = math.min(level_4_data);
-                  else if (level_4 === 'average') value = math.mean(level_4_data);
-                  test_data_complete[level_1][level_2][level_3][level_4] = value
-                }
-              });
-            } else {
-              // Time
-              var value = 0;
-              if (level_3 === 'max') value = math.max(level_3_data);
-              else if (level_3 === 'min') value = math.min(level_3_data);
-              else if (level_3 === 'average') value = math.mean(level_3_data);
-              test_data_complete[level_1][level_2][level_3] = value
+      //console.log("test_data_complete", test_data_complete)
+      
+      // build max/min/average out of lists
+      $.each(test_data_complete, function (testblock_name, testblock_data) {
+        $.each(testblock_data, function (metric_name, metric_data) {
+          $.each(metric_data, function (metric_key_name, metric_key_data) {
+            //console.log("metric_key_name=", metric_key_name)
+            //console.log("metric_key_data=", metric_key_data)
+            if (metric_key_name == 'data') {
+              test_data_complete[testblock_name][metric_name][metric_key_name]['min'] = math.min(metric_key_data['values']);
+              test_data_complete[testblock_name][metric_name][metric_key_name]['max'] = math.max(metric_key_data['values']);
+              test_data_complete[testblock_name][metric_name][metric_key_name]['average'] = math.mean(metric_key_data['values']);
             }
           });
         });
       });
-
+      
+      //console.log("test_data_complete", test_data_complete)
+      
       // Check for errors
       var test_failed = 0;
       $.each(errors['planning'], function (testblock_name, errors) {
@@ -498,6 +421,8 @@ var TestList = {
     var data_per_test = {};
 
     $.each(test_results, function (testblock_name, testblock_data) {
+      //console.log("testblock_name=", testblock_name);
+      //console.log("testblock_data=", testblock_data);
 
       if (testblock_data.hasOwnProperty('status') && testblock_data['status'] === 'error') {
         status_div.append('<div class="alert alert-danger" role="alert">Planning error in testblock "' + testblock_name + '"!</div>');
@@ -511,51 +436,58 @@ var TestList = {
 
       var data_per_testblock = {};
 
-      $.each(testblock_data, function (level_2, level_2_data) {
-        if (level_2_data.hasOwnProperty('max')) {
+      $.each(testblock_data, function (metric, data) {
+        //console.log("metric=", metric);
+        //console.log("data=", data);
+        if (metric == 'time' )
+        {
           // Time
-          if (!data_per_test.hasOwnProperty(level_2)) data_per_test[level_2] = [];
-          data_per_test[level_2].push({
+          time_data = data['data']
+          if (!data_per_test.hasOwnProperty(metric)) data_per_test[metric] = [];
+          data_per_test[metric].push({
             name: testblock_name,
             data: [{
               x: 0,
-              y: level_2_data['average'].round(3),
-              min: level_2_data['min'].round(3),
-              max: level_2_data['max'].round(3)
+              y: time_data['average'].round(3),
+              min: time_data['min'].round(3),
+              max: time_data['max'].round(3)
             }]
           }, {
             name: testblock_name + '_variation',
             type: 'errorbar',
             data: [{
-              low: level_2_data['min'].round(3),
-              high: level_2_data['max'].round(3)
+              low: time_data['min'].round(3),
+              high: time_data['max'].round(3)
             }]
           });
-        } else {
-          $.each(level_2_data, function (level_3, level_3_data) {
-            if (level_3_data.hasOwnProperty('max')) {
-              // Path length & obstacle distance
-              if (!data_per_testblock.hasOwnProperty(level_2)) data_per_testblock[level_2] = [];
-              data_per_testblock[level_2].push({
-                name: level_3,
-                data: [{
-                  x: 0,
-                  y: level_3_data['average'].round(3),
-                  min: level_3_data['min'].round(3),
-                  max: level_3_data['max'].round(3)
-                }]
-              }, {
-                name: level_3 + '_variation',
-                type: 'errorbar',
-                data: [{
-                  low: level_3_data['min'].round(3),
-                  high: level_3_data['max'].round(3)
-                }]
-              });
-            } else {
-              $.each(level_3_data, function (level_4, level_4_data) {
-                // Resources
-                if (typeof level_4_data['max'][0] === 'undefined') {
+        }
+        if (metric == 'path_length')
+        {
+          // Path Length
+          //console.log("data=", data);
+          path_length_data = data['data']
+          if (!data_per_test.hasOwnProperty(metric)) data_per_test[metric] = [];
+          data_per_test[metric].push({
+            name: testblock_name + "<br>(" + data['details']['root_frame'] + " to " + data['details']['measured_frame'] + ")",
+            data: [{
+              x: 0,
+              y: path_length_data['average'].round(3),
+              min: path_length_data['min'].round(3),
+              max: path_length_data['max'].round(3)
+            }]
+          }, {
+            name: testblock_name + '_variation',
+            type: 'errorbar',
+            data: [{
+              low: path_length_data['min'].round(3),
+              high: path_length_data['max'].round(3)
+            }]
+          });
+          }
+        if (metric == 'resources')
+        {
+          // Resources
+          /*      if (typeof level_4_data['max'][0] === 'undefined') {
                   // CPU & Mem
                   if (!data_per_testblock.hasOwnProperty(level_4)) data_per_testblock[level_4] = [];
                   data_per_testblock[level_4].push({
@@ -612,7 +544,7 @@ var TestList = {
                 }
               });
             }
-          });
+          });*/
         }
       });
 

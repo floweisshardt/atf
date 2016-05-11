@@ -45,7 +45,7 @@ function handleFileSelect(evt) {
         if (!FileStorage.writeData(file.name.split('.')[0], file_list[file.name])) {
           console.log('Writing to storage failed!');
         } else {
-          console.log('Request succeeded');
+          console.log('Request succeeded for', file.name);
         }
 
         if (Object.keys(file_list).length === files.length) {
