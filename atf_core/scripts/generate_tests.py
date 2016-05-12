@@ -169,7 +169,7 @@ class GenerateTests:
                 param(name="analysing/result_yaml_output", value=self.yaml_output),
                 param(name="analysing/result_json_output", value=self.json_output),
                 param(name="number_of_tests", value=str(len(self.test_list))),
-                test({'test-name': "test_analysing", 'pkg': "atf_core", 'type': "analyser.py",
+                test({'test-name': "analysing", 'pkg': "atf_core", 'type': "analyser.py",
                       'time-limit': str(self.time_limit_analysing)}),
                 node(name="player", pkg="rosbag", type="play", output="log", args="--delay=5.0 --clock " +
                                                                                      self.bagfile_output + item +
@@ -178,6 +178,20 @@ class GenerateTests:
 
             xmlstr = minidom.parseString(ElementTree.tostring(test_analyse)).toprettyxml(indent="    ")
             with open(os.path.join(self.test_generated_analysing_path, "analysing_" + item) + ".test", "w") as f:
+                f.write(xmlstr)
+            
+            # Merging
+            test_merge = launch(
+                param(name="merging/test_name", value=item),
+                param(name="merging/test_config", value=self.test_list[item]["test_config"]),
+                param(name="merging/test_config_file", value=self.test_config_file),
+                param(name="merging/result_yaml_output", value=self.yaml_output),
+                param(name="merging/result_json_output", value=self.json_output),
+                test({'test-name': "merging", 'pkg': "atf_core", 'type': "merger.py",
+                      'time-limit': "10"})
+            )
+            xmlstr = minidom.parseString(ElementTree.tostring(test_merge)).toprettyxml(indent="    ")
+            with open(os.path.join(self.test_generated_path, "merging.test"), "w") as f:
                 f.write(xmlstr)
             
             # Uploading
@@ -190,16 +204,16 @@ class GenerateTests:
             test_upload = launch()
             if self.upload_data:
                 test_upload.append(    
-                    test({'test-name': "test_uploading_data", 'pkg': "atf_core", 'type': "test_dropbox_uploader.py",
+                    test({'test-name': "uploading_data", 'pkg': "atf_core", 'type': "test_dropbox_uploader.py",
                           'time-limit': str(self.time_limit_uploading), 'args': "-f " + os.path.join(self.package_path, "config/.dropbox_uploader_config") + " upload " + self.bagfile_output + " " + os.path.join(self.package_name, "data")}))
 
             if self.upload_result:
                 test_upload.append(
-                    test({'test-name': "test_uploading_results", 'pkg': "atf_core", 'type': "test_dropbox_uploader.py",
+                    test({'test-name': "uploading_results", 'pkg': "atf_core", 'type': "test_dropbox_uploader.py",
                           'time-limit': str(self.time_limit_uploading), 'args': "-f " + os.path.join(self.package_path, "config/.dropbox_uploader_config") + " upload " + self.json_output + " " + os.path.join(self.package_name, "results")}))
 
             xmlstr = minidom.parseString(ElementTree.tostring(test_upload)).toprettyxml(indent="    ")
-            with open(os.path.join(self.test_generated_path,  "upload.test"), "w") as f:
+            with open(os.path.join(self.test_generated_path, "uploading.test"), "w") as f:
                 f.write(xmlstr)
 
         print "-- " + self.print_output
