@@ -77,7 +77,6 @@ class ATF:
             doc["error"] = "An error occured outside monitored testblocks. Aborted analysis..."
         else:
             for item in self.testblocks:
-                item.testblock_name
 
                 test_status = TestStatus()
                 test_status.test_name = self.test_name
