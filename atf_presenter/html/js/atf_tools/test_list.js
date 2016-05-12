@@ -126,56 +126,62 @@ var TestList = {
             return true;
           }
 
-          $.each(testblock_data, function (metric_name, metric_data) {
+          $.each(testblock_data, function (metric_name, metric_list) {
             //console.log("metric_name",metric_name)
-            //console.log("metric_data",metric_data)
+            //console.log("metric_list",metric_list)
+            
             if (!(metric_name in test_data_complete[testblock_name])) {
-              test_data_complete[testblock_name][metric_name] = {};
+              test_data_complete[testblock_name][metric_name] = [];
             }
 
+            //console.log("test_data_complete[testblock_name][metric_name]", test_data_complete[testblock_name][metric_name])
 
-            $.each(metric_data, function (metric_key_name, metric_key_data) {
-              //console.log("metric_key_name",metric_key_name)
-              //console.log("metric_key_data",metric_key_data)
-              
-              if (metric_key_name == 'data') {
-                // if key is data, we'll setup lists for max/min/average
-                if (!(metric_key_name in test_data_complete[testblock_name][metric_name])) {
-                  test_data_complete[testblock_name][metric_name][metric_key_name] = {};
+            $.each(metric_list, function (entry_number, metric_data) {
+              //console.log("entry_number=", entry_number)
+              //console.log("metric_data=", metric_data)
+              metric_data_modified = metric_data
+              $.each(metric_data, function (metric_key_name, metric_key_data) {
+                //console.log("metric_key_name",metric_key_name)
+                //console.log("metric_key_data",metric_key_data)
+                if (metric_key_name == 'data') {
+                  // if key is data, we'll setup lists for max/min/average
+                  metric_data_modified[metric_key_name] = {};
+                  if ($.isEmptyObject(metric_data_modified[metric_key_name])) {
+                    metric_data_modified[metric_key_name]['values'] = [];
+                  }
+                  metric_data_modified[metric_key_name]['values'].push(metric_key_data);
+                } else {
+                  // if key is not data with max/min/average, we'll copy the original key_data
+                  metric_data_modified[metric_key_name] = metric_key_data
                 }
-                
-                if ($.isEmptyObject(test_data_complete[testblock_name][metric_name][metric_key_name])) {
-                  test_data_complete[testblock_name][metric_name][metric_key_name]['values'] = [];
-                }
-                test_data_complete[testblock_name][metric_name][metric_key_name]['values'].push(metric_key_data);
-              } else {
-                // if key is not data with max/min/average, we'll copy the original key_data
-                test_data_complete[testblock_name][metric_name][metric_key_name] = metric_key_data
-              }
+              });
+              test_data_complete[testblock_name][metric_name].push(metric_data_modified)
             });
           });
         });
         FileStorage.removeData(subtest_name);
       });
 
-      //console.log("test_data_complete", test_data_complete)
+      //console.log("test_data_complete before average", test_data_complete)
       
       // build max/min/average out of lists
       $.each(test_data_complete, function (testblock_name, testblock_data) {
-        $.each(testblock_data, function (metric_name, metric_data) {
-          $.each(metric_data, function (metric_key_name, metric_key_data) {
-            //console.log("metric_key_name=", metric_key_name)
-            //console.log("metric_key_data=", metric_key_data)
-            if (metric_key_name == 'data') {
-              test_data_complete[testblock_name][metric_name][metric_key_name]['min'] = math.min(metric_key_data['values']);
-              test_data_complete[testblock_name][metric_name][metric_key_name]['max'] = math.max(metric_key_data['values']);
-              test_data_complete[testblock_name][metric_name][metric_key_name]['average'] = math.mean(metric_key_data['values']);
-            }
+        $.each(testblock_data, function (metric_name, metric_list) {
+          $.each(metric_list, function (entry_number, metric_data) {
+            $.each(metric_data, function (metric_key_name, metric_key_data) {
+              //console.log("metric_key_name=", metric_key_name)
+              //console.log("metric_key_data=", metric_key_data)
+              if (metric_key_name == 'data') {
+                test_data_complete[testblock_name][metric_name][entry_number][metric_key_name]['min'] = math.min(metric_key_data['values']);
+                test_data_complete[testblock_name][metric_name][entry_number][metric_key_name]['max'] = math.max(metric_key_data['values']);
+                test_data_complete[testblock_name][metric_name][entry_number][metric_key_name]['average'] = math.mean(metric_key_data['values']);
+              }
+            });
           });
         });
       });
       
-      //console.log("test_data_complete", test_data_complete)
+      //console.log("test_data_complete after average", test_data_complete)
       
       // Check for errors
       var test_failed = 0;
@@ -389,6 +395,28 @@ var TestList = {
         plotOptions: {},
         tooltip: plot_tooltip
       },
+      publish_rate: {
+        chart: {
+          defaultSeriesType: 'column',
+          type: 'column',
+          zoomType: 'xy'
+        },
+        title: {
+          text: 'Publish rate'
+        },
+        yAxis: {
+          title: {
+            text: 'Publish rate [hz]'
+          }
+        },
+        xAxis: {
+          labels: {
+            enabled: false
+          }
+        },
+        plotOptions: {},
+        tooltip: plot_tooltip
+      },
       obstacle_distance: {
         chart: {
           defaultSeriesType: 'column',
@@ -436,55 +464,42 @@ var TestList = {
 
       var data_per_testblock = {};
 
-      $.each(testblock_data, function (metric, data) {
-        //console.log("metric=", metric);
-        //console.log("data=", data);
-        if (metric == 'time' )
+      $.each(testblock_data, function (metric_name, metric_list) {
+        //console.log("metric_name=", metric_name);
+        //console.log("metric_list=", metric_list);
+        if ((metric_name == 'time') || (metric_name == 'path_length') || (metric_name == 'publish_rate'))
         {
           // Time
-          time_data = data['data']
-          if (!data_per_test.hasOwnProperty(metric)) data_per_test[metric] = [];
-          data_per_test[metric].push({
-            name: testblock_name,
-            data: [{
-              x: 0,
-              y: time_data['average'].round(3),
-              min: time_data['min'].round(3),
-              max: time_data['max'].round(3)
-            }]
-          }, {
-            name: testblock_name + '_variation',
-            type: 'errorbar',
-            data: [{
-              low: time_data['min'].round(3),
-              high: time_data['max'].round(3)
-            }]
-          });
+          $.each(metric_list, function(entry_number, metric_data) {
+            //console.log("entry_number=", entry_number)
+            //console.log("metric_data=", metric_data)
+            metric_key_data = metric_data['data']
+            
+            // individual settings per metric
+            chart_legend_name = testblock_name
+            if (metric_name == 'path_length') chart_legend_name = testblock_name + "<br>(" + metric_data['details']['root_frame'] + " to " + metric_data['details']['measured_frame'] + ")"
+            
+            if (!data_per_test.hasOwnProperty(metric_name)) data_per_test[metric_name] = [];
+            data_per_test[metric_name].push({
+              name: chart_legend_name,
+              data: [{
+                x: 0,
+                y: metric_key_data['average'].round(3),
+                min: metric_key_data['min'].round(3),
+                max: metric_key_data['max'].round(3)
+              }]
+            }, {
+              name: testblock_name + '_variation',
+              type: 'errorbar',
+              data: [{
+                low: metric_key_data['min'].round(3),
+                high: metric_key_data['max'].round(3)
+              }]
+            });
+          })
         }
-        if (metric == 'path_length')
-        {
-          // Path Length
-          //console.log("data=", data);
-          path_length_data = data['data']
-          if (!data_per_test.hasOwnProperty(metric)) data_per_test[metric] = [];
-          data_per_test[metric].push({
-            name: testblock_name + "<br>(" + data['details']['root_frame'] + " to " + data['details']['measured_frame'] + ")",
-            data: [{
-              x: 0,
-              y: path_length_data['average'].round(3),
-              min: path_length_data['min'].round(3),
-              max: path_length_data['max'].round(3)
-            }]
-          }, {
-            name: testblock_name + '_variation',
-            type: 'errorbar',
-            data: [{
-              low: path_length_data['min'].round(3),
-              high: path_length_data['max'].round(3)
-            }]
-          });
-          }
-        if (metric == 'resources')
+
+        if (metric_name == 'resources')
         {
           // Resources
           /*      if (typeof level_4_data['max'][0] === 'undefined') {

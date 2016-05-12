@@ -1,8 +1,7 @@
 #!/usr/bin/env python
-import math
 import rospy
 import tf
-
+import math
 
 class CalculatePathLengthParamHandler:
     def __init__(self):
@@ -16,17 +15,22 @@ class CalculatePathLengthParamHandler:
         Method that returns the metric method with the given parameter.
         :param params: Parameter
         """
-        try:
-            groundtruth = params["groundtruth"]
-            groundtruth_epsilon = params["groundtruth_epsilon"]
-        except Exception as e:
-            print e
-            rospy.logwarn("No groundtruth parameters given, skipping groundtruth evaluation")
-            groundtruth = None
-            groundtruth_epsilon = None
-
         metrics = []
-        return CalculatePathLength(params["root_frame"], params["measured_frame"], groundtruth, groundtruth_epsilon)
+        if type(params) is not list:
+            rospy.logerr("metric config not a list")
+            return False
+
+        for metric in params:
+            # check for optional parameters
+            try:
+                groundtruth = metric["groundtruth"]
+                groundtruth_epsilon = metric["groundtruth_epsilon"]
+            except (TypeError, KeyError):
+                rospy.logwarn("No groundtruth parameters given, skipping groundtruth evaluation for metric 'path_length'")
+                groundtruth = None
+                groundtruth_epsilon = None
+            metrics.append(CalculatePathLength(metric["root_frame"], metric["measured_frame"], groundtruth, groundtruth_epsilon))
+        return metrics
 
 class CalculatePathLength:
     def __init__(self, root_frame, measured_frame, groundtruth, groundtruth_epsilon):
@@ -66,7 +70,6 @@ class CalculatePathLength:
         self.active = False
         self.first_value = True
 
-    @staticmethod
     def purge():
         pass
 
@@ -81,7 +84,8 @@ class CalculatePathLength:
                 (trans, rot) = self.listener.lookupTransform(self.root_frame, self.measured_frame, rospy.Time(0))
 
             except (tf.Exception, tf.LookupException, tf.ConnectivityException, Exception), e:
-                rospy.logwarn(e)
+                #rospy.logwarn(e)
+                pass
             else:
                 if self.first_value:
                     self.trans_old = trans
@@ -100,7 +104,6 @@ class CalculatePathLength:
         groundtruth_result = False
         if self.finished:
             data = round(self.path_length, 3)
-            path_length = {self.root_frame + " to " + self.measured_frame: data}
             if self.groundtruth != None and self.groundtruth_epsilon != None:
                 if math.fabs(self.groundtruth - data) <= self.groundtruth_epsilon:
                     groundtruth_result = True

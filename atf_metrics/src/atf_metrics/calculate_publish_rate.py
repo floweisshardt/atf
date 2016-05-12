@@ -1,65 +1,83 @@
 #!/usr/bin/env python
-import time
 import rospy
-import rostopic
-
+import math
 
 class CalculatePublishRateParamHandler:
     def __init__(self):
-        self.params = []
+        """
+        Class for returning the corresponding metric class with the given parameter.
+        """
+        pass
 
     def parse_parameter(self, params):
-        self.params = params
+        """
+        Method that returns the metric method with the given parameter.
+        :param params: Parameter
+        """
         metrics = []
 
-        for idx, topic in enumerate(self.params["topics"]):
-            metrics.append(CalculatePublishRate(topic, self.params["hz"][idx], self.params["error"][idx]))
+        if type(params) is not list:
+            rospy.logerr("metric config not a list")
+            return False
 
+        for metric in params:
+            # check for optional parameters
+            try:
+                groundtruth = metric["groundtruth"]
+                groundtruth_epsilon = metric["groundtruth_epsilon"]
+            except (TypeError, KeyError):
+                rospy.logwarn("No groundtruth parameters given, skipping groundtruth evaluation for metric 'publish_rate'")
+                groundtruth = None
+                groundtruth_epsilon = None
+            metrics.append(CalculatePublishRate(metric["topic"], groundtruth, groundtruth_epsilon))
         return metrics
 
-
 class CalculatePublishRate:
-    def __init__(self, topic, hz, error):
+    def __init__(self, topic, groundtruth, groundtruth_epsilon):
 
         self.active = False
         self.finished = False
-        self.hz = hz
-        self.error = error
         self.topic = topic
+        self.groundtruth = groundtruth
+        self.groundtruth_epsilon = groundtruth_epsilon
         self.counter = 0
-        self.start_time = 0
-        self.stop_time = 0
+        self.start_time = rospy.Time()
+        self.stop_time = rospy.Time()
 
-        rospy.Subscriber(topic, rostopic.get_topic_class(self.topic, blocking=True)[0], self.message_callback,
+        rospy.Subscriber(topic, rospy.AnyMsg, self.callback,
                          queue_size=1)
 
-    def message_callback(self, msg):
+    def callback(self, msg):
         if self.active:
             self.counter += 1
 
     def start(self):
         self.active = True
-        self.start_time = time.time()
+        self.start_time = rospy.Time.now()
 
     def stop(self):
         self.active = False
-        self.stop_time = time.time()
+        self.stop_time = rospy.Time.now()
         self.finished = True
 
     def pause(self):
-        self.active = False
+        # TODO: Implement pause time and counter calculation
+        #FIXME: check rate calculation in case of pause (counter, start_time and stop_time)
+        pass
 
-    @staticmethod
     def purge():
         pass
 
     def get_result(self):
+        groundtruth_result = False
         if self.finished:
-            rate = self.counter / (self.stop_time - self.start_time)
-            result = 0
-            if (rate - self.hz) > self.error or (self.hz - rate) > self.error:
-                result = rate - self.hz
-            #return "publish_rate", {self.topic: round(rate, 3)}
-            return "publish_rate", {self.topic: round(result, 3)}
+            data = round(self.counter / (self.stop_time.to_sec() - self.start_time.to_sec()), 3)
+            if self.groundtruth != None and self.groundtruth_epsilon != None:
+                if math.fabs(self.groundtruth - data) <= self.groundtruth_epsilon:
+                    groundtruth_result = True
+            else:
+                groundtruth_result = True
+            details = {"topic": self.topic}
+            return "publish_rate", data, groundtruth_result, self.groundtruth, self.groundtruth_epsilon, details
         else:
             return False

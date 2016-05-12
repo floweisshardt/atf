@@ -13,8 +13,9 @@ import atf_metrics
 
 class Analyser:
     def __init__(self):
-
-        self.atf = ATF(self.create_test_list())
+        self.parsing_error_message = ""
+        self.test_list = self.create_test_list()
+        self.atf = ATF(self.test_list)
 
     def create_test_list(self):
         if not rosparam.get_param("/analysing/result_yaml_output") == "":
@@ -37,10 +38,12 @@ class Analyser:
                 metric_return = getattr(atf_metrics, metrics_data[metric]["handler"])() \
                     .parse_parameter(config_data[testblock_name][metric])
                 if type(metric_return) == list:
-                    for value in metric_return:
-                        metrics.append(value)
+                    for metric in metric_return:
+                        metrics.append(metric)
                 else:
-                    metrics.append(metric_return)
+                    self.parsing_error_message = "no valid metric configuration for metric '" + metric + "' in testblock '" + testblock_name + "'"
+                    rospy.logerr(self.parsing_error_message)
+                    return False
 
             testblock_list.append(Testblock(testblock_name, metrics))
 
@@ -56,10 +59,11 @@ class Analyser:
 class TestAnalysing(unittest.TestCase):
     def test_Analysing(self):
         analyser = Analyser()
+        self.assertTrue(analyser.test_list, analyser.parsing_error_message)
         groundtruth_result, groundtruth_error_message = analyser.atf.check_states()
         self.assertTrue(groundtruth_result, groundtruth_error_message)
 
 
 if __name__ == '__main__':
     rospy.init_node('test_analysing')
-    rostest.rosrun("atf_core", 'test_analysing', TestAnalysing, sysargs=None)  # sysargs=['--text']
+    rostest.rosrun("atf_core", 'analysing', TestAnalysing, sysargs=None)

@@ -77,7 +77,7 @@ class ATF:
             doc["error"] = "An error occured outside monitored testblocks. Aborted analysis..."
         else:
             for item in self.testblocks:
-                name = item.testblock_name
+                item.testblock_name
 
                 test_status = TestStatus()
                 test_status.test_name = self.test_name
@@ -92,23 +92,23 @@ class ATF:
 
                 self.test_status_publisher.publish(test_status)
 
-                if name in self.testblock_error:
-                    doc.update({name: {"status": "error"}})
+                if item.testblock_name in self.testblock_error:
+                    doc.update({item.testblock_name: {"status": "error"}})
                 else:
                     for metric in item.metrics:
+                        #print "metric=", metric
                         result = metric.get_result()
+                        #print "result=", result
                         if result is not False:
                             (m, data, groundtruth_result, groundtruth, groundtruth_epsilon, details) = result
-                            if name not in doc:
-                                doc.update({name: {m: {"data":data, "groundtruth_result": groundtruth_result, "groundtruth": groundtruth, "groundtruth_epsilon": groundtruth_epsilon, "details": details}}})
-                            else:
-                                if m not in doc[name]:
-                                    doc[name].update({m: {"data":data, "groundtruth_result": groundtruth_result, "groundtruth": groundtruth, "groundtruth_epsilon": groundtruth_epsilon, "details": details}})
-                                else:
-                                    doc[name][m].update(data)
+                            if item.testblock_name not in doc:
+                                doc[item.testblock_name] = {}
+                            if m not in doc[item.testblock_name]:
+                                doc[item.testblock_name][m] = []
+                            doc[item.testblock_name][m].append({"data":data, "groundtruth_result": groundtruth_result, "groundtruth": groundtruth, "groundtruth_epsilon": groundtruth_epsilon, "details": details})
                             if not groundtruth_result:
                                 overall_groundtruth_result = False
-                                overall_groundtruth_error_message += name + "(" + m + ": data=" + str(data) + ", groundtruth=" + str(groundtruth) + "+-" + str(groundtruth_epsilon) + "); "
+                                overall_groundtruth_error_message += item.testblock_name + "(" + m + ": data=" + str(data) + ", groundtruth=" + str(groundtruth) + "+-" + str(groundtruth_epsilon) + " details:" + str(details) + "); "
                         else:
                             item.exit()
                             break
