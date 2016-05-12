@@ -128,6 +128,6 @@ class ATF:
         filename = rosparam.get_param("/analysing/result_yaml_output") + self.test_name + ".yaml"
         if not filename == "":
             stream = file(filename, 'w')
-            yaml.dump(doc, stream, default_flow_style=False)
+            yaml.dump(copy(doc), stream, default_flow_style=False)
 
         return overall_groundtruth_result, overall_groundtruth_error_message
