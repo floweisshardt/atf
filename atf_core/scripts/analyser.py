@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 import rospy
 import yaml
-import rosparam
 import os
 import unittest
 import rostest
@@ -18,15 +17,15 @@ class Analyser:
         self.atf = ATF(self.test_list)
 
     def create_test_list(self):
-        if not rosparam.get_param("/analysing/result_yaml_output") == "":
-            if not os.path.exists(rosparam.get_param("/analysing/result_yaml_output")):
-                os.makedirs(rosparam.get_param("/analysing/result_yaml_output"))
+        if not rospy.get_param("/analysing/result_yaml_output") == "":
+            if not os.path.exists(rospy.get_param("/analysing/result_yaml_output")):
+                os.makedirs(rospy.get_param("/analysing/result_yaml_output"))
 
-        if not os.path.exists(rosparam.get_param("/analysing/result_json_output")):
-            os.makedirs(rosparam.get_param("/analysing/result_json_output"))
+        if not os.path.exists(rospy.get_param("/analysing/result_json_output")):
+            os.makedirs(rospy.get_param("/analysing/result_json_output"))
 
-        test_config_path = rosparam.get_param("/analysing/test_config_file")
-        config_data = self.load_data(test_config_path)[rosparam.get_param("/analysing/test_config")]
+        test_config_path = rospy.get_param("/analysing/test_config_file")
+        config_data = self.load_data(test_config_path)[rospy.get_param("/analysing/test_config")]
         metrics_data = self.load_data(rospkg.RosPack().get_path("atf_metrics") + "/config/metrics.yaml")
 
         testblock_list = []
@@ -49,8 +48,7 @@ class Analyser:
 
         return testblock_list
 
-    @staticmethod
-    def load_data(filename):
+    def load_data(self, filename):
         with open(filename, 'r') as stream:
             doc = yaml.load(stream)
             return doc
