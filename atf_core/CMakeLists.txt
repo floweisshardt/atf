@@ -44,6 +44,9 @@ include_directories(
 install(
     PROGRAMS
         scripts/analyser.py
+        scripts/analyse_all.py
+        scripts/record_all.py
+        scripts/merger.py
         scripts/dropbox_uploader.sh
         test/test_dropbox_uploader.py
     DESTINATION

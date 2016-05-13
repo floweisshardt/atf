@@ -59,11 +59,13 @@ class ATFRecorder:
         #while num_subscriber == 0:
         #    num_subscriber = ob_sub.get_num_connections()
 
-        rospy.Timer(rospy.Duration(1), self.create_subscriber_callback) # TODO check for double subscriptions
+        self.subscriber = []
+        self.topics= self.get_topics()
+        rospy.Timer(rospy.Duration(0.5), self.create_subscriber_callback)
+        rospy.sleep(1) #wait for subscribers to get active (rospy bug?)
 
+        # test status monitoring
         self.test_status_publisher = rospy.Publisher(self.topic + "test_status", TestStatus, queue_size=10)
-        rospy.Service(self.topic + "recorder_command", RecorderCommand, self.command_callback)
-
         # Wait for subscriber
         num_subscriber = self.test_status_publisher.get_num_connections()
         while num_subscriber == 0:
@@ -77,6 +79,7 @@ class ATFRecorder:
 
         self.test_status_publisher.publish(test_status)
 
+        rospy.Service(self.topic + "recorder_command", RecorderCommand, self.command_callback)
         rospy.loginfo(rospy.get_name() + ": Node started!")
 
     def shutdown(self):
@@ -103,20 +106,23 @@ class ATFRecorder:
                         testblock_list[testblock] = self.robot_config_file[metric]["topics"]
                     else:
                         for topic in self.robot_config_file[metric]["topics"]:
+                            #add heading "/" to all topics to make them global (rostopic.get_topic_class() cannot handle non global topics)
+                            if topic[0] != "/":
+                                topic = "/" + topic
                             testblock_list[testblock].append(topic)
                 else:
                     try:
-                        if "topics" in self.test_config[testblock][metric]:
-                            try:
-                                testblock_list[testblock]
-                            except KeyError:
-                                testblock_list[testblock] = self.test_config[testblock][metric]["topics"]
-                            else:
-                                for topic in self.test_config[testblock][metric]["topics"]:
-                                    testblock_list[testblock].append(topic)
+                        for item in self.test_config[testblock][metric]:
+                            if "topic" in item:
+                                if testblock not in testblock_list:
+                                    testblock_list.update({testblock: []})
+                                topic = item['topic']
+                                #add heading "/" to all topics to make them global (rostopic.get_topic_class() cannot handle non global topics)
+                                if topic[0] != "/":
+                                    topic = "/" + topic
+                                testblock_list[testblock].append(topic)
                     except TypeError:
                         pass
-
         return testblock_list
 
     def update_requested_topics(self, msg):
@@ -133,14 +139,17 @@ class ATFRecorder:
                 if topic not in self.requested_topics:
                     self.topic_pipeline.remove(topic)
 
-    def create_subscriber_callback(self, event): # TODO: check for double subscriptions
-        for t in self.get_topics():
-            try:
-                msg_class, _, _ = rostopic.get_topic_class(t)
-                msg = rospy.wait_for_message(t, msg_class)
-                rospy.Subscriber(t, msg_class, self.global_topic_callback, callback_args=t)
-            except Exception as e:
-                print e 
+    def create_subscriber_callback(self, event):
+        for topic in self.topics:
+            if topic not in self.subscriber:
+                try:
+                    msg_class, _, _ = rostopic.get_topic_class(topic)
+                    msg = rospy.wait_for_message(topic, msg_class)
+                    rospy.Subscriber(topic, msg_class, self.global_topic_callback, callback_args=topic)
+                    self.subscriber.append(topic)
+                except Exception as e:
+                    #print e 
+                    pass
 
     def command_callback(self, msg):
 
@@ -183,23 +192,10 @@ class ATFRecorder:
 
     def get_topics(self):
         topics = []
-
-        for item in self.test_config:
-            for metric in self.test_config[item]:
-                if metric in self.robot_config_file:
-                    # Get topics from robot_config.yaml
-                    for topic in self.robot_config_file[metric]["topics"]:
-                        if topic not in topics:
-                            topics.append(topic)
-                else:
-                    try:
-                        if "topics" in self.test_config[item][metric]:
-                            # Get topics from test_config.yaml
-                            for topic in self.test_config[item][metric]["topics"]:
-                                if topic not in topics:
-                                    topics.append(topic)
-                    except TypeError:
-                        pass
+        for testblock in self.testblock_list:
+            for topic in self.testblock_list[testblock]:
+                if topic not in topics:
+                    topics.append(topic)
         return topics
 
 

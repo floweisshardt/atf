@@ -1,8 +1,6 @@
 #!/usr/bin/env python
 import rospy
-import time
 import math
-
 
 class CalculateTimeParamHandler:
     def __init__(self):
@@ -16,16 +14,28 @@ class CalculateTimeParamHandler:
         Method that returns the metric method with the given parameter.
         :param params: Parameter
         """
-        try:
-            groundtruth = params["groundtruth"]
-            groundtruth_epsilon = params["groundtruth_epsilon"]
-        except Exception as e:
-            print e
-            rospy.logwarn("No groundtruth parameters given, skipping groundtruth evaluation")
-            groundtruth = None
-            groundtruth_epsilon = None
-        return CalculateTime(groundtruth, groundtruth_epsilon)
+        metrics = []
 
+        # special case for time (can have no parameters and thus is no list)
+        if params == None:
+            metrics.append(CalculateTime(None, None))
+            return metrics
+        
+        if type(params) is not list:
+            rospy.logerr("metric config not a list")
+            return False
+
+        for metric in params:
+            # check for optional parameters
+            try:
+                groundtruth = metric["groundtruth"]
+                groundtruth_epsilon = metric["groundtruth_epsilon"]
+            except (TypeError, KeyError):
+                rospy.logwarn("No groundtruth parameters given, skipping groundtruth evaluation for metric 'time'")
+                groundtruth = None
+                groundtruth_epsilon = None
+            metrics.append(CalculateTime(groundtruth, groundtruth_epsilon))
+        return metrics
 
 class CalculateTime:
     def __init__(self, groundtruth, groundtruth_epsilon):
@@ -40,31 +50,29 @@ class CalculateTime:
         self.finished = False
 
     def start(self):
-        self.start_time = rospy.Time.from_sec(time.time())
+        self.start_time = rospy.Time.now()
 
     def stop(self):
-        self.stop_time = rospy.Time.from_sec(time.time())
+        self.stop_time = rospy.Time.now()
         self.finished = True
 
-    @staticmethod
     def pause():
         # TODO: Implement pause time calculation
         pass
 
-    @staticmethod
     def purge():
         pass
 
     def get_result(self):
-        groundtruth_result = False
+        groundtruth_result = None
+        details = None
         if self.finished:
-            data = round((self.stop_time.to_sec() - self.start_time.to_sec()), 3)
+            data = round(self.stop_time.to_sec() - self.start_time.to_sec(), 3)
             if self.groundtruth != None and self.groundtruth_epsilon != None:
                 if math.fabs(self.groundtruth - data) <= self.groundtruth_epsilon:
                     groundtruth_result = True
-            else:
-                groundtruth_result = True
-            details = None
+                else:
+                    groundtruth_result = False
             return "time", data, groundtruth_result, self.groundtruth, self.groundtruth_epsilon, details
         else:
             return False
