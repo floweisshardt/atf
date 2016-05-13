@@ -101,15 +101,15 @@ class CalculatePathLength:
                 self.rot_old = rot
 
     def get_result(self):
-        groundtruth_result = False
+        groundtruth_result = None
+        details = {"root_frame": self.root_frame, "measured_frame": self.measured_frame}
         if self.finished:
             data = round(self.path_length, 3)
             if self.groundtruth != None and self.groundtruth_epsilon != None:
                 if math.fabs(self.groundtruth - data) <= self.groundtruth_epsilon:
                     groundtruth_result = True
-            else:
-                groundtruth_result = True
-            details = {"root_frame": self.root_frame, "measured_frame": self.measured_frame}
+                else:
+                    groundtruth_result = False
             return "path_length", data, groundtruth_result, self.groundtruth, self.groundtruth_epsilon, details
         else:
             return False

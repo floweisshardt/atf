@@ -59,7 +59,8 @@ class TestAnalysing(unittest.TestCase):
         analyser = Analyser()
         self.assertTrue(analyser.test_list, analyser.parsing_error_message)
         groundtruth_result, groundtruth_error_message = analyser.atf.check_states()
-        self.assertTrue(groundtruth_result, groundtruth_error_message)
+        if groundtruth_result != None:
+            self.assertTrue(groundtruth_result, groundtruth_error_message)
 
 
 if __name__ == '__main__':

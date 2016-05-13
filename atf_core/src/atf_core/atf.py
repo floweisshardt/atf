@@ -71,7 +71,7 @@ class ATF:
 
     def export_to_file(self):
         doc = {}
-        overall_groundtruth_result = True
+        overall_groundtruth_result = None
         overall_groundtruth_error_message = "groundtruth missmatch for: "
         if self.error_outside_testblock:
             doc["error"] = "An error occured outside monitored testblocks. Aborted analysis..."
@@ -105,7 +105,9 @@ class ATF:
                             if m not in doc[item.testblock_name]:
                                 doc[item.testblock_name][m] = []
                             doc[item.testblock_name][m].append({"data":data, "groundtruth_result": groundtruth_result, "groundtruth": groundtruth, "groundtruth_epsilon": groundtruth_epsilon, "details": details})
-                            if not groundtruth_result:
+                            if groundtruth_result == None:
+                                pass
+                            elif not groundtruth_result:
                                 overall_groundtruth_result = False
                                 overall_groundtruth_error_message += item.testblock_name + "(" + m + ": data=" + str(data) + ", groundtruth=" + str(groundtruth) + "+-" + str(groundtruth_epsilon) + " details:" + str(details) + "); "
                         else:

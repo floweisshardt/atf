@@ -64,15 +64,15 @@ class CalculateTime:
         pass
 
     def get_result(self):
-        groundtruth_result = False
+        groundtruth_result = None
+        details = None
         if self.finished:
             data = round(self.stop_time.to_sec() - self.start_time.to_sec(), 3)
             if self.groundtruth != None and self.groundtruth_epsilon != None:
                 if math.fabs(self.groundtruth - data) <= self.groundtruth_epsilon:
                     groundtruth_result = True
-            else:
-                groundtruth_result = True
-            details = None
+                else:
+                    groundtruth_result = False
             return "time", data, groundtruth_result, self.groundtruth, self.groundtruth_epsilon, details
         else:
             return False
