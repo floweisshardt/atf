@@ -44,28 +44,55 @@ class Merger():
                                 
                                 # check if entry exists
                                 if testblock_name not in test_data_merged:
+                                    # create new testblock entry
+                                    #print "create new entry for testblock '" + testblock_name + "'"
                                     test_data_merged[testblock_name] = {}
-                                    if metric_name not in test_data_merged:
-                                        # create new entry
-                                        test_data_merged[testblock_name][metric_name] = {}
-                                        test_data_merged[testblock_name][metric_name] = copy.deepcopy(metric_data)
-                                        test_data_merged[testblock_name][metric_name]['data'] = {}
-                                        test_data_merged[testblock_name][metric_name]['data']['values'] = []
-                                print "test_data_merged0=", test_data_merged
-                                test_data_merged[testblock_name][metric_name]['data']['values'].append(metric_data['data'])
-                                print "test_data_merged1=", test_data_merged
+                                if metric_name not in test_data_merged[testblock_name]:
+                                    # create new metric entry
+                                    #print "create new entry for metric '" + metric_name + "' in testblock '" + testblock_name + "'"
+                                    test_data_merged[testblock_name][metric_name] = []
+                                    new_metric_data = copy.deepcopy(metric_data)
+                                    new_metric_data['data'] = {}
+                                    new_metric_data['data']['values'] = [metric_data['data']]
+                                    test_data_merged[testblock_name][metric_name].append(new_metric_data)
+                                #print "test_data_merged0=", test_data_merged
+                                else:
+                                    # entry already exists
+                                    #print "entry for metric '" + metric_name + "' in testblock '" + testblock_name + "' already exists"
+                                    
+                                    # check if merging is possible, if not: append
+                                    is_in, element_number = self.is_in_metric_data_list(copy.deepcopy(metric_data), copy.deepcopy(test_data_merged[testblock_name][metric_name]))
+                                    if is_in:
+                                        print "--> merge", metric_data['data'], "into element_number:", element_number
+                                        # merge values
+                                        test_data_merged[testblock_name][metric_name][element_number]['data']['values'].append(metric_data['data'])
+                                        # merge groundtruth_result (take the worst result)
+                                        test_data_merged[testblock_name][metric_name][element_number]['groundtruth_result'] = test_data_merged[testblock_name][metric_name][element_number]['groundtruth_result'] and metric_data['groundtruth_result']
+                                    else:
+                                        #print "--> append"
+                                        new_metric_data = copy.deepcopy(metric_data)
+                                        new_metric_data['data'] = {}
+                                        new_metric_data['data']['values'] = [metric_data['data']]
+                                        #print "new_metric_data=", new_metric_data
+                                        #print "append to:", test_data_merged[testblock_name]
+                                        test_data_merged[testblock_name][metric_name].append(new_metric_data)
+                                #print "test_data_merged=", test_data_merged
 
-                print "test_data_merged final=", test_data_merged
+                #print "test_data_merged before average=", test_data_merged
                 
                 # calculate min/max/average
                 for testblock_name, testblock_data in test_data_merged.items():
-                    print "testblock_data=", testblock_data
-                    for metric_name, metric_data in testblock_data.items():
-                        print "metric_data=", metric_data
-                        test_data_merged[testblock_name][metric_name]['data']['min'] = min(metric_data['data']['values'])
-                        test_data_merged[testblock_name][metric_name]['data']['max'] = max(metric_data['data']['values'])
-                        test_data_merged[testblock_name][metric_name]['data']['average'] = round(sum(metric_data['data']['values'])/len(metric_data['data']['values']),3)
-                print "test_data_merged after average=", test_data_merged
+                    #print "testblock_data=", testblock_data
+                    for metric_name, metric_data_list in testblock_data.items():
+                        #print "metric_data_list=", metric_data_list
+                        for i in range(len(metric_data_list)):
+                            #print "i=", i
+                            #print "test_data_merged[testblock_name][metric_name][i]['data']['values']=", test_data_merged[testblock_name][metric_name][i]['data']['values']
+                            test_data_merged[testblock_name][metric_name][i]['data']['min'] = min(test_data_merged[testblock_name][metric_name][i]['data']['values'])
+                            test_data_merged[testblock_name][metric_name][i]['data']['max'] = max(test_data_merged[testblock_name][metric_name][i]['data']['values'])
+                            test_data_merged[testblock_name][metric_name][i]['data']['average'] = round(sum(test_data_merged[testblock_name][metric_name][i]['data']['values'])/len(test_data_merged[testblock_name][metric_name][i]['data']['values']),3)
+                            
+                #print "test_data_merged after average=", test_data_merged
                 
                 # write to file
                 filename = self.json_output + test_name + ".json"
@@ -77,6 +104,25 @@ class Merger():
                     stream = file(filename, 'w')
                     yaml.dump(copy.copy(test_data_merged), stream, default_flow_style=False)
         self.result = True
+
+    def is_in_metric_data_list(self, data, data_list):
+        counter = 0
+        for d in data_list:
+            is_same = self.is_same_metric_data_without_data(copy.deepcopy(data), copy.deepcopy(d))
+            if is_same:
+                return True, counter
+            counter += 1
+        return False, None
+
+    def is_same_metric_data_without_data(self, data1, data2):
+        data1.pop('data')
+        data1.pop('groundtruth_result')
+        data2.pop('data')
+        data2.pop('groundtruth_result')
+        if data1 == data2:
+            return True
+        else:
+            return False
 
     def load_data(self, filename):
         with open(filename, 'r') as stream:
