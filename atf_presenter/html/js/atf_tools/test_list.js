@@ -401,6 +401,7 @@ var TestList = {
             // individual settings per metric
             chart_legend_name = testblock_name
             if (metric_name == 'path_length') chart_legend_name = testblock_name + "<br>(" + metric_data['details']['root_frame'] + " to " + metric_data['details']['measured_frame'] + ")"
+            if (metric_name == 'publish_rate') chart_legend_name = testblock_name + "<br>(" + metric_data['details']['topic'] + ")"
             
             if (!data_per_test.hasOwnProperty(metric_name)) data_per_test[metric_name] = [];
             data_per_test[metric_name].push({
