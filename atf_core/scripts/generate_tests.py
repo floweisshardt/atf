@@ -27,10 +27,7 @@ class GenerateTests:
         # required parameters
         try:
             self.test_suite_file = os.path.join(self.package_path, self.generation_config["test_suite_file"])
-            self.test_config_file = os.path.join(self.package_path, self.generation_config["test_config_file"])
             self.bagfile_output = os.path.join(self.package_path, self.generation_config["bagfile_output"])
-            self.robot_config_path = os.path.join(self.package_path, self.generation_config["robot_config_path"])
-            self.additional_launch_file = os.path.join(self.package_path, self.generation_config["additional_launch_file"])
 
             if self.generation_config["result_yaml_output"] != "":
                 self.yaml_output = os.path.join(self.package_path, self.generation_config["result_yaml_output"])
@@ -101,17 +98,16 @@ class GenerateTests:
         rosparam = em.rosparam
 
         for item in self.test_list:
-            robot_config = self.load_yaml(self.robot_config_path + self.test_list[item]["robot"] + "/robot_config.yaml")
+            robot_config = self.load_yaml(os.path.join(self.package_path, self.generation_config["robot_config_path"], self.test_list[item]["robot"], "robot_config.yaml"))
 
             # Recording
             test_record = launch(
-                include(arg(name="test_status_list", value=self.test_generated_recording_path + "/test_status.yaml"),
+                include(arg(name="test_status_list", value="$(find " + self.package_name + ")/test_status.yaml"),
                         file="$(find atf_status_server)/launch/atf_status_server.launch"),
                 param(name="test_name", value=item),
                 param(name="test_config", value=self.test_list[item]["test_config"]),
                 param(name="scene_config", value=self.test_list[item]["scene_config"]),
-                param(name="robot_config", value=self.robot_config_path + self.test_list[item]["robot"] +
-                      "/robot_config.yaml"),
+                param(name="robot_config", value="$(find " + self.package_name + ")/" + os.path.join(self.generation_config["robot_config_path"], self.test_list[item]["robot"], "robot_config.yaml")),
                 param(name="number_of_tests", value=str(len(self.test_list))),
                 test({'test-name': "recording_" + item, 'pkg': self.package_name, 'type': self.generation_config['app_executable'],
                       'time-limit': str(self.time_limit_recording)})
@@ -123,22 +119,16 @@ class GenerateTests:
                 test_record.append(param(name=config_param, value=str(self.test_list[item][config_param])))
 
             test_record.append(arg(name="robot", value=self.test_list[item]["robot"]))
-            test_record.append(arg(name="rc_path", value=self.robot_config_path))
 
             if robot_config["robot_bringup_launch"] != "":
-                test_record.append(include(file=self.get_path(robot_config["robot_bringup_launch"])))
+                test_record.append(include(file="$(find " + self.package_name + ")/" + robot_config["robot_bringup_launch"]))
 
-            if self.additional_launch_file != "":
-                test_record.append(include(file=self.additional_launch_file))
+            if self.generation_config["additional_launch_file"] != "":
+                test_record.append(include(file="$(find " + self.package_name + ")/" + self.generation_config["additional_launch_file"]))
 
-            test_record.append(node(param(name="/test_config_file", value=self.test_config_file),
+            test_record.append(node(param(name="/test_config_file", value="$(find " + self.package_name + ")/" + self.generation_config["test_config_file"]),
                                     param(name="/bagfile_output", value=self.bagfile_output),
-                                    name="atf_recorder", pkg="atf_recorder", type="recorder_core.py", output="screen"))
-            #test_record.append(rosparam(ns="obstacle_distance_node", command="load",
-            #                            file=self.robot_config_path + self.test_list[item]["robot"] +
-            #                            "/robot_config.yaml"))
-            #test_record.append(node(name="obstacle_distance_node", pkg="obstacle_distance",
-            #                        type="obstacle_distance_node", output="screen"))
+                                    name="atf_recorder", pkg="atf_recorder", type="recorder_core.py", output="screen")) 
 
             for params in robot_config["additional_parameter"]:
                 test_record.append(param(name=str(params["name"]), value=str(params["value"])))
@@ -153,12 +143,12 @@ class GenerateTests:
 
             # Analysing
             test_analyse = launch(
-                include(arg(name="test_status_list", value=self.test_generated_analysing_path + "/test_status.yaml"),
+                include(arg(name="test_status_list", value="$(find " + self.package_name + ")/test_status.yaml"),
                         file="$(find atf_status_server)/launch/atf_status_server.launch"),
                 param(name="analysing/test_name", value=item),
                 param(name="analysing/test_config", value=self.test_list[item]["test_config"]),
-                param(name="analysing/test_config_file", value=self.test_config_file),
-                param(name="analysing/test_generated_path", value=self.test_generated_path),
+                param(name="analysing/test_config_file", value="$(find " + self.package_name + ")/" + self.generation_config["test_config_file"]),
+                param(name="analysing/test_generated_path", value="$(find " + self.package_name + ")/test_generated"),
                 param(name="analysing/result_yaml_output", value=self.yaml_output),
                 param(name="analysing/result_json_output", value=self.json_output),
                 param(name="number_of_tests", value=str(len(self.test_list))),
@@ -178,7 +168,7 @@ class GenerateTests:
             test_merge = launch(
                 param(name="merging/test_name", value=item),
                 param(name="merging/test_config", value=self.test_list[item]["test_config"]),
-                param(name="merging/test_config_file", value=self.test_config_file),
+                param(name="merging/test_config_file", value="$(find " + self.package_name + ")/" + self.generation_config["test_config_file"]),
                 param(name="merging/result_yaml_output", value=self.yaml_output),
                 param(name="merging/result_json_output", value=self.json_output),
                 test({'test-name': "merging", 'pkg': "atf_core", 'type': "merger.py",
