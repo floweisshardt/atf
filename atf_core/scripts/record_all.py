@@ -3,6 +3,7 @@ import rospy
 import rospkg
 import sys
 import os
+import subprocess
 
 
 if __name__ == '__main__':
@@ -21,6 +22,9 @@ if __name__ == '__main__':
     print "found " + str(len(filenames)) + " files: " + str(filenames)
     
     # record all
+    counter = 1
     for f in filenames:
+        print "\n--> recording " + str(counter) + "/" + str(len(filenames)) + " (" + str(f) + ")"
         command = "rostest " + pkg + " " + f
-        os.system(command)    
+        subprocess.call(command, shell=True)
+        counter += 1
