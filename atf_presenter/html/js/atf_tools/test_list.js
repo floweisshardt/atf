@@ -31,7 +31,9 @@ var TestList = {
     var number = 1;
 
     $.each(test_list, function (test_name, test_data) {
+      //console.log("test_name=", test_name)
       var test_name_full = test_name.split('_');
+      //console.log("test_name_full=", test_name_full)
       var upload_status;
       var table_row_error;
       var test_error;
@@ -96,93 +98,14 @@ var TestList = {
     $.each(test_list, function (test_name, test_config) {
       //console.log("test_name=", test_name)
       //console.log("test_config=", test_config)
-      var test_data_complete = {};
       var errors = {
         planning: {},
         error: 0
       };
-      $.each(test_config['subtests'], function (index, subtest_name) {
-        //console.log("subtest_name=", subtest_name)
-        var test_data = FileStorage.readData(subtest_name);
-        //console.log("test_data=", test_data)
-        if (!test_data) return true;
-
-        $.each(test_data, function (testblock_name, testblock_data) {
-          //console.log("testblock_name=", testblock_name)
-          //console.log("testblock_data=", testblock_data)
-          if (!(testblock_name in test_data_complete) && testblock_name != 'error') {
-            test_data_complete[testblock_name] = {};
-          }
-
-          var error = this_class.checkForErrors(test_data);
-          if (error[0] === 'planning') {
-            if (!errors['planning'].hasOwnProperty(testblock_name)) {
-              errors['planning'][testblock_name] = 0;
-            }
-            errors['planning'][testblock_name] += 1;
-            return true;
-          } else if (error[0] === 'error') {
-            errors['error'] += 1;
-            return true;
-          }
-
-          $.each(testblock_data, function (metric_name, metric_list) {
-            //console.log("metric_name",metric_name)
-            //console.log("metric_list",metric_list)
-            
-            if (!(metric_name in test_data_complete[testblock_name])) {
-              test_data_complete[testblock_name][metric_name] = [];
-            }
-
-            //console.log("test_data_complete[testblock_name][metric_name]", test_data_complete[testblock_name][metric_name])
-
-            $.each(metric_list, function (entry_number, metric_data) {
-              //console.log("entry_number=", entry_number)
-              //console.log("metric_data=", metric_data)
-              metric_data_modified = metric_data
-              $.each(metric_data, function (metric_key_name, metric_key_data) {
-                //console.log("metric_key_name",metric_key_name)
-                //console.log("metric_key_data",metric_key_data)
-                if (metric_key_name == 'data') {
-                  // if key is data, we'll setup lists for max/min/average
-                  metric_data_modified[metric_key_name] = {};
-                  if ($.isEmptyObject(metric_data_modified[metric_key_name])) {
-                    metric_data_modified[metric_key_name]['values'] = [];
-                  }
-                  metric_data_modified[metric_key_name]['values'].push(metric_key_data);
-                } else {
-                  // if key is not data with max/min/average, we'll copy the original key_data
-                  metric_data_modified[metric_key_name] = metric_key_data
-                }
-              });
-              test_data_complete[testblock_name][metric_name].push(metric_data_modified)
-            });
-          });
-        });
-        FileStorage.removeData(subtest_name);
-      });
-
-      //console.log("test_data_complete before average", test_data_complete)
       
-      // build max/min/average out of lists
-      $.each(test_data_complete, function (testblock_name, testblock_data) {
-        $.each(testblock_data, function (metric_name, metric_list) {
-          $.each(metric_list, function (entry_number, metric_data) {
-            $.each(metric_data, function (metric_key_name, metric_key_data) {
-              //console.log("metric_key_name=", metric_key_name)
-              //console.log("metric_key_data=", metric_key_data)
-              if (metric_key_name == 'data') {
-                test_data_complete[testblock_name][metric_name][entry_number][metric_key_name]['min'] = math.min(metric_key_data['values']);
-                test_data_complete[testblock_name][metric_name][entry_number][metric_key_name]['max'] = math.max(metric_key_data['values']);
-                test_data_complete[testblock_name][metric_name][entry_number][metric_key_name]['average'] = math.mean(metric_key_data['values']);
-              }
-            });
-          });
-        });
-      });
-      
-      //console.log("test_data_complete after average", test_data_complete)
-      
+      var test_data_complete = FileStorage.readData("ts1_t1");
+      //console.log("test_data_complete=", test_data_complete)
+
       // Check for errors
       var test_failed = 0;
       $.each(errors['planning'], function (testblock_name, errors) {
