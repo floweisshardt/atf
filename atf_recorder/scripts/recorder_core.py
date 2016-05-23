@@ -17,7 +17,6 @@ from atf_recorder import BagfileWriter
 
 class ATFRecorder:
     def __init__(self):
-
         self.bag_name = rosparam.get_param("/test_name")
         self.number_of_tests = rosparam.get_param("/number_of_tests")
         self.robot_config_file = self.load_data(rosparam.get_param("/robot_config"))
@@ -39,10 +38,9 @@ class ATFRecorder:
         self.recorder_plugin_list = []
         if len(recorder_config) > 0:
             for (key, value) in recorder_config.iteritems():
-                self.recorder_plugin_list.append(getattr(atf_recorder_plugins, value)(self.topic,
-                                                                                      self.test_config,
-                                                                                      self.robot_config_file,
-                                                                                      self.lock_write,
+                #print "key=", key
+                #print "value=", value
+                self.recorder_plugin_list.append(getattr(atf_recorder_plugins, value)(self.lock_write,
                                                                                       self.bag))
 
         self.topic_pipeline = []
@@ -117,6 +115,7 @@ class ATFRecorder:
                                 if testblock not in testblock_list:
                                     testblock_list.update({testblock: []})
                                 topic = item['topic']
+                                #print "topic=", topic
                                 #add heading "/" to all topics to make them global (rostopic.get_topic_class() cannot handle non global topics)
                                 if topic[0] != "/":
                                     topic = "/" + topic
@@ -126,10 +125,10 @@ class ATFRecorder:
         return testblock_list
 
     def update_requested_topics(self, msg):
-
         if msg.trigger.trigger == Trigger.ACTIVATE:
             for topic in self.testblock_list[msg.name]:
                 self.requested_topics.append(topic)
+                #print "topic=", topic
                 if topic not in self.topic_pipeline:
                     self.topic_pipeline.append(topic)
 
@@ -140,6 +139,7 @@ class ATFRecorder:
                     self.topic_pipeline.remove(topic)
 
     def create_subscriber_callback(self, event):
+        #print "self.topics=", self.topics
         for topic in self.topics:
             if topic not in self.subscriber:
                 try:
@@ -152,6 +152,7 @@ class ATFRecorder:
                     pass
 
     def command_callback(self, msg):
+        #print "command_callback: msg=", msg
 
         if (msg.trigger.trigger == Trigger.ACTIVATE and msg.name in self.active_sections) or \
                 (msg.trigger.trigger == Trigger.FINISH and msg.name not in self.active_sections) or \
@@ -159,6 +160,7 @@ class ATFRecorder:
             return RecorderCommandResponse(False)
 
         # Only process message if testblock requests topics
+        #print "self.testblock_list=", self.testblock_list
         if msg.name in self.testblock_list:
             self.update_requested_topics(msg)
 
@@ -187,7 +189,7 @@ class ATFRecorder:
         return doc
 
     def global_topic_callback(self, msg, name):
-        if name in self.topic_pipeline:        
+        if name in self.topic_pipeline:
             self.BfW.write_to_bagfile(name, msg, rospy.Time.now())
 
     def get_topics(self):
