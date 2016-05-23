@@ -80,8 +80,8 @@ class CalculateInterface:
         groundtruth_epsilon = None
         details = None #self.api_dict
 
-        print "self.metric=", self.metric
-        print "self.api_dict=", self.api_dict
+        #print "self.metric=", self.metric
+        #print "self.api_dict=", self.api_dict
 
         if self.metric['node'] not in self.api_dict:
             print "node", self.metric['node'], "is NOT in api"
@@ -93,7 +93,7 @@ class CalculateInterface:
             for interface, interface_data in self.metric.items():
                 if interface != "node":
                     for topic_name, topic_type in interface_data:
-                        print "topic_name=", topic_name
+                        #print "topic_name=", topic_name
                         #print "topic_type=", topic_type
                         #print "self.api_dict[self.metric['node']][interface]=", self.api_dict[self.metric['node']][interface]
                         if topic_name not in self.api_dict[self.metric['node']][interface]:

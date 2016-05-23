@@ -22,6 +22,13 @@ test_1:
       - topic: /topic1
       - topic: /topic2
       - topic: /topic3
+    interface:
+      - node: publisher1
+        publishers: 
+          - [topic1, std_msgs/String]
+      - node: publisher2
+        publishers: 
+          - [topic2, std_msgs/String]
    # testblock_all empty
 
 # with groundtruth, with global topics
@@ -72,4 +79,11 @@ test_2:
       - topic: /topic3
         groundtruth: 33
         groundtruth_epsilon: 1
+    interface:
+      - node: publisher1
+        publishers: 
+          - [topic1, std_msgs/String]
+      - node: publisher2
+        publishers: 
+          - [topic2, std_msgs/String]
   # testblock_all empty
