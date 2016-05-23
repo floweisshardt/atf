@@ -70,7 +70,7 @@ class CalculatePathLength:
         self.active = False
         self.first_value = True
 
-    def purge():
+    def purge(self):
         pass
 
     def record_tf(self, event):

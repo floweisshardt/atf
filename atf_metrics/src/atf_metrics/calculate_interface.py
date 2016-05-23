@@ -1,7 +1,5 @@
 #!/usr/bin/env python
 import rospy
-import sys
-from rosapi.srv import Nodes, Topics
 from atf_msgs.msg import Api
 
 class CalculateInterfaceParamHandler:
@@ -16,7 +14,6 @@ class CalculateInterfaceParamHandler:
         Method that returns the metric method with the given parameter.
         :param params: Parameter
         """
-        #print "params=", params
         metrics = []
         
         if type(params) is not list:
@@ -24,15 +21,10 @@ class CalculateInterfaceParamHandler:
             return False
 
         for metric in params:
-            #print "metric1=", metric
             for interface, data in metric.items():
-                #print "interface=", interface
-                #print "data=", data
                 if type(data) is list:
                     new_data = []
                     for interface_name, interface_type in data:
-                        #print "interface_name=", interface_name
-                        #print "interface_type=", interface_type
                         if interface_name[0] != "/":
                             interface_name = "/" + interface_name
                         new_data.append([interface_name, interface_type])
@@ -40,7 +32,6 @@ class CalculateInterfaceParamHandler:
                 elif type(data) is str:
                     if data[0] != "/":
                         metric[interface] = "/" + data
-            #print "metric2=", metric
             metrics.append(CalculateInterface(testblock_name, metric))
         return metrics
 
@@ -56,7 +47,6 @@ class CalculateInterface:
         rospy.Subscriber("/atf/" + self.testblock_name + "/api", Api, self.api_callback)
 
     def api_callback(self, msg):
-        #print "got api callback in ", self.testblock_name, ":", msg
         self.api_dict = self.msg_to_dict(msg)
 
     def start(self):
@@ -74,7 +64,6 @@ class CalculateInterface:
     def msg_to_dict(self, msg):
         api_dict = {}
         
-        #print "msg=", msg
         for node_api in msg.nodes:
             #print "node_api=", node_api
             api_dict[node_api.name] = {}
@@ -82,7 +71,6 @@ class CalculateInterface:
             api_dict[node_api.name]["subscribers"] = node_api.interface.subscribers
             api_dict[node_api.name]["services"] = node_api.interface.services
             #TODO actions
-        #print "api_dict=", api_dict
         return api_dict
 
     def get_result(self):
@@ -90,7 +78,7 @@ class CalculateInterface:
         groundtruth_result = None
         groundtruth = None
         groundtruth_epsilon = None
-        details = {}
+        details = self.api_dict
 
         #print "self.metric=", self.metric
         #print "self.api_dict=", self.api_dict
@@ -112,7 +100,6 @@ class CalculateInterface:
                             groundtruth_result = False
                             data = {interface: self.api_dict[self.metric['node']][interface]}
                             groundtruth = {interface: self.metric[interface]}
-        details = self.api_dict
         if self.finished:
             return "interface", data, groundtruth_result, groundtruth, groundtruth_epsilon, details
         else:

@@ -65,7 +65,7 @@ class CalculatePublishRate:
         #FIXME: check rate calculation in case of pause (counter, start_time and stop_time)
         pass
 
-    def purge():
+    def purge(self):
         pass
 
     def get_result(self):

@@ -56,11 +56,11 @@ class CalculateTime:
         self.stop_time = rospy.Time.now()
         self.finished = True
 
-    def pause():
+    def pause(self):
         # TODO: Implement pause time calculation
         pass
 
-    def purge():
+    def purge(self):
         pass
 
     def get_result(self):
