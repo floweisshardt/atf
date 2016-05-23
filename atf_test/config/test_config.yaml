@@ -41,11 +41,11 @@ test_2:
       - root_frame: link1
         measured_frame: link2
         groundtruth: 6.28
-        groundtruth_epsilon: 0.1
+        groundtruth_epsilon: 0.2
       - root_frame: link1
         measured_frame: link3
         groundtruth: 0.0
-        groundtruth_epsilon: 0.1
+        groundtruth_epsilon: 0.2
     publish_rate:
       - topic: topic1
         groundtruth: 11
@@ -64,11 +64,11 @@ test_2:
       - root_frame: link1
         measured_frame: link2
         groundtruth: 12.56
-        groundtruth_epsilon: 0.1
+        groundtruth_epsilon: 0.2
       - root_frame: link1
         measured_frame: link3
         groundtruth: 0
-        groundtruth_epsilon: 0.1
+        groundtruth_epsilon: 0.2
     publish_rate:
       - topic: /topic1
         groundtruth: 11
