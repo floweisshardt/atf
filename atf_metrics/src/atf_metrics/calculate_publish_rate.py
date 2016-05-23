@@ -9,7 +9,7 @@ class CalculatePublishRateParamHandler:
         """
         pass
 
-    def parse_parameter(self, params):
+    def parse_parameter(self, testblock_name, params):
         """
         Method that returns the metric method with the given parameter.
         :param params: Parameter
