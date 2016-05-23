@@ -74,32 +74,33 @@ class CalculateInterface:
         return api_dict
 
     def get_result(self):
-        data = None
-        groundtruth_result = None
+        data = 0 # interface metric is not numeric
+        groundtruth_result = True # interface metric not usable without groundtruth
         groundtruth = None
         groundtruth_epsilon = None
-        details = self.api_dict
+        details = None #self.api_dict
 
-        #print "self.metric=", self.metric
-        #print "self.api_dict=", self.api_dict
-        
+        print "self.metric=", self.metric
+        print "self.api_dict=", self.api_dict
+
         if self.metric['node'] not in self.api_dict:
             print "node", self.metric['node'], "is NOT in api"
             groundtruth_result = False
-            data = {"nodes": self.api_dict.keys()}
-            groundtruth = {"node": self.metric['node']}
+            #data = {"nodes": self.api_dict.keys()}
+            #groundtruth = {"node": self.metric['node']}
         else:
             print "node", self.metric['node'], "is in api"
-            for interface, data in self.metric.items():
+            for interface, interface_data in self.metric.items():
                 if interface != "node":
-                    for topic_name, topic_type in data:
-                        #print "topic_name=", topic_name
+                    for topic_name, topic_type in interface_data:
+                        print "topic_name=", topic_name
                         #print "topic_type=", topic_type
+                        #print "self.api_dict[self.metric['node']][interface]=", self.api_dict[self.metric['node']][interface]
                         if topic_name not in self.api_dict[self.metric['node']][interface]:
                             print topic_name, "is NOT an interface of node", self.metric['node'], "interfaces:", self.api_dict[self.metric['node']][interface]
                             groundtruth_result = False
-                            data = {interface: self.api_dict[self.metric['node']][interface]}
-                            groundtruth = {interface: self.metric[interface]}
+                            #data = {interface: self.api_dict[self.metric['node']][interface]}
+                            #groundtruth = {interface: self.metric[interface]}
         if self.finished:
             return "interface", data, groundtruth_result, groundtruth, groundtruth_epsilon, details
         else:
