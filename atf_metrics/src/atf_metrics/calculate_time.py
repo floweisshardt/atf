@@ -20,7 +20,7 @@ class CalculateTimeParamHandler:
         if params == None:
             metrics.append(CalculateTime(None, None))
             return metrics
-        
+
         if type(params) is not list:
             rospy.logerr("metric config not a list")
             return False

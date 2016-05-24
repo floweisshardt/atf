@@ -3,10 +3,10 @@ import rospy
 import rosgraph
 import rosservice
 import socket
-import copy 
 from atf_recorder import BagfileWriter
 from rosapi.srv import Nodes, Topics, Publishers, Subscribers
 from atf_msgs.msg import Api, NodeApi, InterfaceItem
+from rosnode import ROSNodeIOException
 
 class RecordInterface:
     def __init__(self, write_lock, bag_file):
@@ -14,7 +14,7 @@ class RecordInterface:
         self.rosapi_service_topics = rospy.ServiceProxy('/rosapi/topics', Topics)
         self.rosapi_service_publishers = rospy.ServiceProxy('/rosapi/publishers', Publishers)
         self.rosapi_service_subscribers = rospy.ServiceProxy('/rosapi/subscribers', Subscribers)
-        
+
         self.master = rosgraph.Master("/rosnode")
 
         self.BfW = BagfileWriter(bag_file, write_lock)
@@ -22,13 +22,13 @@ class RecordInterface:
     def trigger_callback(self, msg):
         #print "msg=", msg
 
-        try: 
-            publishers, subscribers, services = self.master.getSystemState() 
+        try:
+            publishers, subscribers, services = self.master.getSystemState()
             #pub_topics = self.master.getPublishedTopics('/subscriber1')
             topic_types = self.master.getTopicTypes()
             service_types = self.get_service_types(services)
-        except socket.error: 
-            raise ROSNodeIOException("Unable to communicate with master!") 
+        except socket.error:
+            raise ROSNodeIOException("Unable to communicate with master!")
 
         #print "publishers=", publishers
         #print "subscribers=", subscribers
@@ -41,7 +41,7 @@ class RecordInterface:
         self.add_api(api_dict, "subscribers", subscribers, topic_types)
         self.add_api(api_dict, "services", services, service_types)
         #TODO actions
-        
+
         #print "api_dict=\n", api_dict
         api = self.dict_to_msg(api_dict)
         #print "api=\n", api

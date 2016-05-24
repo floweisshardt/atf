@@ -23,7 +23,7 @@ class GenerateTests:
         self.package_name = arguments[1]
         self.package_path = arguments[2]
         self.generation_config = self.load_yaml(self.package_path + "/config/test_generation_config.yaml")
-        
+
         # required parameters
         try:
             self.test_suite_file = os.path.join(self.package_path, self.generation_config["test_suite_file"])
@@ -44,7 +44,7 @@ class GenerateTests:
             print error_message
             self.print_output = "ATF: Test generation failed! " + error_message
             sys.exit(1)
-        
+
         # optional parameters
         try:
             if type(self.generation_config["upload_data"]) is bool:
@@ -63,10 +63,13 @@ class GenerateTests:
 
         self.test_list = {}
 
-        # Empty folders
         self.test_generated_path = os.path.join(self.package_path, "test_generated")
         self.test_generated_recording_path = os.path.join(self.test_generated_path, "recording")
         self.test_generated_analysing_path = os.path.join(self.test_generated_path, "analysing")
+        self.create_folders()
+
+    def create_folders(self):
+        # Empty folders
         if os.path.exists(self.test_generated_path):
             shutil.rmtree(self.test_generated_path)
         os.makedirs(self.test_generated_recording_path)
@@ -95,7 +98,7 @@ class GenerateTests:
         test = em.test
         node = em.node
         param = em.param
-        rosparam = em.rosparam
+        #rosparam = em.rosparam
 
         for item in self.test_list:
             robot_config = self.load_yaml(os.path.join(self.package_path, self.generation_config["robot_config_path"], self.test_list[item]["robot"], "robot_config.yaml"))
@@ -128,7 +131,7 @@ class GenerateTests:
 
             test_record.append(node(param(name="/test_config_file", value="$(find " + self.package_name + ")/" + self.generation_config["test_config_file"]),
                                     param(name="/bagfile_output", value=self.bagfile_output),
-                                    name="atf_recorder", pkg="atf_recorder", type="recorder_core.py", output="screen")) 
+                                    name="atf_recorder", pkg="atf_recorder", type="recorder_core.py", output="screen"))
 
             for params in robot_config["additional_parameter"]:
                 test_record.append(param(name=str(params["name"]), value=str(params["value"])))
@@ -160,7 +163,7 @@ class GenerateTests:
             )
 
             xmlstr = minidom.parseString(ElementTree.tostring(test_analyse)).toprettyxml(indent="    ")
-            filepath = os.path.join(self.test_generated_analysing_path, "analysing_" + item) + ".test" 
+            filepath = os.path.join(self.test_generated_analysing_path, "analysing_" + item) + ".test"
             with open(filepath, "w") as f:
                 f.write(xmlstr)
 
@@ -175,14 +178,14 @@ class GenerateTests:
                       'time-limit': "10"})
             )
             xmlstr = minidom.parseString(ElementTree.tostring(test_merge)).toprettyxml(indent="    ")
-            filepath = os.path.join(self.test_generated_path, "merging.test") 
+            filepath = os.path.join(self.test_generated_path, "merging.test")
             with open(filepath, "w") as f:
                 f.write(xmlstr)
-            
+
             # Uploading
             test_upload = launch()
             if self.upload_data:
-                test_upload.append(    
+                test_upload.append(
                     test({'test-name': "uploading_data", 'pkg': "atf_core", 'type': "test_dropbox_uploader.py",
                           'time-limit': str(self.time_limit_uploading), 'args': "-f " + os.path.join(self.package_path, "config/.dropbox_uploader_config") + " upload " + self.bagfile_output + " " + os.path.join(self.package_name, "data")}))
 

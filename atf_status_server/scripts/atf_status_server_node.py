@@ -3,8 +3,8 @@ import rospy
 import yaml
 import rosparam
 
-from atf_msgs.msg import *
-from atf_status_server.srv import *
+from atf_msgs.msg import TestStatus, TestblockStatus
+from atf_status_server.srv import GetTestStatus, GetTestStatusResponse
 from threading import Lock
 
 
