@@ -6,7 +6,7 @@ import yaml
 import shutil
 import os
 
-from atf_msgs.msg import *
+from atf_msgs.msg import TestStatus, Status, TestblockStatus
 from copy import copy
 
 
@@ -121,7 +121,7 @@ class ATF:
 
         self.test_status_publisher.publish(test_status)
 
-        shutil.copy(os.path.join(rosparam.get_param("analysing/test_generated_path"), "test_list.json") , rosparam.get_param("/analysing/result_json_output"))
+        shutil.copyfile(os.path.join(rosparam.get_param("analysing/test_generated_path"), "test_list.json"), os.path.join(rosparam.get_param("/analysing/result_json_output"), "test_list.json"))
 
         filename = rosparam.get_param("/analysing/result_json_output") + self.test_name + ".json"
         stream = file(filename, 'w')
