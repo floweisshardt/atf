@@ -118,6 +118,8 @@ class CalculateInterface:
             data = 0.0
         else:
             details = "node " + node_name + " is in api"
+            groundtruth_result = True
+            data = 100.0
             for interface, interface_data in self.metric.items():
                 if interface != "node":
                     for topic_name, topic_type in interface_data:
