@@ -13,6 +13,6 @@ result_yaml_output: "/tmp/atf_test/results_yaml/"                   # Folder for
 upload_data: false
 upload_result: false
 
-time_limit_recording: 20.0                                          # Time limit in seconds for recording
-time_limit_analysing: 20.0                                          # Time limit in seconds for analysing
+time_limit_recording: 30.0                                          # Time limit in seconds for recording
+time_limit_analysing: 30.0                                          # Time limit in seconds for analysing
 time_limit_uploading: 60.0                                          # Time limit in seconds for uploading
