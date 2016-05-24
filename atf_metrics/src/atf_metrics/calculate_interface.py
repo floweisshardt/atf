@@ -84,47 +84,63 @@ class CalculateInterface:
         #print "api_dict=", api_dict
         return api_dict
 
+    def check_interface(self, name, topic_type, interface):
+        #print "name=", name
+        #print "topic_type=", topic_type
+        #print "interface=", interface
+        for i in interface:
+            if i[0] == name:
+                if i[1] == topic_type:
+                    return True, True # all OK
+                else:
+                    return True, False # only name OK, but type failed
+        return False, False
+
     def get_result(self):
-        data = 0 # interface metric is not numeric
-        groundtruth_result = True # interface metric not usable without groundtruth
-        groundtruth = None
-        groundtruth_epsilon = None
-        details = None #self.api_dict
+        # As interface metric is not numeric, we'll use the following numeric representation:
+        # max score = 100.0
+        # node in api: score = 33.3
+        # all interfaces available: score = 66.6
+        # all types correct: score = 100.0
+        data = None
+        groundtruth_result = None # interface metric not usable without groundtruth
+        groundtruth = 100         # this is the max score
+        groundtruth_epsilon = 0   # no deviation from max score allowed
+        details = None
 
         #print "self.metric=", self.metric
         #print "self.api_dict=", self.api_dict
 
         node_name = self.metric['node']
         if node_name not in self.api_dict:
-            print "node", node_name, "is NOT in api"
+            details = "node " + node_name + " is not in api"
             groundtruth_result = False
-            #data = {"nodes": self.api_dict.keys()}
-            #groundtruth = {"node": node_name}
+            data = 0.0
         else:
-            print "node", node_name, "is in api"
+            details = "node " + node_name + " is in api"
             for interface, interface_data in self.metric.items():
                 if interface != "node":
                     for topic_name, topic_type in interface_data:
-                        #print ""
                         #print "node_name=", node_name
                         #print "topic_name=", topic_name
                         #print "topic_type=", topic_type
                         #print "self.api_dict[node_name][interface]=", self.api_dict[node_name][interface]
-                        if not self.is_name_in_interface(topic_name, topic_type, self.api_dict[node_name][interface]):
-                            print "  but", topic_name, "(with type", topic_type ,") is NOT an interface of node", node_name, "interfaces are:", self.api_dict[node_name][interface]
+                        name_check, type_check = self.check_interface(topic_name, topic_type, self.api_dict[node_name][interface])
+                        if not name_check:
+                            details += ", but " + topic_name + " is not an interface of node " + node_name + ". Interfaces are: " + str(self.api_dict[node_name][interface])
                             groundtruth_result = False
-                            #data = {interface: self.api_dict[node_name][interface]}
-                            #groundtruth = {interface: self.metric[interface]}
+                            data = 33.3
+                        else:
+                            if not type_check:
+                                details += ", but " + topic_name + " (with type " + topic_type + ") is not an interface of node " + node_name + ". Interfaces are: " + str(self.api_dict[node_name][interface])
+                                groundtruth_result = False
+                                data = 66.0
+                            else: # all Ok
+                                details += ", all interfaces of node " + node_name + ": OK"
+                                groundtruth_result = True
+                                data = 100.0
+        print details
         if self.finished:
             return "interface", data, groundtruth_result, groundtruth, groundtruth_epsilon, details
         else:
             return False
-    
-    def is_name_in_interface(self, name, topic_type, interface):
-        #print "name=", name
-        #print "topic_type=", topic_type
-        #print "interface=", interface
-        for i in interface:
-            if i[0] == name and i[1] == topic_type:
-                return True
-        return False
