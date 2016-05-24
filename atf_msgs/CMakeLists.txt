@@ -17,6 +17,7 @@ add_message_files(
         Api.msg
         NodeApi.msg
         Interface.msg
+        InterfaceItem.msg
         Status.msg
         Trigger.msg
         IO.msg

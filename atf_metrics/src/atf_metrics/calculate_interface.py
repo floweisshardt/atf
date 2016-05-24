@@ -63,14 +63,25 @@ class CalculateInterface:
 
     def msg_to_dict(self, msg):
         api_dict = {}
-        
+
         for node_api in msg.nodes:
             #print "node_api=", node_api
             api_dict[node_api.name] = {}
-            api_dict[node_api.name]["publishers"] = node_api.interface.publishers
-            api_dict[node_api.name]["subscribers"] = node_api.interface.subscribers
-            api_dict[node_api.name]["services"] = node_api.interface.services
+
+            api_dict[node_api.name]["publishers"] = []
+            for item in node_api.interface.publishers:
+                api_dict[node_api.name]["publishers"].append([item.name, item.type])
+
+            api_dict[node_api.name]["subscribers"] = []
+            for item in node_api.interface.subscribers:
+                api_dict[node_api.name]["subscribers"].append([item.name, item.type])
+
+            api_dict[node_api.name]["services"] = []
+            for item in node_api.interface.services:
+                api_dict[node_api.name]["services"].append([item.name, item.type])
+
             #TODO actions
+        #print "api_dict=", api_dict
         return api_dict
 
     def get_result(self):
@@ -83,25 +94,37 @@ class CalculateInterface:
         #print "self.metric=", self.metric
         #print "self.api_dict=", self.api_dict
 
-        if self.metric['node'] not in self.api_dict:
-            print "node", self.metric['node'], "is NOT in api"
+        node_name = self.metric['node']
+        if node_name not in self.api_dict:
+            print "node", node_name, "is NOT in api"
             groundtruth_result = False
             #data = {"nodes": self.api_dict.keys()}
-            #groundtruth = {"node": self.metric['node']}
+            #groundtruth = {"node": node_name}
         else:
-            print "node", self.metric['node'], "is in api"
+            print "node", node_name, "is in api"
             for interface, interface_data in self.metric.items():
                 if interface != "node":
                     for topic_name, topic_type in interface_data:
+                        #print ""
+                        #print "node_name=", node_name
                         #print "topic_name=", topic_name
                         #print "topic_type=", topic_type
-                        #print "self.api_dict[self.metric['node']][interface]=", self.api_dict[self.metric['node']][interface]
-                        if topic_name not in self.api_dict[self.metric['node']][interface]:
-                            print topic_name, "is NOT an interface of node", self.metric['node'], "interfaces:", self.api_dict[self.metric['node']][interface]
+                        #print "self.api_dict[node_name][interface]=", self.api_dict[node_name][interface]
+                        if not self.is_name_in_interface(topic_name, topic_type, self.api_dict[node_name][interface]):
+                            print "  but", topic_name, "(with type", topic_type ,") is NOT an interface of node", node_name, "interfaces are:", self.api_dict[node_name][interface]
                             groundtruth_result = False
-                            #data = {interface: self.api_dict[self.metric['node']][interface]}
+                            #data = {interface: self.api_dict[node_name][interface]}
                             #groundtruth = {interface: self.metric[interface]}
         if self.finished:
             return "interface", data, groundtruth_result, groundtruth, groundtruth_epsilon, details
         else:
             return False
+    
+    def is_name_in_interface(self, name, topic_type, interface):
+        #print "name=", name
+        #print "topic_type=", topic_type
+        #print "interface=", interface
+        for i in interface:
+            if i[0] == name and i[1] == topic_type:
+                return True
+        return False
