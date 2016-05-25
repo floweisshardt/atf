@@ -36,9 +36,9 @@ if(CATKIN_ENABLE_TESTING)
     endif()
 
     add_custom_target(${PROJECT_NAME}_recording ALL)
-    add_custom_target(${PROJECT_NAME}_analysing DEPENDS recording)
-    add_custom_target(${PROJECT_NAME}_merging DEPENDS analysing)
-    add_custom_target(${PROJECT_NAME}_uploading DEPENDS merging)
+    add_custom_target(${PROJECT_NAME}_analysing DEPENDS ${PROJECT_NAME}_recording)
+    add_custom_target(${PROJECT_NAME}_merging DEPENDS ${PROJECT_NAME}_analysing)
+    add_custom_target(${PROJECT_NAME}_uploading DEPENDS ${PROJECT_NAME}_merging)
 
     file(GLOB TESTS_FILES_RECORDING test_generated/recording/*.test)
     file(GLOB TESTS_FILES_ANALYSING test_generated/analysing/*.test)
