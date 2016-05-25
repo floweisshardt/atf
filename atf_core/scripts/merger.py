@@ -6,8 +6,6 @@ import rostest
 import os
 import copy
 import json
-import yaml
-import numpy
 
 class Merger():
     def __init__(self):
@@ -28,7 +26,6 @@ class Merger():
                 #print "subtests=", subtests
                 test_data_merged = {}
                 for subtest in subtests:
-                    subtest_data = subtests
                     #print "subtest=", subtest
                     subtest_data = self.load_data(os.path.join(self.json_output, subtest + ".json"))
                     #print "subtest_data=", subtest_data
@@ -41,7 +38,7 @@ class Merger():
                             for metric_data in metric_data_list:
                                 #print "metric_data=", metric_data
                                 #print "metric_data['data']=", metric_data['data']
-                                
+
                                 # check if entry exists
                                 if testblock_name not in test_data_merged:
                                     # create new testblock entry
@@ -59,7 +56,7 @@ class Merger():
                                 else:
                                     # entry already exists
                                     #print "entry for metric '" + metric_name + "' in testblock '" + testblock_name + "' already exists"
-                                    
+
                                     # check if merging is possible, if not: append
                                     is_in, element_number = self.is_in_metric_data_list(copy.deepcopy(metric_data), copy.deepcopy(test_data_merged[testblock_name][metric_name]))
                                     if is_in:
@@ -79,7 +76,7 @@ class Merger():
                                 #print "test_data_merged=", test_data_merged
 
                 #print "test_data_merged before average=", test_data_merged
-                
+
                 # calculate min/max/average
                 for testblock_name, testblock_data in test_data_merged.items():
                     #print "testblock_data=", testblock_data
@@ -90,10 +87,10 @@ class Merger():
                             #print "test_data_merged[testblock_name][metric_name][i]['data']['values']=", test_data_merged[testblock_name][metric_name][i]['data']['values']
                             test_data_merged[testblock_name][metric_name][i]['data']['min'] = min(test_data_merged[testblock_name][metric_name][i]['data']['values'])
                             test_data_merged[testblock_name][metric_name][i]['data']['max'] = max(test_data_merged[testblock_name][metric_name][i]['data']['values'])
-                            test_data_merged[testblock_name][metric_name][i]['data']['average'] = round(sum(test_data_merged[testblock_name][metric_name][i]['data']['values'])/len(test_data_merged[testblock_name][metric_name][i]['data']['values']),3)
-                            
+                            test_data_merged[testblock_name][metric_name][i]['data']['average'] = round(sum(test_data_merged[testblock_name][metric_name][i]['data']['values'])/len(test_data_merged[testblock_name][metric_name][i]['data']['values']), 3)
+
                 #print "test_data_merged after average=", test_data_merged
-                
+
                 # write to file
                 filename = self.json_output + test_name + ".json"
                 stream = file(filename, 'w')
@@ -107,14 +104,14 @@ class Merger():
 
     def is_in_metric_data_list(self, data, data_list):
         counter = 0
-        for d in data_list:
-            is_same = self.is_same_metric_data_without_data(copy.deepcopy(data), copy.deepcopy(d))
+        for dat in data_list:
+            is_same = self.is_same_metric_data(copy.deepcopy(data), copy.deepcopy(dat))
             if is_same:
                 return True, counter
             counter += 1
         return False, None
 
-    def is_same_metric_data_without_data(self, data1, data2):
+    def is_same_metric_data(self, data1, data2):
         data1.pop('data')
         data1.pop('groundtruth_result')
         data2.pop('data')
@@ -130,7 +127,7 @@ class Merger():
             return doc
 
 class TestMerging(unittest.TestCase):
-    def test_MergingResults(self):
+    def test_merging_results(self):
         merger = Merger()
         merger.merge()
         self.assertTrue(merger.result, merger.merging_error_message)

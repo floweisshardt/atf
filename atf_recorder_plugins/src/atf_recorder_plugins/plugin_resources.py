@@ -8,7 +8,7 @@ import rosnode
 from copy import copy
 from re import findall
 from subprocess import check_output, CalledProcessError
-from atf_msgs.msg import *
+from atf_msgs.msg import Resources, IO, Network
 from atf_recorder import BagfileWriter
 
 

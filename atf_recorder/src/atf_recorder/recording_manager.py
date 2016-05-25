@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 import rospy
 
-from atf_recorder.srv import *
-from atf_msgs.msg import *
+from atf_recorder.srv import RecorderCommand
+from atf_msgs.msg import Trigger
 
 
 class RecordingManager:

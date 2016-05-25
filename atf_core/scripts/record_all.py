@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-import rospy
 import rospkg
 import sys
 import os
@@ -12,7 +11,7 @@ if __name__ == '__main__':
     print "recording all in package '" + pkg + "'"
     pkg_path = r.get_path(pkg)
     path_to_test_files = os.path.join(pkg_path, "test_generated/recording")
-    
+
     filenames = []
     for (dirpath, dirnames, list_of_files) in os.walk(path_to_test_files):
         for f in list_of_files:
@@ -20,7 +19,7 @@ if __name__ == '__main__':
                 filenames.append(f)
 
     print "found " + str(len(filenames)) + " files: " + str(filenames)
-    
+
     # record all
     counter = 1
     for f in filenames:

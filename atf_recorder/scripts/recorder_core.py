@@ -10,8 +10,8 @@ import os
 import atf_recorder_plugins
 
 from threading import Lock
-from atf_msgs.msg import *
-from atf_recorder.srv import *
+from atf_msgs.msg import Trigger, TestStatus
+from atf_recorder.srv import RecorderCommand, RecorderCommandResponse
 from atf_recorder import BagfileWriter
 
 
@@ -58,7 +58,7 @@ class ATFRecorder:
         #    num_subscriber = ob_sub.get_num_connections()
 
         self.subscriber = []
-        self.topics= self.get_topics()
+        self.topics = self.get_topics()
         rospy.Timer(rospy.Duration(0.5), self.create_subscriber_callback)
         rospy.sleep(1) #wait for subscribers to get active (rospy bug?)
 
@@ -144,11 +144,10 @@ class ATFRecorder:
             if topic not in self.subscriber:
                 try:
                     msg_class, _, _ = rostopic.get_topic_class(topic)
-                    msg = rospy.wait_for_message(topic, msg_class)
                     rospy.Subscriber(topic, msg_class, self.global_topic_callback, callback_args=topic)
                     self.subscriber.append(topic)
                 except Exception as e:
-                    #print e 
+                    #print e
                     pass
 
     def command_callback(self, msg):
