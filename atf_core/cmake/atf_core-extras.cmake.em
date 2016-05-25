@@ -41,7 +41,8 @@ function(atf_test)
         add_rostest(test_generated/uploading.test DEPENDENCIES atf_${PROJECT_NAME}_merging)
 
         add_custom_target(atf_${PROJECT_NAME}_generating
-            COMMAND echo "gggggggggggggggggggggggggggggenerating")
+            COMMAND echo "gggggggggggggggggggggggggggggenerating"
+        )
         add_custom_target(atf_${PROJECT_NAME}_recording
             COMMAND echo "rrrrrrrrrrrrrrrrrrrrrrrrrrrrrrecording"
             DEPENDS 
@@ -76,5 +77,7 @@ function(atf_test)
                 atf_${PROJECT_NAME}_generating
         )
         add_dependencies(run_tests atf_${PROJECT_NAME})
+
+        message("--ATF: executing macro done!")
     endif()
 endfunction()
