@@ -189,7 +189,7 @@ class ATFRecorder:
 
     def global_topic_callback(self, msg, name):
         if name in self.topic_pipeline:
-            self.BfW.write_to_bagfile(name, msg, rospy.Time.now())
+            self.BfW.write_to_bagfile(name, msg, rospy.Time.from_sec(time.time()))
 
     def get_topics(self):
         topics = []
