@@ -29,20 +29,25 @@ if(CATKIN_ENABLE_TESTING)
 
     execute_process(
         COMMAND python ${atf_core_SCRIPTS_DIR}/generate_tests.py ${PROJECT_NAME} ${PROJECT_SOURCE_DIR}
-        RESULT_VARIABLE res_var
+        RESULT_VARIABLE generation_result
     )
-    if(NOT "${res_var}" STREQUAL "0")
-      message(FATAL_ERROR "process failed res_var='${res_var}'")
+    if(NOT "${generation_result}" STREQUAL "0")
+      message(FATAL_ERROR "ATF: generating test files failed: exit_code='${generation_result}'")
     endif()
+
+    add_custom_target(recording ALL)
+    add_custom_target(analysing DEPENDS recording)
+    add_custom_target(merging DEPENDS analysing)
+    add_custom_target(uploading DEPENDS merging)
 
     file(GLOB TESTS_FILES_RECORDING test_generated/recording/*.test)
     file(GLOB TESTS_FILES_ANALYSING test_generated/analysing/*.test)
     foreach(TEST ${TESTS_FILES_RECORDING})
-        add_rostest(${TEST})
+        add_rostest(${TEST} DEPENDENCIES recording)
     endforeach()
     foreach(TEST ${TESTS_FILES_ANALYSING})
-        add_rostest(${TEST})
+        add_rostest(${TEST} DEPENDENCIES analysing)
     endforeach()
-    add_rostest(test_generated/merging.test)
-    add_rostest(test_generated/uploading.test)
+    add_rostest(test_generated/merging.test DEPENDENCIES merging)
+    add_rostest(test_generated/uploading.test DEPENDENCIES uploading)
 endif()
