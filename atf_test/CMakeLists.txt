@@ -35,19 +35,44 @@ if(CATKIN_ENABLE_TESTING)
       message(FATAL_ERROR "ATF: generating test files failed: exit_code='${generation_result}'")
     endif()
 
-    add_custom_target(${PROJECT_NAME}_recording ALL)
-    add_custom_target(${PROJECT_NAME}_analysing DEPENDS ${PROJECT_NAME}_recording)
-    add_custom_target(${PROJECT_NAME}_merging DEPENDS ${PROJECT_NAME}_analysing)
-    add_custom_target(${PROJECT_NAME}_uploading DEPENDS ${PROJECT_NAME}_merging)
-
     file(GLOB TESTS_FILES_RECORDING test_generated/recording/*.test)
     file(GLOB TESTS_FILES_ANALYSING test_generated/analysing/*.test)
-    foreach(TEST ${TESTS_FILES_RECORDING})
-        add_rostest(${TEST} DEPENDENCIES ${PROJECT_NAME}_recording)
-    endforeach()
-    foreach(TEST ${TESTS_FILES_ANALYSING})
-        add_rostest(${TEST} DEPENDENCIES ${PROJECT_NAME}_analysing)
-    endforeach()
-    add_rostest(test_generated/merging.test DEPENDENCIES ${PROJECT_NAME}_merging)
-    add_rostest(test_generated/uploading.test DEPENDENCIES ${PROJECT_NAME}_uploading)
+
+    add_custom_target(generating
+        COMMAND echo "geeeeeeeeeeeeeeenerating")
+    add_custom_target(recording DEPENDS 
+        generating
+        _run_tests_atf_test_rostest_test_generated_recording_recording_ts1_t1_1.test
+        _run_tests_atf_test_rostest_test_generated_recording_recording_ts1_t1_2.test
+    )
+    add_custom_target(analysing DEPENDS
+        recording
+        _run_tests_atf_test_rostest_test_generated_analysing_analysing_ts1_t1_1.test
+        _run_tests_atf_test_rostest_test_generated_analysing_analysing_ts1_t1_2.test
+    )
+    add_custom_target(merging DEPENDS
+        analysing
+        _run_tests_atf_test_rostest_test_generated_merging.test
+    )
+    add_custom_target(uploading DEPENDS
+        merging
+        _run_tests_atf_test_rostest_test_generated_uploading.test
+    )
+    add_custom_target(atf DEPENDS uploading merging analysing recording)
+    add_dependencies(run_tests atf)
+
+
+
+    #foreach(TEST ${TESTS_FILES_RECORDING})
+    #    add_rostest(${TEST} DEPENDS recording)
+    #endforeach()
+    #foreach(TEST ${TESTS_FILES_ANALYSING})
+    #    add_rostest(${TEST} DEPENDS analysing)
+    #endforeach()
+    add_rostest(test_generated/recording/recording_ts1_t1_1.test DEPENDENCIES generating)
+    add_rostest(test_generated/recording/recording_ts1_t1_2.test DEPENDENCIES generating)
+    add_rostest(test_generated/analysing/analysing_ts1_t1_1.test DEPENDENCIES recording)
+    add_rostest(test_generated/analysing/analysing_ts1_t1_2.test DEPENDENCIES recording)
+    add_rostest(test_generated/merging.test DEPENDENCIES analysing)
+    add_rostest(test_generated/uploading.test DEPENDENCIES merging)
 endif()
