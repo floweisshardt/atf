@@ -34,8 +34,7 @@ class Analyser:
             metrics = []
 
             for metric in config_data[testblock_name]:
-                metric_return = getattr(atf_metrics, metrics_data[metric]["handler"])() \
-                    .parse_parameter(config_data[testblock_name][metric])
+                metric_return = getattr(atf_metrics, metrics_data[metric]["handler"])().parse_parameter(testblock_name, config_data[testblock_name][metric])
                 if type(metric_return) == list:
                     for metric in metric_return:
                         metrics.append(metric)

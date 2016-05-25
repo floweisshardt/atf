@@ -340,6 +340,28 @@ var TestList = {
         plotOptions: {},
         tooltip: plot_tooltip
       },
+      interface: {
+        chart: {
+          defaultSeriesType: 'column',
+          type: 'column',
+          zoomType: 'xy'
+        },
+        title: {
+          text: 'Interface'
+        },
+        yAxis: {
+          title: {
+            text: 'Interface score [#]'
+          }
+        },
+        xAxis: {
+          labels: {
+            enabled: false
+          }
+        },
+        plotOptions: {},
+        tooltip: plot_tooltip
+      },
       obstacle_distance: {
         chart: {
           defaultSeriesType: 'column',
@@ -390,7 +412,7 @@ var TestList = {
       $.each(testblock_data, function (metric_name, metric_list) {
         //console.log("metric_name=", metric_name);
         //console.log("metric_list=", metric_list);
-        if ((metric_name == 'time') || (metric_name == 'path_length') || (metric_name == 'publish_rate'))
+        if ((metric_name == 'time') || (metric_name == 'path_length') || (metric_name == 'publish_rate') || (metric_name == 'interface'))
         {
           // Time
           $.each(metric_list, function(entry_number, metric_data) {
@@ -402,6 +424,7 @@ var TestList = {
             chart_legend_name = testblock_name
             if (metric_name == 'path_length') chart_legend_name = testblock_name + "<br>(" + metric_data['details']['root_frame'] + " to " + metric_data['details']['measured_frame'] + ")"
             if (metric_name == 'publish_rate') chart_legend_name = testblock_name + "<br>(" + metric_data['details']['topic'] + ")"
+            if (metric_name == 'interface') chart_legend_name = testblock_name + "<br>(" + metric_data['details'] + ")"
             
             if (!data_per_test.hasOwnProperty(metric_name)) data_per_test[metric_name] = [];
             data_per_test[metric_name].push({

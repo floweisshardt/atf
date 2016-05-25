@@ -14,6 +14,10 @@ find_package(catkin
 
 add_message_files(
     FILES
+        Api.msg
+        NodeApi.msg
+        Interface.msg
+        InterfaceItem.msg
         Status.msg
         Trigger.msg
         IO.msg

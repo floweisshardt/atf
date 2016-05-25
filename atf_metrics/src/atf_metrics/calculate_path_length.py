@@ -10,7 +10,7 @@ class CalculatePathLengthParamHandler:
         """
         pass
 
-    def parse_parameter(self, params):
+    def parse_parameter(self, testblock_name, params):
         """
         Method that returns the metric method with the given parameter.
         :param params: Parameter
@@ -70,7 +70,7 @@ class CalculatePathLength:
         self.active = False
         self.first_value = True
 
-    def purge():
+    def purge(self):
         pass
 
     def record_tf(self, event):
