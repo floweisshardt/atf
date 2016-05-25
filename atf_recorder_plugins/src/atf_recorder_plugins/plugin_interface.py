@@ -3,6 +3,7 @@ import rospy
 import rosgraph
 import rosservice
 import socket
+import time
 from atf_recorder import BagfileWriter
 from rosapi.srv import Nodes, Topics, Publishers, Subscribers
 from atf_msgs.msg import Api, NodeApi, InterfaceItem
@@ -47,7 +48,7 @@ class RecordInterface:
         #print "api=\n", api
 
         # write api to bagfile
-        self.BfW.write_to_bagfile("/atf/" + msg.name + "/api", api, rospy.Time.now())
+        self.BfW.write_to_bagfile("/atf/" + msg.name + "/api", api, rospy.Time.from_sec(time.time()))
 
     def get_service_types(self, services):
         service_types = []
