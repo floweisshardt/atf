@@ -9,7 +9,7 @@ class CalculatePublishRateParamHandler:
         """
         pass
 
-    def parse_parameter(self, params):
+    def parse_parameter(self, testblock_name, params):
         """
         Method that returns the metric method with the given parameter.
         :param params: Parameter
@@ -65,7 +65,7 @@ class CalculatePublishRate:
         #FIXME: check rate calculation in case of pause (counter, start_time and stop_time)
         pass
 
-    def purge():
+    def purge(self):
         pass
 
     def get_result(self):

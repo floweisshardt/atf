@@ -6,23 +6,48 @@ from subprocess import call
 import rospy
 import rostest
 import rostopic
+import tf
+import math
 from atf_recorder import RecordingManager
 
 class Application:
     def __init__(self):
-        self.testblock_1 = RecordingManager('testblock_1')
-        self.testblock_2 = RecordingManager('testblock_2')
-        self.testblock_3 = RecordingManager('testblock_3')
+        # ATF code
+        self.testblock_small = RecordingManager('testblock_small')
+        self.testblock_large = RecordingManager('testblock_large')
+        self.testblock_all = RecordingManager('testblock_all')
+        
+        # native app code
+        self.pub_freq = 100.0 # Hz
+        self.br = tf.TransformBroadcaster()
+        rospy.sleep(1) #wait for tf broadcaster to get active (rospy bug?)
 
     def execute(self):
-        self.testblock_1.start()
-        self.testblock_3.start()
-        rospy.sleep(3)
-        self.testblock_1.stop()
-        self.testblock_2.start()
-        rospy.sleep(5)
-        self.testblock_2.stop()
-        self.testblock_3.stop()
+        self.testblock_all.start()
+
+        # small testblock (circle r=0.5, time=3)
+        self.testblock_small.start()
+        self.pub_tf_circle("link1", "link2", radius=1, time=3)
+        self.testblock_small.stop()
+
+        # large testblock (circle r=1, time=5
+        self.testblock_large.start()
+        self.pub_tf_circle("link1", "link2", radius=2, time=5)
+        self.testblock_large.stop()
+
+        self.testblock_all.stop()
+
+    def pub_tf_circle(self, parent_frame_id, child1_frame_id, radius=1, time=1):
+        rate = rospy.Rate(int(self.pub_freq))
+        for i in range(int(self.pub_freq * time) + 1):
+            t = i / self.pub_freq / time
+            self.br.sendTransform(
+                    (-radius * math.cos(2 * math.pi * t) + radius, -radius * math.sin(2 * math.pi * t), 0),
+                    tf.transformations.quaternion_from_euler(0, 0, 0),
+                    rospy.Time.now(),
+                    child1_frame_id,
+                    parent_frame_id)
+            rate.sleep()
 
 class Test(unittest.TestCase):
     def setUp(self):

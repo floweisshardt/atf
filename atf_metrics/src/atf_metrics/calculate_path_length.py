@@ -10,7 +10,7 @@ class CalculatePathLengthParamHandler:
         """
         pass
 
-    def parse_parameter(self, params):
+    def parse_parameter(self, testblock_name, params):
         """
         Method that returns the metric method with the given parameter.
         :param params: Parameter
@@ -70,7 +70,7 @@ class CalculatePathLength:
         self.active = False
         self.first_value = True
 
-    def purge():
+    def purge(self):
         pass
 
     def record_tf(self, event):
@@ -86,18 +86,19 @@ class CalculatePathLength:
             except (tf.Exception, tf.LookupException, tf.ConnectivityException, Exception), e:
                 #rospy.logwarn(e)
                 pass
-            if self.first_value:
+            else:
+                if self.first_value:
+                    self.trans_old = trans
+                    self.rot_old = rot
+                    self.first_value = False
+                    return
+
+                path_increment = math.sqrt((trans[0] - self.trans_old[0]) ** 2 + (trans[1] - self.trans_old[1]) ** 2 +
+                                           (trans[2] - self.trans_old[2]) ** 2)
+                self.path_length += path_increment
+
                 self.trans_old = trans
                 self.rot_old = rot
-                self.first_value = False
-                return
-
-            path_increment = math.sqrt((trans[0] - self.trans_old[0]) ** 2 + (trans[1] - self.trans_old[1]) ** 2 +
-                                       (trans[2] - self.trans_old[2]) ** 2)
-            self.path_length += path_increment
-
-            self.trans_old = trans
-            self.rot_old = rot
 
     def get_result(self):
         groundtruth_result = None
