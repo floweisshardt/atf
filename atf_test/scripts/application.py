@@ -1,11 +1,7 @@
 #!/usr/bin/python
 import unittest
-import yaml
-from subprocess import call
-
 import rospy
 import rostest
-import rostopic
 import tf
 import math
 from atf_recorder import RecordingManager
@@ -16,7 +12,7 @@ class Application:
         self.testblock_small = RecordingManager('testblock_small')
         self.testblock_large = RecordingManager('testblock_large')
         self.testblock_all = RecordingManager('testblock_all')
-        
+
         # native app code
         self.pub_freq = 100.0 # Hz
         self.br = tf.TransformBroadcaster()

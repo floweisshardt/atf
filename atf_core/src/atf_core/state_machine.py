@@ -39,9 +39,9 @@ class StateMachine:
         try:
             self.handler = self.handlers[self.startState]
         except:
-            raise "InitializationError", "Must call .set_start() before .run()"
+            raise SMError("Must call .set_start() before .run()")
         if not self.endStates:
-            raise "InitializationError", "At least one state must be an end_state"
+            raise SMError("At least one state must be an end_state")
 
         rospy.loginfo("SM for testblock '" + self.name + "' is running")
 
@@ -54,3 +54,5 @@ class StateMachine:
                 self.handler = self.handlers[new_state]
             rospy.loginfo("SM '" + self.name + "' in state " + str(self.get_current_state()))
         rospy.loginfo("SM '" + self.name + "' finished with state " + str(self.get_current_state()))
+class SMError(Exception):
+    pass

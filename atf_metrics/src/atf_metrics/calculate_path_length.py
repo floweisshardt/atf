@@ -76,14 +76,13 @@ class CalculatePathLength:
     def record_tf(self, event):
         if self.active:
             try:
-
                 self.listener.waitForTransform(self.root_frame,
                                                self.measured_frame,
                                                rospy.Time(0),
                                                rospy.Duration.from_sec(2 / self.tf_sampling_freq))
                 (trans, rot) = self.listener.lookupTransform(self.root_frame, self.measured_frame, rospy.Time(0))
 
-            except (tf.Exception, tf.LookupException, tf.ConnectivityException, Exception), e:
+            except (tf.Exception, tf.LookupException, tf.ConnectivityException), e:
                 #rospy.logwarn(e)
                 pass
             else:

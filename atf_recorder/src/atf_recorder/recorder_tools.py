@@ -1,7 +1,4 @@
 #!/usr/bin/env python
-import rospy
-
-
 class BagfileWriter:
     def __init__(self, bagfile, write_lock):
         """
