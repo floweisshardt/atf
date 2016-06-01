@@ -437,7 +437,7 @@ var TestList = {
             else {color_testblock = (testblock_number/(number_of_testblocks-1)*255).round(0)}
 
             if (number_of_entries <= 1) {color_entry = 0}
-            else {color_entry = (entry_number/(number_of_entries-1)*255/4).round(0)}
+            else {color_entry = (entry_number/(number_of_entries-1)*255).round(0)}
 
             rgb = [255-color_testblock, color_testblock, color_entry]
             color = "rgb(" + rgb[0].toString() + ", " + rgb[1].toString() + ", " + rgb[2].toString() + ")"
@@ -449,7 +449,7 @@ var TestList = {
                 x: testblock_number,
                 y: metric_key_data['average'].round(3),
                 min: metric_key_data['min'].round(3),
-                max: metric_key_data['max'].round(3),
+                max: metric_key_data['max'].round(3)
               }],
               color: color
             }, {
