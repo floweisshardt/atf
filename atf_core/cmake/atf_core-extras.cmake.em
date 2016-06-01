@@ -9,7 +9,7 @@ set(generate_tests_script ${atf_core_DIR}/../scripts/generate_tests.py)
 
 function(atf_test)
     if(CATKIN_ENABLE_TESTING)
-        message("--ATF: executing macro")
+        message("-- ATF: executing test generation macro")
         find_package(rostest REQUIRED)
 
         execute_process(
@@ -17,7 +17,7 @@ function(atf_test)
             RESULT_VARIABLE generation_result
         )
         if(NOT "${generation_result}" STREQUAL "0")
-          message(FATAL_ERROR "ATF: generating test files failed: exit_code='${generation_result}'")
+          message(FATAL_ERROR "-- ATF: generating test files failed: exit_code='${generation_result}'")
         endif()
 
         file(GLOB TEST_NAMES_RECORDING RELATIVE ${PROJECT_SOURCE_DIR}/test_generated/recording ${PROJECT_SOURCE_DIR}/test_generated/recording/*.test)
@@ -78,6 +78,6 @@ function(atf_test)
         )
         add_dependencies(run_tests atf_${PROJECT_NAME})
 
-        message("--ATF: executing macro done!")
+        message("-- ATF: executing test generation macro done!")
     endif()
 endfunction()
