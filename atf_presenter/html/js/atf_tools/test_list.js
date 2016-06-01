@@ -393,8 +393,12 @@ var TestList = {
 
     var data_per_test = {};
 
+    number_of_testblocks = Object.keys(test_results).length
+    //console.log("number_of_testblocks=", number_of_testblocks)
+    testblock_number = 0
     $.each(test_results, function (testblock_name, testblock_data) {
       //console.log("testblock_name=", testblock_name);
+      //console.log("testblock_number=", testblock_number);
       //console.log("testblock_data=", testblock_data);
 
       if (testblock_data.hasOwnProperty('status') && testblock_data['status'] === 'error') {
@@ -414,7 +418,8 @@ var TestList = {
         //console.log("metric_list=", metric_list);
         if ((metric_name == 'time') || (metric_name == 'path_length') || (metric_name == 'publish_rate') || (metric_name == 'interface'))
         {
-          // Time
+          number_of_entries = Object.keys(metric_list).length
+          //console.log("number_of_entries=", number_of_entries)
           $.each(metric_list, function(entry_number, metric_data) {
             //console.log("entry_number=", entry_number)
             //console.log("metric_data=", metric_data)
@@ -427,21 +432,40 @@ var TestList = {
             if (metric_name == 'interface') chart_legend_name = testblock_name + "<br>(" + metric_data['details'] + ")"
             
             if (!data_per_test.hasOwnProperty(metric_name)) data_per_test[metric_name] = [];
+            
+            if (number_of_testblocks <= 1) {color_testblock = 0}
+            else {color_testblock = (testblock_number/(number_of_testblocks-1)*255).round(0)}
+
+            if (number_of_entries <= 1) {color_entry = 0}
+            else {color_entry = (entry_number/(number_of_entries-1)*255).round(0)}
+
+            rgb = [255-color_testblock, color_testblock, color_entry]
+            color = "rgb(" + rgb[0].toString() + ", " + rgb[1].toString() + ", " + rgb[2].toString() + ")"
+            //console.log("color=", color)
+
             data_per_test[metric_name].push({
               name: chart_legend_name,
               data: [{
-                x: 0,
+                x: testblock_number,
                 y: metric_key_data['average'].round(3),
                 min: metric_key_data['min'].round(3),
                 max: metric_key_data['max'].round(3)
-              }]
+              }],
+              color: color
             }, {
-              name: testblock_name + '_variation',
+              name: chart_legend_name + '_variation',
               type: 'errorbar',
               data: [{
+                x: testblock_number,
                 low: metric_key_data['min'].round(3),
                 high: metric_key_data['max'].round(3)
-              }]
+              }/*,
+              { ##### TODO: THIS CAN BE USED FOR VISUALIZING GRUNDTRUTH DATA #####
+                x: testblock_number,
+                low: 1,
+                high: 2,
+                color: "#FF0000"
+              }*/]
             });
           })
         }
@@ -545,11 +569,13 @@ var TestList = {
           });
         }
       });
+      testblock_number += 1
     });
 
     var details_per_test_panel = $('#details_per_test');
     details_per_test_panel.empty();
 
+    //console.log("data_per_test=", data_per_test)
     $.each(data_per_test, function (metric_name, data) {
       if (data.length != 0) test_details.show();
       details_per_test_panel.append('<div class="panel panel-primary"><div class="panel-heading"></div>' +
