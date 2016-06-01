@@ -32,6 +32,10 @@ class Merger():
                     for testblock_name, testblock_data in subtest_data.items():
                         #print "testblock_name=", testblock_name
                         #print "testblock_data=", testblock_data
+                        if testblock_name == "error":
+                            rospy.logwarn("testblock %s has an error (error_message: '%s'), skipping...", testblock_name, testblock_data)
+                            #TODO: mark testblock as error, so that presenter can show status information
+                            break
                         for metric_name, metric_data_list in testblock_data.items():
                             #print "metric_name=", metric_name
                             #print "metric_data_list=", metric_data_list
@@ -92,11 +96,11 @@ class Merger():
                 #print "test_data_merged after average=", test_data_merged
 
                 # write to file
-                filename = self.json_output + test_name + ".json"
+                filename = os.path.join(self.json_output, test_name + ".json")
                 stream = file(filename, 'w')
                 json.dump(copy.copy(test_data_merged), stream)
 
-                filename = self.yaml_output + test_name + ".yaml"
+                filename = os.path.join(self.yaml_output, test_name + ".yaml")
                 if not filename == "":
                     stream = file(filename, 'w')
                     yaml.dump(copy.copy(test_data_merged), stream, default_flow_style=False)
