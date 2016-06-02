@@ -59,18 +59,18 @@ class CalculatePathLength:
 
         rospy.Timer(rospy.Duration.from_sec(1 / self.tf_sampling_freq), self.record_tf)
 
-    def start(self):
+    def start(self, timestamp):
         self.active = True
 
-    def stop(self):
+    def stop(self, timestamp):
         self.active = False
         self.finished = True
 
-    def pause(self):
+    def pause(self, timestamp):
         self.active = False
         self.first_value = True
 
-    def purge(self):
+    def purge(self, timestamp):
         pass
 
     def record_tf(self, event):

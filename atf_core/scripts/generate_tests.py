@@ -157,7 +157,7 @@ class GenerateTests:
                 param(name="number_of_tests", value=str(len(self.test_list))),
                 test({'test-name': "analysing_" + item, 'pkg': "atf_core", 'type': "analyser.py",
                       'time-limit': str(self.time_limit_analysing)}),
-                node(name="player", pkg="rosbag", type="play", output="log", args="--delay=5.0 --clock " +
+                node(name="player", pkg="rosbag", type="play", output="log", args="--delay=5.0 --rate=10 --clock " +
                                                                                      self.bagfile_output + item +
                                                                                      ".bag")
             )
