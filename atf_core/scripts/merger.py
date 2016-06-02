@@ -33,9 +33,9 @@ class Merger():
                         #print "testblock_name=", testblock_name
                         #print "testblock_data=", testblock_data
                         if testblock_name == "error":
-                            rospy.logwarn("testblock %s has an error (error_message: '%s'), skipping...", testblock_name, testblock_data)
-                            #TODO: mark testblock as error, so that presenter can show status information
-                            break
+                            rospy.logwarn("subtest '%s' has an error (error_message: '%s'), skipping...", subtest, testblock_data)
+                            #TODO: mark subtest as error, so that presenter can show status information
+                            continue
                         for metric_name, metric_data_list in testblock_data.items():
                             #print "metric_name=", metric_name
                             #print "metric_data_list=", metric_data_list
@@ -126,9 +126,12 @@ class Merger():
             return False
 
     def load_data(self, filename):
-        with open(filename, 'r') as stream:
-            doc = yaml.load(stream)
-            return doc
+        try:
+            with open(filename, 'r') as stream:
+                doc = yaml.load(stream)
+        except IOError as e:
+            doc = {'error': e}
+        return doc
 
 class TestMerging(unittest.TestCase):
     def test_merging_results(self):
