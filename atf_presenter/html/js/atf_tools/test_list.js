@@ -172,13 +172,22 @@ var TestList = {
 
     var plot_tooltip = {
       formatter: function () {
-        if (this.series.name.indexOf('variation') != -1) return false;
         var o = this.point.options;
-
-        return '<b>' + this.series.name + '</b><br>' +
-          'Average: ' + this.y + '<br>' +
-          'Minimum: ' + o.min + '<br>' +
-          'Maximum: ' + o.max + '<br>';
+        if (this.series.name.indexOf('variation') != -1)
+        {
+          name = this.series.name.split("_variation")[0]
+          groundtruth_epsilon = (o.high - o.low)/2.0
+          groundtruth = o.low + groundtruth_epsilon
+          return '<b>' + name + '</b><br>' + 
+            'Groundtruth: ' + groundtruth.round(3) + '+-' + groundtruth_epsilon.round(3) + '<br>';
+        }
+        else
+        {
+          return '<b>' + this.series.name + '</b><br>' +
+            'Average: ' + this.y + '<br>' +
+            'Minimum: ' + o.min + '<br>' +
+            'Maximum: ' + o.max + '<br>';
+        }
       }
     };
 
@@ -459,13 +468,17 @@ var TestList = {
                 x: testblock_number,
                 low: metric_key_data['min'].round(3),
                 high: metric_key_data['max'].round(3)
-              }/*,
-              { ##### TODO: THIS CAN BE USED FOR VISUALIZING GRUNDTRUTH DATA #####
+              },
+              { 
                 x: testblock_number,
-                low: 1,
-                high: 2,
-                color: "#FF0000"
-              }*/]
+                low: metric_data['groundtruth'] - metric_data['groundtruth_epsilon'],
+                high: metric_data['groundtruth'] + metric_data['groundtruth_epsilon'],
+                color: "rgb(0, 0, 255)",
+                stemWidth: 10,
+                stemColor: "rgba(255, 255, 255, 0)",
+                whiskerWidth: 3,
+                whiskerColor: "rgba(0, 0, 0, 0.5)"
+              }]
             });
           })
         }
