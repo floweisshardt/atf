@@ -9,9 +9,10 @@ class Testblock:
     def __init__(self, testblock_name, metrics):
 
         self.testblock_name = testblock_name
-        rospy.Subscriber("/atf/" + self.testblock_name + "/Trigger", Trigger, self.trigger_callback)
+        rospy.Subscriber("/atf/" + self.testblock_name + "/trigger", Trigger, self.trigger_callback)
 
         self.transition = None
+        self.timestamp = None
         self.metrics = metrics
 
         self.m = StateMachine(self.testblock_name)
@@ -26,17 +27,19 @@ class Testblock:
 
     def trigger_callback(self, msg):
         self.transition = msg.trigger
+        self.timestamp = msg.header.stamp
 
     def purge(self):
         for metric in self.metrics:
-            metric.purge()
+            metric.purge(self.timestamp)
 
     def activate(self):
         for metric in self.metrics:
-            metric.start()
+            metric.start(self.timestamp)
 
     def pause(self):
-        self.stop()
+        for metric in self.metrics:
+            metric.pause(self.timestamp)
 
     def finish(self):
         self.stop()
@@ -46,7 +49,7 @@ class Testblock:
 
     def stop(self):
         for metric in self.metrics:
-            metric.stop()
+            metric.stop(self.timestamp)
 
     def get_state(self):
         return self.m.get_current_state()

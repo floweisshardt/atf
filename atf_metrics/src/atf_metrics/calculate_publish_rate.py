@@ -41,8 +41,8 @@ class CalculatePublishRate:
         self.groundtruth = groundtruth
         self.groundtruth_epsilon = groundtruth_epsilon
         self.counter = 0
-        self.start_time = rospy.Time()
-        self.stop_time = rospy.Time()
+        self.start_time = None
+        self.stop_time = None
 
         rospy.Subscriber(topic, rospy.AnyMsg, self.callback,
                          queue_size=1)
@@ -51,28 +51,28 @@ class CalculatePublishRate:
         if self.active:
             self.counter += 1
 
-    def start(self):
+    def start(self, timestamp):
         self.active = True
-        self.start_time = rospy.Time.now()
+        self.start_time = timestamp
 
-    def stop(self):
+    def stop(self, timestamp):
         self.active = False
-        self.stop_time = rospy.Time.now()
+        self.stop_time = timestamp
         self.finished = True
 
-    def pause(self):
+    def pause(self, timestamp):
         # TODO: Implement pause time and counter calculation
         #FIXME: check rate calculation in case of pause (counter, start_time and stop_time)
         pass
 
-    def purge(self):
+    def purge(self, timestamp):
         pass
 
     def get_result(self):
         groundtruth_result = None
         details = {"topic": self.topic}
         if self.finished:
-            data = round(self.counter / (self.stop_time.to_sec() - self.start_time.to_sec()), 3)
+            data = round(self.counter / (self.stop_time - self.start_time).to_sec(), 3)
             if self.groundtruth != None and self.groundtruth_epsilon != None:
                 if math.fabs(self.groundtruth - data) <= self.groundtruth_epsilon:
                     groundtruth_result = True

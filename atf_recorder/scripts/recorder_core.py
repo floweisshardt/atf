@@ -5,7 +5,6 @@ import rostopic
 import rosbag
 import rosparam
 import yaml
-import time
 import os
 import atf_recorder_plugins
 
@@ -174,8 +173,11 @@ class ATFRecorder:
         elif msg.trigger.trigger == Trigger.ERROR:
             self.topic_pipeline = []
 
-        self.BfW.write_to_bagfile(self.topic + msg.name + "/Trigger", Trigger(msg.trigger.trigger),
-                                  rospy.Time.from_sec(time.time()))
+        trigger = Trigger()
+        trigger.header.stamp = rospy.Time.now()
+        trigger.trigger = msg.trigger.trigger
+        self.BfW.write_to_bagfile(self.topic + msg.name + "/trigger", trigger,
+                                  trigger.header.stamp)
 
         return RecorderCommandResponse(True)
 
@@ -189,7 +191,7 @@ class ATFRecorder:
 
     def global_topic_callback(self, msg, name):
         if name in self.topic_pipeline:
-            self.BfW.write_to_bagfile(name, msg, rospy.Time.from_sec(time.time()))
+            self.BfW.write_to_bagfile(name, msg, rospy.Time.now())
 
     def get_topics(self):
         topics = []

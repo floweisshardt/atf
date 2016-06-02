@@ -9,7 +9,7 @@ set(generate_tests_script ${atf_core_DIR}/../scripts/generate_tests.py)
 
 function(atf_test)
     if(CATKIN_ENABLE_TESTING)
-        message("-- ATF: executing test generation macro")
+        message(STATUS "ATF: executing test generation macro")
         find_package(rostest REQUIRED)
 
         execute_process(
@@ -21,39 +21,41 @@ function(atf_test)
         endif()
 
         file(GLOB TEST_NAMES_RECORDING RELATIVE ${PROJECT_SOURCE_DIR}/test_generated/recording ${PROJECT_SOURCE_DIR}/test_generated/recording/*.test)
-        file(GLOB TEST_NAMES_ANALYSING RELATIVE ${PROJECT_SOURCE_DIR}/test_generated/analysing ${PROJECT_SOURCE_DIR}/test_generated/analysing/*.test)
 
-        foreach(TEST_NAME ${TEST_NAMES_RECORDING})
-            string(REPLACE "/" "_" TARGET_NAME ${TEST_NAME})
-            set(TARGET_NAME _run_tests_${PROJECT_NAME}_rostest_test_generated_recording_${TARGET_NAME})
-            list(APPEND TEST_TARGETS_RECORDING ${TARGET_NAME})
-            add_rostest(test_generated/recording/${TEST_NAME} DEPENDENCIES atf_${PROJECT_NAME}_generating)
-        endforeach()
+        foreach(TEST_NAME_RECORDING ${TEST_NAMES_RECORDING})
+            # recording
+            set(TARGET_NAME_RECORDING run_tests_${PROJECT_NAME}_rostest_test_generated_recording_${TEST_NAME_RECORDING})
+            set(_TARGET_NAME_RECORDING _run_tests_${PROJECT_NAME}_rostest_test_generated_recording_${TEST_NAME_RECORDING})
+            string(REPLACE "/" "_" TARGET_NAME_RECORDING ${TARGET_NAME_RECORDING})
+            string(REPLACE "/" "_" _TARGET_NAME_RECORDING ${_TARGET_NAME_RECORDING})
+            list(APPEND TARGET_NAMES_RECORDING ${TARGET_NAME_RECORDING})
+            list(APPEND _TARGET_NAMES_RECORDING ${_TARGET_NAME_RECORDING})
+            add_rostest(test_generated/recording/${TEST_NAME_RECORDING})
 
-        foreach(TEST_NAME ${TEST_NAMES_ANALYSING})
-            string(REPLACE "/" "_" TARGET_NAME ${TEST_NAME})
-            set(TARGET_NAME _run_tests_${PROJECT_NAME}_rostest_test_generated_analysing_${TARGET_NAME})
-            list(APPEND TEST_TARGETS_ANALYSING ${TARGET_NAME})
-            add_rostest(test_generated/analysing/${TEST_NAME} DEPENDENCIES atf_${PROJECT_NAME}_recording)
+            # analysing
+            string(REPLACE "recording_" "analysing_" TEST_NAME_ANALYSING ${TEST_NAME_RECORDING})
+            set(TARGET_NAME_ANALYSING run_tests_${PROJECT_NAME}_rostest_test_generated_analysing_${TEST_NAME_ANALYSING})
+            set(_TARGET_NAME_ANALYSING _run_tests_${PROJECT_NAME}_rostest_test_generated_analysing_${TEST_NAME_ANALYSING})
+            string(REPLACE "/" "_" TARGET_NAME_ANALYSING ${TARGET_NAME_ANALYSING})
+            string(REPLACE "/" "_" _TARGET_NAME_ANALYSING ${_TARGET_NAME_ANALYSING})
+            list(APPEND TARGET_NAMES_ANALYSING ${TARGET_NAME_ANALYSING})
+            list(APPEND _TARGET_NAMES_ANALYSING ${_TARGET_NAME_ANALYSING})
+            add_rostest(test_generated/analysing/${TEST_NAME_ANALYSING} DEPENDENCIES ${_TARGET_NAME_RECORDING})
         endforeach()
 
         add_rostest(test_generated/merging.test DEPENDENCIES atf_${PROJECT_NAME}_analysing)
         add_rostest(test_generated/uploading.test DEPENDENCIES atf_${PROJECT_NAME}_merging)
 
-        add_custom_target(atf_${PROJECT_NAME}_generating
-            COMMAND echo "gggggggggggggggggggggggggggggenerating"
-        )
         add_custom_target(atf_${PROJECT_NAME}_recording
             COMMAND echo "rrrrrrrrrrrrrrrrrrrrrrrrrrrrrrecording"
             DEPENDS 
-                atf_${PROJECT_NAME}_generating
-                ${TEST_TARGETS_RECORDING}
+                ${_TARGET_NAMES_RECORDING}
         )
         add_custom_target(atf_${PROJECT_NAME}_analysing
             COMMAND echo "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaanalysing"
             DEPENDS
                 atf_${PROJECT_NAME}_recording
-                ${TEST_TARGETS_ANALYSING}
+                ${_TARGET_NAMES_ANALYSING}
         )
         add_custom_target(atf_${PROJECT_NAME}_merging
             COMMAND echo "mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmerging"
@@ -74,10 +76,10 @@ function(atf_test)
                 atf_${PROJECT_NAME}_merging
                 atf_${PROJECT_NAME}_analysing
                 atf_${PROJECT_NAME}_recording
-                atf_${PROJECT_NAME}_generating
         )
         add_dependencies(run_tests atf_${PROJECT_NAME})
+        add_dependencies(run_tests_${PROJECT_NAME} atf_${PROJECT_NAME})
 
-        message("-- ATF: executing test generation macro done!")
+        message(STATUS "ATF: executing test generation macro done!")
     endif()
 endfunction()

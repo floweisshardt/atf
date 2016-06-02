@@ -3,6 +3,7 @@ project(atf_test)
 
 find_package(catkin REQUIRED COMPONENTS
   atf_core
+  roslaunch
   rospy
 )
 catkin_package(
@@ -23,4 +24,5 @@ install(PROGRAMS scripts/application.py
 #############
 ## Testing ##
 #############
+roslaunch_add_file_check(launch)
 atf_test()

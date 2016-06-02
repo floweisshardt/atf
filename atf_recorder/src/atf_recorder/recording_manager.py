@@ -28,7 +28,10 @@ class RecordingManager:
         :return:
         """
         rospy.loginfo("recording manager: start of testblock '%s'", self.name)
-        result = self.recorder_command(self.name, Trigger(Trigger.ACTIVATE))
+        trigger = Trigger()
+        trigger.header.stamp = rospy.Time.now()
+        trigger.trigger = Trigger.ACTIVATE
+        result = self.recorder_command(self.name, trigger)
         if not result:
             rospy.logerr("Testblock name is not defined in test_config.yaml!")
 
@@ -38,7 +41,10 @@ class RecordingManager:
         :return:
         """
         rospy.loginfo("recording manager: pause of testblock '%s'", self.name)
-        result = self.recorder_command(self.name, Trigger(Trigger.PAUSE))
+        trigger = Trigger()
+        trigger.header.stamp = rospy.Time.now()
+        trigger.trigger = Trigger.PAUSE
+        result = self.recorder_command(self.name, trigger)
         if not result:
             rospy.logerr("Testblock name is not defined in test_config.yaml!")
 
@@ -48,7 +54,10 @@ class RecordingManager:
         :return:
         """
         rospy.loginfo("recording manager: stop of testblock '%s'", self.name)
-        result = self.recorder_command(self.name, Trigger(Trigger.FINISH))
+        trigger = Trigger()
+        trigger.header.stamp = rospy.Time.now()
+        trigger.trigger = Trigger.FINISH
+        result = self.recorder_command(self.name, trigger)
         if not result:
             rospy.logerr("Testblock name is not defined in test_config.yaml!")
 
@@ -58,6 +67,9 @@ class RecordingManager:
         :return:
         """
         rospy.loginfo("recording manager: error in testblock '%s'", self.name)
-        result = self.recorder_command(self.name, Trigger(Trigger.ERROR))
+        trigger = Trigger()
+        trigger.header.stamp = rospy.Time.now()
+        trigger.trigger = Trigger.ERROR
+        result = self.recorder_command(self.name, trigger)
         if not result:
             rospy.logerr("Testblock name is not defined in test_config.yaml!")
