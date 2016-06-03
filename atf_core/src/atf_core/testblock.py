@@ -49,6 +49,12 @@ class Testblock:
                 raise TestblockError(self.exception)
             continue
 
+    def _wait_for_transition_is_not_none(self):
+        while not rospy.is_shutdown() and self.transition is None:
+            if self.exception != None:
+                raise TestblockError(self.exception)
+            continue
+
     def get_state(self):
         return self.m.get_current_state()
 
@@ -115,6 +121,7 @@ class Testblock:
 # states #
 ##########
     def _purged_state(self):
+        self._wait_for_transition_is_not_none()
         if self.transition == TestblockTrigger.START:
             self._start()
             new_state = TestblockState.ACTIVE
@@ -131,6 +138,7 @@ class Testblock:
         return new_state
 
     def _active_state(self):
+        self._wait_for_transition_is_not_none()
         if self.transition == TestblockTrigger.PURGE:
             self._purge()
             new_state = TestblockState.PURGED
@@ -150,6 +158,7 @@ class Testblock:
         return new_state
 
     def _paused_state(self):
+        self._wait_for_transition_is_not_none()
         if self.transition == TestblockTrigger.PURGE:
             self._purge()
             new_state = TestblockState.PURGED
@@ -169,9 +178,11 @@ class Testblock:
         return new_state
 
     def _succeeded_state(self):
+        self._wait_for_transition_is_not_none()
         pass
 
     def _error_state(self):
+        self._wait_for_transition_is_not_none()
         pass
 
 class TestblockError(Exception):
