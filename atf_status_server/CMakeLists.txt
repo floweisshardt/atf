@@ -2,11 +2,11 @@ cmake_minimum_required(VERSION 2.8.3)
 project(atf_status_server)
 
 find_package(catkin REQUIRED COMPONENTS
-    rospy
-    message_generation
-    std_msgs
     atf_msgs
+    message_generation
     rosbridge_server
+    rospy
+    std_msgs
 )
 
 ################################################
@@ -20,8 +20,8 @@ add_service_files(
 
 generate_messages(
     DEPENDENCIES
-        std_msgs
         atf_msgs
+        std_msgs
 )
 
 ###################################
@@ -29,11 +29,11 @@ generate_messages(
 ###################################
 
 catkin_package(CATKIN_DEPENDS
+    atf_msgs
     message_runtime
+    rosbridge_server
     rospy
     std_msgs
-    atf_msgs
-    rosbridge_server
 )
 
 ###########
@@ -50,7 +50,7 @@ include_directories(
 
 install(
     PROGRAMS
-        scripts/atf_status_server_node.py
+        scripts/${PROJECT_NAME}_node.py
     DESTINATION
         ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
