@@ -24,9 +24,8 @@ add_message_files(
         ObstacleDistance.msg
         ObstacleDistanceLink.msg
         Resources.msg
-        Status.msg
         TestStatus.msg
-        TestblockStatus.msg
+        TestblockState.msg
         TestblockTrigger.msg
 )
 
