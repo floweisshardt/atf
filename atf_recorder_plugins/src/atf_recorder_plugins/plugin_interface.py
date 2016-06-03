@@ -4,23 +4,16 @@ import rosgraph
 import rosservice
 import socket
 from atf_recorder import BagfileWriter
-from rosapi.srv import Nodes, Topics, Publishers, Subscribers
 from atf_msgs.msg import Api, NodeApi, InterfaceItem
 from rosnode import ROSNodeIOException
 
 class RecordInterface:
     def __init__(self, write_lock, bag_file):
-        self.rosapi_service_nodes = rospy.ServiceProxy('/rosapi/nodes', Nodes)
-        self.rosapi_service_topics = rospy.ServiceProxy('/rosapi/topics', Topics)
-        self.rosapi_service_publishers = rospy.ServiceProxy('/rosapi/publishers', Publishers)
-        self.rosapi_service_subscribers = rospy.ServiceProxy('/rosapi/subscribers', Subscribers)
-
         self.master = rosgraph.Master("/rosnode")
-
         self.BfW = BagfileWriter(bag_file, write_lock)
 
-    def trigger_callback(self, msg):
-        #print "msg=", msg
+    def trigger_callback(self, goal):
+        #print "RecordInterface goal=", goal
 
         try:
             publishers, subscribers, services = self.master.getSystemState()
@@ -47,7 +40,7 @@ class RecordInterface:
         #print "api=\n", api
 
         # write api to bagfile
-        self.BfW.write_to_bagfile("/atf/" + msg.name + "/api", api, rospy.Time.now())
+        self.BfW.write_to_bagfile("/atf/" + goal.name + "/api", api, rospy.Time.now())
 
     def get_service_types(self, services):
         service_types = []
