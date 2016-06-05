@@ -1,4 +1,0 @@
-string name
-atf_msgs/Trigger trigger
----
-bool feedback
