@@ -18,7 +18,7 @@ from copy import deepcopy, copy
 
 class GenerateTests:
     def __init__(self, arguments):
-
+        self.ns = "/atf/"
         self.print_output = "ATF: Test generation done!"
         self.package_name = arguments[1]
         self.package_path = arguments[2]
@@ -29,12 +29,12 @@ class GenerateTests:
             self.test_suite_file = os.path.join(self.package_path, self.generation_config["test_suite_file"])
             self.bagfile_output = os.path.join(self.package_path, self.generation_config["bagfile_output"])
 
-            if self.generation_config["result_yaml_output"] != "":
-                self.yaml_output = os.path.join(self.package_path, self.generation_config["result_yaml_output"])
+            if self.generation_config["yaml_output"] != "":
+                self.yaml_output = os.path.join(self.package_path, self.generation_config["yaml_output"])
             else:
-                self.yaml_output = self.generation_config["result_yaml_output"]
+                self.yaml_output = self.generation_config["yaml_output"]
 
-            self.json_output = os.path.join(self.package_path, self.generation_config["result_json_output"])
+            self.json_output = os.path.join(self.package_path, self.generation_config["json_output"])
             self.time_limit_recording = self.generation_config["time_limit_recording"]
             self.time_limit_analysing = self.generation_config["time_limit_analysing"]
             self.time_limit_uploading = self.generation_config["time_limit_uploading"]
@@ -67,28 +67,15 @@ class GenerateTests:
         self.test_generated_recording_path = os.path.join(self.test_generated_path, "recording")
         self.test_generated_analysing_path = os.path.join(self.test_generated_path, "analysing")
         self.create_folders()
+        self.generate_test_list()
 
     def create_folders(self):
-        # Empty folders
-        if os.path.exists(self.test_generated_path):
+        # delete of test_generated directory and create new one
+        if os.path.exists(self.test_generated_recording_path):
             shutil.rmtree(self.test_generated_path)
+        os.makedirs(self.test_generated_path)
         os.makedirs(self.test_generated_recording_path)
         os.makedirs(self.test_generated_analysing_path)
-
-        if os.path.exists(self.bagfile_output):
-            shutil.rmtree(self.bagfile_output)
-        os.makedirs(self.bagfile_output)
-
-        if os.path.exists(self.json_output):
-            shutil.rmtree(self.json_output)
-        os.makedirs(self.json_output)
-
-        if self.yaml_output != "":
-            if os.path.exists(self.yaml_output):
-                shutil.rmtree(self.yaml_output)
-            os.makedirs(self.yaml_output)
-
-        self.generate_test_list()
 
     def generate_tests(self):
         em = lxml.builder.ElementMaker()
@@ -98,22 +85,29 @@ class GenerateTests:
         test = em.test
         node = em.node
         param = em.param
-        #rosparam = em.rosparam
+        rosparam = em.rosparam
 
         for item in self.test_list:
             robot_config = self.load_yaml(os.path.join(self.package_path, self.generation_config["robot_config_path"], self.test_list[item]["robot"], "robot_config.yaml"))
+            
+            #print "self.test_list[item]=", self.test_list[item]
 
             # Recording
             test_record = launch(
-                include(arg(name="test_status_list", value="$(find " + self.package_name + ")/test_status.yaml"),
-                        file="$(find atf_status_server)/launch/atf_status_server.launch"),
-                param(name="test_name", value=item),
-                param(name="test_config", value=self.test_list[item]["test_config"]),
-                param(name="scene_config", value=self.test_list[item]["scene_config"]),
-                param(name="robot_config", value="$(find " + self.package_name + ")/" + os.path.join(self.generation_config["robot_config_path"], self.test_list[item]["robot"], "robot_config.yaml")),
-                param(name="number_of_tests", value=str(len(self.test_list))),
-                test({'test-name': "recording_" + item, 'pkg': self.package_name, 'type': self.generation_config['app_executable'],
-                      'time-limit': str(self.time_limit_recording)})
+                arg(name="robot", value=self.test_list[item]["robot"]),
+                #include(arg(name="test_status_list", value="$(find " + self.package_name + ")/test_status.yaml"),
+                #        file="$(find atf_status_server)/launch/atf_status_server.launch"),
+                param(name=self.ns + "test_name", value=item),
+                param(name=self.ns + "test_config_name", value=self.test_list[item]["test_config"]),
+                rosparam(param=self.ns + "test_config", command="load", file="$(find " + self.package_name + ")/" + self.generation_config["test_config_file"]),
+                param(name=self.ns + "scene_config_name", value=self.test_list[item]["scene_config"]),
+                #rosparam(param=self.ns + "scene_config", command="load", file="$(find " + self.package_name + ")/" + self.generation_config["scene_config_file"]),
+                param(name=self.ns + "robot_config_name", value=self.test_list[item]["robot"]),
+                rosparam(param=self.ns + "robot_config", command="load", file="$(find " + self.package_name + ")/" + os.path.join(self.generation_config["robot_config_path"], self.test_list[item]["robot"], "robot_config.yaml")),
+                param(name=self.ns + "bagfile_output", value=self.bagfile_output),
+                param(name=self.ns + "json_output", value=self.json_output),
+                param(name=self.ns + "yaml_output", value=self.yaml_output),
+                #param(name=self.ns + "number_of_tests", value=str(len(self.test_list)))
             )
 
             for config_param in self.test_list[item]:
@@ -121,23 +115,24 @@ class GenerateTests:
                     continue
                 test_record.append(param(name=config_param, value=str(self.test_list[item][config_param])))
 
-            test_record.append(arg(name="robot", value=self.test_list[item]["robot"]))
-
             if robot_config["robot_bringup_launch"] != "":
                 test_record.append(include(file="$(find " + self.package_name + ")/" + robot_config["robot_bringup_launch"]))
 
             if self.generation_config["additional_launch_file"] != "":
                 test_record.append(include(file="$(find " + self.package_name + ")/" + self.generation_config["additional_launch_file"]))
 
-            test_record.append(node(param(name="/test_config_file", value="$(find " + self.package_name + ")/" + self.generation_config["test_config_file"]),
-                                    param(name="/bagfile_output", value=self.bagfile_output),
-                                    name="atf_recorder", pkg="atf_recorder", type="recorder_core.py", output="screen"))
+            #test_record.append(node(param(name="/test_config_file", value="$(find " + self.package_name + ")/" + self.generation_config["test_config_file"]),
+            #                        param(name="/bagfile_output", value=self.bagfile_output),
+            #                        name="atf_recorder", pkg="atf_recorder", type="recorder_core.py", output="screen"))
 
             for params in robot_config["additional_parameter"]:
                 test_record.append(param(name=str(params["name"]), value=str(params["value"])))
 
             for args in robot_config["additional_arguments"]:
                 test_record.append(arg(name=str(args["name"]), value=str(args["value"])))
+
+            test_record.append(test({'test-name': "recording_" + item, 'pkg': self.package_name, 'type': self.generation_config['app_executable'],
+                      'time-limit': str(self.time_limit_recording)}))
 
             xmlstr = minidom.parseString(ElementTree.tostring(test_record)).toprettyxml(indent="    ")
             filepath = os.path.join(self.test_generated_recording_path, "recording_" + item) + ".test"
@@ -148,12 +143,12 @@ class GenerateTests:
             test_analyse = launch(
                 include(arg(name="test_status_list", value="$(find " + self.package_name + ")/test_status.yaml"),
                         file="$(find atf_status_server)/launch/atf_status_server.launch"),
-                param(name="analysing/test_name", value=item),
-                param(name="analysing/test_config", value=self.test_list[item]["test_config"]),
-                param(name="analysing/test_config_file", value="$(find " + self.package_name + ")/" + self.generation_config["test_config_file"]),
-                param(name="analysing/test_generated_path", value="$(find " + self.package_name + ")/test_generated"),
-                param(name="analysing/result_yaml_output", value=self.yaml_output),
-                param(name="analysing/result_json_output", value=self.json_output),
+                param(name="test_name", value=item),
+                param(name="test_config", value=self.test_list[item]["test_config"]),
+                param(name="test_config_file", value="$(find " + self.package_name + ")/" + self.generation_config["test_config_file"]),
+                param(name="test_generated_path", value="$(find " + self.package_name + ")/test_generated"),
+                param(name="yaml_output", value=self.yaml_output),
+                param(name="json_output", value=self.json_output),
                 param(name="number_of_tests", value=str(len(self.test_list))),
                 test({'test-name': "analysing_" + item, 'pkg': "atf_core", 'type': "analyser.py",
                       'time-limit': str(self.time_limit_analysing)}),
@@ -172,8 +167,8 @@ class GenerateTests:
                 param(name="merging/test_name", value=item),
                 param(name="merging/test_config", value=self.test_list[item]["test_config"]),
                 param(name="merging/test_config_file", value="$(find " + self.package_name + ")/" + self.generation_config["test_config_file"]),
-                param(name="merging/result_yaml_output", value=self.yaml_output),
-                param(name="merging/result_json_output", value=self.json_output),
+                param(name="merging/yaml_output", value=self.yaml_output),
+                param(name="merging/json_output", value=self.json_output),
                 test({'test-name': "merging", 'pkg': "atf_core", 'type': "merger.py",
                       'time-limit': "10"})
             )

@@ -1,135 +1,75 @@
 #!/usr/bin/env python
 import rospy
-import rosparam
-import json
-import yaml
-import shutil
-import os
+import atf_core
 
-from atf_msgs.msg import TestStatus, Status, TestblockStatus
-from copy import copy
-
+from atf_msgs.msg import TestblockState
 
 class ATF:
-    def __init__(self, testblocks):
+    def __init__(self, mode = "recording"):
+        self.testblocks = {}
+        self.started = False
+        self.stopped = False
+        atf_configuration_parser = atf_core.ATFConfigurationParser()
+        self.config = atf_configuration_parser.config
+        #print "atf: config=", self.config
 
-        self.testblocks = testblocks
-        self.error = False
-        self.error_outside_testblock = False
-        self.testblock_error = {}
-        self.test_name = rosparam.get_param("/analysing/test_name")
-        self.number_of_tests = rosparam.get_param("/number_of_tests")
-
-        self.test_status_publisher = rospy.Publisher("atf/test_status", TestStatus, queue_size=10)
-
-        # Wait for subscriber
-        num_subscriber = self.test_status_publisher.get_num_connections()
-        while num_subscriber == 0:
-            num_subscriber = self.test_status_publisher.get_num_connections()
-
-        test_status = TestStatus()
-        test_status.test_name = self.test_name
-        test_status.status_analysing = 1
-        test_status.total = self.number_of_tests
-
-        self.test_status_publisher.publish(test_status)
-
-    def check_states(self):
-        running_testblocks = copy(self.testblocks)
-        while not rospy.is_shutdown() and not self.error and len(running_testblocks) != 0:
-            for testblock in self.testblocks:
-                try:
-                    test_status = TestStatus()
-                    test_status.test_name = self.test_name
-                    test_status.status_analysing = 1
-
-                    testblock_status = TestblockStatus()
-                    testblock_status.name = testblock.testblock_name
-                    testblock_status.status = testblock.get_state()
-
-                    test_status.testblock.append(testblock_status)
-                    test_status.total = self.number_of_tests
-
-                    self.test_status_publisher.publish(test_status)
-
-                    if testblock.get_state() == Status.ERROR:
-                        self.testblock_error[testblock.testblock_name] = Status.ERROR
-                        rospy.logwarn("An error occured during analysis in '" + testblock.testblock_name +
-                                      "', no useful " + "results available.")
-                        self.error = True
-                        break
-                    elif testblock.get_state() == Status.FINISHED:
-                        running_testblocks.remove(testblock)
-                except ValueError:
-                    pass
-
-        if rospy.is_shutdown():
-            rospy.logerr("ATF: error outside of testblock")
-            self.error_outside_testblock = True
-
-        return self.export_to_file()
-
-    def export_to_file(self):
-        doc = {}
-        overall_groundtruth_result = None
-        overall_groundtruth_error_message = "groundtruth missmatch for: "
-        if self.error_outside_testblock:
-            doc["error"] = "An error occured outside monitored testblocks. Aborted analysis..."
+        # check for mode (recording or analysing)
+        #print "atf: mode=", mode
+        if mode == "recording":
+            self.recorder_handle = atf_core.ATFRecorder(self.config)
+        elif mode == "analysing":
+            pass
         else:
-            for item in self.testblocks:
+            raise TestblockError("unknown mode '%s', supported modes are 'recording' and 'analysing'." % mode)
+        
 
-                test_status = TestStatus()
-                test_status.test_name = self.test_name
-                test_status.status_analysing = 1
+    def add_testblock(self, name):
+        #print "atf: test_config.keys=", self.config["test_config"][self.config["test_config_name"]].keys()
+        if name in self.config["test_config"][self.config["test_config_name"]].keys():
+            #print "add", name
+            metrics = self.config["test_config"][self.config["test_config_name"]][name]
+            #print "metrics=", metrics
+            self.testblocks[name] = atf_core.Testblock(name, [], self.recorder_handle)
+        else:
+            raise ATFError("Testblock '%s' not in test config." % name)
 
-                testblock_status = TestblockStatus()
-                testblock_status.name = item.testblock_name
-                testblock_status.status = item.get_state()
+    def start(self):
+        if self.stopped:
+            raise ATFError("Calling ATF start while ATF is already stopped.")
+        if self.started:
+            raise ATFError("Calling ATF start while ATF is already started.")
+        self.started = True
+        for testblock in self.testblocks.values():
+            testblock._run()
+            
+    def stop(self):
+        if not self.started:
+            raise ATFError("Calling ATF stop before ATF has been started.")
+        if self.stopped:
+            raise ATFError("Calling ATF stop while ATF is already stopped.")
+        self.stopped = True
 
-                test_status.testblock.append(testblock_status)
-                test_status.total = self.number_of_tests
+        # stop testblocks if not already stopped
+        for testblock_name, testblock in self.testblocks.items():
+            if testblock.get_state() not in testblock.m.endStates and testblock.trigger == None:
+                rospy.logwarn("Stopping testblock '%s' automatically because ATF stop is trigged and testblock is not in an end state.", testblock_name)
+                testblock.stop()
+        
+        # wait for all testblocks to finish
+        for testblock_name, testblock in self.testblocks.items():
+            while not testblock._finished():
+                continue
 
-                self.test_status_publisher.publish(test_status)
+        # check result for each testblock
+        error = False
+        message = ""
+        for testblock_name, testblock in self.testblocks.items():
+            state = testblock.get_state()
+            if not state == TestblockState.SUCCEEDED:
+                error = True
+                message += "Testblock '%s' did not succeed (finished with state '%d');\n " % (testblock_name, state)
+        if error:
+            raise ATFError(message)
 
-                if item.testblock_name in self.testblock_error:
-                    doc.update({item.testblock_name: {"status": "error"}})
-                else:
-                    for metric in item.metrics:
-                        #print "metric=", metric
-                        result = metric.get_result()
-                        #print "result=", result
-                        if result is not False:
-                            (m, data, groundtruth_result, groundtruth, groundtruth_epsilon, details) = result
-                            if item.testblock_name not in doc:
-                                doc[item.testblock_name] = {}
-                            if m not in doc[item.testblock_name]:
-                                doc[item.testblock_name][m] = []
-                            doc[item.testblock_name][m].append({"data":data, "groundtruth_result": groundtruth_result, "groundtruth": groundtruth, "groundtruth_epsilon": groundtruth_epsilon, "details": details})
-                            if groundtruth_result == None:
-                                pass
-                            elif not groundtruth_result:
-                                overall_groundtruth_result = False
-                                overall_groundtruth_error_message += item.testblock_name + "(" + m + ": data=" + str(data) + ", groundtruth=" + str(groundtruth) + "+-" + str(groundtruth_epsilon) + " details:" + str(details) + "); "
-                        else:
-                            item.exit()
-                            break
-
-        test_status = TestStatus()
-        test_status.test_name = self.test_name
-        test_status.status_analysing = 3
-        test_status.total = self.number_of_tests
-
-        self.test_status_publisher.publish(test_status)
-
-        shutil.copyfile(os.path.join(rosparam.get_param("analysing/test_generated_path"), "test_list.json"), os.path.join(rosparam.get_param("/analysing/result_json_output"), "test_list.json"))
-
-        filename = rosparam.get_param("/analysing/result_json_output") + self.test_name + ".json"
-        stream = file(filename, 'w')
-        json.dump(copy(doc), stream)
-
-        filename = rosparam.get_param("/analysing/result_yaml_output") + self.test_name + ".yaml"
-        if not filename == "":
-            stream = file(filename, 'w')
-            yaml.dump(copy(doc), stream, default_flow_style=False)
-
-        return overall_groundtruth_result, overall_groundtruth_error_message
+class ATFError(Exception):
+    pass

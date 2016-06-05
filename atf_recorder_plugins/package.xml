@@ -16,7 +16,6 @@
 
     <buildtool_depend>catkin</buildtool_depend>
     <depend>atf_msgs</depend>
-    <depend>atf_recorder</depend>
     <depend>rospy</depend>
 
 </package>

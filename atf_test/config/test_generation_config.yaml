@@ -7,8 +7,8 @@ app_executable: "application.py"                                    # Name of th
 additional_launch_file: "launch/application.launch"                 # Path of the additional launch file
 
 bagfile_output: "/tmp/atf_test/data/"                               # Folder for bagfile output
-result_json_output: "/tmp/atf_test/results_json/"                   # Folder for the json files output
-result_yaml_output: "/tmp/atf_test/results_yaml/"                   # Folder for the yaml files output
+json_output: "/tmp/atf_test/results_json/"                          # Folder for the json files output
+yaml_output: "/tmp/atf_test/results_yaml/"                          # Folder for the yaml files output
 
 upload_data: false
 upload_result: false

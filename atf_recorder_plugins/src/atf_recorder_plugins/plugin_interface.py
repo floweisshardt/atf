@@ -3,25 +3,37 @@ import rospy
 import rosgraph
 import rosservice
 import socket
-from atf_recorder import BagfileWriter
+import httplib
 from atf_msgs.msg import Api, NodeApi, InterfaceItem
 from rosnode import ROSNodeIOException
 
 class RecordInterface:
-    def __init__(self, write_lock, bag_file):
-        self.master = rosgraph.Master("/rosnode")
-        self.BfW = BagfileWriter(bag_file, write_lock)
+    def __init__(self, write_lock, bag_file_writer):
+        self.bag_file_writer = bag_file_writer
 
     def trigger_callback(self, goal):
         #print "RecordInterface goal=", goal
 
-        try:
-            publishers, subscribers, services = self.master.getSystemState()
-            #pub_topics = self.master.getPublishedTopics('/subscriber1')
-            topic_types = self.master.getTopicTypes()
-            service_types = self.get_service_types(services)
-        except socket.error:
-            raise ROSNodeIOException("Unable to communicate with master!")
+        publishers = {}
+        subscribers = {}
+        services = {}
+        topic_types = {}
+        service_types = {}
+
+        while not rospy.is_shutdown():
+            try:
+                self.master = rosgraph.Master("plugin_interface_" + goal.name)
+                publishers, subscribers, services = self.master.getSystemState()
+                topic_types = self.master.getTopicTypes()
+                service_types = self.get_service_types(services)
+            except socket.error:
+                rospy.logerr("Unable to communicate with master!")
+                continue
+            except httplib.HTTPException:
+                rospy.logerr("Cannot get api from master: HTTPException")
+                continue
+            break
+
 
         #print "publishers=", publishers
         #print "subscribers=", subscribers
@@ -40,7 +52,7 @@ class RecordInterface:
         #print "api=\n", api
 
         # write api to bagfile
-        self.BfW.write_to_bagfile("/atf/" + goal.name + "/api", api, rospy.Time.now())
+        self.bag_file_writer.write_to_bagfile("/atf/" + goal.name + "/api", api, rospy.Time.now())
 
     def get_service_types(self, services):
         service_types = []

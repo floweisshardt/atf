@@ -46,6 +46,9 @@ function(atf_test)
         add_rostest(test_generated/merging.test DEPENDENCIES atf_${PROJECT_NAME}_analysing)
         add_rostest(test_generated/uploading.test DEPENDENCIES atf_${PROJECT_NAME}_merging)
 
+        #TODO: add target to clean old test data and test results directories (as dependency to clean_test_results_${PROJECT_NAME})
+
+
         add_custom_target(atf_${PROJECT_NAME}_recording
             COMMAND echo "rrrrrrrrrrrrrrrrrrrrrrrrrrrrrrecording"
             DEPENDS 

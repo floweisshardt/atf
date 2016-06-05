@@ -4,7 +4,6 @@ project(atf_core)
 find_package(catkin REQUIRED COMPONENTS
     atf_metrics
     atf_msgs
-    atf_recorder
     atf_recorder_plugins
     atf_status_server
 #    obstacle_distance
@@ -21,7 +20,6 @@ catkin_package(
     CATKIN_DEPENDS
         atf_metrics
         atf_msgs
-        atf_recorder
         atf_recorder_plugins
         atf_status_server
     #    obstacle_distance
