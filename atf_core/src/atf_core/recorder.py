@@ -127,7 +127,7 @@ class ATFRecorder:
                     except KeyError:
                         testblock_list[testblock] = self.config["robot_config"][metric]["topics"]
                     else:
-                        for topic in self.robot_config_file[metric]["topics"]:
+                        for topic in self.config["robot_config"][metric]["topics"]:
                             #add heading "/" to all topics to make them global (rostopic.get_topic_class() cannot handle non global topics)
                             if topic[0] != "/":
                                 topic = "/" + topic
