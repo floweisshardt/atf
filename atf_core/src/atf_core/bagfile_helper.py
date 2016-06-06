@@ -21,6 +21,7 @@ class BagfileWriter:
         :type timestamp: rospy.Time
         :return:
         """
+        #print "bfw:", topic, timestamp
         self.lock.acquire()
         self.bag_file.write(topic, data, timestamp)
         self.lock.release()

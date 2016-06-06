@@ -16,10 +16,9 @@ class CalculateTimeParamHandler:
         """
         metrics = []
 
-        # special case for time (can have no parameters and thus is no list)
-        if params == None:
-            metrics.append(CalculateTime(None, None))
-            return metrics
+        # special case for time (can have empty list of parameters, thus adding dummy groundtruth information)
+        if params == []:
+            params.append({"groundtruth":None, "groundtruth_epsilon":None})
 
         if type(params) is not list:
             rospy.logerr("metric config not a list")
@@ -43,31 +42,32 @@ class CalculateTime:
         Class for calculating the time between the trigger 'ACTIVATE' and 'FINISH' on the topic assigned to the
         testblock.
         """
-        self.start_time = rospy.Time()
-        self.stop_time = rospy.Time()
+        self.start_time = None
+        self.stop_time = None
         self.groundtruth = groundtruth
         self.groundtruth_epsilon = groundtruth_epsilon
         self.finished = False
 
-    def start(self):
-        self.start_time = rospy.Time.now()
+    def start(self, timestamp):
+        self.start_time = timestamp
 
-    def stop(self):
-        self.stop_time = rospy.Time.now()
+    def stop(self, timestamp):
+        self.stop_time = timestamp
         self.finished = True
 
-    def pause(self):
+    def pause(self, timestamp):
         # TODO: Implement pause time calculation
         pass
 
-    def purge(self):
+    def purge(self, timestamp):
+        # TODO: Implement purge as soon as pause is implemented
         pass
 
     def get_result(self):
         groundtruth_result = None
         details = None
         if self.finished:
-            data = round(self.stop_time.to_sec() - self.start_time.to_sec(), 3)
+            data = round((self.stop_time - self.start_time).to_sec(), 3)
             if self.groundtruth != None and self.groundtruth_epsilon != None:
                 if math.fabs(self.groundtruth - data) <= self.groundtruth_epsilon:
                     groundtruth_result = True

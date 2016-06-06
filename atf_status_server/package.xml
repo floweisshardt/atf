@@ -15,12 +15,14 @@
     <license>LGPL</license>
 
     <buildtool_depend>catkin</buildtool_depend>
+
     <build_depend>message_generation</build_depend>
     <exec_depend>message_runtime</exec_depend>
 
-    <depend>rospy</depend>
-    <depend>std_msgs</depend>
     <depend>atf_msgs</depend>
     <depend>rosbridge_server</depend>
+    <depend>roslaunch</depend>
+    <depend>rospy</depend>
+    <depend>std_msgs</depend>
 
 </package>
