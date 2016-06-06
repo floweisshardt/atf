@@ -1,4 +1,4 @@
 - git:
-    uri: 'git@github.com:ipa-fmw/ros_comm.git'
+    uri: 'https://github.com/ipa-fmw/ros_comm.git'
     local-name: ros_comm
     version: indigo-devel
