@@ -168,11 +168,11 @@ class GenerateTests:
 
             # Merging
             test_merge = launch(
-                param(name="merging/test_name", value=test_name),
-                param(name="merging/test_config", value=self.test_list[test_name]["test_config"]),
-                param(name="merging/test_config_file", value="$(find " + self.package_name + ")/" + self.generation_config["test_config_file"]),
-                param(name="merging/yaml_output", value=self.yaml_output),
-                param(name="merging/json_output", value=self.json_output),
+                param(name=self.ns + "test_name", value=test_name),
+                param(name=self.ns + "test_config_name", value=self.test_list[test_name]["test_config"]),
+                rosparam(param=self.ns + "test_config", command="load", file="$(find " + self.package_name + ")/" + self.generation_config["test_config_file"]),
+                param(name=self.ns + "yaml_output", value=self.yaml_output),
+                param(name=self.ns + "json_output", value=self.json_output),
                 test({'test-name': "merging", 'pkg': "atf_core", 'type': "merger.py",
                       'time-limit': "10"})
             )

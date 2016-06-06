@@ -12,7 +12,7 @@ import sys
 
 import atf_metrics
 
-from atf_core import ATF, ATFConfigurationParser
+from atf_core import ATFConfigurationParser
 from atf_msgs.msg import TestblockState, TestblockTrigger
 
 
@@ -174,9 +174,9 @@ class TestAnalysing(unittest.TestCase):
         analyser.wait_for_all_testblocks_to_finish()
         #self.assertTrue(analyser.test_list, analyser.parsing_error_message)
         groundtruth_result, groundtruth_error_message, result = analyser.get_result()
+        analyser.export_to_file(result)
         if groundtruth_result != None:
             self.assertTrue(groundtruth_result, groundtruth_error_message)
-        analyser.export_to_file(result)
 
 
 if __name__ == '__main__':
