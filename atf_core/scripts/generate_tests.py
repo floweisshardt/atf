@@ -87,33 +87,33 @@ class GenerateTests:
         param = em.param
         rosparam = em.rosparam
 
-        for item in self.test_list:
-            robot_config = self.load_yaml(os.path.join(self.package_path, self.generation_config["robot_config_path"], self.test_list[item]["robot"], "robot_config.yaml"))
+        for test_name in self.test_list:
+            robot_config = self.load_yaml(os.path.join(self.package_path, self.generation_config["robot_config_path"], self.test_list[test_name]["robot"], "robot_config.yaml"))
             
-            #print "self.test_list[item]=", self.test_list[item]
+            #print "self.test_list[test_name]=", self.test_list[test_name]
 
             # Recording
             test_record = launch(
-                arg(name="robot", value=self.test_list[item]["robot"]),
+                #arg(name="robot", value=self.test_list[test_name]["robot"]),
                 #include(arg(name="test_status_list", value="$(find " + self.package_name + ")/test_status.yaml"),
                 #        file="$(find atf_status_server)/launch/atf_status_server.launch"),
-                param(name=self.ns + "test_name", value=item),
-                param(name=self.ns + "test_config_name", value=self.test_list[item]["test_config"]),
+                param(name=self.ns + "test_name", value=test_name),
+                param(name=self.ns + "test_config_name", value=self.test_list[test_name]["test_config"]),
                 rosparam(param=self.ns + "test_config", command="load", file="$(find " + self.package_name + ")/" + self.generation_config["test_config_file"]),
-                param(name=self.ns + "scene_config_name", value=self.test_list[item]["scene_config"]),
+                param(name=self.ns + "scene_config_name", value=self.test_list[test_name]["scene_config"]),
                 #rosparam(param=self.ns + "scene_config", command="load", file="$(find " + self.package_name + ")/" + self.generation_config["scene_config_file"]),
-                param(name=self.ns + "robot_config_name", value=self.test_list[item]["robot"]),
-                rosparam(param=self.ns + "robot_config", command="load", file="$(find " + self.package_name + ")/" + os.path.join(self.generation_config["robot_config_path"], self.test_list[item]["robot"], "robot_config.yaml")),
+                param(name=self.ns + "robot_config_name", value=self.test_list[test_name]["robot"]),
+                rosparam(param=self.ns + "robot_config", command="load", file="$(find " + self.package_name + ")/" + os.path.join(self.generation_config["robot_config_path"], self.test_list[test_name]["robot"], "robot_config.yaml")),
                 param(name=self.ns + "bagfile_output", value=self.bagfile_output),
                 param(name=self.ns + "json_output", value=self.json_output),
                 param(name=self.ns + "yaml_output", value=self.yaml_output),
                 #param(name=self.ns + "number_of_tests", value=str(len(self.test_list)))
             )
 
-            for config_param in self.test_list[item]:
+            for config_param in self.test_list[test_name]:
                 if config_param == "test_config" or config_param == "scene_config" or config_param == "robot":
                     continue
-                test_record.append(param(name=config_param, value=str(self.test_list[item][config_param])))
+                test_record.append(param(name=config_param, value=str(self.test_list[test_name][config_param])))
 
             if robot_config["robot_bringup_launch"] != "":
                 test_record.append(include(file="$(find " + self.package_name + ")/" + robot_config["robot_bringup_launch"]))
@@ -131,41 +131,45 @@ class GenerateTests:
             for args in robot_config["additional_arguments"]:
                 test_record.append(arg(name=str(args["name"]), value=str(args["value"])))
 
-            test_record.append(test({'test-name': "recording_" + item, 'pkg': self.package_name, 'type': self.generation_config['app_executable'],
+            test_record.append(test({'test-name': "recording_" + test_name, 'pkg': self.package_name, 'type': self.generation_config['app_executable'],
                       'time-limit': str(self.time_limit_recording)}))
 
             xmlstr = minidom.parseString(ElementTree.tostring(test_record)).toprettyxml(indent="    ")
-            filepath = os.path.join(self.test_generated_recording_path, "recording_" + item) + ".test"
+            filepath = os.path.join(self.test_generated_recording_path, "recording_" + test_name) + ".test"
             with open(filepath, "w") as f:
                 f.write(xmlstr)
 
             # Analysing
             test_analyse = launch(
-                include(arg(name="test_status_list", value="$(find " + self.package_name + ")/test_status.yaml"),
-                        file="$(find atf_status_server)/launch/atf_status_server.launch"),
-                param(name="test_name", value=item),
-                param(name="test_config", value=self.test_list[item]["test_config"]),
-                param(name="test_config_file", value="$(find " + self.package_name + ")/" + self.generation_config["test_config_file"]),
-                param(name="test_generated_path", value="$(find " + self.package_name + ")/test_generated"),
-                param(name="yaml_output", value=self.yaml_output),
-                param(name="json_output", value=self.json_output),
-                param(name="number_of_tests", value=str(len(self.test_list))),
-                test({'test-name': "analysing_" + item, 'pkg': "atf_core", 'type': "analyser.py",
+                #include(arg(name="test_status_list", value="$(find " + self.package_name + ")/test_status.yaml"),
+                #        file="$(find atf_status_server)/launch/atf_status_server.launch"),
+                param(name=self.ns + "test_name", value=test_name),
+                param(name=self.ns + "test_config_name", value=self.test_list[test_name]["test_config"]),
+                rosparam(param=self.ns + "test_config", command="load", file="$(find " + self.package_name + ")/" + self.generation_config["test_config_file"]),
+                #param(name="test_config", value=self.test_list[test_name]["test_config"]),
+                #param(name="test_config_file", value="$(find " + self.package_name + ")/" + self.generation_config["test_config_file"]),
+                param(name=self.ns + "test_generated_path", value="$(find " + self.package_name + ")/test_generated"),
+                #param(name="yaml_output", value=self.yaml_output),
+                #param(name="json_output", value=self.json_output),
+                param(name=self.ns + "json_output", value=self.json_output),
+                param(name=self.ns + "yaml_output", value=self.yaml_output),
+                #param(name="number_of_tests", value=str(len(self.test_list))),
+                test({'test-name': "analysing_" + test_name, 'pkg': "atf_core", 'type': "analyser.py",
                       'time-limit': str(self.time_limit_analysing)}),
                 node(name="player", pkg="rosbag", type="play", output="log", args="--delay=5.0 --rate=10 --clock " +
-                                                                                     self.bagfile_output + item +
+                                                                                     self.bagfile_output + test_name +
                                                                                      ".bag")
             )
 
             xmlstr = minidom.parseString(ElementTree.tostring(test_analyse)).toprettyxml(indent="    ")
-            filepath = os.path.join(self.test_generated_analysing_path, "analysing_" + item) + ".test"
+            filepath = os.path.join(self.test_generated_analysing_path, "analysing_" + test_name) + ".test"
             with open(filepath, "w") as f:
                 f.write(xmlstr)
 
             # Merging
             test_merge = launch(
-                param(name="merging/test_name", value=item),
-                param(name="merging/test_config", value=self.test_list[item]["test_config"]),
+                param(name="merging/test_name", value=test_name),
+                param(name="merging/test_config", value=self.test_list[test_name]["test_config"]),
                 param(name="merging/test_config_file", value="$(find " + self.package_name + ")/" + self.generation_config["test_config_file"]),
                 param(name="merging/yaml_output", value=self.yaml_output),
                 param(name="merging/json_output", value=self.json_output),

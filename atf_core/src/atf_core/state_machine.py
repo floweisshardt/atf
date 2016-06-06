@@ -29,6 +29,8 @@ class StateMachine:
         self.startState = name
 
     def get_current_state(self):
+#        if self.handler == None:
+#            return None
         return self.handlers.keys()[self.handlers.values().index(self.handler)]
 
     @threaded

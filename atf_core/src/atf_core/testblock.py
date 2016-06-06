@@ -45,13 +45,13 @@ class Testblock:
     def _wait_for_transition_is_done(self):
         while not rospy.is_shutdown() and not self.trigger is None:
             if self.exception != None:
-                raise TestblockError(self.exception)
+                raise ATFTestblockError(self.exception)
             continue
 
     def _wait_while_transition_is_active(self):
         while not rospy.is_shutdown() and self.trigger is None:
             if self.exception != None:
-                raise TestblockError(self.exception)
+                raise ATFTestblockError(self.exception)
             continue
 
     def get_state(self):
@@ -66,9 +66,9 @@ class Testblock:
         self._wait_for_transition_is_done()
 
         if not self.atf_started:
-            raise TestblockError("Calling purge for testblock '%s' before ATF has been started." % self.name)
+            raise ATFTestblockError("Calling purge for testblock '%s' before ATF has been started." % self.name)
         if self.get_state() in self.m.endStates:
-            raise TestblockError("Calling purge for testblock '%s' while testblock already stopped." % self.name)
+            raise ATFTestblockError("Calling purge for testblock '%s' while testblock already stopped." % self.name)
 
         # set new transition trigger
         t = TestblockTrigger()
@@ -88,9 +88,9 @@ class Testblock:
         self._wait_for_transition_is_done()
 
         if not self.atf_started:
-            raise TestblockError("Calling start for testblock '%s' before ATF has been started." % self.name)
+            raise ATFTestblockError("Calling start for testblock '%s' before ATF has been started." % self.name)
         if self.get_state() in self.m.endStates:
-            raise TestblockError("Calling start for testblock '%s' while testblock already stopped." % self.name)
+            raise ATFTestblockError("Calling start for testblock '%s' while testblock already stopped." % self.name)
 
         # set new transition trigger
         t = TestblockTrigger()
@@ -111,9 +111,9 @@ class Testblock:
         self._wait_for_transition_is_done()
 
         if not self.atf_started:
-            raise TestblockError("Calling pause for testblock '%s' before ATF has been started." % self.name)
+            raise ATFTestblockError("Calling pause for testblock '%s' before ATF has been started." % self.name)
         if self.get_state() in self.m.endStates:
-            raise TestblockError("Calling pause for testblock '%s' while testblock already stopped." % self.name)
+            raise ATFTestblockError("Calling pause for testblock '%s' while testblock already stopped." % self.name)
 
         # set new transition trigger
         t = TestblockTrigger()
@@ -133,9 +133,12 @@ class Testblock:
         self._wait_for_transition_is_done()
 
         if not self.atf_started:
-            raise TestblockError("Calling stop for testblock '%s' before ATF has been started." % self.name)
-        if self.get_state() in self.m.endStates:
-            raise TestblockError("Calling stop for testblock '%s' while testblock already stopped." % self.name)
+            raise ATFTestblockError("Calling stop for testblock '%s' before ATF has been started." % self.name)
+        state = self.get_state()
+        if state == TestblockState.INVALID:
+            raise ATFTestblockError("Calling stop for testblock '%s' before testblock has been started." % self.name)
+        if state in self.m.endStates:
+            raise ATFTestblockError("Calling stop for testblock '%s' while testblock already in an end state." % self.name)
 
         # set new transition trigger
         t = TestblockTrigger()
@@ -166,7 +169,7 @@ class Testblock:
             rospy.logerr(message)
             new_state = TestblockState.ERROR
             self.exception = message
-            raise TestblockError(message)
+            raise ATFTestblockError(message)
         self.trigger = None
         return new_state
 
@@ -187,7 +190,7 @@ class Testblock:
             rospy.logerr(message)
             new_state = TestblockState.ACTIVE
             self.exception = message
-            raise TestblockError(message)
+            raise ATFTestblockError(message)
         self.trigger = None
         return new_state
 
@@ -208,7 +211,7 @@ class Testblock:
             rospy.logerr(message)
             new_state = TestblockState.ERROR
             self.exception = message
-            raise TestblockError(message)
+            raise ATFTestblockError(message)
         self.trigger = None
         return new_state
 
@@ -220,5 +223,5 @@ class Testblock:
         self._wait_while_transition_is_active()
         pass
 
-class TestblockError(Exception):
+class ATFTestblockError(Exception):
     pass

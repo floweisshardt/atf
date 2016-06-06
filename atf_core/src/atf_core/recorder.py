@@ -15,8 +15,8 @@ from atf_msgs.msg import TestblockTrigger, TestStatus
 
 
 class ATFRecorder:
-    def __init__(self, config):
-        self.ns = "/aft/"
+    def __init__(self, config, testblock_list):
+        self.ns = "/atf/"
         self.config = config
         #print "recorder_core: self.config=", self.config
 
@@ -29,16 +29,13 @@ class ATFRecorder:
         #self.topic = "/atf/"
         
         
-        #self.test_config = self.load_data(rosparam.get_param(rospy.get_name() + "/test_config_file")
-        #                                  )[rosparam.get_param("/test_config")]
-        self.test_config = self.config["test_config"][self.config["test_config_name"]]
         recorder_config = self.load_data(rospkg.RosPack().get_path("atf_recorder_plugins") +
                                          "/config/recorder_plugins.yaml")
 
 
         # delete test_results directories and create new ones
         if os.path.exists(self.config["bagfile_output"]):
-        #    shutil.rmtree(self.config["bagfile_output"])
+        #    shutil.rmtree(self.config["bagfile_output"]) #FIXME will fail if multiple test run concurrently
             pass
         else:
             os.makedirs(self.config["bagfile_output"])
@@ -60,7 +57,7 @@ class ATFRecorder:
         self.topic_pipeline = []
         self.active_sections = []
         self.requested_topics = []
-        self.testblock_list = self.create_testblock_list()
+        self.testblock_list = testblock_list
 
         # Wait for obstacle_distance node
         #rospy.loginfo(rospy.get_name() + ": Waiting for obstacle distance node...")
@@ -110,47 +107,6 @@ class ATFRecorder:
 
         #self.test_status_publisher.publish(test_status)
 
-    def create_testblock_list(self):
-        #print "creeeeeeeeeeate testblock list"
-        testblock_list = {}
-        #print "test_config=", self.test_config
-        #print "-------------------"
-        for testblock in self.test_config:
-            #print "testbock=", testblock
-            for metric in self.test_config[testblock].keys():
-                #print "metric=", metric
-                #print "robot_config=", self.config["robot_config"]
-                if metric in self.config["robot_config"]:
-                    #print "metric is in robot_config"
-                    try:
-                        testblock_list[testblock]
-                    except KeyError:
-                        testblock_list[testblock] = self.config["robot_config"][metric]["topics"]
-                    else:
-                        for topic in self.config["robot_config"][metric]["topics"]:
-                            #add heading "/" to all topics to make them global (rostopic.get_topic_class() cannot handle non global topics)
-                            if topic[0] != "/":
-                                topic = "/" + topic
-                            testblock_list[testblock].append(topic)
-                else:
-                    #print "metric is NOT in robot_config"
-                    try:
-                        #print "self.test_config[testblock][metric]=", self.test_config[testblock][metric]
-                        for item in self.test_config[testblock][metric]:
-                            #print "item=", item
-                            if "topic" in item:
-                                if testblock not in testblock_list:
-                                    testblock_list.update({testblock: []})
-                                topic = item['topic']
-                                #print "topic=", topic
-                                #add heading "/" to all topics to make them global (rostopic.get_topic_class() cannot handle non global topics)
-                                if topic[0] != "/":
-                                    topic = "/" + topic
-                                testblock_list[testblock].append(topic)
-                    except TypeError:
-                        pass
-        return testblock_list
-
     def add_requested_topics(self, testblock_name):
         for topic in self.testblock_list[testblock_name]:
             self.requested_topics.append(topic)
@@ -179,8 +135,8 @@ class ATFRecorder:
     def record_trigger(self, trigger):
         print "record_trigger: name=", trigger.name, "trigger=", trigger.trigger, "stamp=", trigger.header.stamp
 
-        if trigger.name not in self.test_config:
-            raise RecorderError("Testblock '%s' not in test config" % trigger.name)
+        if trigger.name not in self.config["test_config"]:
+            raise ATFRecorderError("Testblock '%s' not in test config" % trigger.name)
 
         # Send message to all recorder plugins
         #print "self.recorder_plugin_list=", self.recorder_plugin_list
@@ -226,5 +182,5 @@ class ATFRecorder:
                     topics.append(topic)
         return topics
 
-class RecorderError(Exception):
+class ATFRecorderError(Exception):
     pass

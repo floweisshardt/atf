@@ -7,6 +7,7 @@ import rostest
 import rospkg
 import rosparam
 
+from atf_core import Testblock
 import atf_metrics
 
 
@@ -16,7 +17,10 @@ class ATFConfigurationParser:
 
         self.parsing_error_message = ""
 
+        # get full config from parameter server (test_config = list of all test configs)
         self.config = rosparam.get_param(self.ns)
+        # select the current test_config and replace test_config (list) with the current test_config (test_config[test_config_name])
+        self.config["test_config"] = self.config["test_config"][self.config["test_config_name"]] 
         #print "config loader: config=", self.config
 
         #self.test_name = self.config["test_name"]
@@ -26,32 +30,42 @@ class ATFConfigurationParser:
         #self.robot_config = self.config["robot_config"]
         #print "config loader: robot_config=\n", self.robot_config
 
+    def get_config(self):
+        return self.config
 
+    def create_testblocks(self, config, recorder_handle):
+        testblocks = {}
+        for testblock_name in config["test_config"].keys():
+            metrics = config["test_config"][testblock_name]
+            #print "metrics=", metrics
+            testblocks[testblock_name] = Testblock(testblock_name, [], recorder_handle)
+        return testblocks
 
-
-
-    def create_testblock_list(self):
+    def create_testblock_list(self, config):
         testblock_list = {}
-        #print "self.test_config=", self.test_config
-        #print "self.robot_config_file=", self.robot_config_file
-        for testblock in self.test_config:
-            for metric in self.test_config[testblock]:
+        #print "-------------------"
+        for testblock in config["test_config"].keys():
+            #print "testbock=", testblock
+            for metric in config["test_config"][testblock].keys():
                 #print "metric=", metric
-                if metric in self.robot_config_file:
+                #print "robot_config=", config["robot_config"]
+                if metric in config["robot_config"]:
+                    #print "metric is in robot_config"
                     try:
                         testblock_list[testblock]
                     except KeyError:
-                        testblock_list[testblock] = self.robot_config_file[metric]["topics"]
+                        testblock_list[testblock] = config["robot_config"][metric]["topics"]
                     else:
-                        for topic in self.robot_config_file[metric]["topics"]:
+                        for topic in config["robot_config"][metric]["topics"]:
                             #add heading "/" to all topics to make them global (rostopic.get_topic_class() cannot handle non global topics)
                             if topic[0] != "/":
                                 topic = "/" + topic
                             testblock_list[testblock].append(topic)
                 else:
+                    #print "metric is NOT in robot_config"
                     try:
-                        for item in self.test_config[testblock][metric]:
-                            #print "item=", item
+                        for item in config["test_config"][testblock][metric]:
+                            print "item=", item
                             if "topic" in item:
                                 if testblock not in testblock_list:
                                     testblock_list.update({testblock: []})
@@ -61,7 +75,8 @@ class ATFConfigurationParser:
                                 if topic[0] != "/":
                                     topic = "/" + topic
                                 testblock_list[testblock].append(topic)
-                    except TypeError:
+                    except TypeError as e:
+                        print "TypeError: %s" % str(e)
                         pass
         return testblock_list
 
