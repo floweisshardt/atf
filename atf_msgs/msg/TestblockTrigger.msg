@@ -3,6 +3,6 @@ uint8 START       = 1
 uint8 PAUSE       = 2
 uint8 STOP        = 3
 
-Header header
+time stamp
 string name
 uint8 trigger

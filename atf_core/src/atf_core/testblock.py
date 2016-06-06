@@ -37,11 +37,6 @@ class Testblock:
     def _finished(self):
         return self.m.finished
 
-#    def _trigger_callback(self, msg):
-#        #print "testblock.py: trigger_callbackmsg=\n", msg
-#        self.transition = msg.trigger
-#        self.timestamp = msg.header.stamp
-
     def _wait_for_transition_is_done(self):
         while not rospy.is_shutdown() and not self.trigger is None:
             if self.exception != None:
@@ -72,7 +67,7 @@ class Testblock:
 
         # set new transition trigger
         t = TestblockTrigger()
-        t.header.stamp = rospy.Time.now()
+        t.stamp = rospy.Time.now()
         t.name = self.name
         t.trigger = TestblockTrigger.PURGE
         self.trigger = t
@@ -94,7 +89,7 @@ class Testblock:
 
         # set new transition trigger
         t = TestblockTrigger()
-        t.header.stamp = rospy.Time.now()
+        t.stamp = rospy.Time.now()
         t.name = self.name
         t.trigger = TestblockTrigger.START
         self.trigger = t
@@ -117,7 +112,7 @@ class Testblock:
 
         # set new transition trigger
         t = TestblockTrigger()
-        t.header.stamp = rospy.Time.now()
+        t.stamp = rospy.Time.now()
         t.name = self.name
         t.trigger = TestblockTrigger.PAUSE
         self.trigger = t
@@ -142,7 +137,7 @@ class Testblock:
 
         # set new transition trigger
         t = TestblockTrigger()
-        t.header.stamp = rospy.Time.now()
+        t.stamp = rospy.Time.now()
         t.name = self.name
         t.trigger = TestblockTrigger.STOP
         self.trigger = t

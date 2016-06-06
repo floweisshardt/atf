@@ -20,7 +20,7 @@ class ATFConfigurationParser:
         # get full config from parameter server (test_config = list of all test configs)
         self.config = rosparam.get_param(self.ns)
         # select the current test_config and replace test_config (list) with the current test_config (test_config[test_config_name])
-        self.config["test_config"] = self.config["test_config"][self.config["test_config_name"]] 
+        self.config["test_config"] = self.config["test_config"][self.config["test_config_name"]]
         #print "config loader: config=", self.config
 
         #self.test_name = self.config["test_name"]
@@ -33,12 +33,27 @@ class ATFConfigurationParser:
     def get_config(self):
         return self.config
 
-    def create_testblocks(self, config, recorder_handle):
+    def create_testblocks(self, config, recorder_handle = None, create_metrics = False):
         testblocks = {}
         for testblock_name in config["test_config"].keys():
-            metrics = config["test_config"][testblock_name]
-            #print "metrics=", metrics
-            testblocks[testblock_name] = Testblock(testblock_name, [], recorder_handle)
+            metric_handles = []
+            if create_metrics:
+                metrics = config["test_config"][testblock_name]
+                #print "metrics=", metrics
+                metric_handlers_config = self.load_data(rospkg.RosPack().get_path("atf_metrics") + "/config/metrics.yaml")
+                #print "metric_handlers_config=", metric_handlers_config
+                for metric_name in metrics:
+                    #print "metric_name=", metric_name
+                    metrics_return_list = getattr(atf_metrics, metric_handlers_config[metric_name]["handler"])().parse_parameter(testblock_name, metrics[metric_name])
+                    print "metrics_return_list=", metrics_return_list
+                    if type(metrics_return_list) == list:
+                        for metric_return in metrics_return_list:
+                            #print "metric_return=", metric_return
+                            metric_handles.append(metric_return)
+                    else:
+                        raise ATFConfigurationError("no valid metric configuration for metric '%s' in testblock '%s'" %(metric_name, testblock_name))
+            #print "metric_handles=", metric_handles
+            testblocks[testblock_name] = Testblock(testblock_name, metric_handles, recorder_handle)
         return testblocks
 
     def create_testblock_list(self, config):
@@ -65,7 +80,7 @@ class ATFConfigurationParser:
                     #print "metric is NOT in robot_config"
                     try:
                         for item in config["test_config"][testblock][metric]:
-                            print "item=", item
+                            #print "item=", item
                             if "topic" in item:
                                 if testblock not in testblock_list:
                                     testblock_list.update({testblock: []})
@@ -76,35 +91,14 @@ class ATFConfigurationParser:
                                     topic = "/" + topic
                                 testblock_list[testblock].append(topic)
                     except TypeError as e:
-                        print "TypeError: %s" % str(e)
+                        raise ATFConfigurationError("TypeError: %s" % str(e))
                         pass
-        return testblock_list
-
-    def get_test_list(self):
-        test_config_path = rospy.get_param(self.ns + "test_config_file")
-        config_data = self.load_data(test_config_path)[rospy.get_param(self.ns + "test_config")]
-        #metrics_data = self.load_data(rospkg.RosPack().get_path("atf_metrics") + "/config/metrics.yaml")
-
-        testblock_list = []
-
-        for testblock_name in config_data:
-            metrics = []
-
-            for metric in config_data[testblock_name]:
-                metric_return = getattr(atf_metrics, metrics_data[metric]["handler"])().parse_parameter(testblock_name, config_data[testblock_name][metric])
-                if type(metric_return) == list:
-                    for metric in metric_return:
-                        metrics.append(metric)
-                else:
-                    self.parsing_error_message = "no valid metric configuration for metric '" + metric + "' in testblock '" + testblock_name + "'"
-                    rospy.logerr(self.parsing_error_message)
-                    return False
-
-            testblock_list.append(Testblock(testblock_name, metrics))
-
         return testblock_list
 
     def load_data(self, filename):
         with open(filename, 'r') as stream:
             doc = yaml.load(stream)
             return doc
+
+class ATFConfigurationError(Exception):
+    pass

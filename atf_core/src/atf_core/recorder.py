@@ -133,7 +133,7 @@ class ATFRecorder:
                     pass
 
     def record_trigger(self, trigger):
-        print "record_trigger: name=", trigger.name, "trigger=", trigger.trigger, "stamp=", trigger.header.stamp
+        print "record_trigger: name=", trigger.name, "trigger=", trigger.trigger, "stamp=", trigger.stamp
 
         if trigger.name not in self.config["test_config"]:
             raise ATFRecorderError("Testblock '%s' not in test config" % trigger.name)
@@ -158,7 +158,7 @@ class ATFRecorder:
                 rospy.loginfo("!!!!!!!!!!!!")
 
         self.bag_file_writer.write_to_bagfile(self.ns + trigger.name + "/trigger", trigger,
-                                  trigger.header.stamp)
+                                  trigger.stamp)
 
 
     @staticmethod
