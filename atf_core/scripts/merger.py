@@ -13,7 +13,7 @@ class Merger():
     def __init__(self):
         self.ns = "/atf/"
         self.result = False
-        
+
         self.atf_configuration_parser = ATFConfigurationParser()
         self.config = self.atf_configuration_parser.get_config()
 

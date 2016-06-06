@@ -96,6 +96,21 @@ class GenerateTests:
             
             #print "self.test_list[test_name]=", self.test_list[test_name]
 
+            # Cleaning
+            test_clean = launch(
+                param(name=self.ns + "test_config_name", value=self.test_list[test_name]["test_config"]),
+                rosparam(param=self.ns + "test_config", command="load", file="$(find " + self.package_name + ")/" + self.generation_config["test_config_file"]),
+                param(name=self.ns + "bag_output", value=self.bagfile_output),
+                param(name=self.ns + "yaml_output", value=self.yaml_output),
+                param(name=self.ns + "json_output", value=self.json_output),
+                test({'test-name': "cleaning", 'pkg': "atf_core", 'type': "cleaner.py",
+                      'time-limit': "10"})
+            )
+            xmlstr = minidom.parseString(ElementTree.tostring(test_clean)).toprettyxml(indent="    ")
+            filepath = os.path.join(self.test_generated_path, "cleaning.test")
+            with open(filepath, "w") as f:
+                f.write(xmlstr)
+
             # Recording
             test_record = launch(
                 #arg(name="robot", value=self.test_list[test_name]["robot"]),

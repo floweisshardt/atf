@@ -20,8 +20,11 @@ function(atf_test)
           message(FATAL_ERROR "-- ATF: generating test files failed: exit_code='${generation_result}'")
         endif()
 
-        file(GLOB TEST_NAMES_RECORDING RELATIVE ${PROJECT_SOURCE_DIR}/test_generated/recording ${PROJECT_SOURCE_DIR}/test_generated/recording/*.test)
+        set(TEST_GENERATED_PATH ${PROJECT_SOURCE_DIR}/test_generated)
 
+        add_rostest(test_generated/cleaning.test)
+
+        file(GLOB TEST_NAMES_RECORDING RELATIVE ${TEST_GENERATED_PATH}/recording ${TEST_GENERATED_PATH}/recording/*.test)
         foreach(TEST_NAME_RECORDING ${TEST_NAMES_RECORDING})
             # recording
             set(TARGET_NAME_RECORDING run_tests_${PROJECT_NAME}_rostest_test_generated_recording_${TEST_NAME_RECORDING})
@@ -30,7 +33,7 @@ function(atf_test)
             string(REPLACE "/" "_" _TARGET_NAME_RECORDING ${_TARGET_NAME_RECORDING})
             list(APPEND TARGET_NAMES_RECORDING ${TARGET_NAME_RECORDING})
             list(APPEND _TARGET_NAMES_RECORDING ${_TARGET_NAME_RECORDING})
-            add_rostest(test_generated/recording/${TEST_NAME_RECORDING})
+            add_rostest(test_generated/recording/${TEST_NAME_RECORDING} DEPENDENCIES _run_tests_${PROJECT_NAME}_rostest_test_generated_cleaning.test)
 
             # analysing
             string(REPLACE "recording_" "analysing_" TEST_NAME_ANALYSING ${TEST_NAME_RECORDING})
@@ -46,12 +49,15 @@ function(atf_test)
         add_rostest(test_generated/merging.test DEPENDENCIES atf_${PROJECT_NAME}_analysing)
         add_rostest(test_generated/uploading.test DEPENDENCIES atf_${PROJECT_NAME}_merging)
 
-        #TODO: add target to clean old test data and test results directories (as dependency to clean_test_results_${PROJECT_NAME})
-
-
+        add_custom_target(atf_${PROJECT_NAME}_cleaning
+            COMMAND echo "cccccccccccccccccccccccccccccccleaning"
+            DEPENDS
+                _run_tests_${PROJECT_NAME}_rostest_test_generated_cleaning.test
+        )
         add_custom_target(atf_${PROJECT_NAME}_recording
             COMMAND echo "rrrrrrrrrrrrrrrrrrrrrrrrrrrrrrecording"
             DEPENDS 
+                atf_${PROJECT_NAME}_cleaning
                 ${_TARGET_NAMES_RECORDING}
         )
         add_custom_target(atf_${PROJECT_NAME}_analysing
@@ -75,10 +81,11 @@ function(atf_test)
         add_custom_target(atf_${PROJECT_NAME}
             COMMAND echo "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaatf"
             DEPENDS
-                atf_${PROJECT_NAME}_uploading
-                atf_${PROJECT_NAME}_merging
-                atf_${PROJECT_NAME}_analysing
+                atf_${PROJECT_NAME}_cleaning
                 atf_${PROJECT_NAME}_recording
+                atf_${PROJECT_NAME}_analysing
+                atf_${PROJECT_NAME}_merging
+                atf_${PROJECT_NAME}_uploading
         )
         add_dependencies(run_tests atf_${PROJECT_NAME})
         add_dependencies(run_tests_${PROJECT_NAME} atf_${PROJECT_NAME})
