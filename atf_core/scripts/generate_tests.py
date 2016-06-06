@@ -55,6 +55,10 @@ class GenerateTests:
                 self.upload_result = self.generation_config["upload_result"]
             else:
                 self.upload_result = False
+            if "speed_factor_analysis" in self.generation_config:
+                self.speed_factor_analysis = self.generation_config["speed_factor_analysis"]
+            else:
+                self.speed_factor_analysis = 1
         except KeyError as e:
             error_message = "ATF: Warning: parsing test configuration incomplete. Missing Key: " + str(e)
             print error_message
@@ -154,11 +158,12 @@ class GenerateTests:
                 param(name=self.ns + "json_output", value=self.json_output),
                 param(name=self.ns + "yaml_output", value=self.yaml_output),
                 #param(name="number_of_tests", value=str(len(self.test_list))),
-                test({'test-name': "analysing_" + test_name, 'pkg': "atf_core", 'type': "analyser.py",
-                      'time-limit': str(self.time_limit_analysing)}),
-                node(name="player", pkg="rosbag", type="play", output="log", args="--delay=5.0 --rate=10 --clock " +
+                node(name="player", pkg="rosbag", type="play", output="log", args="--delay=5.0 --clock " +
+                                                                                     "--rate=" + str(self.speed_factor_analysis) + " " +
                                                                                      self.bagfile_output + test_name +
-                                                                                     ".bag")
+                                                                                     ".bag"),
+                test({'test-name': "analysing_" + test_name, 'pkg': "atf_core", 'type': "analyser.py",
+                      'time-limit': str(self.time_limit_analysing)})
             )
 
             xmlstr = minidom.parseString(ElementTree.tostring(test_analyse)).toprettyxml(indent="    ")

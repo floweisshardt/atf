@@ -133,7 +133,7 @@ class ATFRecorder:
                     pass
 
     def record_trigger(self, trigger):
-        print "record_trigger: name=", trigger.name, "trigger=", trigger.trigger, "stamp=", trigger.stamp
+        #print "record_trigger: name=", trigger.name, "trigger=", trigger.trigger, "stamp=", trigger.stamp
 
         if trigger.name not in self.config["test_config"]:
             raise ATFRecorderError("Testblock '%s' not in test config" % trigger.name)
@@ -144,7 +144,7 @@ class ATFRecorder:
             recorder_plugin.trigger_callback(trigger)
 
         # Only process message if testblock requests topics
-        print "self.testblock_list=", self.testblock_list
+        #print "self.testblock_list=", self.testblock_list
         if trigger.name in self.testblock_list:
             if trigger.trigger == TestblockTrigger.START:
                 self.active_sections.append(trigger.name)
