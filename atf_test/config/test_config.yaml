@@ -49,13 +49,13 @@ test_2:
     publish_rate:
       - topic: topic1
         groundtruth: 11
-        groundtruth_epsilon: 3
+        groundtruth_epsilon: 5
       - topic: topic2
         groundtruth: 22
-        groundtruth_epsilon: 3
+        groundtruth_epsilon: 5
       - topic: topic3
         groundtruth: 33
-        groundtruth_epsilon: 3
+        groundtruth_epsilon: 5
   testblock_large:
     time:
       - groundtruth: 5
@@ -72,13 +72,13 @@ test_2:
     publish_rate:
       - topic: /topic1
         groundtruth: 11
-        groundtruth_epsilon: 3
+        groundtruth_epsilon: 5
       - topic: /topic2
         groundtruth: 22
-        groundtruth_epsilon: 3
+        groundtruth_epsilon: 5
       - topic: /topic3
         groundtruth: 33
-        groundtruth_epsilon: 3
+        groundtruth_epsilon: 5
     interface:
       - node: publisher1
         publishers: 
