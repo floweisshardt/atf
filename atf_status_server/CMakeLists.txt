@@ -5,6 +5,7 @@ find_package(catkin REQUIRED COMPONENTS
     atf_msgs
     message_generation
     rosbridge_server
+    roslaunch
     rospy
     std_msgs
 )
