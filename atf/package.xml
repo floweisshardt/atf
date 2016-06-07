@@ -13,7 +13,6 @@
   <exec_depend>atf_metrics</exec_depend>
   <exec_depend>atf_msgs</exec_depend>
   <exec_depend>atf_presenter</exec_depend>
-  <exec_depend>atf_recorder</exec_depend>
   <exec_depend>atf_recorder_plugins</exec_depend>
   <exec_depend>atf_status_server</exec_depend>
 

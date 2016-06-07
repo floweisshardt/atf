@@ -13,11 +13,11 @@ class ATF:
         #print "atf: config=", self.config
         self.testblock_list = atf_configuration_parser.create_testblock_list(self.config)
         #print "atf: testblock_list=", self.testblock_list
-        
+
         self.recorder_handle = atf_core.ATFRecorder(self.config, self.testblock_list)
         self.testblocks = atf_configuration_parser.create_testblocks(self.config, self.recorder_handle)
         self.init()
-    
+
     def init(self):
         if self.finished:
             raise ATFError("Calling ATF init while ATF is already finished.")
@@ -53,7 +53,7 @@ class ATF:
             if testblock.get_state() not in testblock.m.endStates and testblock.trigger == None:
                 rospy.logwarn("Stopping testblock '%s' automatically because ATF stop is trigged and testblock is not in an end state.", testblock_name)
                 testblock.stop()
-        
+
         # wait for all testblocks to finish
         for testblock_name, testblock in self.testblocks.items():
             r = rospy.Rate(10)

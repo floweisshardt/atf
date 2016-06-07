@@ -4,8 +4,9 @@ import rosgraph
 import rosservice
 import socket
 import httplib
+
 from atf_msgs.msg import Api, NodeApi, InterfaceItem
-from rosnode import ROSNodeIOException
+
 
 class RecordInterface:
     def __init__(self, write_lock, bag_file_writer):
@@ -22,9 +23,9 @@ class RecordInterface:
 
         while not rospy.is_shutdown():
             try:
-                self.master = rosgraph.Master("plugin_interface_" + goal.name)
-                publishers, subscribers, services = self.master.getSystemState()
-                topic_types = self.master.getTopicTypes()
+                master = rosgraph.Master("plugin_interface_" + goal.name)
+                publishers, subscribers, services = master.getSystemState()
+                topic_types = master.getTopicTypes()
                 service_types = self.get_service_types(services)
             except socket.error:
                 rospy.logerr("Unable to communicate with master!")

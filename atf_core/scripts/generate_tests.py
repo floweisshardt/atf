@@ -93,7 +93,7 @@ class GenerateTests:
 
         for test_name in self.test_list:
             robot_config = self.load_yaml(os.path.join(self.package_path, self.generation_config["robot_config_path"], self.test_list[test_name]["robot"], "robot_config.yaml"))
-            
+
             #print "self.test_list[test_name]=", self.test_list[test_name]
 
             # Cleaning
