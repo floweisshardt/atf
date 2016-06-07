@@ -5,6 +5,7 @@ find_package(catkin REQUIRED COMPONENTS
   atf_core
   roslaunch
   rospy
+  rostopic
 )
 catkin_package(
    CATKIN_DEPENDS rospy
