@@ -15,7 +15,6 @@ class CalculatePublishRateParamHandler:
         :param params: Parameter
         """
         metrics = []
-
         if type(params) is not list:
             rospy.logerr("metric config not a list")
             return False
@@ -26,7 +25,7 @@ class CalculatePublishRateParamHandler:
                 groundtruth = metric["groundtruth"]
                 groundtruth_epsilon = metric["groundtruth_epsilon"]
             except (TypeError, KeyError):
-                rospy.logwarn("No groundtruth parameters given, skipping groundtruth evaluation for metric 'publish_rate'")
+                rospy.logwarn("No groundtruth parameters given, skipping groundtruth evaluation for metric 'publish_rate' in testblock '%s'", testblock_name)
                 groundtruth = None
                 groundtruth_epsilon = None
             metrics.append(CalculatePublishRate(metric["topic"], groundtruth, groundtruth_epsilon))

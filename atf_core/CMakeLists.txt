@@ -42,9 +42,9 @@ include_directories(
 
 install(
     PROGRAMS
-        scripts/cleaner.py
         scripts/analyse_all.py
         scripts/analyser.py
+        scripts/cleaner.py
         scripts/dropbox_uploader.sh
         scripts/merger.py
         scripts/record_all.py

@@ -1,14 +1,10 @@
 #!/usr/bin/env python
-import rospy
 import yaml
-import os
-import unittest
-import rostest
 import rospkg
 import rosparam
+import atf_metrics
 
 from atf_core import Testblock
-import atf_metrics
 
 
 class ATFConfigurationParser:
@@ -33,7 +29,7 @@ class ATFConfigurationParser:
     def get_config(self):
         return self.config
 
-    def create_testblocks(self, config, recorder_handle = None, create_metrics = False):
+    def create_testblocks(self, config, recorder_handle=None, create_metrics=False):
         testblocks = {}
         for testblock_name in config["test_config"].keys():
             metric_handles = []
@@ -92,7 +88,6 @@ class ATFConfigurationParser:
                                 testblock_list[testblock].append(topic)
                     except TypeError as e:
                         raise ATFConfigurationError("TypeError: %s" % str(e))
-                        pass
         return testblock_list
 
     def load_data(self, filename):

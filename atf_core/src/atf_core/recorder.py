@@ -3,15 +3,13 @@ import rospy
 import rospkg
 import rostopic
 import rosbag
-import rosparam
 import yaml
-import shutil
 import os
 import atf_recorder_plugins
 import atf_core
 
 from threading import Lock
-from atf_msgs.msg import TestblockTrigger, TestStatus
+from atf_msgs.msg import TestblockTrigger
 
 
 class ATFRecorder:
@@ -20,18 +18,8 @@ class ATFRecorder:
         self.config = config
         #print "recorder_core: self.config=", self.config
 
-        #self.number_of_tests = rosparam.get_param("/number_of_tests")
-        #self.robot_config_file = self.load_data(rosparam.get_param("/robot_config"))
-
-        #if not os.path.exists(rosparam.get_param(rospy.get_name() + "/bagfile_output")):
-        #    os.makedirs(rosparam.get_param(rospy.get_name() + "/bagfile_output"))
-
-        #self.topic = "/atf/"
-        
-        
         recorder_config = self.load_data(rospkg.RosPack().get_path("atf_recorder_plugins") +
                                          "/config/recorder_plugins.yaml")
-
 
         # delete test_results directories and create new ones
         if os.path.exists(self.config["bagfile_output"]):
@@ -48,8 +36,7 @@ class ATFRecorder:
         # Init metric recorder
         self.recorder_plugin_list = []
         if len(recorder_config) > 0:
-            for (key, value) in recorder_config.iteritems():
-                #print "key=", key
+            for value in recorder_config.values():
                 #print "value=", value
                 self.recorder_plugin_list.append(getattr(atf_recorder_plugins, value)(self.lock_write,
                                                                                       self.bag_file_writer))
@@ -128,8 +115,7 @@ class ATFRecorder:
                     msg_class, _, _ = rostopic.get_topic_class(topic)
                     rospy.Subscriber(topic, msg_class, self.global_topic_callback, callback_args=topic)
                     self.subscriber.append(topic)
-                except Exception as e:
-                    #print e
+                except Exception:
                     pass
 
     def record_trigger(self, trigger):
