@@ -10,7 +10,9 @@ set(generate_tests_script ${atf_core_DIR}/../scripts/generate_tests.py)
 function(atf_test)
     if(CATKIN_ENABLE_TESTING)
         message(STATUS "ATF: executing test generation macro")
-        find_package(rostest REQUIRED)
+        find_package(catkin REQUIRED COMPONENTS
+            rostest
+            roslaunch)
 
         execute_process(
             COMMAND python ${generate_tests_script} ${PROJECT_NAME} ${PROJECT_SOURCE_DIR}
@@ -21,6 +23,8 @@ function(atf_test)
         endif()
 
         set(TEST_GENERATED_PATH ${PROJECT_SOURCE_DIR}/test_generated)
+
+        roslaunch_add_file_check(test_generated)
 
         add_rostest(test_generated/cleaning.test)
 
