@@ -186,7 +186,7 @@ if __name__ == '__main__':
         analyser.wait_for_all_testblocks_to_finish()
         groundtruth_result, groundtruth_error_message, result = analyser.get_result()
         if groundtruth_result != None:
-            self.assertTrue(groundtruth_result, groundtruth_error_message)
+            assertTrue(groundtruth_result, groundtruth_error_message)
         analyser.export_to_file(result)
     else:
         rostest.rosrun("atf_core", 'analysing', TestAnalysing, sysargs=None)
