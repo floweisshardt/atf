@@ -1,0 +1,4 @@
+atf_msgs/TestblockTrigger trigger
+---
+string message
+---

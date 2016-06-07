@@ -16,10 +16,9 @@ class CalculateTimeParamHandler:
         """
         metrics = []
 
-        # special case for time (can have no parameters and thus is no list)
-        if params == None:
-            metrics.append(CalculateTime(None, None))
-            return metrics
+        # special case for time (can have empty list of parameters, thus adding dummy groundtruth information)
+        if params == []:
+            params.append({"groundtruth":None, "groundtruth_epsilon":None})
 
         if type(params) is not list:
             rospy.logerr("metric config not a list")
@@ -61,6 +60,7 @@ class CalculateTime:
         pass
 
     def purge(self, timestamp):
+        # TODO: Implement purge as soon as pause is implemented
         pass
 
     def get_result(self):

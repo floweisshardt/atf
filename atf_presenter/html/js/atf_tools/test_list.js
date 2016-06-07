@@ -14,6 +14,7 @@ var TestList = {
     $('#test_list_content').show();
   },
   init: function () {
+    console.log("init")
     var test_list = FileStorage.readData(this.name);
     var test_list_div = $('#test_list_content').find('#test_list');
     var compare_test_option = $('#compare_test_option');
@@ -39,7 +40,7 @@ var TestList = {
       var test_error;
       var button_disabled;
       var checkbox_disabled;
-      var test = FileStorage.readData(test_name);
+      var test = FileStorage.readData("merged_" + test_name);
 
       if (!test) {
         upload_status = '<span class="glyphicon glyphicon-alert" aria-hidden="true"></span><span class="sr-only">Error: </span> File not found!';
@@ -91,6 +92,7 @@ var TestList = {
     });
   },
   summarize: function () {
+    console.log("summarize")
     var test_list = FileStorage.readData(this.name);
     var this_class = this;
     //console.log("test_list=", test_list)
@@ -103,7 +105,7 @@ var TestList = {
         error: 0
       };
       
-      var test_data_complete = FileStorage.readData("ts1_t1");
+      var test_data_complete = FileStorage.readData("merged_" + test_name);
       //console.log("test_data_complete=", test_data_complete)
 
       // Check for errors
@@ -126,7 +128,7 @@ var TestList = {
       FileStorage.removeData(test_name);
       if (Object.keys(test_data_complete).length != 0) {
         test_list[test_name]['tests_failed'] = test_failed;
-        FileStorage.writeData(test_name, test_data_complete);
+        FileStorage.writeData("merged_" + test_name, test_data_complete);
       }
     });
     FileStorage.removeData(this.name);
@@ -147,6 +149,7 @@ var TestList = {
     return error;
   },
   showDetails: function (name) {
+    console.log("showDetails")
     var test_detail_div = $('#detail_test');
     var test_name_split = name.split('_');
     test_detail_div.find('.modal-title').html('Details Testsuite ' + test_name_split[0].replace(/^\D+/g, '') + ' - Test ' + test_name_split[1].replace(/^\D+/g, ''));
@@ -155,7 +158,8 @@ var TestList = {
     test_details.hide();
 
     // Get test data
-    var test_results = FileStorage.readData(name);
+    //console.log("name=", name)
+    var test_results = FileStorage.readData("merged_" + name);
 
     // Get test list
     var test_list = FileStorage.readData('test_list');
@@ -172,13 +176,22 @@ var TestList = {
 
     var plot_tooltip = {
       formatter: function () {
-        if (this.series.name.indexOf('variation') != -1) return false;
         var o = this.point.options;
-
-        return '<b>' + this.series.name + '</b><br>' +
-          'Average: ' + this.y + '<br>' +
-          'Minimum: ' + o.min + '<br>' +
-          'Maximum: ' + o.max + '<br>';
+        if (this.series.name.indexOf('variation') != -1)
+        {
+          name = this.series.name.split("_variation")[0]
+          groundtruth_epsilon = (o.high - o.low)/2.0
+          groundtruth = o.low + groundtruth_epsilon
+          return '<b>' + name + '</b><br>' + 
+            'Groundtruth: ' + groundtruth.round(3) + '+-' + groundtruth_epsilon.round(3) + '<br>';
+        }
+        else
+        {
+          return '<b>' + this.series.name + '</b><br>' +
+            'Average: ' + this.y + '<br>' +
+            'Minimum: ' + o.min + '<br>' +
+            'Maximum: ' + o.max + '<br>';
+        }
       }
     };
 
@@ -459,13 +472,17 @@ var TestList = {
                 x: testblock_number,
                 low: metric_key_data['min'].round(3),
                 high: metric_key_data['max'].round(3)
-              }/*,
-              { ##### TODO: THIS CAN BE USED FOR VISUALIZING GRUNDTRUTH DATA #####
+              },
+              { 
                 x: testblock_number,
-                low: 1,
-                high: 2,
-                color: "#FF0000"
-              }*/]
+                low: metric_data['groundtruth'] - metric_data['groundtruth_epsilon'],
+                high: metric_data['groundtruth'] + metric_data['groundtruth_epsilon'],
+                color: "rgb(0, 0, 255)",
+                stemWidth: 10,
+                stemColor: "rgba(255, 255, 255, 0)",
+                whiskerWidth: 3,
+                whiskerColor: "rgba(0, 0, 0, 0.5)"
+              }]
             });
           })
         }

@@ -7,18 +7,21 @@ import os
 import copy
 import json
 
+from atf_core import ATFConfigurationParser
+
 class Merger():
     def __init__(self):
+        self.ns = "/atf/"
         self.result = False
-        self.merging_error_message = ""
-        self.json_output = rospy.get_param("merging/result_json_output")
-        self.yaml_output = rospy.get_param("merging/result_yaml_output")
+
+        self.atf_configuration_parser = ATFConfigurationParser()
+        self.config = self.atf_configuration_parser.get_config()
 
     def merge(self):
-        test_list = self.load_data(os.path.join(self.json_output, "test_list.json"))
+        test_list = self.atf_configuration_parser.load_data(os.path.join(self.config["json_output"], "test_list.json"))
         #print "test_list=", test_list
         for test in test_list:
-            print "test=", test
+            #print "test=", test
             for test_name, test_data in test.items():
                 #print "test_name=", test_name
                 #print "test_data=", test_data
@@ -27,7 +30,7 @@ class Merger():
                 test_data_merged = {}
                 for subtest in subtests:
                     #print "subtest=", subtest
-                    subtest_data = self.load_data(os.path.join(self.json_output, subtest + ".json"))
+                    subtest_data = self.atf_configuration_parser.load_data(os.path.join(self.config["json_output"], subtest + ".json"))
                     #print "subtest_data=", subtest_data
                     for testblock_name, testblock_data in subtest_data.items():
                         #print "testblock_name=", testblock_name
@@ -96,11 +99,11 @@ class Merger():
                 #print "test_data_merged after average=", test_data_merged
 
                 # write to file
-                filename = os.path.join(self.json_output, test_name + ".json")
+                filename = os.path.join(self.config["json_output"], "merged_" + test_name + ".json")
                 stream = file(filename, 'w')
                 json.dump(copy.copy(test_data_merged), stream)
 
-                filename = os.path.join(self.yaml_output, test_name + ".yaml")
+                filename = os.path.join(self.config["yaml_output"], "merged_" + test_name + ".yaml")
                 if not filename == "":
                     stream = file(filename, 'w')
                     yaml.dump(copy.copy(test_data_merged), stream, default_flow_style=False)
@@ -125,19 +128,12 @@ class Merger():
         else:
             return False
 
-    def load_data(self, filename):
-        try:
-            with open(filename, 'r') as stream:
-                doc = yaml.load(stream)
-        except IOError as e:
-            doc = {'error': e}
-        return doc
 
 class TestMerging(unittest.TestCase):
     def test_merging_results(self):
         merger = Merger()
         merger.merge()
-        self.assertTrue(merger.result, merger.merging_error_message)
+        self.assertTrue(merger.result, "Could not merge results.")
 
 if __name__ == '__main__':
     rospy.init_node('test_merging')

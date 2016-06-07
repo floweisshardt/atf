@@ -13,6 +13,9 @@ env:
     - CATKIN_WS_UNDERLAY_SRC=${CATKIN_WS_UNDERLAY}/src
     - CI_ROS_DISTRO="indigo"
     - DEFAULT_ROSINSTALL="https://raw.githubusercontent.com/ipa320/care-o-bot/${CI_ROS_DISTRO}_dev/.travis.rosinstall"
+  matrix:
+    - CATKIN_ENABLE_TESTING=OFF
+    - CATKIN_ENABLE_TESTING=ON
 
 install:
   - wget https://raw.githubusercontent.com/ipa320/care-o-bot/${CI_ROS_DISTRO}_dev/.travis.install.sh
@@ -24,6 +27,5 @@ script:
 
 after_failure:
   - cd $CATKIN_WS
-  - source devel/setup.bash
+  - source devel/setup.bash > /dev/null 2>&1
   - catkin_test_results --verbose
-  - cat build/Testing/Temporary/LastTest.log

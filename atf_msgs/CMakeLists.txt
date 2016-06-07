@@ -1,11 +1,11 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(atf_msgs)
 
-find_package(catkin
-    REQUIRED COMPONENTS
-        message_generation
-        geometry_msgs
-        std_msgs
+find_package(catkin REQUIRED COMPONENTS
+    actionlib_msgs
+    geometry_msgs
+    message_generation
+    std_msgs
 )
 
 ################################################
@@ -15,23 +15,29 @@ find_package(catkin
 add_message_files(
     FILES
         Api.msg
-        NodeApi.msg
+        IO.msg
         Interface.msg
         InterfaceItem.msg
-        Status.msg
-        Trigger.msg
-        IO.msg
         Network.msg
-        Resources.msg
-        TestStatus.msg
-        TestblockStatus.msg
+        NodeApi.msg
         NodeResources.msg
         ObstacleDistance.msg
         ObstacleDistanceLink.msg
+        Resources.msg
+        TestStatus.msg
+        TestblockState.msg
+        TestblockTrigger.msg
+)
+
+add_action_files(
+    FILES
+        Recorder.action
 )
 
 generate_messages(
     DEPENDENCIES
+        actionlib_msgs
+        geometry_msgs
         std_msgs
 )
 
@@ -41,6 +47,8 @@ generate_messages(
 
 catkin_package(
     CATKIN_DEPENDS
+        actionlib_msgs
+        geometry_msgs
         message_runtime
         std_msgs
 )
