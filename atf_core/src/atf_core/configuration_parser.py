@@ -45,7 +45,7 @@ class ATFConfigurationParser:
                 for metric_name in metrics:
                     #print "metric_name=", metric_name
                     metrics_return_list = getattr(atf_metrics, metric_handlers_config[metric_name]["handler"])().parse_parameter(testblock_name, metrics[metric_name])
-                    print "metrics_return_list=", metrics_return_list
+                    #print "metrics_return_list=", metrics_return_list
                     if type(metrics_return_list) == list:
                         for metric_return in metrics_return_list:
                             #print "metric_return=", metric_return

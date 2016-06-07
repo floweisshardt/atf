@@ -10,9 +10,11 @@ bagfile_output: "/tmp/atf_test/data/"                               # Folder for
 json_output: "/tmp/atf_test/results_json/"                          # Folder for the json files output
 yaml_output: "/tmp/atf_test/results_yaml/"                          # Folder for the yaml files output
 
-upload_data: false
-upload_result: false
+speed_factor_analysis: 2.0                                          # Factor to speedup analysis (can lower accuracy if to fast, especially path_length)
 
 time_limit_recording: 60.0                                          # Time limit in seconds for recording
 time_limit_analysing: 60.0                                          # Time limit in seconds for analysing
 time_limit_uploading: 60.0                                          # Time limit in seconds for uploading
+
+upload_data: false
+upload_result: false
