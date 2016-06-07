@@ -52,7 +52,6 @@ function handleFileSelect(evt) {
           if (!(file_list.hasOwnProperty('test_list.json'))) {
             bootbox.alert('You have to select the test_list.json file!');
           } else {
-            TestList.summarize();
             TestList.show();
           }
         }
@@ -99,7 +98,6 @@ function handleFileSelectDropbox() {
             if (!(file_list.hasOwnProperty('test_list.json'))) {
               bootbox.alert('You have to select the test_list.json file!');
             } else {
-              TestList.summarize();
               TestList.show();
             }
           }
