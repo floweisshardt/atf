@@ -1,4 +1,4 @@
-#from plugin_resources import RecordResources
-from plugin_interface import RecordInterface
-#from plugin_obstacle_distance import RecordObstacleDistance
-# from example import Example
+#from atf_recorder_plugins.plugin_resources import RecordResources
+from atf_recorder_plugins.plugin_interface import RecordInterface
+#from atf_recorder_plugins.plugin_obstacle_distance import RecordObstacleDistance
+# from atf_recorder_plugins.example import Example

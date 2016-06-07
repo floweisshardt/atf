@@ -15,7 +15,6 @@ class CalculateInterfaceParamHandler:
         :param params: Parameter
         """
         metrics = []
-
         if type(params) is not list:
             rospy.logerr("metric config not a list")
             return False

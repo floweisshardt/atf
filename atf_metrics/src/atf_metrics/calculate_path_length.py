@@ -26,7 +26,7 @@ class CalculatePathLengthParamHandler:
                 groundtruth = metric["groundtruth"]
                 groundtruth_epsilon = metric["groundtruth_epsilon"]
             except (TypeError, KeyError):
-                rospy.logwarn("No groundtruth parameters given, skipping groundtruth evaluation for metric 'path_length'")
+                rospy.logwarn("No groundtruth parameters given, skipping groundtruth evaluation for metric 'path_length' in testblock '%s'", testblock_name)
                 groundtruth = None
                 groundtruth_epsilon = None
             metrics.append(CalculatePathLength(metric["root_frame"], metric["measured_frame"], groundtruth, groundtruth_epsilon))
@@ -82,7 +82,7 @@ class CalculatePathLength:
                                                rospy.Duration.from_sec(1 / (2*self.tf_sampling_freq)))
                 (trans, rot) = self.listener.lookupTransform(self.root_frame, self.measured_frame, rospy.Time(0))
 
-            except (tf.Exception, tf.LookupException, tf.ConnectivityException), e:
+            except (tf.Exception, tf.LookupException, tf.ConnectivityException):
                 #rospy.logwarn(e)
                 pass
             else:

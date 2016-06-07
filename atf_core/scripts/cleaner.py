@@ -1,14 +1,12 @@
 #!/usr/bin/env python
 import rospy
-import yaml
 import unittest
 import rostest
 import shutil
 import os
-import copy
-import json
 
 from atf_core import ATFConfigurationParser
+
 
 class Cleaner():
     def __init__(self):

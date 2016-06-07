@@ -71,7 +71,7 @@ class Testblock:
         t.name = self.name
         t.trigger = TestblockTrigger.PURGE
         self.trigger = t
-    
+
     def _purge(self):
         rospy.loginfo("Purging testblock '%s'", self.name)
         for metric in self.metrics:
@@ -116,7 +116,7 @@ class Testblock:
         t.name = self.name
         t.trigger = TestblockTrigger.PAUSE
         self.trigger = t
-    
+
     def _pause(self):
         rospy.loginfo("Pausing testblock '%s'", self.name)
         for metric in self.metrics:
@@ -141,7 +141,7 @@ class Testblock:
         t.name = self.name
         t.trigger = TestblockTrigger.STOP
         self.trigger = t
-    
+
     def _stop(self):
         rospy.loginfo("Stopping testblock '%s'", self.name)
         for metric in self.metrics:
@@ -212,11 +212,9 @@ class Testblock:
 
     def _succeeded_state(self): # will never be called
         self._wait_while_transition_is_active()
-        pass
 
     def _error_state(self): # will never be called
         self._wait_while_transition_is_active()
-        pass
 
 class ATFTestblockError(Exception):
     pass
