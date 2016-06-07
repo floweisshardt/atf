@@ -91,49 +91,6 @@ var TestList = {
       number++;
     });
   },
-  summarize: function () {
-    console.log("summarize")
-    var test_list = FileStorage.readData(this.name);
-    var this_class = this;
-    //console.log("test_list=", test_list)
-
-    $.each(test_list, function (test_name, test_config) {
-      //console.log("test_name=", test_name)
-      //console.log("test_config=", test_config)
-      var errors = {
-        planning: {},
-        error: 0
-      };
-      
-      var test_data_complete = FileStorage.readData("merged_" + test_name);
-      //console.log("test_data_complete=", test_data_complete)
-
-      // Check for errors
-      var test_failed = 0;
-      $.each(errors['planning'], function (testblock_name, errors) {
-        test_failed += errors;
-        if (errors === test_config['subtests'].length) {
-          test_data_complete[testblock_name]['status'] = 'error';
-          return false;
-        } else if ((errors['error'] + errors['planning']) === test_config['subtests'].length) {
-          test_data_complete[testblock_name]['status'] = 'error';
-        }
-      });
-      test_failed += errors['error'];
-      if (errors['error'] === test_config['subtests'].length) {
-        test_data_complete = {};
-        test_data_complete['error'] = 'An error occured outside monitored testblocks. Aborted analysis...';
-      }
-
-      FileStorage.removeData(test_name);
-      if (Object.keys(test_data_complete).length != 0) {
-        test_list[test_name]['tests_failed'] = test_failed;
-        FileStorage.writeData("merged_" + test_name, test_data_complete);
-      }
-    });
-    FileStorage.removeData(this.name);
-    FileStorage.writeData(this.name, test_list);
-  },
   checkForErrors: function (file) {
     var error = '';
     if (file.hasOwnProperty('error')) {
