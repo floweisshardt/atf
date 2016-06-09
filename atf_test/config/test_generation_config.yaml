@@ -1,7 +1,8 @@
-test_suite_file: "config/test_suite.yaml"                           # Path of the test_suite file
-test_config_file: "config/test_config.yaml"                         # Path of the test_config file
-robot_config_path: "config/"                                        # Folder which contains the robot_config files
-test_repetitions: 2                                                 # Number of repetitions per test
+suites_file: config/test_suites.yaml                                # Path of the test_suite file
+test_config_path: config/test_configs                               # Path of the test_config file
+robot_config_path: config/robots                                    # Folder which contains the robot_config files
+robot_env_config_path: "config/robot_envs"                          # Folder which contains the robot_env_config files
+repetitions: 2                                                      # Number of repetitions per test
 
 app_executable: "application.py"                                    # Name of the application's executable file
 additional_launch_file: "launch/application.launch"                 # Path of the additional launch file
