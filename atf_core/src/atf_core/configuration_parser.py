@@ -15,8 +15,6 @@ class ATFConfigurationParser:
 
         # get full config from parameter server (test_config = list of all test configs)
         self.config = rosparam.get_param(self.ns)
-        # select the current test_config and replace test_config (list) with the current test_config (test_config[test_config_name])
-        self.config["test_config"] = self.config["test_config"][self.config["test_config_name"]]
         #print "config loader: config=", self.config
 
         #self.test_name = self.config["test_name"]

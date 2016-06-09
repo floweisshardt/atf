@@ -16,7 +16,7 @@ class ATFRecorder:
     def __init__(self, config, testblock_list):
         self.ns = "/atf/"
         self.config = config
-        #print "recorder_core: self.config=", self.config
+        #print "recorder_core: config=", self.config
 
         recorder_config = self.load_data(rospkg.RosPack().get_path("atf_recorder_plugins") +
                                          "/config/recorder_plugins.yaml")
@@ -58,7 +58,6 @@ class ATFRecorder:
         self.subscriber = []
         self.topics = self.get_topics()
         rospy.Timer(rospy.Duration(0.5), self.create_subscriber_callback)
-        rospy.sleep(1) #wait for subscribers to get active (rospy bug?)
 
         # test status monitoring
         #self.test_status_publisher = rospy.Publisher(self.ns + "test_status", TestStatus, queue_size=10)
@@ -77,6 +76,19 @@ class ATFRecorder:
 
         #rospy.Service(self.topic + "recorder_command", RecorderCommand, self.command_callback)
         rospy.on_shutdown(self.shutdown)
+        
+        # wait for topics and services to become active
+        for topic in self.config["robot_config"]["wait_for_topics"]:
+            rospy.loginfo("Waiting for topic '%s'...", topic)
+            rospy.wait_for_message(topic, rospy.AnyMsg)
+            rospy.loginfo("... got message on topic '%s'.", topic)
+
+        for service in self.config["robot_config"]["wait_for_services"]:
+            rospy.loginfo("Waiting for service '%s'...", service)
+            rospy.wait_for_service(service)
+            rospy.loginfo("... service '%s' available.", service)
+
+        rospy.sleep(1) #wait for subscribers to get active (rospy bug?)
         rospy.loginfo("ATF recorder: started!")
 
     def shutdown(self):
