@@ -140,10 +140,6 @@ class GenerateTests:
             if self.generation_config["additional_launch_file"] != "":
                 test_record.append(include(file="$(find " + self.package_name + ")/" + self.generation_config["additional_launch_file"]))
 
-            #test_record.append(node(param(name="/test_config_file", value="$(find " + self.package_name + ")/" + self.generation_config["test_config_file"]),
-            #                        param(name="/bagfile_output", value=self.bagfile_output),
-            #                        name="atf_recorder", pkg="atf_recorder", type="recorder_core.py", output="screen"))
-
             for params in robot_config["additional_parameter"]:
                 test_record.append(param(name=str(params["name"]), value=str(params["value"])))
 
@@ -151,7 +147,7 @@ class GenerateTests:
                 test_record.append(arg(name=str(args["name"]), value=str(args["value"])))
 
             test_record.append(test({'test-name': "recording_" + test_name, 'pkg': self.package_name, 'type': self.generation_config['app_executable'],
-                      'time-limit': str(self.time_limit_recording)}))
+                      'time-limit': str(self.time_limit_recording), 'required': "true"}))
 
             xmlstr = minidom.parseString(ElementTree.tostring(test_record)).toprettyxml(indent="    ")
             filepath = os.path.join(self.test_generated_recording_path, "recording_" + test_name) + ".test"
@@ -173,12 +169,12 @@ class GenerateTests:
                 param(name=self.ns + "json_output", value=self.json_output),
                 param(name=self.ns + "yaml_output", value=self.yaml_output),
                 #param(name="number_of_tests", value=str(len(self.test_list))),
-                node(name="player", pkg="rosbag", type="play", output="log", args="--delay=5.0 --clock " +
+                node(name="player", pkg="rosbag", type="play", required="true", output="log", args="--delay=5.0 --clock " +
                                                                                      "--rate=" + str(self.speed_factor_analysis) + " " +
                                                                                      self.bagfile_output + test_name +
                                                                                      ".bag"),
                 test({'test-name': "analysing_" + test_name, 'pkg': "atf_core", 'type': "analyser.py",
-                      'time-limit': str(self.time_limit_analysing)})
+                      'time-limit': str(self.time_limit_analysing), 'required': "true"})
             )
 
             xmlstr = minidom.parseString(ElementTree.tostring(test_analyse)).toprettyxml(indent="    ")
