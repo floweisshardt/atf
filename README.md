@@ -4,6 +4,8 @@ CI-Status ```master```: [![Build Status](https://travis-ci.org/ipa-fmw/atf.svg?b
 
 CI-Status ```stable```: [![Build Status](https://travis-ci.org/ipa-fmw/atf.svg?branch=stable)](https://travis-ci.org/ipa-fmw/atf)
 
+CI-Status ```atf_test_apps/master```: [![Build Status](https://travis-ci.org/ipa-fmw/atf_test_apps.svg?branch=master)](https://travis-ci.org/ipa-fmw/atf_test_apps)
+
 The ATF is a testing framework written for [ROS](http://www.ros.org/) which supports executing integration and system tests, running benchmarks and monitor the code behaviour over time. The ATF provides basic building blocks for easy integration of the tests into your application. Furthermore the ATF provides everything to automate the execution and analysis of tests as well as a graphical web-based frontend to visualize the results.
 
 ## Architecture
