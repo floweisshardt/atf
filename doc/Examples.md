@@ -50,19 +50,19 @@ rosrun atf_presenter chromium.sh
 ```
 You should now see 
 
-SCREENSHOT1
+<img src="data/atf_presenter1.png" width="500">
 
 Please select the file ```test_list.json``` and all ```merged_*.json``` files out of the ```results_json``` directory.
 
-SCREENSHOT2
+<img src="data/atf_presenter2.png" width="500">
 
 If all results could be loaded successfully you can press on the 'Details' button to see the test details.
 
-SCREENSHOT3
+<img src="data/atf_presenter3.png" width="500">
 
 Now for all analyzed metrics you will see a diagramm showing the average results, the min/max deviation and the allowed groundtruth tollerances.
 
-SCREENSHOT4
+<img src="data/atf_presenter4.png" width="500">
 
 ### Integrate the ATF into your own application
 ###### Python
