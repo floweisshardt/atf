@@ -11,7 +11,7 @@ The ATF is a testing framework written for [ROS](http://www.ros.org/) which supp
 ###### Recording data
 ###### Analysing metrics
 ###### Visualising results
-###### Implemented metrics
+### Implemented metrics
 The following metrics have been implemented so far:
 
 | Metric        | Description   | Unit  | Mode (span, snap, min/max) |
