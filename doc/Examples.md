@@ -150,7 +150,7 @@ rosrun atf_presenter chromium.sh
 ###### C++
 not yet available
 ### Automating ATF test execution
-If you have your test app written and configuration setup as shown in LIIIIIIIIIIIIIIIIIIIIIINK, there are new catkin targets which trigger the execution of tests in a package:
+If you have your test app written and configuration setup as shown in the [python example] (Examples.md#python), there are new catkin targets which trigger the execution of tests in a package:
 * ```catkin_make atf_<YOUR_PACKAGE>_cleaning ```: cleans all test artefacts (bag, json and yaml files)
 * ```catkin_make atf_<YOUR_PACKAGE>_recording```: triggers the ```cleaning``` target and all recording tests
 * ```catkin_make atf_<YOUR_PACKAGE>_analysing```: triggers the ```recording``` target and all analysing tests
