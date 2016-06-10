@@ -87,9 +87,9 @@ class GenerateTests:
         param = em.param
         rosparam = em.rosparam
 
-        print "self.test_list=", self.test_list
+        #print "self.test_list=", self.test_list
         for test_name in self.test_list.keys():
-            print "\ntest_name=", test_name
+            #print "\ntest_name=", test_name
             test_config = self.load_yaml(os.path.join(self.package_path, self.generation_config["test_config_path"], self.test_list[test_name]["test_config"] + ".yaml"))
             robot_config = self.load_yaml(os.path.join(self.package_path, self.generation_config["robot_config_path"], self.test_list[test_name]["robot"] + ".yaml"))
             robot_env_config = self.load_yaml(os.path.join(self.package_path, self.generation_config["robot_env_config_path"], self.test_list[test_name]["robot_env"] + ".yaml"))
@@ -257,7 +257,6 @@ class GenerateTests:
                 
                 # fix keys to be sinular not plural any more
                 for key in variation_elements:
-                    print "key=", key
                     new_key = variation_elements_singular[variation_elements.index(key)]
                     test[new_key] = test.pop(key)
 
