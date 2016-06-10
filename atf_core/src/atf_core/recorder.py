@@ -21,12 +21,15 @@ class ATFRecorder:
         recorder_config = self.load_data(rospkg.RosPack().get_path("atf_recorder_plugins") +
                                          "/config/recorder_plugins.yaml")
 
-        # delete test_results directories and create new ones
-        if os.path.exists(self.config["bagfile_output"]):
-        #    shutil.rmtree(self.config["bagfile_output"]) #FIXME will fail if multiple test run concurrently
+        try:
+            # delete test_results directories and create new ones
+            if os.path.exists(self.config["bagfile_output"]):
+            #    shutil.rmtree(self.config["bagfile_output"]) #FIXME will fail if multiple test run concurrently
+                pass
+            else:
+                os.makedirs(self.config["bagfile_output"])
+        except OSError:
             pass
-        else:
-            os.makedirs(self.config["bagfile_output"])
 
         # create bag file writer handle
         self.lock_write = Lock()
