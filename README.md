@@ -31,14 +31,11 @@ Further metrics (in development):
 | ```obstacle_distance``` | The ```obstacle_distance``` metric measures the distance between two meshes   | [m] | snap, min/max |
 | ```message_match``` | The ```message_match``` metric checks if a message content matches its desired content. | [bool] | snap |
 
+## Installation
+For installation instruction see [ATF Installation](https://github.com/ipa-fmw/atf/blob/docu/doc/Installation.md).
+
 ## Using the ATF (by examples)
-### Basic installation
-### Running simple atf test apps
-
-
-### Integrate the ATF into your own application
-### How to use the ATF in a "simulation-in-the-loop" setup using [gazebo](http://gazebosim.org/)
-### How to use the ATF for benchmarking
+For examples how to use the ATF see [ATF Examples](https://github.com/ipa-fmw/atf/blob/docu/doc/Examples.md)
 
 ## Contributing to the ATF
 ### Extend the ATF with your own metric
