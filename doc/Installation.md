@@ -1,5 +1,8 @@
 # Installation
-## Installing from source
+### Installation from release
+not yet available
+
+### Installing from source
 
 1. Prerequisites:
   * Install Ubuntut 14.04 LTS "trusty" (either fresh from an image or using dist-ugrade)

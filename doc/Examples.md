@@ -1,7 +1,10 @@
 # Using the ATF (by examples)
+[Running simple atf test apps][Running simple atf test apps]
+
+
 ### Running simple atf test apps
 ###### Download and build test apps
-For each [implemented metric](https://github.com/ipa-fmw/atf#implemented-metrics) there is a test app package that uses the metric in a simple application. You can find all the test apps in the [atf_test_apps](https://github.com/ipa-fmw/atf_test_apps) repository.
+For each [implemented metric](../README.md#implemented-metrics) there is a test app package that uses the metric in a simple application. You can find all the test apps in the [atf_test_apps](https://github.com/ipa-fmw/atf_test_apps) repository.
 
 1. Get sources
 ```
