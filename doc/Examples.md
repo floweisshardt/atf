@@ -1,8 +1,8 @@
 # Using the ATF (by examples)
-[Running simple atf test apps](./#running-simple-atf-test-apps)
-
-[Running simple atf test apps](Examples.md#running-simple-atf-test-apps)
-
+* [Running simple atf test apps](Examples.md#running-simple-atf-test-apps)
+* [Integrate the ATF into your own application](Examples.md#integrate-the-atf-into-your-own-application)
+* [How to use the ATF with "simulation-in-the-loop"](Examples.md#how-to-use-the-atf-in-a-simulation-in-the-loop-setup-using-gazebo)
+* [How to use the ATF for benchmarking](Examples.md#how-to-use-the-atf-for-benchmarking)
 
 ### Running simple atf test apps
 ###### Download and build test apps
