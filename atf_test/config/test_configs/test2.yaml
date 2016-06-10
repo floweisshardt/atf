@@ -7,11 +7,11 @@ testblock_small:
     - root_frame: link1
       measured_frame: link2
       groundtruth: 6.28
-      groundtruth_epsilon: 1.0
+      groundtruth_epsilon: 1.5
     - root_frame: link1
       measured_frame: link3
       groundtruth: 0.0
-      groundtruth_epsilon: 1.0
+      groundtruth_epsilon: 1.5
   publish_rate:
     - topic: topic1
       groundtruth: 11
@@ -30,11 +30,11 @@ testblock_large:
     - root_frame: link1
       measured_frame: link2
       groundtruth: 12.56
-      groundtruth_epsilon: 1.0
+      groundtruth_epsilon: 1.5
     - root_frame: link1
       measured_frame: link3
       groundtruth: 0
-      groundtruth_epsilon: 1.0
+      groundtruth_epsilon: 1.5
   publish_rate:
     - topic: /topic1
       groundtruth: 11
