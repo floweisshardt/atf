@@ -15,7 +15,7 @@ The ATF is a testing framework written for [ROS](http://www.ros.org/) which supp
 The following metrics have been implemented so far:
 
 | Metric        | Description   | Unit  | Mode (span, snap, min/max) |
-|:--------------|:--------------|:-----:|:--------------------------:|
+|:-------------:|:--------------|:-----:|:--------------------------:|
 | ```time```    | The ```time``` metric measures the elapsed time. | [sec] | span |
 | ```path_length```      | The ```path_length``` metric measures the cartesian path (distance integrated over time) of a TF frame with respect to another frame.    |  [m] | span |
 | ```publish_rate``` | The ```publish_rate``` metric measures the publising rate of a topic   | [1/sec] | span |
@@ -24,7 +24,7 @@ The following metrics have been implemented so far:
 Further metrics (in development):
 
 | Metric        | Description   | Unit  | Mode (span, snap, min/max) |
-| :------------ |:--------------| :----:|:--------------------------:|
+|:-------------:|:--------------|:-----:|:--------------------------:|
 | ```ressources```    | The ```ressources``` metric measures the ressource consumption of a node on the operating system level (CPU, RAM, IO). | [%], [MB], [MB/sec] | snap |
 | ```path_velocity```      | The ```path_velocity``` metric measures the cartesian velocity (distance differntiated over time) of a TF frame with respect to another frame.    |  [m/sec] | span |
 | ```distance```      | The ```distance``` metric measures the cartesian distance between two TF frames.    |  [m] | snap, min/max |
@@ -122,10 +122,21 @@ You an use the ATF presenter to visualize the results in a webbrowser:
 ```
 rosrun atf_presenter chromium.sh
 ```
+You should now see 
+
+SCREENSHOT1
+
 Please select the file ```test_list.json``` and all ```merged_*.json``` files out of the ```results_json``` directory.
 
-SCREENSHOT
+SCREENSHOT2
 
+If all results could be loaded successfully you can press on the 'Details' button to see the test details.
+
+SCREENSHOT3
+
+Now for all analyzed metrics you will see a diagramm showing the average results, the min/max deviation and the allowed groundtruth tollerances.
+
+SCREENSHOT4
 
 ### Integrate the ATF into your own application
 ### How to use the ATF in a "simulation-in-the-loop" setup using [gazebo](http://gazebosim.org/)
