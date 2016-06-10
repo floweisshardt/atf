@@ -78,8 +78,55 @@ catkin_make
 source ~/catkin_ws/devel/setup.bash
 ```
 
-
 ### Running simple atf test apps
+For each [implemented metric](https://github.com/ipa-fmw/atf#implemented-metrics) there is a test app package that uses the metric in a simple application. You can find all the test apps in the [atf_test_apps](https://github.com/ipa-fmw/atf_test_apps) repository.
+
+1. Get sources
+```
+cd ~/catkin_ws/src
+wstool set atf_test_apps --git https://github.com/ipa-fmw/atf_test_apps.git
+wstool update
+```
+
+1. Build and generate tests
+```
+cd ~/catkin_ws
+catkin_make --force-cmake
+```
+
+1. Run the tests
+To run all tests:
+```
+cd ~/catkin_ws
+catkin_make run_tests
+```
+or just tests from a specific package (e.g. for ```atf_test_app_time```):
+```
+cd ~/catkin_ws
+catkin_make atf_atf_test_app_time
+```
+
+1. Check the results
+If all goes well, you should see the recorded bag files in ```/tmp/atf_test_app_time```:
+```
+ls /tmp/atf_test_app_time/data
+rosbag info /tmp/atf_test_app_time/ts0_c0_r0_e0_0.bag
+```
+and the (merged) results in ```/tmp/atf_test_app_time/results_yaml```:
+```
+cat /tmp/atf_test_app_time/results_yaml/merged_ts0_c0_r0_e0.yaml
+```
+
+1. Visualize the results
+You an use the ATF presenter to visualize the results in a webbrowser:
+```
+rosrun atf_presenter chromium.sh
+```
+Please select the file ```test_list.json``` and all ```merged_*.json``` files out of the ```results_json``` directory.
+
+SCREENSHOT
+
+
 ### Integrate the ATF into your own application
 ### How to use the ATF in a "simulation-in-the-loop" setup using [gazebo](http://gazebosim.org/)
 ### How to use the ATF for benchmarking
