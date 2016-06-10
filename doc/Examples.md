@@ -1,5 +1,7 @@
 # Using the ATF (by examples)
-[Running simple atf test apps][Running simple atf test apps]
+[Running simple atf test apps](./#running-simple-atf-test-apps)
+
+[Running simple atf test apps](Examples.md#running-simple-atf-test-apps)
 
 
 ### Running simple atf test apps
