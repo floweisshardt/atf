@@ -50,19 +50,19 @@ rosrun atf_presenter chromium.sh
 ```
 You should now see 
 
-SCREENSHOT1
+<img src="data/atf_presenter1.png" width="500">
 
 Please select the file ```test_list.json``` and all ```merged_*.json``` files out of the ```results_json``` directory.
 
-SCREENSHOT2
+<img src="data/atf_presenter2.png" width="500">
 
 If all results could be loaded successfully you can press on the 'Details' button to see the test details.
 
-SCREENSHOT3
+<img src="data/atf_presenter3.png" width="500">
 
 Now for all analyzed metrics you will see a diagramm showing the average results, the min/max deviation and the allowed groundtruth tollerances.
 
-SCREENSHOT4
+<img src="data/atf_presenter4.png" width="500">
 
 ### Integrate the ATF into your own application
 ###### Python
@@ -150,7 +150,7 @@ rosrun atf_presenter chromium.sh
 ###### C++
 not yet available
 ### Automating ATF test execution
-If you have your test app written and configuration setup as shown in LIIIIIIIIIIIIIIIIIIIIIINK, there are new catkin targets which trigger the execution of tests in a package:
+If you have your test app written and configuration setup as shown in the [example above](Examples.md#integrate-the-atf-into-your-own-application), there are new catkin targets which trigger the execution of tests in a package:
 * ```catkin_make atf_<YOUR_PACKAGE>_cleaning ```: cleans all test artefacts (bag, json and yaml files)
 * ```catkin_make atf_<YOUR_PACKAGE>_recording```: triggers the ```cleaning``` target and all recording tests
 * ```catkin_make atf_<YOUR_PACKAGE>_analysing```: triggers the ```recording``` target and all analysing tests
