@@ -106,11 +106,7 @@ class Test(unittest.TestCase):
 
 if __name__ == '__main__':
     rospy.init_node('test_name')
-    if "standalone" in sys.argv:
-        app = Application()
-        app.execute()
-    else:
-        rostest.rosrun('application', 'recording', Test, sysargs=None)
+    rostest.rosrun('application', 'recording', Test, sysargs=None)
 ```
 Alongside with the modifications in the app code, you need to create some configuration files. Please have a look at the [atf test apps repository](https://github.com/ipa-fmw/atf_test_apps) for configuration references. Typically you will have the following files:
 ```
