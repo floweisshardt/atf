@@ -18,5 +18,6 @@
     <depend>atf_metrics</depend>
     <depend>atf_recorder_plugins</depend>
     <depend>atf_status_server</depend>
+    <depend>python-lxml</depend>
 
 </package>
