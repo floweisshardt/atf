@@ -38,7 +38,7 @@ catkin_make atf_atf_test_app_time
 If all goes well, you should see the recorded bag files in ```/tmp/atf_test_app_time```:
 ```
 ls /tmp/atf_test_app_time/data
-rosbag info /tmp/atf_test_app_time/ts0_c0_r0_e0_0.bag
+rosbag info /tmp/atf_test_app_time/data/ts0_c0_r0_e0_0.bag
 ```
 and the (merged) results in ```/tmp/atf_test_app_time/results_yaml```:
 ```
