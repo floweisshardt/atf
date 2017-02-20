@@ -1,0 +1,18 @@
+<?xml version="1.0"?>
+<launch>
+    <!-- Add all launch files that you want to run additionally to your robot bringup like moveit, etc... -->
+    
+    <node name="bagfile" pkg="rosbag" type="play" args="--clock --start 490 /home/fmw-hb/Desktop/filtered3.bag" output="screen"/>   
+    
+    <include file="$(find cob_bringup)/drivers/scan_unifier.launch">
+			<arg name="robot" value="cob4-1"/>
+    </include>
+    
+    <include file="$(find ipa_long_term_slam)/launch/long_term_slam.launch">
+        <arg name="init_from_backup" value="false"/>
+        <arg name="init_from_static_map" value="true"/>
+        <arg name="robot_env" value="saturn-ingolstadt" />
+        <arg name="env_pack" value="$(find msh_env_config)" />
+    </include> 
+   
+</launch>

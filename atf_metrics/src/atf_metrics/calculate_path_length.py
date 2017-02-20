@@ -91,10 +91,14 @@ class CalculatePathLength:
                     self.rot_old = rot
                     self.first_value = False
                     return
-
                 path_increment = math.sqrt((trans[0] - self.trans_old[0]) ** 2 + (trans[1] - self.trans_old[1]) ** 2 +
                                            (trans[2] - self.trans_old[2]) ** 2)
-                self.path_length += path_increment
+                if(path_increment < 1):
+                    #rospy.logwarn("Transformation: %s, Path Increment: %s",str(trans), str(path_increment))
+                    self.path_length += path_increment
+
+                else:
+                    rospy.logwarn("Transformation Failed! \n Transformation: %s, Path Increment: %s",str(trans), str(path_increment))
 
                 self.trans_old = trans
                 self.rot_old = rot

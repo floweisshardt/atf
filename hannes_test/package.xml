@@ -1,0 +1,22 @@
+<?xml version="1.0"?>
+<package format="2">
+    <name>hannes_test</name>
+    <version>0.1.0</version>
+    <description>Example test configuration to verifying the correct behaviour of the ATF.</description>
+
+    <maintainer email="florian.weisshardt@ipa.fraunhofer.de">Florian Weisshardt</maintainer>
+
+    <author email="florian.weisshardt@ipa.fraunhofer.de">Florian Weisshardt</author>
+
+    <license>Apache 2.0</license>
+
+    <buildtool_depend>catkin</buildtool_depend>
+
+    <depend>atf_core</depend>
+    <depend>roslaunch</depend>
+    <depend>rospy</depend>
+    <depend>rostopic</depend>
+
+    <test_depend>rostest</test_depend>
+
+</package>
