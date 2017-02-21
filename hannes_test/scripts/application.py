@@ -21,10 +21,11 @@ class Application:
         self.sss = simple_script_server()
 
     def execute(self):
-
-        # small testblock (circle r=0.5, time=3)
+        rospy.sleep(1)
+        self.initpose()
+        rospy.sleep(15)
         self.atf.start("testblock_small")
-        rospy.sleep(20)
+        rospy.sleep(12)#600s
         #self.sss.move("base", [25.0,68.5,0.0])
         self.atf.stop("testblock_small")
 
@@ -46,6 +47,28 @@ class Application:
                     child1_frame_id,
                     parent_frame_id)
             rate.sleep()
+            
+    def initpose(self):
+        pub_initialpose = rospy.Publisher('initialpose', PoseWithCovarianceStamped, queue_size=1)
+
+        initialpose = PoseWithCovarianceStamped()
+        initialpose.header.stamp = rospy.Time.now()
+        print "stamp: "+str( initialpose.header.stamp)
+        initialpose.header.frame_id = "map"
+        initialpose.pose.pose.position.x = 8.2
+        initialpose.pose.pose.position.y = 39.1
+        initialpose.pose.pose.position.z = 0
+        quat = tf.transformations.quaternion_from_euler(0.0, 0.0, -2.78)
+        initialpose.pose.pose.orientation.x = quat[0]
+        initialpose.pose.pose.orientation.y = quat[1]
+        initialpose.pose.pose.orientation.z = quat[2]
+        initialpose.pose.pose.orientation.w = quat[3]
+
+        # publish robot pose on initialpose topic
+        for i in range(0,2):
+            pub_initialpose.publish(initialpose)
+            rospy.sleep(1.5)
+            print "publish initpose"
 
 class Test(unittest.TestCase):
     def setUp(self):

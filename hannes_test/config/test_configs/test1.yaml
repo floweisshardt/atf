@@ -4,5 +4,13 @@ testblock_small:
   path_length:
     - root_frame: map
       measured_frame: base_link
- 
+  distance:
+    - root_frame: base_link_ekf
+      measured_frame: base_link 
+  localization:
+    - root_frame: base_link_ekf
+      measured_frame: base_link 
+      groundtruth: 0.0
+      groundtruth_epsilon: 2.0
+
 # testblock_all empty
