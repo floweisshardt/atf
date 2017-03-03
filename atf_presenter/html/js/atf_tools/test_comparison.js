@@ -16,57 +16,57 @@ var TestComparison = {
     efficiency: 100
   },
   getMaximum: function (files) {
-    var max = {};
-    $.each(files, function (index, test_name) {
-      var test_results = FileStorage.readData(test_name);
-
-      $.each(test_results, function (testblock_name, testblock_data) {
-          $.each(testblock_data, function (level_2, level_2_data) {
-            if (level_2_data.hasOwnProperty('max')) {
-              // Time
-              if (!max.hasOwnProperty(level_2)) max[level_2] = 0;
-              if (level_2_data['max'] > max[level_2]) {
-                max[level_2] = level_2_data['max'];
-              }
-            } else {
-              $.each(level_2_data, function (level_3, level_3_data) {
-                if (level_3_data.hasOwnProperty('max')) {
-                  // Path length & obstacle distance
-                  if (!max.hasOwnProperty(level_2)) max[level_2] = 0;
-                  if (level_3_data['max'] > max[level_2]) {
-                    max[level_2] = level_3_data['max'];
-                  }
-                } else {
-                  $.each(level_3_data, function (level_4, level_4_data) {
-                    // Resources
-                    if (typeof level_4_data['max'][0] === 'undefined') {
-                      // CPU & Mem
-                      if (!max.hasOwnProperty(level_4)) max[level_4] = 0;
-                      if (level_4_data['max'] > max[level_4]) {
-                        max[level_4] = level_4_data['max'];
-                      }
-                    } else {
-                      // IO & Network
-                      if (!max.hasOwnProperty(level_4)) {
-                        max[level_4] = [];
-                        for (var i = 0; i < level_4_data['max'].length; i++) {
-                          max[level_4].push(0);
-                        }
-                      }
-                      $.each(level_4_data['max'], function (index, value) {
-                        if (value > max[level_4][index]) {
-                          max[level_4][index] = value;
-                        }
-                      });
-                    }
-                  });
-                }
-              });
-            }
-          });
-      });
-    });
-    return max;
+    //var max = {};
+    //$.each(files, function (index, test_name) {
+    //  var test_results = FileStorage.readData(test_name);
+    //
+    //  $.each(test_results, function (testblock_name, testblock_data) {
+    //      $.each(testblock_data, function (level_2, level_2_data) {
+    //        if (level_2_data.hasOwnProperty('max')) {
+    //          // Time
+    //          if (!max.hasOwnProperty(level_2)) max[level_2] = 0;
+    //          if (level_2_data['max'] > max[level_2]) {
+    //            max[level_2] = level_2_data['max'];
+    //          }
+    //        } else {
+    //          $.each(level_2_data, function (level_3, level_3_data) {
+    //            if (level_3_data.hasOwnProperty('max')) {
+    //              // Path length & obstacle distance
+    //              if (!max.hasOwnProperty(level_2)) max[level_2] = 0;
+    //              if (level_3_data['max'] > max[level_2]) {
+    //                max[level_2] = level_3_data['max'];
+    //              }
+    //            } else {
+    //              $.each(level_3_data, function (level_4, level_4_data) {
+    //                // Resources
+    //                if (typeof level_4_data['max'][0] === 'undefined') {
+    //                  // CPU & Mem
+    //                  if (!max.hasOwnProperty(level_4)) max[level_4] = 0;
+    //                  if (level_4_data['max'] > max[level_4]) {
+    //                    max[level_4] = level_4_data['max'];
+    //                  }
+    //                } else {
+    //                  // IO & Network
+    //                  if (!max.hasOwnProperty(level_4)) {
+    //                    max[level_4] = [];
+    //                    for (var i = 0; i < level_4_data['max'].length; i++) {
+    //                      max[level_4].push(0);
+    //                    }
+    //                  }
+    //                  $.each(level_4_data['max'], function (index, value) {
+    //                    if (value > max[level_4][index]) {
+    //                      max[level_4][index] = value;
+    //                    }
+    //                  });
+    //                }
+    //              });
+    //            }
+    //          });
+    //        }
+    //      });
+    //  });
+    //});
+    return 10;
   },
   compareTests: function (files) {
     var test_list = FileStorage.readData('test_list');
@@ -146,98 +146,148 @@ var TestComparison = {
 
     var temp_testblock = {};
     var this_class = this;
+    var data_per_testblock = {};
+    var data_per_test = {};
+    number_of_testblocks = Object.keys(test_results).length;
+    testblock_number = 0;
 
     // Iterate through all testblocks
     $.each(test_results, function (testblock_name, testblock_data) {
-      $.each(testblock_data, function (level_2, level_2_data) {
-        if (level_2_data.hasOwnProperty('max')) {
-          // Time
-          if (!temp_testblock.hasOwnProperty(level_2)) {
-            temp_testblock[level_2] = {
-              total: max_values[level_2],
-              min: [],
-              max: [],
-              average: []
-            };
-          }
-          if (temp_testblock[level_2]['total'] != 0) {
-            temp_testblock[level_2]['average'].push((temp_testblock[level_2]['total'] - level_2_data['average']) / temp_testblock[level_2]['total']);
-            temp_testblock[level_2]['max'].push((temp_testblock[level_2]['total'] - level_2_data['min']) / temp_testblock[level_2]['total']);
-            temp_testblock[level_2]['min'].push((temp_testblock[level_2]['total'] - level_2_data['max']) / temp_testblock[level_2]['total']);
-          }
-        } else {
-          $.each(level_2_data, function (level_3, level_3_data) {
-            if (level_3_data.hasOwnProperty('max')) {
-              // Path length & obstacle distance
-              if (!temp_testblock.hasOwnProperty(level_2)) {
-                temp_testblock[level_2] = {
-                  total: max_values[level_2],
-                  min: [],
-                  max: [],
-                  average: []
-                };
-              }
-              if (temp_testblock[level_2]['total'] != 0) {
-                if (level_2 === 'obstacle_distance') {
-                  temp_testblock[level_2]['average'].push(level_3_data['average'] / temp_testblock[level_2]['total']);
-                  temp_testblock[level_2]['min'].push(level_3_data['min'] / temp_testblock[level_2]['total']);
-                  temp_testblock[level_2]['max'].push(level_3_data['max'] / temp_testblock[level_2]['total']);
-                } else {
-                  temp_testblock[level_2]['average'].push((temp_testblock[level_2]['total'] - level_3_data['average']) / temp_testblock[level_2]['total']);
-                  temp_testblock[level_2]['max'].push((temp_testblock[level_2]['total'] - level_3_data['min']) / temp_testblock[level_2]['total']);
-                  temp_testblock[level_2]['min'].push((temp_testblock[level_2]['total'] - level_3_data['max']) / temp_testblock[level_2]['total']);
-                }
-              }
-            } else {
-              $.each(level_3_data, function (level_4, level_4_data) {
-                // Resources
-                if (!temp_testblock.hasOwnProperty(level_2)) {
-                  temp_testblock[level_2] = {};
-                }
-                if (typeof level_4_data['max'][0] === 'undefined') {
+ 
+      $.each(testblock_data, function (metric_name, metric_list) {
+        //console.log("metric_name=", metric_name);
+        //console.log("metric_list=", metric_list);
+        if ((metric_name == 'time') || (metric_name == 'path_length') || (metric_name == 'publish_rate') || (metric_name == 'interface'))
+        {
+          number_of_entries = Object.keys(metric_list).length;
+          //console.log("number_of_entries=", number_of_entries)
+          $.each(metric_list, function(entry_number, metric_data) {
+            //console.log("entry_number=", entry_number)
+            //console.log("metric_data=", metric_data)
+            metric_key_data = metric_data['data'];
+            
+            // individual settings per metric
+            chart_legend_name = testblock_name
+            if (metric_name == 'path_length') chart_legend_name = testblock_name + "<br>(" + metric_data['details']['root_frame'] + " to " + metric_data['details']['measured_frame'] + ")"
+            if (metric_name == 'publish_rate') chart_legend_name = testblock_name + "<br>(" + metric_data['details']['topic'] + ")";
+            if (metric_name == 'interface') chart_legend_name = testblock_name + "<br>(" + metric_data['details'] + ")";
+            
+            if (!data_per_test.hasOwnProperty(metric_name)) data_per_test[metric_name] = [];
+            
+            if (number_of_testblocks <= 1) {color_testblock = 0}
+            else {color_testblock = (testblock_number/(number_of_testblocks-1)*255).round(0)}
+
+            if (number_of_entries <= 1) {color_entry = 0}
+            else {color_entry = (entry_number/(number_of_entries-1)*255).round(0)}
+
+            rgb = [255-color_testblock, color_testblock, color_entry]
+            color = "rgb(" + rgb[0].toString() + ", " + rgb[1].toString() + ", " + rgb[2].toString() + ")"
+            //console.log("color=", color)
+            //DATEN SCHREIBEN!!!
+            data_per_test[metric_name].push({
+              name: chart_legend_name,
+              data: [{
+                x: testblock_number,
+                y: metric_key_data['average'].round(3),
+                min: metric_key_data['min'].round(3),
+                max: metric_key_data['max'].round(3)
+              }],
+              color: color
+            }, {
+              name: chart_legend_name + '_variation',
+              type: 'errorbar',
+              data: [{
+                x: testblock_number,
+                low: metric_key_data['min'].round(3),
+                high: metric_key_data['max'].round(3)
+              },
+              { 
+                x: testblock_number,
+                low: metric_data['groundtruth'] - metric_data['groundtruth_epsilon'],
+                high: metric_data['groundtruth'] + metric_data['groundtruth_epsilon'],
+                color: "rgb(0, 0, 255)",
+                stemWidth: 10,
+                stemColor: "rgba(255, 255, 255, 0)",
+                whiskerWidth: 3,
+                whiskerColor: "rgba(0, 0, 0, 0.5)"
+              }]
+            });
+          })
+        }
+
+        if (metric_name == 'resources')
+        {
+          // Resources
+          /*      if (typeof level_4_data['max'][0] === 'undefined') {
                   // CPU & Mem
-                  if (!temp_testblock[level_2].hasOwnProperty(level_4)) {
-                    temp_testblock[level_2][level_4] = {
-                      total: max_values[level_4],
-                      min: [],
-                      max: [],
-                      average: []
-                    };
-                  }
-                  if (temp_testblock[level_2][level_4]['total'] != 0) {
-                    temp_testblock[level_2][level_4]['average'].push((temp_testblock[level_2][level_4]['total'] - level_4_data['average']) / temp_testblock[level_2][level_4]['total']);
-                    temp_testblock[level_2][level_4]['max'].push((temp_testblock[level_2][level_4]['total'] - level_4_data['min']) / temp_testblock[level_2][level_4]['total']);
-                    temp_testblock[level_2][level_4]['min'].push((temp_testblock[level_2][level_4]['total'] - level_4_data['max']) / temp_testblock[level_2][level_4]['total']);
-                  }
-                  temp_testblock[level_2][level_4]['length']++;
+                  if (!data_per_testblock.hasOwnProperty(level_4)) data_per_testblock[level_4] = [];
+                  data_per_testblock[level_4].push({
+                    name: level_3,
+                    data: [{
+                      x: 0,
+                      y: level_4_data['average'].round(2),
+                      min: level_4_data['min'].round(2),
+                      max: level_4_data['max'].round(2)
+                    }]
+                  }, {
+                    name: level_3 + '_variation',
+                    type: 'errorbar',
+                    data: [{
+                      low: level_4_data['min'].round(3),
+                      high: level_4_data['max'].round(3)
+                    }]
+                  });
                 } else {
+                  var data = [];
+                  var data_variation = [];
+
                   // IO & Network
-                  if (!temp_testblock[level_2].hasOwnProperty(level_4)) {
-                    temp_testblock[level_2][level_4] = {
-                      total: max_values[level_4],
-                      min: [],
-                      max: [],
-                      average: []
-                    };
-                  }
-                  for (var x = 0; x < level_4_data['max'].length; x++) {
-                    if (temp_testblock[level_2][level_4]['total'][x] != 0) {
-                      temp_testblock[level_2][level_4]['average'].push((temp_testblock[level_2][level_4]['total'][x] - level_4_data['average'][x]) / temp_testblock[level_2][level_4]['total'][x]);
-                      temp_testblock[level_2][level_4]['max'].push((temp_testblock[level_2][level_4]['total'][x] - level_4_data['min'][x]) / temp_testblock[level_2][level_4]['total'][x]);
-                      temp_testblock[level_2][level_4]['min'].push((temp_testblock[level_2][level_4]['total'][x] - level_4_data['max'][x]) / temp_testblock[level_2][level_4]['total'][x]);
+                  if (!data_per_testblock.hasOwnProperty(level_4)) data_per_testblock[level_4] = [];
+                  for (var i = 0; i < level_4_data['min'].length; i++) {
+                    if (level_4 === 'io' && i > 1) {
+                      level_4_data['average'][i] = (level_4_data['average'][i] / 1000).round(0);
+                      level_4_data['min'][i] = (level_4_data['min'][i] / 1000).round(0);
+                      level_4_data['max'][i] = (level_4_data['max'][i] / 1000).round(0);
+                    } else if (level_4 === 'network' && i < 2) {
+                      level_4_data['average'][i] = (level_4_data['average'][i] / 1000).round(0);
+                      level_4_data['min'][i] = (level_4_data['min'][i] / 1000).round(0);
+                      level_4_data['max'][i] = (level_4_data['max'][i] / 1000).round(0);
                     }
+                    data.push({
+                      x: i,
+                      y: level_4_data['average'][i].round(0),
+                      min: level_4_data['min'][i].round(0),
+                      max: level_4_data['max'][i].round(0)
+                    });
+                    data_variation.push({
+                      low: level_4_data['min'][i].round(0),
+                      high: level_4_data['max'][i].round(0)
+                    });
                   }
+                  data_per_testblock[level_4].push({
+                    name: level_3,
+                    data: data
+                  }, {
+                    name: level_3 + '_variation',
+                    type: 'errorbar',
+                    data: data_variation
+                  });
                 }
               });
             }
-          });
+          });*/
         }
       });
-    });
+  });
+    console.log("data per test", data_per_test);
+    console.log("data per testblock", data_per_testblock);
 
     var temp_metrics = {};
+    console.log("temp testblock", temp_testblock);
+    $.each(data_per_test, function (metric, metric_data) {
+      console.log("metric", metric);
+      console.log("metric data", metric_data);
 
-    $.each(temp_testblock, function (metric, metric_data) {
       if (!temp_metrics.hasOwnProperty(metric)) {
         temp_metrics[metric] = {
           average: [],
@@ -278,13 +328,15 @@ var TestComparison = {
     });
 
     $.each(categories, function (index, category) {
+      console.log("category:", category);
+      
       if (category != 'total') {
         var temp = {
           average: 0,
           min: 0,
           max: 0
         };
-
+        
         if (category === 'resources') {
           temp['average'] = math.mean(temp_metrics['resources']['average']) * this_class.weight[category];
           temp['min'] = math.mean(temp_metrics['resources']['min']) * this_class.weight[category];
@@ -332,10 +384,38 @@ var TestComparison = {
       }
     });
 
-    results['total']['average'] = math.mean(temp['average']);
-    results['total']['min'] = math.mean(temp['min']);
-    results['total']['max'] = math.mean(temp['max']);
+    $.each(data_per_testblock, function (metric_name, data) {
+        console.log("metric name", metric_name);
+        console.log("data", data);
+        if (data.length != 0) {
+          results['total']['average']=data_per_test[metric_name].
+        }
+      });
+      testblock_number += 1
+    });
 
+    var details_per_test_panel = $('#details_per_test');
+    details_per_test_panel.empty();
+
+    console.log("data_per_test=", data_per_test)
+    $.each(data_per_test, function (metric_name, data) {
+      console.log("metric name", metric_name);
+      console.log("data", data);
+      if (data.length != 0) test_details.show();
+      details_per_test_panel.append('<div class="panel panel-primary"><div class="panel-heading"></div>' +
+        '<div class="panel-body"><div id="details_' + metric_name + '_content" class="plot"></div></div></div>');
+      $('#details_' + metric_name + '_content').highcharts({
+        chart: plot_options[metric_name]['chart'],
+        title: plot_options[metric_name]['title'],
+        xAxis: plot_options[metric_name]['xAxis'],
+        yAxis: plot_options[metric_name]['yAxis'],
+        tooltip: plot_options[metric_name]['tooltip'],
+        series: data,
+        plotOptions: plot_options[metric_name]['plotOptions']
+      });
+    });
+    
+    console.log("results: ", results);
     return results;
   },
   computePoints: function (test_list, files) {
@@ -344,7 +424,7 @@ var TestComparison = {
 
     // Iterate through selected tests
     $.each(files, function (index, test_name) {
-      var results = this_class.ratingAlgorithm(test_list[test_name], FileStorage.readData(test_name), max_values);
+      var results = this_class.ratingAlgorithm(test_list[test_name], FileStorage.readData("merged_"+test_name), max_values);
 
       //Save chart data
       $.each(results, function (category, data) {
