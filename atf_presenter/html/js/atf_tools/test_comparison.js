@@ -282,7 +282,7 @@ var TestComparison = {
     console.log("data per test", data_per_test);
     console.log("data per testblock", data_per_testblock);
 
-    var temp_metrics = {};
+    /*var temp_metrics = {};
     console.log("temp testblock", temp_testblock);
     $.each(data_per_test, function (metric, metric_data) {
       console.log("metric", metric);
@@ -382,37 +382,33 @@ var TestComparison = {
         temp['min'].push(results[name]['min']);
         temp['max'].push(results[name]['max']);
       }
-    });
+    });*/
 
     $.each(data_per_testblock, function (metric_name, data) {
-        console.log("metric name", metric_name);
-        console.log("data", data);
+        //console.log("metric name", metric_name);
+        //console.log("data", data);
         if (data.length != 0) {
-          results['total']['average']=data_per_test[metric_name].
+          results['total']['min'] = data[metric_name].data.min;
         }
       });
-      testblock_number += 1
-    });
+
 
     var details_per_test_panel = $('#details_per_test');
     details_per_test_panel.empty();
 
-    console.log("data_per_test=", data_per_test)
+    console.log("data_per_test=", data_per_test);
     $.each(data_per_test, function (metric_name, data) {
       console.log("metric name", metric_name);
       console.log("data", data);
-      if (data.length != 0) test_details.show();
-      details_per_test_panel.append('<div class="panel panel-primary"><div class="panel-heading"></div>' +
-        '<div class="panel-body"><div id="details_' + metric_name + '_content" class="plot"></div></div></div>');
-      $('#details_' + metric_name + '_content').highcharts({
-        chart: plot_options[metric_name]['chart'],
-        title: plot_options[metric_name]['title'],
-        xAxis: plot_options[metric_name]['xAxis'],
-        yAxis: plot_options[metric_name]['yAxis'],
-        tooltip: plot_options[metric_name]['tooltip'],
-        series: data,
-        plotOptions: plot_options[metric_name]['plotOptions']
-      });
+      if (data.length != 0){
+        console.log("results: ", data[0].data[0].min);
+        console.log("results: ", data[0].data[0].max);
+        console.log("results: ", data[0].data[0].y);
+        results['total']['min'] = data[0].data[0].min;
+        results['total']['max'] = data[0].data[0].max;
+        results['total']['average'] = data[0].data[0].y;
+
+      }
     });
     
     console.log("results: ", results);
