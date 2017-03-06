@@ -2,6 +2,7 @@
 import numpy
 import rospy
 import yaml
+import copy
 import matplotlib.pyplot as pyplot
 
 class presenter:
@@ -28,9 +29,9 @@ class presenter:
                 self.data.update({metric : []})
 
     def extract_yaml(self, num):
-        avg = self.data.copy()
-        mini = self.data.copy()
-        maxi = self.data.copy()
+        avg = copy.deepcopy(self.data)
+        mini = copy.deepcopy(self.data)
+        maxi = copy.deepcopy(self.data)
         for testblock, metrics in self.yaml_file.iteritems():
             #print ("testblock: ", testblock)
             for metric, values in metrics.iteritems():
@@ -49,13 +50,18 @@ class presenter:
                                         for dictval in number:
                                             print ("value: ", dictval)
                                     elif isinstance(number, float):
-                                        #print ("float: ",number)
+                                        print ("result: ",result)
                                         if attribute == "average":
                                             avg[metric].append(number)
+                                            print "avg:", number
                                         if attribute == "min":
                                             mini[metric].append(number)
+                                            print "min:", number
                                         if attribute == "max":
                                             maxi[metric].append(number)
+                                            print "max:", number
+                                        print "avg:", avg, "min:", mini, "max:", maxi
+                                        print "\n \n \n -------------------------------------------------------------- \n \n \n"
                                     elif isinstance(number, int):
                                         print ("integer: ",number)
                                     elif isinstance(number, str) or isinstance(result, unicode):
@@ -70,46 +76,68 @@ class presenter:
                             else:
                                 rospy.logerr("Error, unknown result!")
         vals = [avg, maxi, mini]
+        print "values", vals
         self.tests.update({"test"+str(num): vals})
+        print "-------------------------------------------------"
         print ("tests:", self.tests)
+        print "-------------------------------------------------"
+
     def show_results(self):
         print self.metric
         for metric in self.metric:
             plotdata = {}
             testnames = []
+            means = []
+            err = []
             for testname, data in self.tests.iteritems():
-                print "-------------------------------------------"
-                print testname
-                print data
-                #plotdata.update({testname : data[metric]})
-                means = data[0][metric]
-                for i in (means):
+                # print "-------------------------------------------"
+                # print testname
+                print "data: ", data
+                print "mean: ",data[0][metric]
+                print "max: ", data[1][metric]
+                # #plotdata.update({testname : data[metric]})
+                means.extend(data[0][metric])
+                err.extend(numpy.array(data[1][metric])-numpy.array(data[0][metric]))
+                print "err:", err
+                for i in data[0][metric]:
                     testnames.append(testname)
 
 
-            print("show")
+            # print("show")
             print testnames
-            print self.metric
-            print plotdata
-            N = 5
-            ind = numpy.arange(len(data[0][metric]))  # the x locations for the groups
-            width = 0.35  # the width of the bars
+            # print self.metric
+            # print plotdata
 
-            #fig, ax = pyplot.subplots()
-            rects1 = ax.bar(ind, means, width, color='r')#, yerr=men_std)
+            fig, ax = pyplot.subplots()
+            y_pos = numpy.arange(len(testnames))
+            print "x", y_pos
+            print "y", means
+            #pyplot.bar(y_pos, means, align='center', alpha=0.5, yerr=err)
+            # example data
+            x = numpy.arange(0.1, 2, 0.5)
+            y = numpy.exp(-x)
+            print "x", x
+            print "y", y
 
-            # women_means = [25, 32, 34, 20, 25]
-            # women_std = [3, 5, 2, 3, 3]
-            # ind = numpy.arange(N)
-            # rects2 = ax.bar(ind + width, women_means, width, color='y', yerr=women_std)
+            # example variable error bar values
+            yerr = 0.1 + 0.2 * numpy.sqrt(x)
+            xerr = 0.1 + yerr
+            #pyplot.errorbar(y_pos, means, yerr=[yerr, 2 * yerr], fmt='--o')
+            #pyplot.bar(y_pos, means, yerr=[yerr, 4 * yerr], alpha=0.5)
+            print "ypos:", y_pos[0], "means", means[0]
+            rects1 = ax.bar(y_pos, means, yerr=[yerr, 4 * yerr], alpha=0.5)
+            rects2 = ax.bar(y_pos, means, yerr=[yerr, 0.5 * yerr], alpha=0.5)
 
-            # add some text for labels, title and axes ticks
+            # pyplot.xticks(y_pos, testnames)
+            # pyplot.ylabel('Usage')
+            # pyplot.title(metric)
+
             ax.set_ylabel('Scores')
-            ax.set_title(metric)
-            ax.set_xticks(ind + width / 2)
-            ax.set_xticklabels(testnames)
+            ax.set_title('Scores by group and gender')
+            ax.set_xticks(y_pos + 0.5 / 2)
+            #ax.set_xticklabels(('G1', 'G2', 'G3', 'G4', 'G5'))
 
-            ax.legend((rects1[0], rects2[0]), ('Men', 'Women'))
+            #ax.legend((rects1[0], rects2[0]), ('Men', 'Women'))
 
             def autolabel(rects):
                 """
@@ -123,6 +151,7 @@ class presenter:
 
             autolabel(rects1)
             autolabel(rects2)
+
 
             pyplot.show()
 
