@@ -4,6 +4,7 @@
     
     <arg name="int_res" default="0.5"/>
     <arg name="part_num" default="100"/>
+    <arg name="ndt_match" default="false"/>
     
     <node name="bagfile" pkg="rosbag" type="play" args="--clock --start 488 /home/fmw-hb/Documents/Masterarbeit/bagfiles/filtered3.bag" output="screen"/>  
     
@@ -11,9 +12,9 @@
 			<arg name="robot" value="cob4-2"/>
     </include>
     
-    <include file="$(find msh_bringup)/launch/rviz.launch">
+    <!--include file="$(find msh_bringup)/launch/rviz.launch">
 			<arg name="robot" value="cob4-2"/>
-    </include>
+    </include-->
     
     <include file="$(find ipa_navigation_bringup)/launch/ipa_localization.xml" >
         <arg name="robot" value="cob4-2" />
@@ -37,6 +38,7 @@
         <arg name="env_pack" value="$(find msh_env_config)" />
         <arg name="resolution" value="$(arg int_res)" />
         <arg name="particles" value="$(arg part_num)" />
+        <arg name="ndt_matching" value="$(arg ndt_match)" />
     </include> 
    
 </launch>

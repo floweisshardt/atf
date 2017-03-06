@@ -7,9 +7,9 @@ repetitions: 5                                                    # Number of re
 app_executable: application.py                                     # Name of the application's executable file
 additional_launch_file: launch/application.launch                  # Path of the additional launch file
 
-bagfile_output: "/tmp/hannes_test/data/"                               # Folder for bagfile output
-json_output: "/tmp/hannes_test/results_json/"                          # Folder for the json files output
-yaml_output: "/tmp/hannes_test/results_yaml/"                          # Folder for the yaml files output
+bagfile_output: "/home/fmw-hb/hannes_test_new/data/"                               # Folder for bagfile output
+json_output: "/home/fmw-hb/hannes_test_new/results_json/"                          # Folder for the json files output
+yaml_output: "/home/fmw-hb/hannes_test_new/results_yaml/"                          # Folder for the yaml files output
 
 speed_factor_analysis: 1.0                                          # Factor to speedup analysis (can lower accuracy if too fast, especially path_length)
 

@@ -11,7 +11,7 @@ obstacle_distance:
 publish_rate:
   handler: CalculatePublishRateParamHandler
 interface:
-    handler: CalculateInterfaceParamHandler
+  handler: CalculateInterfaceParamHandler
 localization:
   handler: CheckLocalizationParamHandler
 # example:
