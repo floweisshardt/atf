@@ -49,7 +49,7 @@ class RecordResources:
                         #         self.requested_nodes[re].append(res)
                         #         if res not in self.res_pipeline[node]:
                         #             self.res_pipeline[node].append(res)
-                print "requested nodes start:", self.requested_nodes
+                #print "requested nodes start:", self.requested_nodes
                 counter += 1
 
         elif msg.trigger == TestblockTrigger.STOP:
@@ -86,7 +86,7 @@ class RecordResources:
         testblock_list = {}
         nodes = []
         for testblock in self.test_config:
-            print "\n testblock:", testblock
+            #print "\n testblock:", testblock
             try:
                 self.test_config[testblock]["resources"]
             except KeyError:
@@ -103,7 +103,7 @@ class RecordResources:
                         #print "node name:", node_name,
                         nodes.append(resource)
             testblock_list.update({testblock: nodes})
-        print "\n testblock list:", testblock_list
+        #print "\n testblock list:", testblock_list
         return testblock_list
 
     def collect_resource_data(self, event):
@@ -112,54 +112,56 @@ class RecordResources:
             msg = Resources()
             msg_list = []
             topic = self.topic_prefix + "resources"
-            for resource, node in pipeline.iteritems():
+            for resource, nodes in pipeline.iteritems():
                 msg_data = NodeResources()
                 print "pid list: ", self.pid_list, "pid", self.pid_list[resource]
                 for pid in self.pid_list[resource]:
 
                     if pid is None:
                         continue
-                    print "message node name:", node, "pipeline:", pipeline
-                    try:
-                        msg_data.node_name = node
+                    for node in nodes:
+                        print "message node:", node, "resource:", resource, "\n pipeline:", pipeline
+                        try:
+                            msg_data.node_name = node
 
-                        if "cpu" in pipeline:
-                            msg_data.cpu = psutil.Process(pid).get_cpu_percent(interval=self.timer_interval)
+                            if "cpu" in pipeline:
+                                msg_data.cpu = psutil.Process(pid).get_cpu_percent(interval=self.timer_interval)
 
-                        if "mem" in pipeline:
-                            msg_data.memory = psutil.Process(pid).get_memory_percent()
+                            if "mem" in pipeline:
+                                msg_data.memory = psutil.Process(pid).get_memory_percent()
 
-                        if "io" in pipeline:
-                            data = findall('\d+', str(psutil.Process(pid).get_io_counters()))
-                            msg_data.io.read_count = int(data[0])
-                            msg_data.io.write_count = int(data[1])
-                            msg_data.io.read_bytes = int(data[2])
-                            msg_data.io.write_bytes = int(data[3])
+                            if "io" in pipeline:
+                                data = findall('\d+', str(psutil.Process(pid).get_io_counters()))
+                                msg_data.io.read_count = int(data[0])
+                                msg_data.io.write_count = int(data[1])
+                                msg_data.io.read_bytes = int(data[2])
+                                msg_data.io.write_bytes = int(data[3])
 
-                        if "network" in pipeline:
-                            data = findall('\d+', str(psutil.net_io_counters()))
-                            msg_data.network.bytes_sent = int(data[0])
-                            msg_data.network.bytes_recv = int(data[1])
-                            msg_data.network.packets_sent = int(data[2])
-                            msg_data.network.packets_recv = int(data[3])
-                            msg_data.network.errin = int(data[4])
-                            msg_data.network.errout = int(data[5])
-                            msg_data.network.dropin = int(data[6])
-                            msg_data.network.dropout = int(data[7])
+                            if "network" in pipeline:
+                                data = findall('\d+', str(psutil.net_io_counters()))
+                                msg_data.network.bytes_sent = int(data[0])
+                                msg_data.network.bytes_recv = int(data[1])
+                                msg_data.network.packets_sent = int(data[2])
+                                msg_data.network.packets_recv = int(data[3])
+                                msg_data.network.errin = int(data[4])
+                                msg_data.network.errout = int(data[5])
+                                msg_data.network.dropin = int(data[6])
+                                msg_data.network.dropout = int(data[7])
 
-                        print "message data: ", msg_data
-                        #msg.nodes.append(msg_data)
-                        msg_list.append(copy(msg_data))
-                    except (psutil.NoSuchProcess, psutil.AccessDenied) as e:
-                        print "collecting error: ", e
-                        pass
-            print "--------------------------------------"
-            print "messages:", msg_list
-            print "--------------------------------------"
-            msg.nodes=msg_list[0]
-            print "msg:", msg.nodes
+                            #print "message data: ", msg_data
+                            #msg.nodes.append(msg_data)
+                            msg_list.append(copy(msg_data))
+                            print "message node name: \n", msg_data.node_name, "\n type:", type(msg_data.node_name)
+                        except (psutil.NoSuchProcess, psutil.AccessDenied) as e:
+                            print "collecting error: ", e
+                            pass
+            # print "--------------------------------------"
+            # print "messages:", msg_list
+            # print "--------------------------------------"
+            msg.nodes=msg_list
+            #print "msg:", msg.nodes
 
-            self.BfW.write_to_bagfile(topic, msg, rospy.Time.from_sec(time.time()))
+            self.BfW.write_to_bagfile(topic, msg, rospy.Time.now())
 
     def trigger_callback(self, msg):
 
