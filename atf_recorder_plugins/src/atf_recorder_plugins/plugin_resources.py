@@ -13,7 +13,7 @@ from atf_msgs.msg import NodeResources, Resources, IO, Network, TestblockTrigger
 
 class RecordResources:
     def __init__(self, write_lock, bag_file_writer):
-        self.topic_prefix = ""
+        self.topic_prefix = "atf/"
         file = "/home/fmw-hb/workshop_catkin_ws/src/msh_test/hannes_test_msh/config/test_configs/test2.yaml"
         with open(file, 'r') as stream:
             self.test_config = yaml.load(stream)

@@ -12,14 +12,15 @@ class CalculateResourcesParamHandler:
         """
         self.params = []
 
-    def parse_parameter(self, params):
+    def parse_parameter(self, testblock_name, params):
         """
         Method that returns the metric method with the given parameter.
         :param params: Parameter
         """
         self.params = params
-
-        metrics = CalculateResources(self.params)
+        print "params:",params
+        metrics = []
+        metrics.append(CalculateResources(self.params))
 
         return metrics
 
@@ -42,34 +43,39 @@ class CalculateResources:
         self.finished = False
 
         # Sort resources after nodes
-        for resource in self.resources:
-            for node in self.resources[resource]:
-                if node not in self.node_data:
-                    self.node_data[node] = {resource: {"data": [], "average": [], "min": [], "max": []}}
-                elif resource not in self.node_data[node]:
-                    self.node_data[node].update({resource: {"data": [], "average": [], "min": [], "max": []}})
-
+        #print "resources:", self.resources, "\n node data:", self.node_data
+        for dict in self.resources:
+            for resource, nodes in dict.iteritems():
+                for node in nodes:
+                    if node not in self.node_data:
+                        print "node : ", node
+                        self.node_data[node] = {resource: {"data": [], "average": [], "min": [], "max": []}}
+                    elif resource not in self.node_data[node]:
+                        self.node_data[node].update({resource: {"data": [], "average": [], "min": [], "max": []}})
+        #print "node data after:", self.node_data
         rospy.Subscriber("/atf/resources", Resources, self.process_resource_data, queue_size=1)
 
-    def start(self):
+    def start(self, timestamp):
         self.active = True
 
-    def stop(self):
+    def stop(self, timestamp):
         self.active = False
         self.finished = True
 
-    def pause(self):
+    def pause(self, timestamp):
         self.active = False
 
-    @staticmethod
-    def purge():
+    #@staticmethod
+    def purge(self, timestamp):
         pass
 
     def process_resource_data(self, msg):
+        print "process data \n msg:", msg, "\n active", self.active
         if self.active:
             for node in msg.nodes:
                 try:
                     for resource in self.node_data[node.node_name]:
+                        print "nodes:", msg.nodes, "\n node data:", self.node_data, "\n resource", resource
                         if resource == "cpu":
                             self.node_data[node.node_name][resource]["data"].append(round(node.cpu, 2))
                         elif resource == "mem":
@@ -117,7 +123,9 @@ class CalculateResources:
                             self.node_data[node][res]["min"] = float(round(min(self.node_data[node][res]["data"]), 2))
                             self.node_data[node][res]["max"] = float(round(max(self.node_data[node][res]["data"]), 2))
                     del self.node_data[node][res]["data"]
-
-            return "resources", self.node_data
+            groundtruth_result = True
+            self.groundtruth = 0.0
+            self.groundtruth_epsilon = 0.0
+            return "resources", self.node_data, groundtruth_result, self.groundtruth, self.groundtruth_epsilon, "*resources details*"
         else:
             return False
