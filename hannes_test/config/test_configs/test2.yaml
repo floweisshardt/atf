@@ -1,0 +1,40 @@
+# with groundtruth, with global topics
+testblock_small:
+  time: []
+  path_length:
+    - root_frame: map
+    - measured_frame: base_link
+  publish_rate:
+    - topic: map_hmm
+    - topic: map_intern
+testblock_large:
+  time:
+    - groundtruth: 5
+      groundtruth_epsilon: 0.5
+  path_length:
+    - root_frame: link1
+      measured_frame: link2
+      groundtruth: 12.56
+      groundtruth_epsilon: 1.5
+    - root_frame: link1
+      measured_frame: link3
+      groundtruth: 0
+      groundtruth_epsilon: 1.5
+  publish_rate:
+    - topic: /topic1
+      groundtruth: 11
+      groundtruth_epsilon: 5
+    - topic: /topic2
+      groundtruth: 22
+      groundtruth_epsilon: 5
+    - topic: /topic3
+      groundtruth: 33
+      groundtruth_epsilon: 5
+  interface:
+    - node: publisher1
+      publishers: 
+        - [topic1, std_msgs/String]
+    - node: publisher2
+      publishers: 
+        - [topic2, std_msgs/String]
+# testblock_all empty

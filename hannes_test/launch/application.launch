@@ -1,0 +1,42 @@
+<?xml version="1.0"?>
+<launch>
+    <!-- Add all launch files that you want to run additionally to your robot bringup like moveit, etc... -->
+    
+    <arg name="int_res" default="0.5"/>
+    <arg name="part_num" default="100"/>
+    
+    <node name="bagfile" pkg="rosbag" type="play" args="--clock --start 488 /home/fmw-hb/Documents/Masterarbeit/bagfiles/filtered3.bag" output="screen"/>  
+    
+    <include file="$(find cob_bringup)/drivers/scan_unifier.launch">
+			<arg name="robot" value="cob4-2"/>
+    </include>
+    
+    <include file="$(find msh_bringup)/launch/rviz.launch">
+			<arg name="robot" value="cob4-2"/>
+    </include>
+    
+    <include file="$(find ipa_navigation_bringup)/launch/ipa_localization.xml" >
+        <arg name="robot" value="cob4-2" />
+        <arg name="robot_env" value="saturn-ingolstadt" />
+        <arg name="env_pack" value="$(find msh_env_config)" />
+        <arg name="map" value="$$(find msh_env_config)/saturn-ingolstadt/map.yaml" />
+        <arg name="slam" value="false" />
+        <arg name="imu_driver" value="false" />
+        <arg name="rfid" value="false" />
+        <arg name="map_server" value="false" />
+        <arg name="grid_converter" value="false" />
+        <arg name="sensor_config" value="$(find ipa_navigation_config)/config/sensor_setups/cob4-full.yaml" />
+        <arg name="dead_reck" value="false" />
+        <arg name="localgrid" value="false" />
+    </include>
+   
+    <include file="$(find ipa_long_term_slam)/launch/long_term_slam.launch">
+        <arg name="init_from_backup" value="false"/>
+        <arg name="init_from_static_map" value="true"/>
+        <arg name="robot_env" value="saturn-ingolstadt" />
+        <arg name="env_pack" value="$(find msh_env_config)" />
+        <arg name="resolution" value="$(arg int_res)" />
+        <arg name="particles" value="$(arg part_num)" />
+    </include> 
+   
+</launch>
