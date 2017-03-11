@@ -5,6 +5,8 @@ import yaml
 import copy
 import matplotlib.pyplot as pyplot
 
+import os
+
 class presenter:
 
     def __init__(self):
@@ -18,7 +20,8 @@ class presenter:
 
 
     def import_yaml(self, file):
-        with open(self.filepath+file, 'r') as stream:
+        with open(file, 'r') as stream:
+            print "import file", file
             try:
                 #print(yaml.load(stream))
                 self.yaml_file = yaml.load(stream)
@@ -32,6 +35,7 @@ class presenter:
         avg = copy.deepcopy(self.data)
         mini = copy.deepcopy(self.data)
         maxi = copy.deepcopy(self.data)
+        numvals = copy.deepcopy(self.data)
         for testblock, metrics in self.yaml_file.iteritems():
             #print ("testblock: ", testblock)
             for metric, values in metrics.iteritems():
@@ -47,21 +51,23 @@ class presenter:
                                 for attribute, number in result.iteritems():
                                     #print ("attribute: ", attribute)
                                     if isinstance(number, list):
-                                        for dictval in number:
-                                            print ("value: ", dictval)
+                                        numvals[metric].append(number)
+                                        #print "numvals", numvals
+                                        #for dictval in number:
+                                            #print ("value: ", dictval)
                                     elif isinstance(number, float):
-                                        print ("result: ",result)
+                                        #print ("result: ",result)
                                         if attribute == "average":
                                             avg[metric].append(number)
-                                            print "avg:", number
+                                            ##print "avg:", number
                                         if attribute == "min":
                                             mini[metric].append(number)
-                                            print "min:", number
+                                            #print "min:", number
                                         if attribute == "max":
                                             maxi[metric].append(number)
-                                            print "max:", number
-                                        print "avg:", avg, "min:", mini, "max:", maxi
-                                        print "\n \n \n -------------------------------------------------------------- \n \n \n"
+                                            #print "max:", number
+                                        #print "avg:", avg, "min:", mini, "max:", maxi
+                                        #print "\n \n -------------------------------------------------------------- \n \n"
                                     elif isinstance(number, int):
                                         print ("integer: ",number)
                                     elif isinstance(number, str) or isinstance(result, unicode):
@@ -75,90 +81,58 @@ class presenter:
                                 print ("string: ", result)
                             else:
                                 rospy.logerr("Error, unknown result!")
-        vals = [avg, maxi, mini]
-        print "values", vals
-        self.tests.update({"test"+str(num): vals})
-        print "-------------------------------------------------"
-        print ("tests:", self.tests)
-        print "-------------------------------------------------"
+        vals = [avg, numvals]
+        #print "values", vals
+        self.tests.update({str(num): vals})
+        # print "-------------------------------------------------"
+        # print ("tests:", self.tests)
+        # print "-------------------------------------------------"
 
     def show_results(self):
         print self.metric
         for metric in self.metric:
-            plotdata = {}
             testnames = []
             means = []
-            err = []
+            devs = []
             for testname, data in self.tests.iteritems():
                 # print "-------------------------------------------"
                 # print testname
-                print "data: ", data
-                print "mean: ",data[0][metric]
-                print "max: ", data[1][metric]
-                # #plotdata.update({testname : data[metric]})
+                # print "\n data: ", data
+                # print "\n mean: ",data[0][metric]
+                # print "\n values: ", data[1][metric]
                 means.extend(data[0][metric])
-                err.extend(numpy.array(data[1][metric])-numpy.array(data[0][metric]))
-                print "err:", err
+                for mean in data[1][metric]:
+                    #print "mean", mean
+                    devs.append(numpy.std(mean))
                 for i in data[0][metric]:
                     testnames.append(testname)
 
-
             # print("show")
-            print testnames
+            #print testnames
             # print self.metric
             # print plotdata
 
-            fig, ax = pyplot.subplots()
             y_pos = numpy.arange(len(testnames))
             print "x", y_pos
             print "y", means
-            #pyplot.bar(y_pos, means, align='center', alpha=0.5, yerr=err)
-            # example data
-            x = numpy.arange(0.1, 2, 0.5)
-            y = numpy.exp(-x)
-            print "x", x
-            print "y", y
+            print "yerr", devs
 
-            # example variable error bar values
-            yerr = 0.1 + 0.2 * numpy.sqrt(x)
-            xerr = 0.1 + yerr
-            #pyplot.errorbar(y_pos, means, yerr=[yerr, 2 * yerr], fmt='--o')
-            #pyplot.bar(y_pos, means, yerr=[yerr, 4 * yerr], alpha=0.5)
-            print "ypos:", y_pos[0], "means", means[0]
-            rects1 = ax.bar(y_pos, means, yerr=[yerr, 4 * yerr], alpha=0.5)
-            rects2 = ax.bar(y_pos, means, yerr=[yerr, 0.5 * yerr], alpha=0.5)
-
-            # pyplot.xticks(y_pos, testnames)
-            # pyplot.ylabel('Usage')
-            # pyplot.title(metric)
-
-            ax.set_ylabel('Scores')
-            ax.set_title('Scores by group and gender')
-            ax.set_xticks(y_pos + 0.5 / 2)
-            #ax.set_xticklabels(('G1', 'G2', 'G3', 'G4', 'G5'))
-
-            #ax.legend((rects1[0], rects2[0]), ('Men', 'Women'))
-
-            def autolabel(rects):
-                """
-                Attach a text label above each bar displaying its height
-                """
-                for rect in rects:
-                    height = rect.get_height()
-                    ax.text(rect.get_x() + rect.get_width() / 2., 1.05 * height,
-                            '%d' % int(height),
-                            ha='center', va='bottom')
-
-            autolabel(rects1)
-            autolabel(rects2)
-
-
+            pyplot.bar(y_pos, means, yerr=devs, alpha=0.5, color='red')
+            pyplot.xticks(y_pos+0.8/2, testnames, rotation='vertical')
+            pyplot.title(metric)
+            pyplot.tight_layout()
             pyplot.show()
 
 if __name__ == '__main__':
     p = presenter()
-    p.import_yaml("merged_ts0_c0_r0_e0.yaml")
-    p.extract_yaml(1)
-    p.import_yaml("merged_ts0_c0_r1_e0.yaml")
-    p.extract_yaml(2)
+
+    Path = "/tmp/atf_test/results_yaml/"
+    filelist = os.listdir(Path)
+    for file in filelist:
+        print "file", file
+        if "merged" in str(file):
+            print "merged", file
+            p.import_yaml(Path+file)
+            filename = file.replace('.yaml', '')
+            p.extract_yaml(filename.replace('merged_', ''))
     p.show_results()
