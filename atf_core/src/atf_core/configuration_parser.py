@@ -29,6 +29,7 @@ class ATFConfigurationParser:
 
     def create_testblocks(self, config, recorder_handle=None, create_metrics=False):
         testblocks = {}
+        print "create testblocks, config:", config["test_config"]
         for testblock_name in config["test_config"].keys():
             metric_handles = []
             if create_metrics:
@@ -37,9 +38,9 @@ class ATFConfigurationParser:
                 metric_handlers_config = self.load_data(rospkg.RosPack().get_path("atf_metrics") + "/config/metrics.yaml")
                 #print "metric_handlers_config=", metric_handlers_config
                 for metric_name in metrics:
-                    #print "metric_name=", metric_name
+                    print "metric_name=", metric_name
                     metrics_return_list = getattr(atf_metrics, metric_handlers_config[metric_name]["handler"])().parse_parameter(testblock_name, metrics[metric_name])
-                    #print "metrics_return_list=", metrics_return_list
+                    print "metrics_return_list=", metrics_return_list
                     if type(metrics_return_list) == list:
                         for metric_return in metrics_return_list:
                             #print "metric_return=", metric_return
