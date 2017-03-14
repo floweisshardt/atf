@@ -140,6 +140,7 @@ class ATFRecorder:
             raise ATFRecorderError("Testblock '%s' not in test config" % trigger.name)
 
         # Send message to all recorder plugins
+        #print "self.recorder_plugin_list=", self.recorder_plugin_list
         for recorder_plugin in self.recorder_plugin_list:
             recorder_plugin.trigger_callback(trigger)
 

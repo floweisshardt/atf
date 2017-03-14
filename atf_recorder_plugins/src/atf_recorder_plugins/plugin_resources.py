@@ -18,7 +18,7 @@ class RecordResources:
         with open(file, 'r') as stream:
             self.test_config = yaml.load(stream)
 
-        self.resources_timer_frequency = 4.0  # Hz
+        self.resources_timer_frequency = 10.0  # Hz
         self.timer_interval = 1/self.resources_timer_frequency
 
         self.testblock_list = self.create_testblock_list()
@@ -36,50 +36,17 @@ class RecordResources:
             print "START Trigger"
             for node in self.testblock_list[msg.name]:
 
-                #print "node: ", node, "requested nodes:", self.requested_nodes, "testblock node", self.testblock_list[msg.name]
                 for resource, names in node.iteritems():
                     for name in names:
-                        print resource, name
+                        print "resource:", resource," name", name
                         if name not in self.requested_nodes:
                             print "new node", counter, self.testblock_list[msg.name][counter][resource]#, "ohne: ", self.testblock_list[msg.name][resource]
                             self.requested_nodes[resource] = copy(self.testblock_list[msg.name][counter][resource])
-                            self.res_pipeline[resource] = copy(self.testblock_list[msg.name][counter][resource])
-                        # else:
-                        #     for res in self.testblock_list[msg.name][counter][resource]:
-                        #         self.requested_nodes[re].append(res)
-                        #         if res not in self.res_pipeline[node]:
-                        #             self.res_pipeline[node].append(res)
-                #print "requested nodes start:", self.requested_nodes
-                counter += 1
+                            self.res_pipeline[resource] = copy(self.testblock_list[msg.name][counter][resource]                
+				counter += 1
 
         elif msg.trigger == TestblockTrigger.STOP:
             print "STOP Trigger"
-            # for node in self.testblock_list[msg.name]:
-            #
-            #     # print "node: ", node, "requested nodes:", self.requested_nodes, "testblock node", self.testblock_list[msg.name]
-            #     for resource, names in node.iteritems():
-            #         for name in names:
-            #             print resource, name
-            #             if name not in self.requested_nodes:
-            #                 print "new node", counter, self.testblock_list[msg.name][counter][
-            #                     resource]  # , "ohne: ", self.testblock_list[msg.name][resource]
-            #                 self.requested_nodes[resource].remove(self.testblock_list[msg.name][counter][resource])
-            #                 self.res_pipeline[resource].remove(self.testblock_list[msg.name][counter][resource])
-            #                 # else:
-            #                 #     for res in self.testblock_list[msg.name][counter][resource]:
-            #                 #         self.requested_nodes[re].append(res)
-            #                 #         if res not in self.res_pipeline[node]:
-            #                 #             self.res_pipeline[node].append(res)
-            #     print "requested nodes end:", self.requested_nodes
-            #     counter += 1
-            # for node in self.testblock_list[msg.name]:
-            #     for res in self.testblock_list[msg.name][node]:
-            #         self.requested_nodes[node].remove(res)
-            #         if res not in self.requested_nodes[node]:
-            #             self.res_pipeline[node].remove(res)
-            #         if len(self.requested_nodes[node]) == 0:
-            #             del self.requested_nodes[node]
-            #             del self.res_pipeline[node]
 
     def create_testblock_list(self):
 
@@ -99,9 +66,15 @@ class RecordResources:
                     except KeyError:
                         testblock_list.update({testblock: {}})
 
+                    if 'groundtruth' in resource:
+                        del resource['groundtruth']
+                    if 'groundtruth_epsilon' in resource:
+                        del resource['groundtruth_epsilon']
+
                     for node_name in resource:
-                        #print "node name:", node_name,
                         nodes.append(resource)
+                        #print "node", node_name, "appended", nodes
+
             testblock_list.update({testblock: nodes})
         #print "\n testblock list:", testblock_list
         return testblock_list
@@ -114,13 +87,13 @@ class RecordResources:
             topic = self.topic_prefix + "resources"
             for resource, nodes in pipeline.iteritems():
                 msg_data = NodeResources()
-                print "pid list: ", self.pid_list, "pid", self.pid_list[resource]
+                #print "pid list: ", self.pid_list, "pid", self.pid_list[resource]
                 for pid in self.pid_list[resource]:
 
                     if pid is None:
                         continue
                     for node in nodes:
-                        print "message node:", node, "resource:", resource, "\n pipeline:", pipeline
+                        #print "message node:", node, "resource:", resource, "\n pipeline:", pipeline
                         try:
                             msg_data.node_name = node
 
@@ -149,24 +122,19 @@ class RecordResources:
                                 msg_data.network.dropout = int(data[7])
 
                             #print "message data: ", msg_data
-                            #msg.nodes.append(msg_data)
                             msg_list.append(copy(msg_data))
-                            print "message node name: \n", msg_data.node_name, "\n type:", type(msg_data.node_name)
+                            #print "message node name: \n", msg_data.node_name, "\n type:", type(msg_data.node_name)
                         except (psutil.NoSuchProcess, psutil.AccessDenied) as e:
-                            print "collecting error: ", e
+                            rospy.logerr("collecting error: %s", e)
                             pass
-            # print "--------------------------------------"
-            # print "messages:", msg_list
-            # print "--------------------------------------"
             msg.nodes=msg_list
-            #print "msg:", msg.nodes
 
             self.BfW.write_to_bagfile(topic, msg, rospy.Time.now())
 
     def trigger_callback(self, msg):
 
         # Only save node resources if testblock requests them
-        print "trigger callback: msg \n", msg, " \n testblocks", self.testblock_list, "\n msg trigger:", msg.trigger
+        #print "trigger callback: msg \n", msg, " \n testblocks", self.testblock_list, "\n msg trigger:", msg.trigger
         if msg.name in self.testblock_list:
             self.update_requested_nodes(msg)
 
@@ -177,11 +145,12 @@ class RecordResources:
         for (testblock, nodes) in self.testblock_list.iteritems():
             for node in nodes:
                 for resource, names in node.iteritems():
-                    #print "node: ", node,"resource", resource,"nodes: ", nodes, "node_list:", node_list
-                    for name in names:
-                        if self.get_pid(name) not in pid_list:
-                            pid_list.append(self.get_pid(name))
-                    node_list.update({resource:pid_list})
+                    print "node: ", node,"resource", resource,"nodes: ", nodes, "node_list:", node_list, "\n names:", names
+                    if isinstance(names, list):
+                        for name in names:
+                            if self.get_pid(name) not in pid_list:
+                                pid_list.append(self.get_pid(name))
+                        node_list.update({resource:pid_list})
         #print "node list", node_list
         return node_list
 

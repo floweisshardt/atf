@@ -2,8 +2,13 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="3c7a34fa-3eef-493c-84f3-7a52b1f3455c" name="Default" comment="">
+      <change type="DELETED" beforePath="$PROJECT_DIR$/atf_metrics/src/atf_metrics/calculate_distance.py" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/atf_metrics/src/atf_metrics/check_localization.py" afterPath="" />
+      <change type="DELETED" beforePath="$PROJECT_DIR$/atf_presenter/html/js/atf_tools/test_compare.js" afterPath="" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/atf_core/scripts/analyser.py" afterPath="$PROJECT_DIR$/atf_core/scripts/analyser.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/atf_core/src/atf_core/configuration_parser.py" afterPath="$PROJECT_DIR$/atf_core/src/atf_core/configuration_parser.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/atf_core/src/atf_core/recorder.py" afterPath="$PROJECT_DIR$/atf_core/src/atf_core/recorder.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/atf_metrics/src/atf_metrics/calculate_path_length.py" afterPath="$PROJECT_DIR$/atf_metrics/src/atf_metrics/calculate_path_length.py" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/atf_metrics/src/atf_metrics/calculate_resources.py" afterPath="$PROJECT_DIR$/atf_metrics/src/atf_metrics/calculate_resources.py" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/atf_recorder_plugins/src/atf_recorder_plugins/plugin_resources.py" afterPath="$PROJECT_DIR$/atf_recorder_plugins/src/atf_recorder_plugins/plugin_resources.py" />
     </list>
@@ -23,21 +28,54 @@
       <file leaf-file-name="calculate_resources.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/atf_metrics/src/atf_metrics/calculate_resources.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="504">
-              <caret line="72" column="67" lean-forward="false" selection-start-line="72" selection-start-column="67" selection-end-line="72" selection-end-column="67" />
-              <folding />
+            <state relative-caret-position="75">
+              <caret line="5" column="47" lean-forward="false" selection-start-line="5" selection-start-column="47" selection-end-line="5" selection-end-column="47" />
+              <folding>
+                <element signature="e#22#34#0" expanded="true" />
+                <marker date="1489497116134" expanded="true" signature="3177:8999" ph="..." />
+                <marker date="1489497116134" expanded="true" signature="3209:3222" ph="..." />
+                <marker date="1489497116134" expanded="true" signature="3265:6370" ph="..." />
+                <marker date="1489497116134" expanded="true" signature="3358:6370" ph="..." />
+                <marker date="1489497116134" expanded="true" signature="3393:6370" ph="..." />
+                <marker date="1489497116134" expanded="true" signature="3414:6312" ph="..." />
+                <marker date="1489497116134" expanded="true" signature="3482:6312" ph="..." />
+                <marker date="1489497116134" expanded="true" signature="3943:4666" ph="..." />
+                <marker date="1489497116134" expanded="true" signature="4034:4196" ph="..." />
+                <marker date="1489497116134" expanded="true" signature="4718:6312" ph="..." />
+                <marker date="1489497116134" expanded="true" signature="4809:4976" ph="..." />
+                <marker date="1489497116134" expanded="true" signature="6397:8999" ph="..." />
+                <marker date="1489497116134" expanded="true" signature="6484:8960" ph="..." />
+                <marker date="1489497116134" expanded="true" signature="6605:8688" ph="..." />
+                <marker date="1489497116134" expanded="true" signature="6692:8118" ph="..." />
+                <marker date="1489497116134" expanded="true" signature="6798:8060" ph="..." />
+                <marker date="1489497116134" expanded="true" signature="6858:7402" ph="..." />
+                <marker date="1489497116134" expanded="true" signature="6935:7402" ph="..." />
+                <marker date="1489497116134" expanded="true" signature="7432:8060" ph="..." />
+                <marker date="1489497116134" expanded="true" signature="8338:8688" ph="..." />
+                <marker date="1489497116134" expanded="true" signature="8386:8688" ph="..." />
+              </folding>
             </state>
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="plugin_resources.py" pinned="false" current-in-tab="true">
+      <file leaf-file-name="plugin_resources.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/atf_recorder_plugins/src/atf_recorder_plugins/plugin_resources.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="225">
-              <caret line="15" column="33" lean-forward="false" selection-start-line="15" selection-start-column="33" selection-end-line="15" selection-end-column="33" />
+            <state relative-caret-position="2640">
+              <caret line="176" column="9" lean-forward="false" selection-start-line="176" selection-start-column="9" selection-end-line="176" selection-end-column="9" />
               <folding>
                 <element signature="e#22#34#0" expanded="true" />
               </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="presenter.py" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/atf_presenter/scripts/presenter.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="519">
+              <caret line="52" column="64" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="138" selection-end-column="0" />
+              <folding />
             </state>
           </provider>
         </entry>
@@ -52,11 +90,23 @@
           </provider>
         </entry>
       </file>
+      <file leaf-file-name="recorder.py" pinned="false" current-in-tab="true">
+        <entry file="file://$PROJECT_DIR$/atf_core/src/atf_core/recorder.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="517">
+              <caret line="57" column="12" lean-forward="false" selection-start-line="57" selection-start-column="10" selection-end-line="57" selection-end-column="12" />
+              <folding>
+                <element signature="e#22#34#0" expanded="true" />
+              </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
       <file leaf-file-name="calculate_path_length.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/atf_metrics/src/atf_metrics/calculate_path_length.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="774">
-              <caret line="111" column="111" lean-forward="false" selection-start-line="111" selection-start-column="38" selection-end-line="111" selection-end-column="111" />
+            <state relative-caret-position="489">
+              <caret line="111" column="46" lean-forward="false" selection-start-line="107" selection-start-column="12" selection-end-line="111" selection-end-column="46" />
               <folding />
             </state>
           </provider>
@@ -65,8 +115,8 @@
       <file leaf-file-name="analyser.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/atf_core/scripts/analyser.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="204">
-              <caret line="118" column="23" lean-forward="true" selection-start-line="118" selection-start-column="23" selection-end-line="118" selection-end-column="23" />
+            <state relative-caret-position="-321">
+              <caret line="118" column="62" lean-forward="false" selection-start-line="118" selection-start-column="44" selection-end-line="118" selection-end-column="62" />
               <folding />
             </state>
           </provider>
@@ -109,6 +159,9 @@
       <find>create</find>
       <find>trigger_</find>
       <find>bag</find>
+      <find>pid</find>
+      <find>nodes</find>
+      <find>prin</find>
       <find>print</find>
     </findStrings>
     <replaceStrings>
@@ -136,11 +189,12 @@
         <option value="$PROJECT_DIR$/atf_presenter/scripts/presenter.py" />
         <option value="$PROJECT_DIR$/atf_recorder_plugins/config/recorder_plugins.yaml" />
         <option value="$PROJECT_DIR$/atf_recorder_plugins/src/atf_recorder_plugins/__init__.py" />
-        <option value="$PROJECT_DIR$/atf_core/src/atf_core/recorder.py" />
         <option value="$PROJECT_DIR$/atf_core/scripts/analyser.py" />
         <option value="$PROJECT_DIR$/atf_core/src/atf_core/configuration_parser.py" />
+        <option value="$PROJECT_DIR$/atf_metrics/src/atf_metrics/calculate_path_length.py" />
         <option value="$PROJECT_DIR$/atf_recorder_plugins/src/atf_recorder_plugins/plugin_resources.py" />
         <option value="$PROJECT_DIR$/atf_metrics/src/atf_metrics/calculate_resources.py" />
+        <option value="$PROJECT_DIR$/atf_core/src/atf_core/recorder.py" />
       </list>
     </option>
   </component>
@@ -214,6 +268,38 @@
             </PATH_ELEMENT>
             <PATH_ELEMENT>
               <option name="myItemId" value="atf_recorder_plugins" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+          </PATH>
+          <PATH>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="atf" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.ProjectViewProjectNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="atf" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="atf_presenter" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+          </PATH>
+          <PATH>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="atf" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.ProjectViewProjectNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="atf" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="atf_presenter" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="scripts" />
               <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
             </PATH_ELEMENT>
           </PATH>
@@ -554,7 +640,7 @@
         <state relative-caret-position="945">
           <caret line="63" column="61" lean-forward="true" selection-start-line="63" selection-start-column="61" selection-end-line="64" selection-end-column="37" />
           <folding>
-            <element signature="e#22#34#0" expanded="true" />
+            <element signature="e#22#34#0" expanded="false" />
           </folding>
         </state>
       </provider>
@@ -638,7 +724,7 @@
         <state relative-caret-position="1260">
           <caret line="90" column="15" lean-forward="false" selection-start-line="90" selection-start-column="15" selection-end-line="90" selection-end-column="15" />
           <folding>
-            <element signature="e#22#34#0" expanded="true" />
+            <element signature="e#22#34#0" expanded="false" />
           </folding>
         </state>
       </provider>
@@ -816,20 +902,12 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/atf_presenter/scripts/presenter.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="354">
-          <caret line="125" column="3" lean-forward="false" selection-start-line="125" selection-start-column="0" selection-end-line="126" selection-end-column="0" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/atf_recorder_plugins/src/atf_recorder_plugins/plugin_interface.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="202">
           <caret line="54" column="26" lean-forward="false" selection-start-line="54" selection-start-column="23" selection-end-line="54" selection-end-column="26" />
           <folding>
-            <element signature="e#22#34#0" expanded="true" />
+            <element signature="e#22#34#0" expanded="false" />
           </folding>
         </state>
       </provider>
@@ -850,14 +928,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/atf_core/src/atf_core/recorder.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="105">
-          <caret line="10" column="19" lean-forward="true" selection-start-line="10" selection-start-column="0" selection-end-line="11" selection-end-column="0" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/atf_core/src/atf_core/bagfile_helper.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="0">
@@ -871,8 +941,16 @@
         <state relative-caret-position="0">
           <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
           <folding>
-            <element signature="e#0#28#0" expanded="true" />
+            <element signature="e#0#28#0" expanded="false" />
           </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/atf_metrics/src/atf_metrics/calculate_publish_rate.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="-540">
+          <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
+          <folding />
         </state>
       </provider>
     </entry>
@@ -886,40 +964,73 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/atf_core/scripts/analyser.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="204">
-          <caret line="118" column="23" lean-forward="true" selection-start-line="118" selection-start-column="23" selection-end-line="118" selection-end-column="23" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/atf_metrics/src/atf_metrics/calculate_publish_rate.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="-540">
-          <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
+        <state relative-caret-position="-321">
+          <caret line="118" column="62" lean-forward="false" selection-start-line="118" selection-start-column="44" selection-end-line="118" selection-end-column="62" />
           <folding />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/atf_metrics/src/atf_metrics/calculate_path_length.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="774">
-          <caret line="111" column="111" lean-forward="false" selection-start-line="111" selection-start-column="38" selection-end-line="111" selection-end-column="111" />
+        <state relative-caret-position="489">
+          <caret line="111" column="46" lean-forward="false" selection-start-line="107" selection-start-column="12" selection-end-line="111" selection-end-column="46" />
           <folding />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/atf_metrics/src/atf_metrics/calculate_resources.py">
+    <entry file="file://$PROJECT_DIR$/atf_presenter/scripts/presenter.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="504">
-          <caret line="72" column="67" lean-forward="false" selection-start-line="72" selection-start-column="67" selection-end-line="72" selection-end-column="67" />
+        <state relative-caret-position="519">
+          <caret line="52" column="64" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="138" selection-end-column="0" />
           <folding />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/atf_recorder_plugins/src/atf_recorder_plugins/plugin_resources.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="225">
-          <caret line="15" column="33" lean-forward="false" selection-start-line="15" selection-start-column="33" selection-end-line="15" selection-end-column="33" />
+        <state relative-caret-position="2640">
+          <caret line="176" column="9" lean-forward="false" selection-start-line="176" selection-start-column="9" selection-end-line="176" selection-end-column="9" />
+          <folding>
+            <element signature="e#22#34#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/atf_metrics/src/atf_metrics/calculate_resources.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="75">
+          <caret line="5" column="47" lean-forward="false" selection-start-line="5" selection-start-column="47" selection-end-line="5" selection-end-column="47" />
+          <folding>
+            <element signature="e#22#34#0" expanded="true" />
+            <marker date="1489497116134" expanded="true" signature="3177:8999" ph="..." />
+            <marker date="1489497116134" expanded="true" signature="3209:3222" ph="..." />
+            <marker date="1489497116134" expanded="true" signature="3265:6370" ph="..." />
+            <marker date="1489497116134" expanded="true" signature="3358:6370" ph="..." />
+            <marker date="1489497116134" expanded="true" signature="3393:6370" ph="..." />
+            <marker date="1489497116134" expanded="true" signature="3414:6312" ph="..." />
+            <marker date="1489497116134" expanded="true" signature="3482:6312" ph="..." />
+            <marker date="1489497116134" expanded="true" signature="3943:4666" ph="..." />
+            <marker date="1489497116134" expanded="true" signature="4034:4196" ph="..." />
+            <marker date="1489497116134" expanded="true" signature="4718:6312" ph="..." />
+            <marker date="1489497116134" expanded="true" signature="4809:4976" ph="..." />
+            <marker date="1489497116134" expanded="true" signature="6397:8999" ph="..." />
+            <marker date="1489497116134" expanded="true" signature="6484:8960" ph="..." />
+            <marker date="1489497116134" expanded="true" signature="6605:8688" ph="..." />
+            <marker date="1489497116134" expanded="true" signature="6692:8118" ph="..." />
+            <marker date="1489497116134" expanded="true" signature="6798:8060" ph="..." />
+            <marker date="1489497116134" expanded="true" signature="6858:7402" ph="..." />
+            <marker date="1489497116134" expanded="true" signature="6935:7402" ph="..." />
+            <marker date="1489497116134" expanded="true" signature="7432:8060" ph="..." />
+            <marker date="1489497116134" expanded="true" signature="8338:8688" ph="..." />
+            <marker date="1489497116134" expanded="true" signature="8386:8688" ph="..." />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/atf_core/src/atf_core/recorder.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="517">
+          <caret line="57" column="12" lean-forward="false" selection-start-line="57" selection-start-column="10" selection-end-line="57" selection-end-column="12" />
           <folding>
             <element signature="e#22#34#0" expanded="true" />
           </folding>

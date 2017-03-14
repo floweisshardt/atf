@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 import numpy
 import rospy
+import math
 
 from atf_msgs.msg import Resources, IO, Network
 
@@ -17,16 +18,30 @@ class CalculateResourcesParamHandler:
         Method that returns the metric method with the given parameter.
         :param params: Parameter
         """
-        self.params = params
-        print "params:",params
         metrics = []
-        metrics.append(CalculateResources(self.params))
 
+        for metric in params:
+            # check for optional parameters
+            try:
+                groundtruth = metric["groundtruth"]
+                groundtruth_epsilon = metric["groundtruth_epsilon"]
+                #print "groundtruth", groundtruth, "groundtruth_epsilon", groundtruth_epsilon
+                if 'groundtruth' in metric:
+                    del metric['groundtruth']
+                if 'groundtruth_epsilon' in metric:
+                    del metric['groundtruth_epsilon']
+            except (TypeError, KeyError):
+                rospy.logwarn(
+                    "No groundtruth parameters given, skipping groundtruth evaluation for metric 'path_length' in testblock '%s'",
+                    testblock_name)
+                groundtruth = None
+                groundtruth_epsilon = None
+            metrics.append(CalculateResources(metric, groundtruth, groundtruth_epsilon))
         return metrics
 
 
 class CalculateResources:
-    def __init__(self, resources):
+    def __init__(self, resources, groundtruth, groundtruth_epsilon):
         """
         Class for calculating the average resource workload and writing the current resource data.
         The resource data is sent over the topic "/testing/Resources".
@@ -37,6 +52,8 @@ class CalculateResources:
 
         self.active = False
         self.resources = resources
+        self.groundtruth = groundtruth
+        self.groundtruth_epsilon = groundtruth_epsilon
         self.node_data = {}
         self.size_io = len(IO.__slots__)
         self.size_network = len(Network.__slots__)
@@ -44,14 +61,13 @@ class CalculateResources:
 
         # Sort resources after nodes
         #print "resources:", self.resources, "\n node data:", self.node_data
-        for dict in self.resources:
-            for resource, nodes in dict.iteritems():
-                for node in nodes:
-                    if node not in self.node_data:
-                        print "node : ", node
-                        self.node_data[node] = {resource: {"data": [], "average": [], "min": [], "max": []}}
-                    elif resource not in self.node_data[node]:
-                        self.node_data[node].update({resource: {"data": [], "average": [], "min": [], "max": []}})
+        for resource, nodes in self.resources.iteritems():
+            for node in nodes:
+                if node not in self.node_data:
+                    #print "node : ", node
+                    self.node_data[node] = {resource: {"data": [], "average": [], "min": [], "max": []}}
+                elif resource not in self.node_data[node]:
+                    self.node_data[node].update({resource: {"data": [], "average": [], "min": [], "max": []}})
         #print "node data after:", self.node_data
         rospy.Subscriber("/atf/resources", Resources, self.process_resource_data, queue_size=1)
 
@@ -65,17 +81,16 @@ class CalculateResources:
     def pause(self, timestamp):
         self.active = False
 
-    #@staticmethod
     def purge(self, timestamp):
         pass
 
     def process_resource_data(self, msg):
-        print "process data \n msg:", msg, "\n active", self.active
+        #print "process data \n msg:", msg, "\n active", self.active
         if self.active:
             for node in msg.nodes:
                 try:
                     for resource in self.node_data[node.node_name]:
-                        print "nodes:", msg.nodes, "\n node data:", self.node_data, "\n resource", resource
+                        #print "nodes:", msg.nodes, "\n node data:", self.node_data, "\n resource", resource
                         if resource == "cpu":
                             self.node_data[node.node_name][resource]["data"].append(round(node.cpu, 2))
                         elif resource == "mem":
@@ -108,24 +123,43 @@ class CalculateResources:
                     pass
 
     def get_result(self):
+        groundtruth_result = None
+        average_sum = 0.0
+
         if self.finished:
+            #print "----------------------------- \n node data:", self.node_data
             for node in self.node_data:
+                #print " node:", node
                 for res in self.node_data[node]:
+                    #print "res", res
                     if len(self.node_data[node][res]["data"]) != 0:
                         if res == "io" or res == "network":
                             for values in self.node_data[node][res]["data"]:
                                 self.node_data[node][res]["average"].append(float(round(numpy.mean(values), 2)))
                                 self.node_data[node][res]["min"].append(float(round(min(values), 2)))
                                 self.node_data[node][res]["max"].append(float(round(max(values), 2)))
+                                average_sum += float(round(numpy.mean(values), 2))
+                                #print "average sum:", average_sum
                         else:
                             self.node_data[node][res]["average"] = float(round(numpy.mean(self.node_data[node][res]
                                                                                           ["data"]), 2))
                             self.node_data[node][res]["min"] = float(round(min(self.node_data[node][res]["data"]), 2))
                             self.node_data[node][res]["max"] = float(round(max(self.node_data[node][res]["data"]), 2))
+                            average_sum += float(round(numpy.mean(self.node_data[node][res]["data"]), 2))
+                            #print "average sum:", average_sum
                     del self.node_data[node][res]["data"]
-            groundtruth_result = True
-            self.groundtruth = 0.0
-            self.groundtruth_epsilon = 0.0
+
+                #print "groundtruthes:", self.groundtruth, self.groundtruth_epsilon, "\n average:", self.node_data[node][res]["average"]
+                if self.groundtruth != None and self.groundtruth_epsilon != None:
+                    for node in self.node_data:
+
+                        #print "average sum:check", average_sum
+                        if math.fabs(self.groundtruth - average_sum) <= self.groundtruth_epsilon:
+                            groundtruth_result = True
+                        else:
+                            groundtruth_result = False
+
+            #print "node data: ", self.node_data, "\n groundthruth result", groundtruth_result, " \n .................................."
             return "resources", self.node_data, groundtruth_result, self.groundtruth, self.groundtruth_epsilon, "*resources details*"
         else:
             return False

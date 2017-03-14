@@ -112,9 +112,9 @@ class Analyser:
             else:
                 #print "testblock.metrics=", testblock.metrics
                 for metric_handle in testblock.metrics:
-                    print "metric_handle=", metric_handle
+                    #print "metric_handle=", metric_handle
                     metric_result = metric_handle.get_result()
-                    print "metric_result=", metric_result
+                    #print "metric_result=", metric_result
                     if metric_result is not False:
                         (metric_name, data, groundtruth_result, groundtruth, groundtruth_epsilon, details) = metric_result
                         if testblock_name not in result:

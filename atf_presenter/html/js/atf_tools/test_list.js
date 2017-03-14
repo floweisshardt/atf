@@ -521,11 +521,8 @@ var TestList = {
         test_details.find('.nav-tabs').append('<li role="presentation" class="' + active_class + '"><a href="#details_' + testblock_name + '" aria-controls="details_' + testblock_name + '" role="tab" data-toggle="tab">' + testblock_name + '</a></li>');
         test_details.find('.tab-content').append('<div role="tabpanel" class="tab-pane ' + active_class + '" id="details_' + testblock_name + '"></div>');
       }
-      
-      console.log("data per testblock", data_per_testblock);
+
       $.each(data_per_testblock, function (metric_name, data) {
-        console.log("metric name", metric_name);
-        console.log("data", data);
         if (data.length != 0) {
           test_details.show();
 
@@ -552,10 +549,8 @@ var TestList = {
     var details_per_test_panel = $('#details_per_test');
     details_per_test_panel.empty();
 
-    console.log("data_per_test=", data_per_test)
+    //console.log("data_per_test=", data_per_test)
     $.each(data_per_test, function (metric_name, data) {
-      console.log("metric name", metric_name);
-      console.log("data", data);
       if (data.length != 0) test_details.show();
       details_per_test_panel.append('<div class="panel panel-primary"><div class="panel-heading"></div>' +
         '<div class="panel-body"><div id="details_' + metric_name + '_content" class="plot"></div></div></div>');
