@@ -42,8 +42,8 @@ class RecordResources:
                         if name not in self.requested_nodes:
                             print "new node", counter, self.testblock_list[msg.name][counter][resource]#, "ohne: ", self.testblock_list[msg.name][resource]
                             self.requested_nodes[resource] = copy(self.testblock_list[msg.name][counter][resource])
-                            self.res_pipeline[resource] = copy(self.testblock_list[msg.name][counter][resource]                
-				counter += 1
+                            self.res_pipeline[resource] = copy(self.testblock_list[msg.name][counter][resource])
+                counter += 1
 
         elif msg.trigger == TestblockTrigger.STOP:
             print "STOP Trigger"

@@ -2,14 +2,6 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="3c7a34fa-3eef-493c-84f3-7a52b1f3455c" name="Default" comment="">
-      <change type="DELETED" beforePath="$PROJECT_DIR$/atf_metrics/src/atf_metrics/calculate_distance.py" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/atf_metrics/src/atf_metrics/check_localization.py" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/atf_presenter/html/js/atf_tools/test_compare.js" afterPath="" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/atf_core/scripts/analyser.py" afterPath="$PROJECT_DIR$/atf_core/scripts/analyser.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/atf_core/src/atf_core/recorder.py" afterPath="$PROJECT_DIR$/atf_core/src/atf_core/recorder.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/atf_metrics/src/atf_metrics/calculate_path_length.py" afterPath="$PROJECT_DIR$/atf_metrics/src/atf_metrics/calculate_path_length.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/atf_metrics/src/atf_metrics/calculate_resources.py" afterPath="$PROJECT_DIR$/atf_metrics/src/atf_metrics/calculate_resources.py" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/atf_recorder_plugins/src/atf_recorder_plugins/plugin_resources.py" afterPath="$PROJECT_DIR$/atf_recorder_plugins/src/atf_recorder_plugins/plugin_resources.py" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
@@ -58,24 +50,14 @@
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="plugin_resources.py" pinned="false" current-in-tab="false">
+      <file leaf-file-name="plugin_resources.py" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/atf_recorder_plugins/src/atf_recorder_plugins/plugin_resources.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="2640">
-              <caret line="176" column="9" lean-forward="false" selection-start-line="176" selection-start-column="9" selection-end-line="176" selection-end-column="9" />
+            <state relative-caret-position="-675">
+              <caret line="30" column="92" lean-forward="false" selection-start-line="30" selection-start-column="71" selection-end-line="30" selection-end-column="92" />
               <folding>
                 <element signature="e#22#34#0" expanded="true" />
               </folding>
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="presenter.py" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/atf_presenter/scripts/presenter.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="519">
-              <caret line="52" column="64" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="138" selection-end-column="0" />
-              <folding />
             </state>
           </provider>
         </entry>
@@ -90,7 +72,7 @@
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="recorder.py" pinned="false" current-in-tab="true">
+      <file leaf-file-name="recorder.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/atf_core/src/atf_core/recorder.py">
           <provider selected="true" editor-type-id="text-editor">
             <state relative-caret-position="517">
@@ -133,7 +115,6 @@
   </component>
   <component name="FindInProjectRecents">
     <findStrings>
-      <find>Calculate</find>
       <find>calculat</find>
       <find>dist</find>
       <find>distance</find>
@@ -163,6 +144,7 @@
       <find>nodes</find>
       <find>prin</find>
       <find>print</find>
+      <find>hin</find>
     </findStrings>
     <replaceStrings>
       <replace>CheckLocalization</replace>
@@ -192,9 +174,9 @@
         <option value="$PROJECT_DIR$/atf_core/scripts/analyser.py" />
         <option value="$PROJECT_DIR$/atf_core/src/atf_core/configuration_parser.py" />
         <option value="$PROJECT_DIR$/atf_metrics/src/atf_metrics/calculate_path_length.py" />
-        <option value="$PROJECT_DIR$/atf_recorder_plugins/src/atf_recorder_plugins/plugin_resources.py" />
         <option value="$PROJECT_DIR$/atf_metrics/src/atf_metrics/calculate_resources.py" />
         <option value="$PROJECT_DIR$/atf_core/src/atf_core/recorder.py" />
+        <option value="$PROJECT_DIR$/atf_recorder_plugins/src/atf_recorder_plugins/plugin_resources.py" />
       </list>
     </option>
   </component>
@@ -986,16 +968,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/atf_recorder_plugins/src/atf_recorder_plugins/plugin_resources.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="2640">
-          <caret line="176" column="9" lean-forward="false" selection-start-line="176" selection-start-column="9" selection-end-line="176" selection-end-column="9" />
-          <folding>
-            <element signature="e#22#34#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/atf_metrics/src/atf_metrics/calculate_resources.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="75">
@@ -1031,6 +1003,16 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="517">
           <caret line="57" column="12" lean-forward="false" selection-start-line="57" selection-start-column="10" selection-end-line="57" selection-end-column="12" />
+          <folding>
+            <element signature="e#22#34#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/atf_recorder_plugins/src/atf_recorder_plugins/plugin_resources.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="-675">
+          <caret line="30" column="92" lean-forward="false" selection-start-line="30" selection-start-column="71" selection-end-line="30" selection-end-column="92" />
           <folding>
             <element signature="e#22#34#0" expanded="true" />
           </folding>
