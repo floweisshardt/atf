@@ -1,0 +1,11 @@
+# without groundtruth, without global topics
+testblock_small:
+  time: []
+  path_length:
+    - root_frame: map
+      measured_frame: base_link
+  distance:
+    - root_frame: base_link_ekf
+      measured_frame: base_link     
+ 
+# testblock_all empty

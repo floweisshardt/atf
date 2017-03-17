@@ -1,0 +1,2 @@
+additional_parameters: []                                # Name and value of additional parameter which will be included in every recording test file
+additional_arguments: []                                 # Name and value of additional arguments which will be included in every recording test file
