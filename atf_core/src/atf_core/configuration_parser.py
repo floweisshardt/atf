@@ -3,6 +3,7 @@ import yaml
 import rospkg
 import rosparam
 import atf_metrics
+import os
 
 from atf_core import Testblock
 
@@ -89,9 +90,11 @@ class ATFConfigurationParser:
         return testblock_list
 
     def load_data(self, filename):
-        with open(filename, 'r') as stream:
-            doc = yaml.load(stream)
-            return doc
+        print "config parser filename:", filename
+        if os.path.isfile(filename):
+            with open(filename, 'r') as stream:
+                doc = yaml.load(stream)
+                return doc
 
 class ATFConfigurationError(Exception):
     pass

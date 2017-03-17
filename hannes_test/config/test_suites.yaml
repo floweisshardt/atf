@@ -4,6 +4,10 @@ testsuite_1:
     - test1
   robots:                       # You have to define at least one robot
     - part75_250mm
+    - part100_350mm
+    - part150_350mm
     - part150_500mm
+    - part200_600mm
+
   robot_envs:                   # You have to define at least one robot_env
     - env1
