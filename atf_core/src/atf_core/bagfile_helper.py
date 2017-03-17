@@ -23,5 +23,5 @@ class BagfileWriter:
         """
         #print "bfw:", topic, timestamp
         self.lock.acquire()
-        self.bag_file.write(topic, data, timestamp)
+        self.bag_file.write(topic, data)
         self.lock.release()

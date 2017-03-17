@@ -7,6 +7,7 @@ import yaml
 import os
 import atf_recorder_plugins
 import atf_core
+import time
 
 from threading import Lock
 from atf_msgs.msg import TestblockTrigger
@@ -16,6 +17,11 @@ class ATFRecorder:
     def __init__(self, config, testblock_list):
         self.ns = "/atf/"
         self.config = config
+        self.time = time.time()
+        self.count = 0
+        self.diff = 0
+        self.time_write = 0.0
+        self.counter = 0
         #print "recorder_core: config=", self.config
 
         recorder_config = self.load_data(rospkg.RosPack().get_path("atf_recorder_plugins") +
@@ -128,8 +134,9 @@ class ATFRecorder:
             if topic not in self.subscriber:
                 try:
                     msg_class, _, _ = rostopic.get_topic_class(topic)
-                    rospy.Subscriber(topic, msg_class, self.global_topic_callback, callback_args=topic)
+                    rospy.Subscriber(topic, msg_class, self.global_topic_callback, callback_args=topic, queue_size=10)
                     self.subscriber.append(topic)
+                    print "new subscriber for: ", topic, "message class:", msg_class, " subscribers: ", self.subscriber
                 except Exception:
                     pass
 
@@ -172,7 +179,7 @@ class ATFRecorder:
 
     def global_topic_callback(self, msg, name):
         if name in self.topic_pipeline:
-            self.bag_file_writer.write_to_bagfile(name, msg, rospy.Time.now())
+             self.bag_file_writer.write_to_bagfile(name, msg, rospy.Time.now())
 
     def get_topics(self):
         topics = []
