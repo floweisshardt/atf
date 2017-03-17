@@ -2,8 +2,6 @@ time:
   handler: CalculateTimeParamHandler
 path_length:
   handler: CalculatePathLengthParamHandler
-distance:
-  handler: CalculateDistanceParamHandler
 resources:
   handler: CalculateResourcesParamHandler
 obstacle_distance:
@@ -11,8 +9,6 @@ obstacle_distance:
 publish_rate:
   handler: CalculatePublishRateParamHandler
 interface:
-  handler: CalculateInterfaceParamHandler
-localization:
-  handler: CheckLocalizationParamHandler
+    handler: CalculateInterfaceParamHandler
 # example:
 #   handler: ExampleParamHandler

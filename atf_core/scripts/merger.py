@@ -23,15 +23,15 @@ class Merger():
         for test in test_list:
             #print "test=", test
             for test_name, test_data in test.items():
-                print "test_name=", test_name
-                print "test_data=", test_data
+                #print "test_name=", test_name
+                #print "test_data=", test_data
                 subtests = test_data['subtests']
-                print "subtests=", subtests
+                #print "subtests=", subtests
                 test_data_merged = {}
                 for subtest in subtests:
-                    print "subtest=", subtest
+                    #print "subtest=", subtest
                     subtest_data = self.atf_configuration_parser.load_data(os.path.join(self.config["json_output"], subtest + ".json"))
-                    print "subtest_data=", subtest_data
+                    #print "subtest_data=", subtest_data
                     if subtest_data != None:
                         for testblock_name, testblock_data in subtest_data.items():
                             #print "testblock_name=", testblock_name
