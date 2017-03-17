@@ -17,12 +17,6 @@ class ATFRecorder:
     def __init__(self, config, testblock_list):
         self.ns = "/atf/"
         self.config = config
-        self.time = time.time()
-        self.count = 0
-        self.diff = 0
-        self.time_write = 0.0
-        self.counter = 0
-        #print "recorder_core: config=", self.config
 
         recorder_config = self.load_data(rospkg.RosPack().get_path("atf_recorder_plugins") +
                                          "/config/recorder_plugins.yaml")
@@ -179,7 +173,7 @@ class ATFRecorder:
 
     def global_topic_callback(self, msg, name):
         if name in self.topic_pipeline:
-             self.bag_file_writer.write_to_bagfile(name, msg, rospy.Time.now())
+            self.bag_file_writer.write_to_bagfile(name, msg, rospy.Time.now())
 
     def get_topics(self):
         topics = []
