@@ -25,7 +25,7 @@ class Application:
         self.initpose()
         rospy.sleep(15)
         self.atf.start("testblock_small")
-        rospy.sleep(600)#600s
+        rospy.sleep(230)#600s
         #self.sss.move("base", [25.0,68.5,0.0])
         self.atf.stop("testblock_small")
 

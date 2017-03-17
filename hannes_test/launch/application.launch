@@ -12,9 +12,9 @@
 			<arg name="robot" value="cob4-2"/>
     </include>
     
-    <!--include file="$(find msh_bringup)/launch/rviz.launch">
+    <include file="$(find msh_bringup)/launch/rviz.launch">
 			<arg name="robot" value="cob4-2"/>
-    </include-->
+    </include>
     
     <include file="$(find ipa_navigation_bringup)/launch/ipa_localization.xml" >
         <arg name="robot" value="cob4-2" />
