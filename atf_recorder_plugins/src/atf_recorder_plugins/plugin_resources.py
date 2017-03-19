@@ -35,21 +35,21 @@ class RecordResources:
         if msg.trigger == TestblockTrigger.START:
             print "START Trigger"
             for node in self.testblock_list[msg.name]:
-
                 for resource, names in node.iteritems():
-                    for name in names:
-                        print "resource:", resource," name", name
-                        if name not in self.requested_nodes:
-                            print "new node", counter, self.testblock_list[msg.name][counter][resource]#, "ohne: ", self.testblock_list[msg.name][resource]
-                            self.requested_nodes[resource] = copy(self.testblock_list[msg.name][counter][resource])
-                            self.res_pipeline[resource] = copy(self.testblock_list[msg.name][counter][resource])
+                    if not resource in self.requested_nodes:
+                        self.requested_nodes.update({resource:[]})
+                    self.requested_nodes[resource].extend(copy(self.testblock_list[msg.name][counter][resource]))
+
+                    #print "requested nodes after:", self.requested_nodes," \n-----------------------------------------\n pipeline before:",self.res_pipeline, "resource: ", resource, "\n copy:", self.testblock_list[msg.name][counter][resource]
+                    if not resource in self.res_pipeline:
+                        self.res_pipeline.update({resource:[]})
+                    self.res_pipeline[resource].extend(copy(self.testblock_list[msg.name][counter][resource]))
                 counter += 1
 
         elif msg.trigger == TestblockTrigger.STOP:
             print "STOP Trigger"
 
     def create_testblock_list(self):
-
         testblock_list = {}
         nodes = []
         for testblock in self.test_config:
@@ -93,7 +93,7 @@ class RecordResources:
                     if pid is None:
                         continue
                     for node in nodes:
-                        #print "message node:", node, "resource:", resource, "\n pipeline:", pipeline
+                        print "message node:", node, "nodes: ", nodes, "resource:", resource, "\n pipeline:", pipeline
                         try:
                             msg_data.node_name = node
 
@@ -121,7 +121,7 @@ class RecordResources:
                                 msg_data.network.dropin = int(data[6])
                                 msg_data.network.dropout = int(data[7])
 
-                            #print "message data: ", msg_data
+                            print "message data: ", msg_data
                             msg_list.append(copy(msg_data))
                             #print "message node name: \n", msg_data.node_name, "\n type:", type(msg_data.node_name)
                         except (psutil.NoSuchProcess, psutil.AccessDenied) as e:

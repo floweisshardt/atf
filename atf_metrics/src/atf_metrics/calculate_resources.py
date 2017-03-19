@@ -18,6 +18,9 @@ class CalculateResourcesParamHandler:
         Method that returns the metric method with the given parameter.
         :param params: Parameter
         """
+        if not isinstance(params, list):
+            rospy.logerr("metric config not a list")
+            return False
         metrics = []
 
         for metric in params:
@@ -32,7 +35,7 @@ class CalculateResourcesParamHandler:
                     del metric['groundtruth_epsilon']
             except (TypeError, KeyError):
                 rospy.logwarn(
-                    "No groundtruth parameters given, skipping groundtruth evaluation for metric 'path_length' in testblock '%s'",
+                    "No groundtruth parameters given, skipping groundtruth evaluation for metric 'resources' in testblock '%s'",
                     testblock_name)
                 groundtruth = None
                 groundtruth_epsilon = None
@@ -124,6 +127,7 @@ class CalculateResources:
 
     def get_result(self):
         groundtruth_result = None
+        details = None
         average_sum = 0.0
 
         if self.finished:
@@ -160,6 +164,6 @@ class CalculateResources:
                             groundtruth_result = False
 
             #print "node data: ", self.node_data, "\n groundthruth result", groundtruth_result, " \n .................................."
-            return "resources", self.node_data, groundtruth_result, self.groundtruth, self.groundtruth_epsilon, "*resources details*"
+            return "resources", self.node_data, groundtruth_result, self.groundtruth, self.groundtruth_epsilon, details
         else:
             return False

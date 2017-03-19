@@ -15,7 +15,6 @@ class CalculatePathLengthParamHandler:
         Method that returns the metric method with the given parameter.
         :param params: Parameter
         """
-        print "pathlength params:", params
         metrics = []
         if type(params) is not list:
             rospy.logerr("metric config not a list")
