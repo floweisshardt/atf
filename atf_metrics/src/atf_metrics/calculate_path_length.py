@@ -109,6 +109,7 @@ class CalculatePathLength:
                     groundtruth_result = True
                 else:
                     groundtruth_result = False
+            print "path length data: ", data
             return "path_length", data, groundtruth_result, self.groundtruth, self.groundtruth_epsilon, details
         else:
             return False

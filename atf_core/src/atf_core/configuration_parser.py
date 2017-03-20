@@ -33,13 +33,13 @@ class ATFConfigurationParser:
             metric_handles = []
             if create_metrics:
                 metrics = config["test_config"][testblock_name]
-                #print "metrics=", metrics
+                print "metrics=", metrics
                 metric_handlers_config = self.load_data(rospkg.RosPack().get_path("atf_metrics") + "/config/metrics.yaml")
-                #print "metric_handlers_config=", metric_handlers_config
+                print "metric_handlers_config=", metric_handlers_config
                 for metric_name in metrics:
-                    #print "metric_name=", metric_name
+                    print "metric_name=", metric_name
                     metrics_return_list = getattr(atf_metrics, metric_handlers_config[metric_name]["handler"])().parse_parameter(testblock_name, metrics[metric_name])
-                    #print "metrics_return_list=", metrics_return_list
+                    print "metrics_return_list=", metrics_return_list
                     if type(metrics_return_list) == list:
                         for metric_return in metrics_return_list:
                             #print "metric_return=", metric_return

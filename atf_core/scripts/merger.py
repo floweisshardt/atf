@@ -91,7 +91,7 @@ class Merger():
                         #print "metric_data_list=", metric_data_list
                         for i in range(len(metric_data_list)):
                             #print "i=", i
-                            #print "test_data_merged[testblock_name][metric_name][i]['data']['values']=", test_data_merged[testblock_name][metric_name][i]['data']['values']
+                            print "test_data_merged[testblock_name][metric_name][i]['data']['values']=", test_data_merged[testblock_name][metric_name][i]['data']['values']
                             test_data_merged[testblock_name][metric_name][i]['data']['min'] = min(test_data_merged[testblock_name][metric_name][i]['data']['values'])
                             test_data_merged[testblock_name][metric_name][i]['data']['max'] = max(test_data_merged[testblock_name][metric_name][i]['data']['values'])
                             test_data_merged[testblock_name][metric_name][i]['data']['average'] = round(sum(test_data_merged[testblock_name][metric_name][i]['data']['values'])/len(test_data_merged[testblock_name][metric_name][i]['data']['values']), 3)

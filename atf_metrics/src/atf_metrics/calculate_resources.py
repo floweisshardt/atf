@@ -163,7 +163,7 @@ class CalculateResources:
                         else:
                             groundtruth_result = False
 
-            #print "node data: ", self.node_data, "\n groundthruth result", groundtruth_result, " \n .................................."
+            #print "resources data: ", self.node_data, "\n groundthruth result", groundtruth_result, " \n .................................."
             return "resources", self.node_data, groundtruth_result, self.groundtruth, self.groundtruth_epsilon, details
         else:
             return False
