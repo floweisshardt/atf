@@ -3,9 +3,11 @@ import numpy
 import rospy
 import yaml
 import copy
+import os
+import sys
+import optparse
 import matplotlib.pyplot as plt
 
-import os
 
 class presenter:
 
@@ -33,6 +35,7 @@ class presenter:
             for metric, values in metrics.iteritems():
                 self.data.update({metric : []})
 
+
     def extract_yaml(self, num):
         avg = copy.deepcopy(self.data)
         mini = copy.deepcopy(self.data)
@@ -40,11 +43,11 @@ class presenter:
         numvals = copy.deepcopy(self.data)
         for testblock, metrics in self.yaml_file.iteritems():
             #print ("testblock: ", testblock)
-            for metric, values in metrics.iteritems():
+            for metric, data in metrics.iteritems():
                 #print ("metric: ", metric)
                 self.metric.add(metric)
-                for data in values:
-                    for name, result in data.iteritems():
+                for values in data:
+                    for name, result in values.iteritems():
                         #print ("name:", name)
                         if result != None:
                             #print ("result: ",result)
@@ -53,10 +56,13 @@ class presenter:
                                 for attribute, number in result.iteritems():
                                     #print ("attribute: ", attribute)
                                     if isinstance(number, list):
-                                        numvals[metric].append(number)
                                         print "numvals", numvals
-                                        #for dictval in number:
-                                            #print ("value: ", dictval)
+                                        for item in number:
+                                            #print ("value: ", item)
+                                            if isinstance(item, str):
+                                                continue
+                                            else:
+                                                numvals[metric].append(item)
                                     elif isinstance(number, float):
                                         #print ("result: ",result)
                                         if attribute == "average":
@@ -69,26 +75,25 @@ class presenter:
                                             maxi[metric].append(number)
                                             #print "max:", number
                                         #print "avg:", avg, "min:", mini, "max:", maxi
-                                        #print "\n \n -------------------------------------------------------------- \n \n"
-                                    elif isinstance(number, int):
-                                        print ("integer: ",number)
-                                    elif isinstance(number, str) or isinstance(result, unicode):
-                                        print ("string: ",number)
-                            elif isinstance(result, list):
-                                for arrval in result:
-                                    print ("arrval:", arrval)
-                            elif isinstance(result, int):
-                                print ("number: ", result)
-                            elif isinstance(result, str) or isinstance(result, unicode):
-                                print ("string: ", result)
+                                    # elif isinstance(number, int):
+                                    #     print ("integer: ",number)
+                                    # elif isinstance(number, str) or isinstance(result, unicode):
+                                    #     print ("string: ",number)
+                            # elif isinstance(result, list):
+                            #     for arrval in result:
+                            #         print ("arrval:", arrval)
+                            # elif isinstance(result, int):
+                            #     print ("number: ", result)
+                            # elif isinstance(result, str) or isinstance(result, unicode):
+                            #     print ("string: ", result)
                             else:
                                 rospy.logerr("Error, unknown result!")
         vals = [avg, numvals]
-        print "values", vals
+        #print "values", vals
         self.tests.update({str(num): vals})
-        # print "-------------------------------------------------"
-        # print ("tests:", self.tests)
-        # print "-------------------------------------------------"
+        print "-------------------------------------------------"
+        print ("tests:", self.tests)
+        print "-------------------------------------------------"
 
     def import_testnames(self, file):
         with open(file, 'r') as stream:
@@ -101,7 +106,7 @@ class presenter:
             self.testlist = yaml.load(stream)
 
     def show_results(self, all):
-        if(all == "all"):
+        if(all):
             self.metric.remove('time')
             #print "metric: ",self.metric
             counter = 0
@@ -114,12 +119,12 @@ class presenter:
                     # print "-------------------------------------------"
                     # print testname
                     # print "\n data: ", data
-                    # print "\n mean: ",data[0][metric]
-                    # print "\n values: ", data[1][metric]
+                    # print "mean: ",data[0][metric]
+                    # print "values: ", data[1][metric]
                     means.extend(data[0][metric])
-                    for mean in data[1][metric]:
-                        #print "mean", mean
-                        devs.append(numpy.std(mean))
+                    #for mean in data[1][metric]:
+                    #print "dev", numpy.std(data[1][metric]), "from mean", data[1][metric]
+                    devs.append(numpy.std(data[1][metric]))
                     for test in self.testlist:
                         if testname in test:
                             #print "\n testname:", self.testlist, " \n \n test:", test
@@ -164,12 +169,12 @@ class presenter:
                     # print "-------------------------------------------"
                     # print testname
                     # print "\n data: ", data
-                    # print "\n mean: ",data[0][metric]
-                    # print "\n values: ", data[1][metric]
+                    # print "mean: ",data[0][metric]
+                    # print "values: ", data[1][metric]
                     means.extend(data[0][metric])
-                    for mean in data[1][metric]:
-                        #print "mean", mean
-                        devs.append(numpy.std(mean))
+                    #for mean in data[1][metric]:
+                    #print "dev", numpy.std(data[1][metric]), "from mean", data[1][metric]
+                    devs.append(numpy.std(data[1][metric]))
                     for test in self.testlist:
                         if testname in test:
                             #print "\n testname:", self.testlist, " \n \n test:", test
@@ -199,18 +204,20 @@ class presenter:
                 plt.tight_layout()
                 plt.show()
 
-
 if __name__ == '__main__':
-    p = presenter()
+    parser = optparse.OptionParser()
+    parser.add_option('-a', '--all', dest='all', help='Print all plots in one Window', default=False, action="store_true")
+    (options, args) = parser.parse_args()
 
+    p = presenter()
     Path = "/tmp/hannes_test_new/results_yaml/"
     filelist = os.listdir(Path)
     p.import_testnames(Path.replace('yaml', 'json')+"test_list.json")
 
     for file in filelist:
         #print "file", file
-        #if "merged" in str(file):
-        p.import_yaml(Path+file)
-        filename = file.replace('.yaml', '')
-        p.extract_yaml(filename.replace('merged_', ''))
-    p.show_results("all")
+        if "merged" in str(file):
+            p.import_yaml(Path+file)
+            filename = file.replace('.yaml', '')
+            p.extract_yaml(filename.replace('merged_', ''))
+    p.show_results(options.all)
