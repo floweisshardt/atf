@@ -4,8 +4,14 @@ path_length:
   handler: CalculatePathLengthParamHandler
 distance:
   handler: CalculateDistanceParamHandler
-resources:
-  handler: CalculateResourcesParamHandler
+resource_cpu:
+  handler: CalculateResourcesCpuParamHandler
+resource_mem:
+  handler: CalculateResourcesMemParamHandler
+resource_io:
+  handler: CalculateResourcesIOParamHandler
+resource_network:
+  handler: CalculateResourcesNetworkParamHandler
 obstacle_distance:
   handler: CalculateDistanceToObstaclesParamHandler
 publish_rate:
