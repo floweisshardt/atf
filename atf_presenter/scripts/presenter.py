@@ -111,42 +111,8 @@ class presenter:
             #print "metric: ",self.metric
             counter = 0
             fig, axarr = plt.subplots(len(self.metric), sharex=True)
-            testnames = []
             for metric in self.metric:
-                means = []
-                devs = []
-                for testname, data in self.tests.iteritems():
-                    # print "-------------------------------------------"
-                    # print testname
-                    # print "\n data: ", data
-                    # print "mean: ",data[0][metric]
-                    # print "values: ", data[1][metric]
-                    means.extend(data[0][metric])
-                    #for mean in data[1][metric]:
-                    #print "dev", numpy.std(data[1][metric]), "from mean", data[1][metric]
-                    devs.append(numpy.std(data[1][metric]))
-                    for test in self.testlist:
-                        if testname in test:
-                            #print "\n testname:", self.testlist, " \n \n test:", test
-                            if (test[testname]['robot'] not in self.testnames):
-                              self.testnames.append(test[testname]['robot'])
-                #print "------------------------\n testnames:", testnames, "\n", self.testnames
-
-
-                # print("show")
-                # print testnames
-                # print self.metric
-                # print plotdata
-                y_pos = numpy.arange(len(self.testnames))
-                # print "x", y_pos
-                # print "y", means
-                # print "yerr", devs
-
-                # plt.bar(y_pos, means, yerr=devs, alpha=0.5, color='red')
-                # plt.xticks(y_pos+0.8/2, testnames, rotation='vertical')
-                # plt.title(metric)
-                # plt.tight_layout()
-
+                (y_pos, means, devs) = self.calculate_data(metric)
                 axarr[counter].bar(y_pos, means, yerr=devs, alpha=0.5, color='red')
                 rects = axarr[counter].bar(y_pos, means, yerr=devs, alpha=0.5, color='red')
                 axarr[counter].set_title(metric)
@@ -163,34 +129,7 @@ class presenter:
         else:
             print self.metric
             for metric in self.metric:
-                means = []
-                devs = []
-                for testname, data in self.tests.iteritems():
-                    # print "-------------------------------------------"
-                    # print testname
-                    # print "\n data: ", data
-                    # print "mean: ",data[0][metric]
-                    # print "values: ", data[1][metric]
-                    means.extend(data[0][metric])
-                    #for mean in data[1][metric]:
-                    #print "dev", numpy.std(data[1][metric]), "from mean", data[1][metric]
-                    devs.append(numpy.std(data[1][metric]))
-                    for test in self.testlist:
-                        if testname in test:
-                            #print "\n testname:", self.testlist, " \n \n test:", test
-                            if (test[testname]['robot'] not in self.testnames):
-                              self.testnames.append(test[testname]['robot'])
-
-
-                # print("show")
-                # print testnames
-                # print self.metric
-                # print plotdata
-                y_pos = numpy.arange(len(self.testnames))
-                # print "x", y_pos
-                # print "y", means
-                # print "yerr", devs
-
+                (y_pos, means, devs) = self.calculate_data(metric)
                 plt.bar(y_pos, means, yerr=devs, alpha=0.5, color='red')
                 rects = plt.bar(y_pos, means, yerr=devs, alpha=0.5, color='red')
                 for rect in rects:
@@ -203,6 +142,36 @@ class presenter:
                 plt.tight_layout()
                 plt.tight_layout()
                 plt.show()
+
+    def calculate_data(self, metric):
+        means = []
+        devs = []
+        for testname, data in self.tests.iteritems():
+            # print "-------------------------------------------"
+            # print testname
+            # print "\n data: ", data
+            # print "mean: ",data[0][metric]
+            # print "values: ", data[1][metric]
+            means.extend(data[0][metric])
+            #for mean in data[1][metric]:
+            #print "dev", numpy.std(data[1][metric]), "from mean", data[1][metric]
+            devs.append(numpy.std(data[1][metric]))
+            for test in self.testlist:
+                if testname in test:
+                    #print "\n testname:", self.testlist, " \n \n test:", test
+                    if (test[testname]['robot'] not in self.testnames):
+                      self.testnames.append(test[testname]['robot'])
+
+
+        # print("show")
+        # print testnames
+        # print self.metric
+        # print plotdata
+        y_pos = numpy.arange(len(self.testnames))
+        # print "y pos", y_pos
+        # print "height", means
+        # print "deviation", devs
+        return (y_pos, means, devs)
 
 if __name__ == '__main__':
     parser = optparse.OptionParser()
