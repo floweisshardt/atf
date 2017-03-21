@@ -4,6 +4,7 @@ import rospy
 import math
 
 from atf_msgs.msg import Resources, IO, Network
+from operator import add
 
 
 class CalculateResourcesIOParamHandler:
@@ -22,13 +23,13 @@ class CalculateResourcesIOParamHandler:
             rospy.logerr("metric config not a list")
             return False
         metrics = []
-
+        print "params:", params
         for metric in params:
             # check for optional parameters
             try:
                 groundtruth = metric["groundtruth"]
                 groundtruth_epsilon = metric["groundtruth_epsilon"]
-                #print "groundtruth", groundtruth, "groundtruth_epsilon", groundtruth_epsilon
+                print "groundtruth", groundtruth, "groundtruth_epsilon", groundtruth_epsilon
                 if 'groundtruth' in metric:
                     del metric['groundtruth']
                 if 'groundtruth_epsilon' in metric:
@@ -39,12 +40,13 @@ class CalculateResourcesIOParamHandler:
                     testblock_name)
                 groundtruth = None
                 groundtruth_epsilon = None
-            metrics.append(CalculateResourcesIO(metric, groundtruth, groundtruth_epsilon))
+            print "metric:", metric
+            metrics.append(CalculateResourcesIO(metric["nodes"], groundtruth, groundtruth_epsilon))
         return metrics
 
 
 class CalculateResourcesIO:
-    def __init__(self, resources, groundtruth, groundtruth_epsilon):
+    def __init__(self, nodes, groundtruth, groundtruth_epsilon):
         """
         Class for calculating the average resource workload and writing the current resource data.
         The resource data is sent over the topic "/testing/Resources".
@@ -54,7 +56,7 @@ class CalculateResourcesIO:
         """
 
         self.active = False
-        self.resources = resources
+        self.resource = "io"
         self.groundtruth = groundtruth
         self.groundtruth_epsilon = groundtruth_epsilon
         self.node_data = {}
@@ -63,15 +65,14 @@ class CalculateResourcesIO:
         self.finished = False
 
         # Sort resources after nodes
-        #print "resources:", self.resources, "\n node data:", self.node_data
-        for resource, nodes in self.resources.iteritems():
-            for node in nodes:
-                if node not in self.node_data:
-                    #print "node : ", node
-                    self.node_data[node] = {resource: {"data": [], "average": [], "min": [], "max": []}}
-                elif resource not in self.node_data[node]:
-                    self.node_data[node].update({resource: {"data": [], "average": [], "min": [], "max": []}})
-        #print "node data after:", self.node_data
+        print "node data:", self.node_data
+        for node in nodes:
+            if node not in self.node_data:
+                print "node : ", node
+                self.node_data[node] = {self.resource: {"data": [], "average": [], "min": [], "max": []}}
+            # elif resource not in self.node_data[node]:
+            #     self.node_data[node].update({resource: {"data": [], "average": [], "min": [], "max": []}})
+        print "node data after:", self.node_data
         rospy.Subscriber("/atf/resources", Resources, self.process_resource_data, queue_size=1)
 
     def start(self, timestamp):
@@ -88,17 +89,13 @@ class CalculateResourcesIO:
         pass
 
     def process_resource_data(self, msg):
-        #print "process data \n msg:", msg, "\n active", self.active
+        #print "--------------------------------------\nprocess data \n msg:", msg, "\n active", self.active
         if self.active:
             for node in msg.nodes:
                 try:
                     for resource in self.node_data[node.node_name]:
                         #print "nodes:", msg.nodes, "\n node data:", self.node_data, "\n resource", resource
-                        if resource == "cpu":
-                            self.node_data[node.node_name][resource]["data"].append(round(node.cpu, 2))
-                        elif resource == "mem":
-                            self.node_data[node.node_name][resource]["data"].append(round(node.memory, 2))
-                        elif resource == "io":
+                        if resource == "io":
                             if len(self.node_data[node.node_name][resource]["data"]) == 0:
                                 for i in xrange(0, self.size_io):
                                     self.node_data[node.node_name][resource]["data"].append([])
@@ -106,52 +103,37 @@ class CalculateResourcesIO:
                             self.node_data[node.node_name][resource]["data"][1].append(round(node.io.write_count, 2))
                             self.node_data[node.node_name][resource]["data"][2].append(round(node.io.read_bytes, 2))
                             self.node_data[node.node_name][resource]["data"][3].append(round(node.io.write_bytes, 2))
-                        elif resource == "network":
-                            if len(self.node_data[node.node_name][resource]["data"]) == 0:
-                                for i in xrange(0, self.size_network):
-                                    self.node_data[node.node_name][resource]["data"].append([])
-                            self.node_data[node.node_name][resource]["data"][0].append(round(node.network.bytes_sent,
-                                                                                             2))
-                            self.node_data[node.node_name][resource]["data"][1].append(round(node.network.bytes_recv,
-                                                                                             2))
-                            self.node_data[node.node_name][resource]["data"][2].append(round(node.network.packets_sent,
-                                                                                             2))
-                            self.node_data[node.node_name][resource]["data"][3].append(round(node.network.packets_recv,
-                                                                                             2))
-                            self.node_data[node.node_name][resource]["data"][4].append(round(node.network.errin, 2))
-                            self.node_data[node.node_name][resource]["data"][5].append(round(node.network.errout, 2))
-                            self.node_data[node.node_name][resource]["data"][6].append(round(node.network.dropin, 2))
-                            self.node_data[node.node_name][resource]["data"][7].append(round(node.network.dropout, 2))
                 except KeyError:
                     pass
 
     def get_result(self):
         groundtruth_result = None
-        details = None
+        details = {"sum of read and write bytes from nodes":[]}
         average_sum = 0.0
 
         if self.finished:
-            #print "----------------------------- \n node data:", self.node_data
             for node in self.node_data:
                 #print " node:", node
                 for res in self.node_data[node]:
                     #print "res", res
                     if len(self.node_data[node][res]["data"]) != 0:
-                        if res == "io" or res == "network":
-                            for values in self.node_data[node][res]["data"]:
-                                self.node_data[node][res]["average"].append(float(round(numpy.mean(values), 2)))
-                                self.node_data[node][res]["min"].append(float(round(min(values), 2)))
-                                self.node_data[node][res]["max"].append(float(round(max(values), 2)))
-                                average_sum += float(round(numpy.mean(values), 2))
-                                #print "average sum:", average_sum
-                        else:
-                            self.node_data[node][res]["average"] = float(round(numpy.mean(self.node_data[node][res]
-                                                                                          ["data"]), 2))
-                            self.node_data[node][res]["min"] = float(round(min(self.node_data[node][res]["data"]), 2))
-                            self.node_data[node][res]["max"] = float(round(max(self.node_data[node][res]["data"]), 2))
-                            average_sum += float(round(numpy.mean(self.node_data[node][res]["data"]), 2))
-                            #print "average sum:", average_sum
+                        self.node_data[node][res]["average"] = float(round(numpy.mean(
+                            map(add, self.node_data[node][res]["data"][2], self.node_data[node][res]["data"][3])), 2))
+                        self.node_data[node][res]["min"] = float(round(
+                            min(map(add, self.node_data[node][res]["data"][2], self.node_data[node][res]["data"][3])),
+                            2))
+                        self.node_data[node][res]["max"] = float(round(
+                            max(map(add, self.node_data[node][res]["data"][2], self.node_data[node][res]["data"][3])),
+                            2))
+                        average_sum += float(round(numpy.mean(self.node_data[node][res]["average"]), 2))
+                        print "average sum:", average_sum
+                    #print "----------------------------- \n node data:", self.node_data
                     del self.node_data[node][res]["data"]
+
+                    details["sum of read and write bytes from nodes"].append(node)
+                    # details["nodes"][node].append({"max":self.node_data[node][res]["max"]})
+                    # details["nodes"][node].append({"average":self.node_data[node][res]["average"]})
+                    # details["nodes"][node].append({"min":self.node_data[node][res]["min"]})
 
                 #print "groundtruthes:", self.groundtruth, self.groundtruth_epsilon, "\n average:", self.node_data[node][res]["average"]
                 if self.groundtruth != None and self.groundtruth_epsilon != None:
@@ -163,7 +145,7 @@ class CalculateResourcesIO:
                         else:
                             groundtruth_result = False
 
-            print "resources io data: ", self.node_data, "\n groundthruth result", groundtruth_result, " \n .................................."
-            return "resources_io", self.node_data, groundtruth_result, self.groundtruth, self.groundtruth_epsilon, details
+            print "resources io data: ", average_sum, "\n groundthruth result", groundtruth_result, "details:", details, " \n .................................."
+            return "resources_io", round(average_sum, 3), groundtruth_result, self.groundtruth, self.groundtruth_epsilon, details
         else:
             return False

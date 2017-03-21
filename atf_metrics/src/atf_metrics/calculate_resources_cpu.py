@@ -101,7 +101,7 @@ class CalculateResourcesCpu:
 
     def get_result(self):
         groundtruth_result = None
-        details = {"nodes":{}}
+        details = {"sum of nodes":[]}
         average_sum = 0.0
 
         if self.finished:
@@ -119,11 +119,10 @@ class CalculateResourcesCpu:
                         print "average sum:", average_sum
                     del self.node_data[node][res]["data"]
 
-                    details["nodes"].update({node:[]})
-                    details["nodes"][node].append({"max":self.node_data[node][res]["max"]})
-                    details["nodes"][node].append({"average":self.node_data[node][res]["average"]})
-                    details["nodes"][node].append({"min":self.node_data[node][res]["min"]})
-
+                    details["sum of nodes"].append(node)
+                    # details["nodes"][node].append({"max":self.node_data[node][res]["max"]})
+                    # details["nodes"][node].append({"average":self.node_data[node][res]["average"]})
+                    # details["nodes"][node].append({"min":self.node_data[node][res]["min"]})
 
                 #print "groundtruthes:", self.groundtruth, self.groundtruth_epsilon, "\n average:", self.node_data[node][res]["average"]
                 if self.groundtruth != None and self.groundtruth_epsilon != None:
