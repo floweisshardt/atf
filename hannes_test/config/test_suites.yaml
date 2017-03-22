@@ -3,11 +3,29 @@ testsuite_1:
   test_configs:                 # You have to define at least one test_config
     - test1
   robots:                       # You have to define at least one robot
+    - part75_250mm_ndtmatch
+    - part75_350mm_ndtmatch
+    - part75_500mm_ndtmatch
+    - part75_750mm_ndtmatch
+    - part100_250mm_ndtmatch
+    - part100_350mm_ndtmatch
+    - part100_500mm_ndtmatch
+    - part100_750mm_ndtmatch
+    - part150_250mm_ndtmatch
+    - part150_350mm_ndtmatch
+    - part150_500mm_ndtmatch
+    - part150_750mm_ndtmatch
     - part75_250mm
+    - part75_350mm
+    - part75_500mm
+    - part75_750mm
+    - part100_250mm
     - part100_350mm
+    - part100_500mm
+    - part100_750mm
+    - part150_250mm
     - part150_350mm
     - part150_500mm
-    - part200_600mm
-
+    - part150_750mm
   robot_envs:                   # You have to define at least one robot_env
     - env1

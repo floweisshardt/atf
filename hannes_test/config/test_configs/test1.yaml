@@ -14,5 +14,8 @@ testblock_small:
       measured_frame: base_link 
       groundtruth: 0.0
       groundtruth_epsilon: 2.0
+  resource_cpu:
+    - nodes:
+        - slam
 
 # testblock_all empty

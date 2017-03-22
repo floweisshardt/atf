@@ -9,5 +9,5 @@ additional_parameters:
   "/use_sim_time": true
 additional_arguments:
   "int_res": 0.75
-  "part_num": 100
-  "ndt_match": false
+  "part_num": 150
+  "ndt_match": true

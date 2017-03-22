@@ -39,6 +39,7 @@ qtcreator-*
 /planning/src
 
 *~
+*.orig
 
 # Emacs
 .#*

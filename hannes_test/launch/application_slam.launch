@@ -12,11 +12,11 @@
 			<arg name="robot" value="cob4-2"/>
     </include>
     
-    <!--include file="$(find msh_bringup)/launch/rviz.launch">
+    <include file="$(find msh_bringup)/launch/rviz.launch">
 			<arg name="robot" value="cob4-2"/>
-    </include-->
+    </include>
     
-    <include file="$(find ipa_navigation_bringup)/launch/ipa_localization.xml" >
+    <!--include file="$(find ipa_navigation_bringup)/launch/ipa_localization.xml" >
         <arg name="robot" value="cob4-2" />
         <arg name="robot_env" value="saturn-ingolstadt" />
         <arg name="env_pack" value="$(find msh_env_config)" />
@@ -29,7 +29,7 @@
         <arg name="sensor_config" value="$(find ipa_navigation_config)/config/sensor_setups/cob4-full.yaml" />
         <arg name="dead_reck" value="false" />
         <arg name="localgrid" value="false" />
-    </include>
+    </include-->
    
     <include file="$(find ipa_long_term_slam)/launch/long_term_slam.launch">
         <arg name="init_from_backup" value="false"/>

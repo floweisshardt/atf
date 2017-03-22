@@ -91,9 +91,9 @@ class presenter:
         vals = [avg, numvals]
         #print "values", vals
         self.tests.update({str(num): vals})
-        print "-------------------------------------------------"
-        print ("tests:", self.tests)
-        print "-------------------------------------------------"
+        # print "-------------------------------------------------"
+        # print "tests:\n", self.tests
+        # print "-------------------------------------------------"
 
     def import_testnames(self, file):
         with open(file, 'r') as stream:
@@ -146,9 +146,11 @@ class presenter:
     def calculate_data(self, metric):
         means = []
         devs = []
-        for testname, data in self.tests.iteritems():
+        for testname in sorted(self.tests, key=lambda ts : int(ts.split('_')[2].replace('r', ''))): # Magic!
+            data = self.tests[testname]
             # print "-------------------------------------------"
             # print testname
+            # print sorted(self.tests, key=lambda ts : int(ts.split('_')[2].replace('r', '')))
             # print "\n data: ", data
             # print "mean: ",data[0][metric]
             # print "values: ", data[1][metric]
@@ -157,12 +159,11 @@ class presenter:
             #print "dev", numpy.std(data[1][metric]), "from mean", data[1][metric]
             devs.append(numpy.std(data[1][metric]))
             for test in self.testlist:
+                #print "\n-------------------\ntest:", test, "\ntestname:", testname, "\n data: \n", data
                 if testname in test:
                     #print "\n testname:", self.testlist, " \n \n test:", test
                     if (test[testname]['robot'] not in self.testnames):
                       self.testnames.append(test[testname]['robot'])
-
-
         # print("show")
         # print testnames
         # print self.metric
@@ -179,7 +180,7 @@ if __name__ == '__main__':
     (options, args) = parser.parse_args()
 
     p = presenter()
-    Path = "/tmp/hannes_test_new/results_yaml/"
+    Path = "/home/fmw-hb/Desktop/hannes_test_new/results_yaml/"#"/tmp/hannes_test_new/results_yaml/"
     filelist = os.listdir(Path)
     p.import_testnames(Path.replace('yaml', 'json')+"test_list.json")
 

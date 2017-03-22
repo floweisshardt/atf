@@ -8,6 +8,6 @@ wait_for_services: []
 additional_parameters:
   "/use_sim_time": true
 additional_arguments:
-  "int_res": 0.75
-  "part_num": 100
-  "ndt_match": false
+  "int_res": 0.5
+  "part_num": 150
+  "ndt_match": true
