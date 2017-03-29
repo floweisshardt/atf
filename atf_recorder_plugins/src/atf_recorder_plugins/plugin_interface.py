@@ -58,7 +58,17 @@ class RecordInterface:
     def get_service_types(self, services):
         service_types = []
         for service in services:
-            service_types.append([service[0], rosservice.get_service_type(service[0])])
+            if service:
+                try:
+                    service_type_str = rosservice.get_service_type(service[0])
+                    if service_type_str is not None:
+                        service_types.append([service[0], service_type_str])
+                except rospy.ServiceException as e:
+                    rospy.logerr("Information is invalid for the service : %s . %s" % (service[0], e))
+                    continue
+                except rospy.ServiceIOException as e:
+                    rospy.logerr("Unable to communicate with service : %s . %s" % (service[0], e))
+                    continue
         return service_types
 
     def add_api(self, api, api_descriptor, api_state, types):
