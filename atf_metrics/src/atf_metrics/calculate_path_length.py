@@ -82,8 +82,8 @@ class CalculatePathLength:
                                                rospy.Duration.from_sec(1 / (2*self.tf_sampling_freq)))
                 (trans, rot) = self.listener.lookupTransform(self.root_frame, self.measured_frame, rospy.Time(0))
 
-            except (tf.Exception, tf.LookupException, tf.ConnectivityException):
-                #rospy.logwarn(e)
+            except (tf.Exception, tf.LookupException, tf.ConnectivityException) as e:
+                rospy.logwarn(e)
                 pass
             else:
                 if self.first_value:
@@ -91,10 +91,15 @@ class CalculatePathLength:
                     self.rot_old = rot
                     self.first_value = False
                     return
-
+                #print "transformations: \n", "trans[0]", trans[0], "self.trans_old[0]",self.trans_old[0], "trans[1]", trans[1], "self.trans_old[1]",self.trans_old[1], "trans[2]",trans[2], "self.trans_old[2]",self.trans_old[2], "\n ------------------------------------------------ "
                 path_increment = math.sqrt((trans[0] - self.trans_old[0]) ** 2 + (trans[1] - self.trans_old[1]) ** 2 +
                                            (trans[2] - self.trans_old[2]) ** 2)
-                self.path_length += path_increment
+                if(path_increment < 1):
+                    #rospy.logwarn("Transformation: %s, Path Increment: %s",str(trans), str(path_increment))
+                    self.path_length += path_increment
+
+                else:
+                    rospy.logwarn("Transformation Failed! \n Transformation: %s, Path Increment: %s",str(trans), str(path_increment))
 
                 self.trans_old = trans
                 self.rot_old = rot

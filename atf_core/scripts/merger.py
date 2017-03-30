@@ -32,55 +32,56 @@ class Merger():
                     #print "subtest=", subtest
                     subtest_data = self.atf_configuration_parser.load_data(os.path.join(self.config["json_output"], subtest + ".json"))
                     #print "subtest_data=", subtest_data
-                    for testblock_name, testblock_data in subtest_data.items():
-                        #print "testblock_name=", testblock_name
-                        #print "testblock_data=", testblock_data
-                        if testblock_name == "error":
-                            rospy.logwarn("subtest '%s' has an error (error_message: '%s'), skipping...", subtest, testblock_data)
-                            #TODO: mark subtest as error, so that presenter can show status information
-                            continue
-                        for metric_name, metric_data_list in testblock_data.items():
-                            #print "metric_name=", metric_name
-                            #print "metric_data_list=", metric_data_list
-                            for metric_data in metric_data_list:
-                                #print "metric_data=", metric_data
-                                #print "metric_data['data']=", metric_data['data']
+                    if subtest_data != None:
+                        for testblock_name, testblock_data in subtest_data.items():
+                            #print "testblock_name=", testblock_name
+                            #print "testblock_data=", testblock_data
+                            if testblock_name == "error":
+                                rospy.logwarn("subtest '%s' has an error (error_message: '%s'), skipping...", subtest, testblock_data)
+                                #TODO: mark subtest as error, so that presenter can show status information
+                                continue
+                            for metric_name, metric_data_list in testblock_data.items():
+                                #print "metric_name=", metric_name
+                                #print "metric_data_list=", metric_data_list
+                                for metric_data in metric_data_list:
+                                    #print "metric_data=", metric_data
+                                    #print "metric_data['data']=", metric_data['data']
 
-                                # check if entry exists
-                                if testblock_name not in test_data_merged:
-                                    # create new testblock entry
-                                    #print "create new entry for testblock '" + testblock_name + "'"
-                                    test_data_merged[testblock_name] = {}
-                                if metric_name not in test_data_merged[testblock_name]:
-                                    # create new metric entry
-                                    #print "create new entry for metric '" + metric_name + "' in testblock '" + testblock_name + "'"
-                                    test_data_merged[testblock_name][metric_name] = []
-                                    new_metric_data = copy.deepcopy(metric_data)
-                                    new_metric_data['data'] = {}
-                                    new_metric_data['data']['values'] = [metric_data['data']]
-                                    test_data_merged[testblock_name][metric_name].append(new_metric_data)
-                                #print "test_data_merged0=", test_data_merged
-                                else:
-                                    # entry already exists
-                                    #print "entry for metric '" + metric_name + "' in testblock '" + testblock_name + "' already exists"
-
-                                    # check if merging is possible, if not: append
-                                    is_in, element_number = self.is_in_metric_data_list(copy.deepcopy(metric_data), copy.deepcopy(test_data_merged[testblock_name][metric_name]))
-                                    if is_in:
-                                        print "--> merge", metric_data['data'], "into element_number:", element_number
-                                        # merge values
-                                        test_data_merged[testblock_name][metric_name][element_number]['data']['values'].append(metric_data['data'])
-                                        # merge groundtruth_result (take the worst result)
-                                        test_data_merged[testblock_name][metric_name][element_number]['groundtruth_result'] = test_data_merged[testblock_name][metric_name][element_number]['groundtruth_result'] and metric_data['groundtruth_result']
-                                    else:
-                                        #print "--> append"
+                                    # check if entry exists
+                                    if testblock_name not in test_data_merged:
+                                        # create new testblock entry
+                                        #print "create new entry for testblock '" + testblock_name + "'"
+                                        test_data_merged[testblock_name] = {}
+                                    if metric_name not in test_data_merged[testblock_name]:
+                                        # create new metric entry
+                                        #print "create new entry for metric '" + metric_name + "' in testblock '" + testblock_name + "'"
+                                        test_data_merged[testblock_name][metric_name] = []
                                         new_metric_data = copy.deepcopy(metric_data)
                                         new_metric_data['data'] = {}
                                         new_metric_data['data']['values'] = [metric_data['data']]
-                                        #print "new_metric_data=", new_metric_data
-                                        #print "append to:", test_data_merged[testblock_name]
                                         test_data_merged[testblock_name][metric_name].append(new_metric_data)
-                                #print "test_data_merged=", test_data_merged
+                                    #print "test_data_merged0=", test_data_merged
+                                    else:
+                                        # entry already exists
+                                        #print "entry for metric '" + metric_name + "' in testblock '" + testblock_name + "' already exists"
+
+                                        # check if merging is possible, if not: append
+                                        is_in, element_number = self.is_in_metric_data_list(copy.deepcopy(metric_data), copy.deepcopy(test_data_merged[testblock_name][metric_name]))
+                                        if is_in:
+                                            print "--> merge", metric_data['data'], "into element_number:", element_number
+                                            # merge values
+                                            test_data_merged[testblock_name][metric_name][element_number]['data']['values'].append(metric_data['data'])
+                                            # merge groundtruth_result (take the worst result)
+                                            test_data_merged[testblock_name][metric_name][element_number]['groundtruth_result'] = test_data_merged[testblock_name][metric_name][element_number]['groundtruth_result'] and metric_data['groundtruth_result']
+                                        else:
+                                            #print "--> append"
+                                            new_metric_data = copy.deepcopy(metric_data)
+                                            new_metric_data['data'] = {}
+                                            new_metric_data['data']['values'] = [metric_data['data']]
+                                            #print "new_metric_data=", new_metric_data
+                                            #print "append to:", test_data_merged[testblock_name]
+                                            test_data_merged[testblock_name][metric_name].append(new_metric_data)
+                                    #print "test_data_merged=", test_data_merged
 
                 #print "test_data_merged before average=", test_data_merged
 
