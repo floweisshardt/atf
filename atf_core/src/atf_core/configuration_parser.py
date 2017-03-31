@@ -36,16 +36,17 @@ class ATFConfigurationParser:
                 #print "metrics=", metrics
                 metric_handlers_config = self.load_data(rospkg.RosPack().get_path("atf_metrics") + "/config/metrics.yaml")
                 #print "metric_handlers_config=", metric_handlers_config
-                for metric_name in metrics:
-                    #print "metric_name=", metric_name
-                    metrics_return_list = getattr(atf_metrics, metric_handlers_config[metric_name]["handler"])().parse_parameter(testblock_name, metrics[metric_name])
-                    #print "metrics_return_list=", metrics_return_list
-                    if type(metrics_return_list) == list:
-                        for metric_return in metrics_return_list:
-                            #print "metric_return=", metric_return
-                            metric_handles.append(metric_return)
-                    else:
-                        raise ATFConfigurationError("no valid metric configuration for metric '%s' in testblock '%s'" %(metric_name, testblock_name))
+                if  metric_handlers_config and metrics:
+                    for metric_name in metrics:
+                        #print "metric_name=", metric_name
+                        metrics_return_list = getattr(atf_metrics, metric_handlers_config[metric_name]["handler"])().parse_parameter(testblock_name, metrics[metric_name])
+                        #print "metrics_return_list=", metrics_return_list
+                        if metrics_return_list and (type(metrics_return_list) == list):
+                            for metric_return in metrics_return_list:
+                                #print "metric_return=", metric_return
+                                metric_handles.append(metric_return)
+                        else:
+                            raise ATFConfigurationError("no valid metric configuration for metric '%s' in testblock '%s'" %(metric_name, testblock_name))
             #print "metric_handles=", metric_handles
             testblocks[testblock_name] = Testblock(testblock_name, metric_handles, recorder_handle)
         return testblocks
