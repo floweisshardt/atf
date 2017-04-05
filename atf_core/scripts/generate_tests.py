@@ -22,6 +22,7 @@ class GenerateTests:
         self.print_output = "ATF: Test generation done!"
         self.package_name = arguments[1]
         self.package_path = arguments[2]
+        self.generation_path = arguments[3]
         self.generation_config = self.load_yaml(self.package_path + "/config/test_generation_config.yaml")
 
         # required parameters
@@ -63,7 +64,7 @@ class GenerateTests:
 
         self.test_list = {}
 
-        self.test_generated_path = os.path.join(self.package_path, "test_generated")
+        self.test_generated_path = os.path.join(self.generation_path, "test_generated")
         self.test_generated_recording_path = os.path.join(self.test_generated_path, "recording")
         self.test_generated_analysing_path = os.path.join(self.test_generated_path, "analysing")
         self.create_folders()
@@ -167,7 +168,7 @@ class GenerateTests:
                     rosparam(param=self.ns + "test_config", command="load", file="$(find " + self.package_name + ")/" + os.path.join(self.generation_config["test_config_path"], self.test_list[test_name]["test_config"] + ".yaml")),
                     #param(name="test_config", value=self.test_list[test_name]["test_config"]),
                     #param(name="test_config_file", value="$(find " + self.package_name + ")/" + self.generation_config["test_config_file"]),
-                    param(name=self.ns + "test_generated_path", value="$(find " + self.package_name + ")/test_generated"),
+                    param(name=self.ns + "test_generated_path", value="$(find " + self.generation_path + ")/test_generated"),
                     #param(name="yaml_output", value=self.yaml_output),
                     #param(name="json_output", value=self.json_output),
                     param(name=self.ns + "json_output", value=self.generation_config["json_output"]),
