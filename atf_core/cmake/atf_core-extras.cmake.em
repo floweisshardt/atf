@@ -22,9 +22,8 @@ function(atf_test)
           message(FATAL_ERROR "-- ATF: generating test files failed: exit_code='${generation_result}'")
         endif()
 
-        set(TEST_GENERATED_PATH ${CMAKE_BINARY_DIR}/test_generated)
+        set(TEST_GENERATED_PATH ${PROJECT_BINARY_DIR}/test_generated)
 
-        MESSAGE( STATUS "PROJECT_BINARY_DIR: " ${TEST_GENERATED_PATH} )
         roslaunch_add_file_check(${PROJECT_BINARY_DIR}/test_generated)
 
         add_rostest(${PROJECT_BINARY_DIR}/test_generated/cleaning.test)

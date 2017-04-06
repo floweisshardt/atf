@@ -168,7 +168,7 @@ class GenerateTests:
                     rosparam(param=self.ns + "test_config", command="load", file="$(find " + self.package_name + ")/" + os.path.join(self.generation_config["test_config_path"], self.test_list[test_name]["test_config"] + ".yaml")),
                     #param(name="test_config", value=self.test_list[test_name]["test_config"]),
                     #param(name="test_config_file", value="$(find " + self.package_name + ")/" + self.generation_config["test_config_file"]),
-                    param(name=self.ns + "test_generated_path", value="$(find " + self.generation_path + ")/test_generated"),
+                    param(name=self.ns + "test_generated_path", value=self.test_generated_path),
                     #param(name="yaml_output", value=self.yaml_output),
                     #param(name="json_output", value=self.json_output),
                     param(name=self.ns + "json_output", value=self.generation_config["json_output"]),
