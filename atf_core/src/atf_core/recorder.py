@@ -144,7 +144,7 @@ class ATFRecorder:
         #print "self.recorder_plugin_list=", self.recorder_plugin_list
         for recorder_plugin in self.recorder_plugin_list:
             #FIXME: need to filter the topics not needed for current trigger
-            #recorder_plugin.trigger_callback(trigger)
+            recorder_plugin.trigger_callback(trigger)
             rospy.loginfo(" recorder plugin callback : '%s'", trigger.name)
 
         # Only process message if testblock requests topics
