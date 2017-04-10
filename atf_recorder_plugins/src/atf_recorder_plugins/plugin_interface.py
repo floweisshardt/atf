@@ -60,14 +60,15 @@ class RecordInterface:
         for service in services:
             if service:
                 try:
-                    service_type_str = rosservice.get_service_type(service[0])
+                    service_name_str = str(service[0])
+                    service_type_str = rosservice.get_service_type(service_name_str)
                     if service_type_str is not None:
-                        service_types.append([service[0], service_type_str])
+                        service_types.append([service_name_str, service_type_str])
                 except rospy.ServiceException as e:
-                    rospy.logerr("Information is invalid for the service : %s . %s" % (service[0], e))
+                    rospy.logerr("Information is invalid for the service : %s . %s" % (service_name_str, e))
                     continue
                 except rospy.ServiceIOException as e:
-                    rospy.logerr("Unable to communicate with service : %s . %s" % (service[0], e))
+                    rospy.logerr("Unable to communicate with service : %s . %s" % (service_name_str, e))
                     continue
         return service_types
 

@@ -22,7 +22,7 @@ class GenerateTests:
         self.print_output = "ATF: Test generation done!"
         self.package_name = arguments[1]
         self.package_path = arguments[2]
-        self.generation_path = arguments[3]
+        self.binary_dir_path = arguments[3]
         self.generation_config = self.load_yaml(self.package_path + "/config/test_generation_config.yaml")
 
         # required parameters
@@ -64,7 +64,7 @@ class GenerateTests:
 
         self.test_list = {}
 
-        self.test_generated_path = os.path.join(self.generation_path, "test_generated")
+        self.test_generated_path = os.path.join(self.binary_dir_path, "test_generated")
         self.test_generated_recording_path = os.path.join(self.test_generated_path, "recording")
         self.test_generated_analysing_path = os.path.join(self.test_generated_path, "analysing")
         self.create_folders()
@@ -74,6 +74,7 @@ class GenerateTests:
         # delete of test_generated directory and create new one
         if os.path.exists(self.test_generated_recording_path):
             shutil.rmtree(self.test_generated_path)
+        shutil.copyfile(self.package_path + "/package.xml", self.binary_dir_path + "/package.xml")
         os.makedirs(self.test_generated_path)
         os.makedirs(self.test_generated_recording_path)
         os.makedirs(self.test_generated_analysing_path)
