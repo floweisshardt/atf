@@ -38,26 +38,26 @@ class Testblock:
         return self.m.finished
 
     def _wait_for_transition_is_done(self):
-        rospy.loginfo("-------------> ENTRY  wait_for_transition_is_done ")
-        rospy.loginfo(" waiting for trasition with trigger value : '%s'", self.trigger)
+        rospy.logdebug("-------------> ENTRY  wait_for_transition_is_done ")
+        rospy.logdebug(" waiting for trasition with trigger value : '%s'", self.trigger)
         while not rospy.is_shutdown() and not self.trigger is None:
             if self.exception != None:
                 raise ATFTestblockError(self.exception)
             continue
-        rospy.loginfo("-------------> EXIT  wait_for_transition_is_done ")
+        rospy.logdebug("-------------> EXIT  wait_for_transition_is_done ")
 
     def _wait_while_transition_is_active(self):
-        rospy.loginfo("========> ENTRY  _wait_while_transition_is_active ")
-        rospy.loginfo(" waiting for active transition with trigger value : '%s'", self.trigger)
+        rospy.logdebug("========> ENTRY  _wait_while_transition_is_active ")
+        rospy.logdebug(" waiting for active transition with trigger value : '%s'", self.trigger)
         while not rospy.is_shutdown() and self.trigger is None:
             if self.exception != None:
                 raise ATFTestblockError(self.exception)
             continue
-        rospy.loginfo("  >>>>>>>>>>>>>>>> triggering the recording with trigger value : '%s'", self.trigger.trigger)
+        rospy.logdebug("  >>>>>>>>>>>>>>>> triggering the recording with trigger value : '%s'", self.trigger.trigger)
         if self.trigger is not None:
             self.recorder_handle.record_trigger(self.trigger)
-            rospy.loginfo("  <<<<<<<<<<<<<<<<< recording has been triggered with trigger value : '%s'", self.trigger.trigger)
-        rospy.loginfo("========> EXIT  _wait_while_transition_is_active ")
+            rospy.logdebug("  <<<<<<<<<<<<<<<<< recording has been triggered with trigger value : '%s'", self.trigger.trigger)
+        rospy.logdebug("========> EXIT  _wait_while_transition_is_active ")
 
     def get_state(self):
         return self.m.get_current_state()
@@ -67,7 +67,7 @@ class Testblock:
 ###############
     # purge
     def purge(self):
-        rospy.loginfo("### ENTRY  purge  ###")
+        rospy.logdebug("### ENTRY  purge  ###")
         # wait for old transition to finish before processing new one
         self._wait_for_transition_is_done()
 
@@ -82,7 +82,7 @@ class Testblock:
         t.name = self.name
         t.trigger = TestblockTrigger.PURGE
         self.trigger = t
-        rospy.loginfo("### EXIT purge  ###")
+        rospy.logdebug("### EXIT purge  ###")
 
     def _purge(self):
         rospy.loginfo("Purging testblock '%s'", self.name)
@@ -91,7 +91,7 @@ class Testblock:
 
     # start
     def start(self):
-        rospy.loginfo("### ENTRY  start  ###")
+        rospy.logdebug("### ENTRY  start  ###")
         # wait for old transition to finish before processing new one
         self._wait_for_transition_is_done()
 
@@ -106,8 +106,8 @@ class Testblock:
         t.name = self.name
         t.trigger = TestblockTrigger.START
         self.trigger = t
-        rospy.loginfo(" start call with trigger : '%s'", self.trigger.trigger)
-        rospy.loginfo("### EXIT  start  ###")
+        rospy.logdebug(" start call with trigger : '%s'", self.trigger.trigger)
+        rospy.logdebug("### EXIT  start  ###")
 
     def _start(self):
         rospy.loginfo("Starting testblock '%s'", self.name)
@@ -117,7 +117,7 @@ class Testblock:
 
     # pause
     def pause(self):
-        rospy.loginfo("### ENTRY  pause  ###")
+        rospy.logdebug("### ENTRY  pause  ###")
         # wait for old transition to finish before processing new one
         self._wait_for_transition_is_done()
 
@@ -132,7 +132,7 @@ class Testblock:
         t.name = self.name
         t.trigger = TestblockTrigger.PAUSE
         self.trigger = t
-        rospy.loginfo("### EXIT  pause  ###")
+        rospy.logdebug("### EXIT  pause  ###")
 
     def _pause(self):
         rospy.loginfo("Pausing testblock '%s'", self.name)
@@ -141,12 +141,12 @@ class Testblock:
 
     # stop
     def stop(self):
-        rospy.loginfo("### ENTRY  stop  ###")
+        rospy.logdebug("### ENTRY  stop  ###")
         self.stop_call = "testblock initiated stop call"
         # wait for old transition to finish before processing new one
-        rospy.loginfo(" Calling - _wait_for_transition_is_done() ***")
+        rospy.logdebug(" Calling - _wait_for_transition_is_done() ***")
         self._wait_for_transition_is_done()
-        rospy.loginfo(" Return - _wait_for_transition_is_done() ***")
+        rospy.logdebug(" Return - _wait_for_transition_is_done() ***")
 
         if not self.atf_started:
             raise ATFTestblockError("Calling stop for testblock '%s' before ATF has been started." % self.name)
@@ -156,33 +156,32 @@ class Testblock:
         if state in self.m.endStates:
             raise ATFTestblockError("Calling stop for testblock '%s' while testblock already in an end state." % self.name)
 
-        rospy.loginfo("  Setting new trigger STOP ***")
+        rospy.logdebug("  Setting new trigger STOP ***")
         # set new transition trigger
         t = TestblockTrigger()
         t.stamp = rospy.Time.now()
         t.name = self.name
         t.trigger = TestblockTrigger.STOP
         self.trigger = t
-        rospy.loginfo("### EXIT  stop  ###")
+        rospy.logdebug("### EXIT  stop  ###")
 
     def _stop(self):
-        rospy.loginfo("Stopping testblock ENTRY '%s'", self.name)
+        rospy.loginfo("Stopping testblock '%s'", self.name)
         for metric in self.metrics:
             metric.stop(self.timestamp)
-        rospy.loginfo("Stopping testblock EXIT '%s'", self.name)
 
 ##########
 # states #
 ##########
     def _purged_state(self):
-        rospy.loginfo("*** ENTRY _purged_state ***")
+        rospy.logdebug("*** ENTRY _purged_state ***")
         self._wait_while_transition_is_active()
         #self.recorder_handle.record_trigger(self.trigger)
         if self.trigger.trigger == TestblockTrigger.START:
             self._start()
             new_state = TestblockState.ACTIVE
         elif self.trigger.trigger == TestblockTrigger.STOP:
-            rospy.loginfo("Stopping testblock is called from _purged_state")
+            rospy.logdebug("Stopping testblock is called from _purged_state")
             self._stop()
             new_state = TestblockState.SUCCEEDED
         else:
@@ -191,14 +190,14 @@ class Testblock:
             new_state = TestblockState.ERROR
             self.exception = message
             raise ATFTestblockError(message)
-        rospy.loginfo(" _purged_state trigger : '%s'", self.trigger.trigger)
+        rospy.logdebug(" _purged_state trigger : '%s'", self.trigger.trigger)
         self.trigger = None
-        rospy.loginfo(" _purged_state after trigger = None : '%s'", self.trigger)
-        rospy.loginfo("*** EXIT _purged_state ***")
+        rospy.logdebug(" _purged_state after trigger = None : '%s'", self.trigger)
+        rospy.logdebug("*** EXIT _purged_state ***")
         return new_state
 
     def _active_state(self):
-        rospy.loginfo("*** ENTRY _active_state ***")
+        rospy.logdebug("*** ENTRY _active_state ***")
         self._wait_while_transition_is_active()
         #self.recorder_handle.record_trigger(self.trigger)
         if self.trigger.trigger == TestblockTrigger.PURGE:
@@ -208,7 +207,7 @@ class Testblock:
             self._pause()
             new_state = TestblockState.PAUSED
         elif self.trigger.trigger == TestblockTrigger.STOP:
-            rospy.loginfo("Stopping testblock is called from _active_state")
+            rospy.logdebug("Stopping testblock is called from _active_state")
             self._stop()
             new_state = TestblockState.SUCCEEDED
         else:
@@ -217,14 +216,14 @@ class Testblock:
             new_state = TestblockState.ACTIVE
             self.exception = message
             raise ATFTestblockError(message)
-        rospy.loginfo(" _active_state trigger - _active_state : '%s'", self.trigger.trigger)
+        rospy.logdebug(" _active_state trigger - _active_state : '%s'", self.trigger.trigger)
         self.trigger = None
-        rospy.loginfo(" _active_state after trigger = None : '%s'", self.trigger)
-        rospy.loginfo("*** EXIT _active_state ***")
+        rospy.logdebug(" _active_state after trigger = None : '%s'", self.trigger)
+        rospy.logdebug("*** EXIT _active_state ***")
         return new_state
 
     def _paused_state(self):
-        rospy.loginfo("*** ENTRY _paused_state ***")
+        rospy.logdebug("*** ENTRY _paused_state ***")
         self._wait_while_transition_is_active()
         #self.recorder_handle.record_trigger(self.trigger)
         if self.trigger.trigger == TestblockTrigger.PURGE:
@@ -234,7 +233,7 @@ class Testblock:
             self._start()
             new_state = TestblockState.ACTIVE
         elif self.trigger.trigger == TestblockTrigger.STOP:
-            rospy.loginfo("Stopping testblock is called from _paused_state")
+            rospy.logdebug("Stopping testblock is called from _paused_state")
             self._stop()
             new_state = TestblockState.SUCCEEDED
         else:
@@ -243,21 +242,21 @@ class Testblock:
             new_state = TestblockState.ERROR
             self.exception = message
             raise ATFTestblockError(message)
-        rospy.loginfo(" _paused_state trigger - _active_state : '%s'", self.trigger.trigger)
+        rospy.logdebug(" _paused_state trigger - _active_state : '%s'", self.trigger.trigger)
         self.trigger = None
-        rospy.loginfo(" _paused_state after trigger = None : '%s'", self.trigger)
-        rospy.loginfo("*** EXIT _paused_state ***")
+        rospy.logdebug(" _paused_state after trigger = None : '%s'", self.trigger)
+        rospy.logdebug("*** EXIT _paused_state ***")
         return new_state
 
     def _succeeded_state(self): # will never be called
-        rospy.loginfo("*** ENTRY _succeeded_state ***")
+        rospy.logdebug("*** ENTRY _succeeded_state ***")
         self._wait_while_transition_is_active()
-        rospy.loginfo("*** EXIT _succeeded_state ***")
+        rospy.logdebug("*** EXIT _succeeded_state ***")
 
     def _error_state(self): # will never be called
-        rospy.loginfo("*** ENTRY _error_state ***")
+        rospy.logdebug("*** ENTRY _error_state ***")
         self._wait_while_transition_is_active()
-        rospy.loginfo("*** EXIT _error_state ***")
+        rospy.logdebug("*** EXIT _error_state ***")
 
 class ATFTestblockError(Exception):
     pass
