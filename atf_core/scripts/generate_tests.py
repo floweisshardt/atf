@@ -21,8 +21,9 @@ class GenerateTests:
         self.ns = "/atf/"
         self.print_output = "ATF: Test generation done!"
         self.package_name = arguments[1]
-        self.package_path = arguments[2]
-        self.generation_config = self.load_yaml(self.package_path + "/config/test_generation_config.yaml")
+        self.package_src_path = arguments[2]
+        self.package_bin_path = arguments[3]
+        self.generation_config = self.load_yaml(self.package_src_path + "/config/test_generation_config.yaml")
 
         # required parameters
         try:
@@ -63,7 +64,7 @@ class GenerateTests:
 
         self.test_list = {}
 
-        self.test_generated_path = os.path.join(self.package_path, "test_generated")
+        self.test_generated_path = os.path.join(self.package_bin_path, "test_generated")
         self.test_generated_recording_path = os.path.join(self.test_generated_path, "recording")
         self.test_generated_analysing_path = os.path.join(self.test_generated_path, "analysing")
         self.create_folders()
@@ -73,6 +74,7 @@ class GenerateTests:
         # delete of test_generated directory and create new one
         if os.path.exists(self.test_generated_recording_path):
             shutil.rmtree(self.test_generated_path)
+        shutil.copyfile(self.package_src_path + "/package.xml", self.package_bin_path + "/package.xml")
         os.makedirs(self.test_generated_path)
         os.makedirs(self.test_generated_recording_path)
         os.makedirs(self.test_generated_analysing_path)
@@ -90,9 +92,9 @@ class GenerateTests:
         #print "self.test_list=", self.test_list
         for test_name in self.test_list.keys():
             #print "\ntest_name=", test_name
-            test_config = self.load_yaml(os.path.join(self.package_path, self.generation_config["test_config_path"], self.test_list[test_name]["test_config"] + ".yaml"))
-            robot_config = self.load_yaml(os.path.join(self.package_path, self.generation_config["robot_config_path"], self.test_list[test_name]["robot"] + ".yaml"))
-            robot_env_config = self.load_yaml(os.path.join(self.package_path, self.generation_config["robot_env_config_path"], self.test_list[test_name]["robot_env"] + ".yaml"))
+            test_config = self.load_yaml(os.path.join(self.package_src_path, self.generation_config["test_config_path"], self.test_list[test_name]["test_config"] + ".yaml"))
+            robot_config = self.load_yaml(os.path.join(self.package_src_path, self.generation_config["robot_config_path"], self.test_list[test_name]["robot"] + ".yaml"))
+            robot_env_config = self.load_yaml(os.path.join(self.package_src_path, self.generation_config["robot_env_config_path"], self.test_list[test_name]["robot_env"] + ".yaml"))
             #print "robot_config=", robot_config
             #print "robot_env_config=", robot_env_config
             #print "self.test_list[test_name]=", self.test_list[test_name]
@@ -167,7 +169,7 @@ class GenerateTests:
                     rosparam(param=self.ns + "test_config", command="load", file="$(find " + self.package_name + ")/" + os.path.join(self.generation_config["test_config_path"], self.test_list[test_name]["test_config"] + ".yaml")),
                     #param(name="test_config", value=self.test_list[test_name]["test_config"]),
                     #param(name="test_config_file", value="$(find " + self.package_name + ")/" + self.generation_config["test_config_file"]),
-                    param(name=self.ns + "test_generated_path", value="$(find " + self.package_name + ")/test_generated"),
+                    param(name=self.ns + "test_generated_path", value=self.test_generated_path),
                     #param(name="yaml_output", value=self.yaml_output),
                     #param(name="json_output", value=self.json_output),
                     param(name=self.ns + "json_output", value=self.generation_config["json_output"]),
@@ -206,12 +208,12 @@ class GenerateTests:
             if self.upload_data:
                 test_upload.append(
                     test({'test-name': "uploading_data", 'pkg': "atf_core", 'type': "test_dropbox_uploader.py",
-                          'time-limit': str(self.time_limit_uploading), 'args': "-f " + os.path.join(self.package_path, "config/.dropbox_uploader_config") + " upload " + self.bagfile_output + " " + os.path.join(self.package_name, "data")}))
+                          'time-limit': str(self.time_limit_uploading), 'args': "-f " + os.path.join(self.package_src_path, "config/.dropbox_uploader_config") + " upload " + self.bagfile_output + " " + os.path.join(self.package_name, "data")}))
 
             if self.upload_result:
                 test_upload.append(
                     test({'test-name': "uploading_results", 'pkg': "atf_core", 'type': "test_dropbox_uploader.py",
-                          'time-limit': str(self.generation_config["time_limit_uploading"]), 'args': "-f " + os.path.join(self.package_path, "config/.dropbox_uploader_config") + " upload " + self.generation_config["json_output"] + " " + os.path.join(self.package_name, "results")}))
+                          'time-limit': str(self.generation_config["time_limit_uploading"]), 'args': "-f " + os.path.join(self.package_src_path, "config/.dropbox_uploader_config") + " upload " + self.generation_config["json_output"] + " " + os.path.join(self.package_name, "results")}))
 
             xmlstr = minidom.parseString(ElementTree.tostring(test_upload)).toprettyxml(indent="    ")
             filepath = os.path.join(self.test_generated_path, "uploading.test")
@@ -222,7 +224,7 @@ class GenerateTests:
 
     def generate_test_list(self):
         test_list = {}
-        suites = self.load_yaml(os.path.join(self.package_path, self.generation_config["suites_file"]))
+        suites = self.load_yaml(os.path.join(self.package_src_path, self.generation_config["suites_file"]))
         #print "suites=", suites
 
         suite_nr = 0
@@ -238,11 +240,11 @@ class GenerateTests:
             for variation in variation_elements:
                 try:
                     if len(suite_data[variation]) < 1:
-                        print "-- ATF error: an empty list for '%s' is specified in test suite '%s', defined in test suites file '%s'." % (variation, suite_name, os.path.join(self.package_path, self.generation_config["suites_file"]))
+                        print "-- ATF error: an empty list for '%s' is specified in test suite '%s', defined in test suites file '%s'." % (variation, suite_name, os.path.join(self.package_src_path, self.generation_config["suites_file"]))
                         #variation_elements.remove(variation)
                         sys.exit(1)
                 except KeyError as e:
-                    print "-- ATF error: no %s specfied in test suite '%s', defined in test suites file '%s'" % (e, suite_name, os.path.join(self.package_path, self.generation_config["suites_file"]))
+                    print "-- ATF error: no %s specfied in test suite '%s', defined in test suites file '%s'" % (e, suite_name, os.path.join(self.package_src_path, self.generation_config["suites_file"]))
                     sys.exit(1)
 
             variations = [dict(zip(variation_elements, prod)) for prod in it.product(*(suite_data[varName] for varName in variation_elements))]
