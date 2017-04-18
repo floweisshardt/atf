@@ -24,9 +24,9 @@ function(atf_test)
 
         set(TEST_GENERATED_PATH ${PROJECT_BINARY_DIR}/test_generated)
 
-        roslaunch_add_file_check(${PROJECT_BINARY_DIR}/test_generated)
+        roslaunch_add_file_check(${TEST_GENERATED_PATH})
 
-        add_rostest(${PROJECT_BINARY_DIR}/test_generated/cleaning.test)
+        add_rostest(${TEST_GENERATED_PATH}/cleaning.test)
 
         file(GLOB TEST_NAMES_RECORDING RELATIVE ${TEST_GENERATED_PATH}/recording ${TEST_GENERATED_PATH}/recording/*.test)
         foreach(TEST_NAME_RECORDING ${TEST_NAMES_RECORDING})
@@ -37,7 +37,7 @@ function(atf_test)
             string(REPLACE "/" "_" _TARGET_NAME_RECORDING ${_TARGET_NAME_RECORDING})
             list(APPEND TARGET_NAMES_RECORDING ${TARGET_NAME_RECORDING})
             list(APPEND _TARGET_NAMES_RECORDING ${_TARGET_NAME_RECORDING})
-            add_rostest(${PROJECT_BINARY_DIR}/test_generated/recording/${TEST_NAME_RECORDING} DEPENDENCIES _run_tests_${PROJECT_NAME}_rostest_test_generated_cleaning.test)
+            add_rostest(${TEST_GENERATED_PATH}/recording/${TEST_NAME_RECORDING} DEPENDENCIES _run_tests_${PROJECT_NAME}_rostest_test_generated_cleaning.test)
 
             # analysing
             string(REPLACE "recording_" "analysing_" TEST_NAME_ANALYSING ${TEST_NAME_RECORDING})
@@ -47,11 +47,11 @@ function(atf_test)
             string(REPLACE "/" "_" _TARGET_NAME_ANALYSING ${_TARGET_NAME_ANALYSING})
             list(APPEND TARGET_NAMES_ANALYSING ${TARGET_NAME_ANALYSING})
             list(APPEND _TARGET_NAMES_ANALYSING ${_TARGET_NAME_ANALYSING})
-            add_rostest(${PROJECT_BINARY_DIR}/test_generated/analysing/${TEST_NAME_ANALYSING} DEPENDENCIES ${_TARGET_NAME_RECORDING})
+            add_rostest(${TEST_GENERATED_PATH}/analysing/${TEST_NAME_ANALYSING} DEPENDENCIES ${_TARGET_NAME_RECORDING})
         endforeach()
 
-        add_rostest(${PROJECT_BINARY_DIR}/test_generated/merging.test DEPENDENCIES atf_${PROJECT_NAME}_analysing)
-        add_rostest(${PROJECT_BINARY_DIR}/test_generated/uploading.test DEPENDENCIES atf_${PROJECT_NAME}_merging)
+        add_rostest(${TEST_GENERATED_PATH}/merging.test DEPENDENCIES atf_${PROJECT_NAME}_analysing)
+        add_rostest(${TEST_GENERATED_PATH}/uploading.test DEPENDENCIES atf_${PROJECT_NAME}_merging)
 
         add_custom_target(atf_${PROJECT_NAME}_cleaning
             COMMAND echo "cccccccccccccccccccccccccccccccleaning"
