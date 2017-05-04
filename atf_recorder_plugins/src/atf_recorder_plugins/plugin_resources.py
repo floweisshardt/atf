@@ -95,7 +95,7 @@ class RecordResources:
             #print "message node:", node, "pid:", pid
             try:
                 msg_data.node_name = node
-                print "node:", node, "pid:", pid
+                #print "node:", node, "pid:", pid
 
                 msg_data.cpu = psutil.Process(pid).get_cpu_percent(interval=self.timer_interval)
 

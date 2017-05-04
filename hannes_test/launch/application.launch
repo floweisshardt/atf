@@ -5,8 +5,13 @@
     <arg name="int_res" default="0.5"/>
     <arg name="part_num" default="100"/>
     <arg name="ndt_match" default="false"/>
+    <arg name="gain" default="3"/>
+    <arg name="counter" default="1"/>
+    <arg name="mapping" default="1.0"/>
+    <arg name="stmgain" default="0.5"/>
     
-    <node name="bagfile" pkg="rosbag" type="play" args="--clock --start 488 /home/fmw-hb/Documents/Masterarbeit/bagfiles/filtered3.bag" output="screen"/>  
+
+    <node name="bagfile" pkg="rosbag" type="play" args="--clock --start 488 /home/fmw-hb/bagfiles/filtered3.bag" output="screen"/>  
     
     <include file="$(find cob_bringup)/drivers/scan_unifier.launch">
 			<arg name="robot" value="cob4-2"/>
@@ -39,6 +44,10 @@
         <arg name="resolution" value="$(arg int_res)" />
         <arg name="particles" value="$(arg part_num)" />
         <arg name="ndt_matching" value="$(arg ndt_match)" />
+        <arg name="weight_gain" value="$(arg gain)" />
+        <arg name="cb_counter" value="$(arg counter)" />
+        <arg name="map_freq" value="$(arg mapping)" />
+        <arg name="stm_gain" value="$(arg stmgain)" />
     </include> 
    
 </launch>

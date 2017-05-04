@@ -105,8 +105,24 @@ class presenter:
             #         self.testnames.append(robot[1]['robot'])
             self.testlist = yaml.load(stream)
 
-    def show_results(self, all):
-        if(all):
+    def show_results(self, single):
+        if(single):
+            print self.metric
+            for metric in self.metric:
+                (y_pos, means, devs) = self.calculate_data(metric)
+                plt.bar(y_pos, means, yerr=devs, alpha=0.5, color='red')
+                rects = plt.bar(y_pos, means, yerr=devs, alpha=0.5, color='red')
+                for rect in rects:
+                    height = rect.get_height()
+                    plt.text(rect.get_x() + rect.get_width()/2., 1.05*height,
+                            '%.1f' % round(height, 1),
+                            ha='center', va='bottom')
+                plt.xticks(y_pos+0.8/2, self.testnames, rotation='vertical')
+                plt.title(metric)
+                plt.tight_layout()
+                plt.tight_layout()
+                plt.show()
+        else:
             self.metric.remove('time')
             #print "metric: ",self.metric
             counter = 0
@@ -126,22 +142,7 @@ class presenter:
                 counter += 1
             plt.tight_layout()
             plt.show()
-        else:
-            print self.metric
-            for metric in self.metric:
-                (y_pos, means, devs) = self.calculate_data(metric)
-                plt.bar(y_pos, means, yerr=devs, alpha=0.5, color='red')
-                rects = plt.bar(y_pos, means, yerr=devs, alpha=0.5, color='red')
-                for rect in rects:
-                    height = rect.get_height()
-                    plt.text(rect.get_x() + rect.get_width()/2., 1.05*height,
-                            '%.1f' % round(height, 1),
-                            ha='center', va='bottom')
-                plt.xticks(y_pos+0.8/2, self.testnames, rotation='vertical')
-                plt.title(metric)
-                plt.tight_layout()
-                plt.tight_layout()
-                plt.show()
+
 
     def calculate_data(self, metric):
         means = []
@@ -176,11 +177,11 @@ class presenter:
 
 if __name__ == '__main__':
     parser = optparse.OptionParser()
-    parser.add_option('-a', '--all', dest='all', help='Print all plots in one Window', default=False, action="store_true")
+    parser.add_option('-s', '--single', dest='single', help='Print all plots in single windows', default=False, action="store_true")
     (options, args) = parser.parse_args()
 
     p = presenter()
-    Path = "/home/fmw-hb/Desktop/hannes_test_new/results_yaml/"#"/tmp/hannes_test_new/results_yaml/"
+    Path = "/home/fmw-hb/Documents/hannes_test_load/results_yaml/"#"/home/fmw-hb/Desktop/hannes_test_shortterm/results_yaml/"#"/tmp/hannes_test_new/results_yaml/"
     filelist = os.listdir(Path)
     p.import_testnames(Path.replace('yaml', 'json')+"test_list.json")
 
@@ -190,4 +191,4 @@ if __name__ == '__main__':
             p.import_yaml(Path+file)
             filename = file.replace('.yaml', '')
             p.extract_yaml(filename.replace('merged_', ''))
-    p.show_results(options.all)
+    p.show_results(options.single)

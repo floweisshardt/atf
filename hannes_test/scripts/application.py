@@ -25,29 +25,24 @@ class Application:
         self.initpose()
         rospy.sleep(15)
         self.atf.start("testblock_small")
-        rospy.sleep(600)#600s
-        #self.sss.move("base", [25.0,68.5,0.0])
+        rospy.sleep(750)#600s
+        # listener = tf.TransformListener()
+        # try:
+        #     listener.waitForTransform("/map", "/base_link_", rospy.Time(0), rospy.Duration.from_sec(10))
+        #     (trans, rot) = listener.lookupTransform("/map", "/base_link_", rospy.Time(0))
+        # except (tf.Exception, tf.LookupException, tf.ConnectivityException) as e:
+        #     rospy.logwarn(e)
+        #     pass
+        # else:
+        #     print "transformation at the end: ", trans
+        #     meta = open("/home/fmw-hb/Desktop/hannes_test_long/"+"final_positions", 'wa')
+        #     meta.write(str(5))
         self.atf.stop("testblock_small")
 
-        # large testblock (circle r=1, time=5
-        #self.atf.start("testblock_large")
-        #self.pub_tf_circle("link1", "link2", radius=2, time=5)
-        #self.atf.stop("testblock_large")
+       
         
         self.atf.shutdown()
 
-    def pub_tf_circle(self, parent_frame_id, child1_frame_id, radius=1, time=1):
-        rate = rospy.Rate(int(self.pub_freq))
-        for i in range(int(self.pub_freq * time) + 1):
-            t = i / self.pub_freq / time
-            self.br.sendTransform(
-                    (-radius * math.cos(2 * math.pi * t) + radius, -radius * math.sin(2 * math.pi * t), 0),
-                    tf.transformations.quaternion_from_euler(0, 0, 0),
-                    rospy.Time.now(),
-                    child1_frame_id,
-                    parent_frame_id)
-            rate.sleep()
-            
     def initpose(self):
         pub_initialpose = rospy.Publisher('initialpose', PoseWithCovarianceStamped, queue_size=1)
 
@@ -63,6 +58,9 @@ class Application:
         initialpose.pose.pose.orientation.y = quat[1]
         initialpose.pose.pose.orientation.z = quat[2]
         initialpose.pose.pose.orientation.w = quat[3]
+        initialpose.pose.covariance[0] = 0.01;
+        initialpose.pose.covariance[7] = 0.01;
+        initialpose.pose.covariance[35] = 0.01;
 
         # publish robot pose on initialpose topic
         for i in range(0,2):
