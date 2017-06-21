@@ -16,6 +16,11 @@ testblock_small:
       groundtruth_epsilon: 2.0
   resource_cpu:
     - nodes:
-        - slam
+        -  slam
+#        - ipa_loc_feature_association_node
+#        - ipa_loc_feature_fusion_ekf_node
+#        - ipa_loc_feature_map_server
+#        - ipa_loc_feature_source_laser_node
+
 
 # testblock_all empty

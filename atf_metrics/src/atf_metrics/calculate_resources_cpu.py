@@ -71,7 +71,6 @@ class CalculateResourcesCpu:
                 self.node_data[node] = {self.resource: {"data": [], "average": [], "min": [], "max": []}}
             # elif resource not in self.node_data[node]:
             #     self.node_data[node].update({resource: {"data": [], "average": [], "min": [], "max": []}})
-        print "node data after:", self.node_data
         rospy.Subscriber("/atf/resources", Resources, self.process_resource_data, queue_size=1)
 
     def start(self, timestamp):

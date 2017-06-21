@@ -10,11 +10,11 @@ class robot_maker():
     def __init__(self):
         self.int_res = [0.35] #[0.25, 0.35, 0.5, 0.6, 0.75, 1.0, 1.5]
         self.part_num = [100] #[25, 50, 75, 100, 150, 200, 500]
-        self.cb_counter = [1]
-        self.mapping = [0.5, 1, 5, 10]
+        self.cb_counter = [1, 5, 10]
+        self.mapping = [1]
         self.ndt_match = ["true"]
-        self.gain = [2]
-        self.dyn_gain = [0.25, 0.5, 0.75, 1.0]
+        self.gain = [5, 25, 50]
+        self.dyn_gain = [0.5]
         self.file_path = "/home/fmw-hb/Desktop/robots/"  #'/home/fmw-hb/atf_catkin_ws/src/atf/hannes_test/config/robots/'
         self.robots = ""
 

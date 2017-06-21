@@ -13,7 +13,7 @@ if __name__ == '__main__':
     path_to_test_files = os.path.join(pkg_path, "test_generated/recording")
 
     filenames = []
-    for (dirpath, dirnames, list_of_files) in os.walk(path_to_test_files):
+    for (dirpath, dirnames, list_of_files) in os.walk(path_to_test_files, topdown=True):
         for f in list_of_files:
             if f.endswith(".test"):
                 filenames.append(f)

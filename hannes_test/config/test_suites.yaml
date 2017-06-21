@@ -3,21 +3,8 @@ testsuite_1:
   test_configs:                 # You have to define at least one test_config
     - test1
   robots:                       # You have to define at least one robot
-    - 0.5mapping_0.25overlaymap
-    - 1mapping_0.25overlaymap
-    - 5mapping_0.25overlaymap
-    - 10mapping_0.25overlaymap
-    - 0.5mapping_0.5overlaymap
-    - 1mapping_0.5overlaymap
-    - 5mapping_0.5overlaymap
-    - 10mapping_0.5overlaymap
-    - 0.5mapping_0.75overlaymap
-    - 1mapping_0.75overlaymap
-    - 5mapping_0.75overlaymap
-    - 10mapping_0.75overlaymap
-    - 0.5mapping_1.0overlaymap
-    - 1mapping_1.0overlaymap
-    - 5mapping_1.0overlaymap
-    - 10mapping_1.0overlaymap
+   - noopt_100part
+ #   - 5opt_25part
+ #   - 1mapping_1count
   robot_envs:                   # You have to define at least one robot_env
     - env1

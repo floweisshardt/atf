@@ -47,7 +47,8 @@ class CheckLocalization:
         self.root_frame = root_frame
         self.measured_frame = measured_frame
         self.distance = 0.0
-        self.tf_sampling_freq = 5.0  # Hz
+        self.lost_count = 0
+        self.tf_sampling_freq = 1.0 # Hz
         self.groundtruth = groundtruth
         self.groundtruth_epsilon = groundtruth_epsilon
         self.finished = False
@@ -83,13 +84,15 @@ class CheckLocalization:
                 pass
             else:
                 self.distance = math.sqrt(trans[0]**2 + trans[1]**2)
+                if (self.distance > 1.0):
+                    self.lost_count += 1
 
 
     def get_result(self):
         groundtruth_result = None
         details = {"root_frame": self.root_frame, "measured_frame": self.measured_frame}
         if self.finished:
-            data = round(self.distance, 3)
+            data = self.lost_count
             if self.groundtruth != None and self.groundtruth_epsilon != None:
                 if math.fabs(self.groundtruth - data) <= self.groundtruth_epsilon:
                     groundtruth_result = True

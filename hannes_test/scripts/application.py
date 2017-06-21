@@ -5,6 +5,10 @@ import rostest
 import tf
 import math
 import sys
+import os
+import rosnode
+import time
+import shutil
 
 from atf_core import ATF
 from simple_script_server import *
@@ -19,29 +23,54 @@ class Application:
         self.br = tf.TransformBroadcaster()
         rospy.sleep(1) #wait for tf broadcaster to get active (rospy bug?)
         self.sss = simple_script_server()
+        self.filepath =  rospy.get_param("/atf/bagfile_output").replace("data/", "")
 
     def execute(self):
         rospy.sleep(1)
         self.initpose()
-        rospy.sleep(15)
+        rospy.sleep(5)
         self.atf.start("testblock_small")
-        rospy.sleep(750)#600s
-        # listener = tf.TransformListener()
-        # try:
-        #     listener.waitForTransform("/map", "/base_link_", rospy.Time(0), rospy.Duration.from_sec(10))
-        #     (trans, rot) = listener.lookupTransform("/map", "/base_link_", rospy.Time(0))
-        # except (tf.Exception, tf.LookupException, tf.ConnectivityException) as e:
-        #     rospy.logwarn(e)
-        #     pass
-        # else:
-        #     print "transformation at the end: ", trans
-        #     meta = open("/home/fmw-hb/Desktop/hannes_test_long/"+"final_positions", 'wa')
-        #     meta.write(str(5))
+#        poses = rospy.get_param("/script_server/base")
+#        for pose in poses:
+#            print "moving to pose", pose
+#            sss.move("base",pose)
+        #rosnode._rosnode_cmd_info(['rosnode', 'info', '/ipa_loc_feature_source_laser_node'])
+        rospy.sleep(750)#750s
         self.atf.stop("testblock_small")
-
-       
-        
+        # os.system('rosrun map_server map_saver map:=map_hmm -f '+self.filepath+'map_atf_stm'+str(time.time()))
+        # os.system('rosrun map_server map_saver map:=ref_map -f '+self.filepath+'map_atf_ltm'+str(time.time()))
+        #os.system('rosrun map_server map_saver map:=map_hmm -f '+self.filepath+'map_atf_stm'+str(time.time()))
+        #os.system('rosrun map_server map_saver map:=overlay_cells_map -f '+self.filepath+'map_atf_overlay'+str(time.time()))
+        #os.system('rosservice call /long_term_slam/backup')
+        #rospy.sleep(5)
+        #self.backup_changer()
         self.atf.shutdown()
+
+
+    def backup_changer(self):
+        count = 0
+        countfile = self.filepath+"atf_count.txt"
+        test_name = rospy.get_param("/atf/test_name")
+        print test_name
+        if os.path.isfile(countfile):
+            with open(countfile, 'r+') as file:
+                #print "file:",file
+                #count = int(file.read())
+                for line in file:
+                    count = line
+                print "count", count
+                count = int(count)
+                if (count > 1):
+                    shutil.copy("/home/fmw-hb/.ipa_navigation/long_term_slam_backup/client/init_ipa.backup", "/home/fmw-hb/.ipa_navigation/long_term_slam_backup/client/long_term_slam.backup")
+                    count = 0
+                    print "backups copied!!!"
+                else:
+                    count += 1
+                file.write(test_name+"\n"+str(count)+"\n")
+
+        else:
+            with open(countfile, 'w') as file:
+                file.write(test_name+"\n"+str(count)+"\n")
 
     def initpose(self):
         pub_initialpose = rospy.Publisher('initialpose', PoseWithCovarianceStamped, queue_size=1)
