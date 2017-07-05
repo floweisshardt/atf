@@ -67,19 +67,6 @@
     </node>
 
     <!-- hannes SLAM -->       
-    <!--include file="$(find ipa_long_term_slam)/launch/long_term_slam.launch">
-        <arg name="init_from_backup" value="true"/>
-        <arg name="init_from_static_map" value="false"/>
-        <arg name="resolution" value="0.35" />
-        <arg name="particles" value="100.0" />
-        <arg name="ndt_matching" value="true" />
-        <arg name="weight_gain" value="$(arg gain)" />
-        <arg name="cb_counter" value="$(arg counter)" />
-        <arg name="map_freq" value="1.0" />
-        <arg name="stm_gain" value="0.5" />
-    </include--> 
-    
-    <!-- ipa SLAM -->
     <include file="$(find ipa_long_term_slam)/launch/long_term_slam.launch">
         <arg name="init_from_backup" value="false"/>
         <arg name="init_from_static_map" value="true"/>
@@ -87,6 +74,19 @@
         <arg name="robot_env" value="saturn-ingolstadt" />
         <arg name="pkg_env_config" value="$(find msh_env_config)"/>
         <arg name="map" value="$(find msh_env_config)/envs/saturn-ingolstadt/map.yaml" />
+        <arg name="resolution" value="$(arg int_res)" />
+        <arg name="particles" value="$(arg part_num)" />
+        <arg name="weight_gain" value="$(arg gain)" />
     </include> 
+    
+    <!-- ipa SLAM -->
+    <!--include file="$(find ipa_long_term_slam)/launch/long_term_slam.launch">
+        <arg name="init_from_backup" value="false"/>
+        <arg name="init_from_static_map" value="true"/>
+        <arg name="robot" value="cob4-2"/>
+        <arg name="robot_env" value="saturn-ingolstadt" />
+        <arg name="pkg_env_config" value="$(find msh_env_config)"/>
+        <arg name="map" value="$(find msh_env_config)/envs/saturn-ingolstadt/map.yaml" />
+    </include--> 
    
 </launch>

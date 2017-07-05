@@ -181,7 +181,7 @@ if __name__ == '__main__':
     (options, args) = parser.parse_args()
 
     p = presenter()
-    Path = "/home/fmw-hb/Documents/hannes_test_load/results_yaml/"#"/home/fmw-hb/Desktop/hannes_test_shortterm/results_yaml/"#"/tmp/hannes_test_new/results_yaml/"
+    Path = "/home/fmw-hb/Desktop/hannes_test_slam/results_yaml/"#"/home/fmw-hb/Desktop/hannes_test_shortterm/results_yaml/"#"/tmp/hannes_test_new/results_yaml/"
     filelist = os.listdir(Path)
     p.import_testnames(Path.replace('yaml', 'json')+"test_list.json")
 

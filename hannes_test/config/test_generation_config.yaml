@@ -2,7 +2,7 @@ suites_file: config/test_suites.yaml                                # Path of th
 test_config_path: config/test_configs                               # Path of the test_config file
 robot_config_path: config/robots                                    # Folder which contains the robot_config files
 robot_env_config_path: config/robot_envs                            # Folder which contains the robot_env_config files
-repetitions: 15                                              # Number of repetitions per test
+repetitions: 5                                              # Number of repetitions per test
 
 app_executable: application.py                                     # Name of the application's executable file
 additional_launch_file: launch/application.launch                  # Path of the additional launch file
@@ -11,7 +11,7 @@ bagfile_output: "/home/fmw-hb/Desktop/hannes_test_slam/data/"                   
 json_output: "/home/fmw-hb/Desktop/hannes_test_slam/results_json/"                          # Folder for the json files output
 yaml_output: "/home/fmw-hb/Desktop/hannes_test_slam/results_yaml/"                          # Folder for the yaml files output
 
-speed_factor_analysis: 1.0                                          # Factor to speedup analysis (can lower accuracy if too fast, especially path_length)
+speed_factor_analysis: 2.0                                          # Factor to speedup analysis (can lower accuracy if too fast, especially path_length)
 
 time_limit_recording: 777.0                                          # Time limit in seconds for recording
 time_limit_analysing: 800.0                                          # Time limit in seconds for analysing
