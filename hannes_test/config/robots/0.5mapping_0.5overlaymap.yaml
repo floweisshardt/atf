@@ -1,0 +1,17 @@
+path_length:
+  topics:
+    - "/tf"
+    - "/scan_unified"
+robot_bringup_launch: "launch/all.launch"
+wait_for_topics: []
+wait_for_services: []
+additional_parameters:
+  "/use_sim_time": true
+additional_arguments:
+  "int_res": 0.35
+  "part_num": 100
+  "ndt_match": true
+  "gain": 2
+  "counter": 1
+  "mapping": 0.5
+  "stmgain": 0.5
