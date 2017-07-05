@@ -24,9 +24,9 @@
 			<arg name="robot" value="cob4-2"/>
     </include-->
     
-    <!--include file="$(find msh_bringup)/launch/rviz.launch">
+    <include file="$(find msh_bringup)/launch/rviz.launch">
 			<arg name="robot" value="cob4-2"/>
-    </include-->
+    </include>
     
       <arg name="map_server" default="true" />
       <arg name="grid_converter" default="false" />
@@ -67,7 +67,7 @@
     </node>
 
     <!-- hannes SLAM -->       
-    <include file="$(find ipa_long_term_slam)/launch/long_term_slam.launch">
+    <!--include file="$(find ipa_long_term_slam)/launch/long_term_slam.launch">
         <arg name="init_from_backup" value="false"/>
         <arg name="init_from_static_map" value="true"/>
         <arg name="robot" value="cob4-2"/>
@@ -77,16 +77,16 @@
         <arg name="resolution" value="$(arg int_res)" />
         <arg name="particles" value="$(arg part_num)" />
         <arg name="weight_gain" value="$(arg gain)" />
-    </include> 
+    </include--> 
     
     <!-- ipa SLAM -->
-    <!--include file="$(find ipa_long_term_slam)/launch/long_term_slam.launch">
+    <include file="$(find ipa_long_term_slam)/launch/long_term_slam.launch">
         <arg name="init_from_backup" value="false"/>
         <arg name="init_from_static_map" value="true"/>
         <arg name="robot" value="cob4-2"/>
         <arg name="robot_env" value="saturn-ingolstadt" />
         <arg name="pkg_env_config" value="$(find msh_env_config)"/>
         <arg name="map" value="$(find msh_env_config)/envs/saturn-ingolstadt/map.yaml" />
-    </include--> 
+    </include> 
    
 </launch>

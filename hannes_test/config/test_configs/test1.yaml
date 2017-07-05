@@ -12,6 +12,7 @@ testblock_small:
   localization:
     - root_frame: base_link_ekf
       measured_frame: base_link 
+      max_loc_error: 0.1
       groundtruth: 0.0
       groundtruth_epsilon: 2.0
   resource_cpu:

@@ -35,7 +35,7 @@ class Application:
 #            print "moving to pose", pose
 #            sss.move("base",pose)
         #rosnode._rosnode_cmd_info(['rosnode', 'info', '/ipa_loc_feature_source_laser_node'])
-        rospy.sleep(750)#750s
+        rospy.sleep(50)#750s
         self.atf.stop("testblock_small")
         # os.system('rosrun map_server map_saver map:=map_hmm -f '+self.filepath+'map_atf_stm'+str(time.time()))
         # os.system('rosrun map_server map_saver map:=ref_map -f '+self.filepath+'map_atf_ltm'+str(time.time()))
