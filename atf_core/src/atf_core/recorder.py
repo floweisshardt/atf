@@ -17,6 +17,8 @@ class ATFRecorder:
     def __init__(self, config, testblock_list):
         self.ns = "/atf/"
         self.config = config
+        #print "recorder_core: config=", self.config
+
         recorder_config = self.load_data(rospkg.RosPack().get_path("atf_recorder_plugins") +
                                          "/config/recorder_plugins.yaml")
 
@@ -142,7 +144,9 @@ class ATFRecorder:
         # Send message to all recorder plugins
         #print "self.recorder_plugin_list=", self.recorder_plugin_list
         for recorder_plugin in self.recorder_plugin_list:
+            #FIXME: need to filter the topics not needed for current trigger
             recorder_plugin.trigger_callback(trigger)
+            rospy.logdebug(" recorder plugin callback : '%s'", trigger.name)
 
         # Only process message if testblock requests topics
         #print "self.testblock_list=", self.testblock_list
@@ -158,8 +162,7 @@ class ATFRecorder:
             else:
                 rospy.loginfo("!!!!!!!!!!!!")
 
-        self.bag_file_writer.write_to_bagfile(self.ns + trigger.name + "/trigger", trigger,
-                                  trigger.stamp)
+        self.bag_file_writer.write_to_bagfile(self.ns + trigger.name + "/trigger", trigger, trigger.stamp)
 
 
     @staticmethod
