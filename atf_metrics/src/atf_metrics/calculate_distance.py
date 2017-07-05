@@ -80,23 +80,12 @@ class CalculateDistance:
                                                rospy.Time(0),
                                                rospy.Duration.from_sec(1 / (2*self.tf_sampling_freq)))
                 (trans, rot) = self.listener.lookupTransform(self.root_frame, self.measured_frame, rospy.Time(0))
-                # self.listener.waitForTransform("/map",
-                #                                self.measured_frame,
-                #                                rospy.Time(0),
-                #                                rospy.Duration.from_sec(1 / (2*self.tf_sampling_freq)))
-                # (trans_hmm, rot_hmm) = self.listener.lookupTransform("/map", self.measured_frame, rospy.Time(0))
-                # self.listener.waitForTransform("/map",
-                #                                self.root_frame,
-                #                                rospy.Time(0),
-                #                                rospy.Duration.from_sec(1 / (2*self.tf_sampling_freq)))
-                # (trans_ekf, rot_ekf) = self.listener.lookupTransform("/map", self.root_frame, rospy.Time(0))
 
             except (tf.Exception, tf.LookupException, tf.ConnectivityException):
                 #rospy.logwarn(e)
                 pass
             else:
                 self.distances = self.distances + math.sqrt(trans[0]**2 + trans[1]**2)
-                #rospy.loginfo("distance: "+str(math.sqrt(trans[0]**2 + trans[1]**2))+" baselink: "+str(math.sqrt(trans_hmm[0]**2 + trans_hmm[1]**2))+" baselinkekf: "+str(math.sqrt(trans_ekf[0]**2 + trans_ekf[1]**2)))
                 self.dist_count = self.dist_count + 1
 
 

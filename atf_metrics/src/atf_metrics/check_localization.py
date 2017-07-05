@@ -35,12 +35,14 @@ class CheckLocalizationParamHandler:
 class CheckLocalization:
     def __init__(self, root_frame, measured_frame, max_loc_error, groundtruth, groundtruth_epsilon):
         """
-        Class for calculating the distance to a given root frame.
+        Class for calculating the seconds passed with lost localization in respect to a given root frame.
         The tf data is sent over the tf topic given in the robot_config.yaml.
         :param root_frame: name of the first frame
         :type  root_frame: string
         :param measured_frame: name of the second frame. The distance will be measured in relation to the root_frame.
         :type  measured_frame: string
+        :param max_loc_error: distance between the two frames which is considered to be localization lost
+        :type max_loc_error:float
         """
 
         self.active = False

@@ -47,11 +47,9 @@ class CalculateResourcesCpuParamHandler:
 class CalculateResourcesCpu:
     def __init__(self, nodes, groundtruth, groundtruth_epsilon):
         """
-        Class for calculating the average resource workload and writing the current resource data.
+        Class for calculating the average cpu resource workload and writing the current resource data.
         The resource data is sent over the topic "/testing/Resources".
-        :param resources: a dictionary containing the names of the resources and a list with the names of the nodes.
-        Example: {"cpu":[move_group], "mem": [move_group]}
-        :type  resources: dict
+        :param nodes: a list with the names of the nodes.
         """
 
         self.active = False
@@ -64,13 +62,9 @@ class CalculateResourcesCpu:
         self.finished = False
 
         # Sort resources after nodes
-        print "node data:", self.node_data
         for node in nodes:
             if node not in self.node_data:
-                print "node : ", node
                 self.node_data[node] = {self.resource: {"data": [], "average": [], "min": [], "max": []}}
-            # elif resource not in self.node_data[node]:
-            #     self.node_data[node].update({resource: {"data": [], "average": [], "min": [], "max": []}})
         rospy.Subscriber("/atf/resources", Resources, self.process_resource_data, queue_size=1)
 
     def start(self, timestamp):
@@ -87,7 +81,6 @@ class CalculateResourcesCpu:
         pass
 
     def process_resource_data(self, msg):
-        #print "--------------------------------------\nprocess data \n msg:", msg, "\n active", self.active
         if self.active:
             for node in msg.nodes:
                 try:
@@ -104,7 +97,6 @@ class CalculateResourcesCpu:
         average_sum = 0.0
 
         if self.finished:
-            #print "----------------------------- \n node data:", self.node_data
             for node in self.node_data:
                 #print " node:", node
                 for res in self.node_data[node]:
@@ -119,9 +111,6 @@ class CalculateResourcesCpu:
                     del self.node_data[node][res]["data"]
 
                     details["sum of nodes"].append(node)
-                    # details["nodes"][node].append({"max":self.node_data[node][res]["max"]})
-                    # details["nodes"][node].append({"average":self.node_data[node][res]["average"]})
-                    # details["nodes"][node].append({"min":self.node_data[node][res]["min"]})
 
                 #print "groundtruthes:", self.groundtruth, self.groundtruth_epsilon, "\n average:", self.node_data[node][res]["average"]
                 if self.groundtruth != None and self.groundtruth_epsilon != None:
@@ -133,7 +122,6 @@ class CalculateResourcesCpu:
                         else:
                             groundtruth_result = False
 
-            print "resources cpu data: ", average_sum, "\n groundthruth result", groundtruth_result, "details:", details, " \n .................................."
             return "resources_cpu", round(average_sum, 3), groundtruth_result, self.groundtruth, self.groundtruth_epsilon, details
         else:
             return False
