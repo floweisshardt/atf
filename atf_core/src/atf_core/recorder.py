@@ -128,8 +128,9 @@ class ATFRecorder:
             if topic not in self.subscriber:
                 try:
                     msg_class, _, _ = rostopic.get_topic_class(topic)
-                    rospy.Subscriber(topic, msg_class, self.global_topic_callback, callback_args=topic)
+                    rospy.Subscriber(topic, msg_class, self.global_topic_callback, callback_args=topic, queue_size=10)
                     self.subscriber.append(topic)
+                    print "new subscriber for: ", topic, "message class:", msg_class, " subscribers: ", self.subscriber
                 except Exception:
                     pass
 

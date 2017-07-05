@@ -39,6 +39,7 @@ qtcreator-*
 /planning/src
 
 *~
+*.orig
 
 # Emacs
 .#*
@@ -46,3 +47,5 @@ qtcreator-*
 # Catkin custom files
 CATKIN_IGNORE
 test_generated
+
+.idea/*

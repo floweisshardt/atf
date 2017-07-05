@@ -1,4 +1,7 @@
-#resources: RecordResources
+resources_cpu: RecordResources
+resource_mem: RecordResources
+resource_io: RecordResources
+resource_network: RecordResources
 interface: RecordInterface
 #obstacle_distance: RecordObstacleDistance
 # example: Example
