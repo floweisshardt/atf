@@ -29,11 +29,11 @@ class CheckLocalizationParamHandler:
                 rospy.logwarn("No groundtruth parameters given, skipping groundtruth evaluation for metric 'distance' in testblock '%s'", testblock_name)
                 groundtruth = None
                 groundtruth_epsilon = None
-            metrics.append(CheckLocalization(metric["root_frame"], metric["measured_frame"], groundtruth, groundtruth_epsilon))
+            metrics.append(CheckLocalization(metric["root_frame"], metric["measured_frame"], metric["max_loc_error"], groundtruth, groundtruth_epsilon))
         return metrics
 
 class CheckLocalization:
-    def __init__(self, root_frame, measured_frame, groundtruth, groundtruth_epsilon):
+    def __init__(self, root_frame, measured_frame, max_loc_error, groundtruth, groundtruth_epsilon):
         """
         Class for calculating the distance to a given root frame.
         The tf data is sent over the tf topic given in the robot_config.yaml.
@@ -51,6 +51,7 @@ class CheckLocalization:
         self.tf_sampling_freq = 1.0 # Hz
         self.groundtruth = groundtruth
         self.groundtruth_epsilon = groundtruth_epsilon
+        self.max_loc_error = max_loc_error;
         self.finished = False
 
         self.listener = tf.TransformListener()
@@ -84,7 +85,7 @@ class CheckLocalization:
                 pass
             else:
                 self.distance = math.sqrt(trans[0]**2 + trans[1]**2)
-                if (self.distance > 1.0):
+                if (self.distance > self.max_loc_error):
                     self.lost_count += 1
 
 
