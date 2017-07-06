@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 class BagfileWriter:
-    def __init__(self, bagfile, write_lock):
+    def __init__(self,test_config, bagfile, write_lock):
         """
         Class for writing data to a rosbag file.
         :param bagfile: The bagfile to which the data should be written.

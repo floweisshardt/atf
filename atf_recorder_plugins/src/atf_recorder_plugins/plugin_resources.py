@@ -12,11 +12,9 @@ from subprocess import check_output, CalledProcessError
 from atf_msgs.msg import NodeResources, Resources, IO, Network, TestblockTrigger
 
 class RecordResources:
-    def __init__(self, write_lock, bag_file_writer):
+    def __init__(self,test_config, write_lock, bag_file_writer):
         self.topic_prefix = "atf/"
-        file = "/home/fmw-hb/atf_catkin_ws/src/atf/hannes_test/config/test_configs/test1.yaml"
-        with open(file, 'r') as stream:
-            self.test_config = yaml.load(stream)
+        self.test_config = test_config
 
         self.resources_timer_frequency = 10.0  # Hz
         self.timer_interval = 1/self.resources_timer_frequency
@@ -40,10 +38,7 @@ class RecordResources:
                 print "node:", node
                 if not node in requested_nodes:
                     requested_nodes.append(node)
-                    #self.res_pipeline[resource].extend(node_name)
                 self.requested_nodes = deepcopy(requested_nodes)
-                #print "requested nodes:", self.requested_nodes
-                #print "res pipeline:", self.res_pipeline
                 counter += 1
 
         elif msg.trigger == TestblockTrigger.STOP:
@@ -53,49 +48,40 @@ class RecordResources:
         testblock_list = {}
         node_list = []
         counter = 0
-        print "testconfig: ", self.test_config
-        for testblock in self.test_config:
-            #print "testblock:", testblock, "\n tests:",  self.test_config[testblock]
+        print "testconfig: ", self.test_config["test_config"]
+        for testblock, tests in self.test_config["test_config"].iteritems():
             try:
-                self.test_config[testblock]
+                tests
+                print "testblock tests: ", tests
+
             except KeyError:
                 rospy.logerr("No nodes for resources to record")
                 continue
             else:
-                for resource, nodes in self.test_config[testblock].iteritems():
+                for resource, nodes in tests.iteritems():
                     if str(resource).__contains__("resource"):
-                        #print "resources:", resource, "nodes:", nodes[counter]["nodes"]
-                        node_list.extend(nodes[counter]["nodes"])
-
-                        # if 'groundtruth' in resource:
-                        #     del resource['groundtruth']
-                        # if 'groundtruth_epsilon' in resource:
-                        #     del resource['groundtruth_epsilon']
+                        print "nodes", nodes
+                        node_list.extend(nodes[0]["nodes"])
             counter += 1
             try:
                 testblock_list[testblock]
             except KeyError:
                 testblock_list.update({testblock: []})
-            #print "node list:", node_list
+            print "node list:", node_list
             testblock_list.update({testblock: node_list})
-        #print "--------------------------\n testblock list:", testblock_list
+        print "testblock list: ", testblock_list
         return testblock_list
 
     def collect_resource_data(self, event):
         msg = Resources()
         msg_list = []
         topic = self.topic_prefix + "resources"
-        #for resource, nodes in pipeline.iteritems():
         msg_data = NodeResources()
-        #print "pid list: ", self.pid_list#, "pid", self.pid_list[resource]
         for node, pid in self.pid_list.iteritems():
             if pid is None:
                 continue
-            #print "requested nodes: ", self.requested_nodes
-            #print "message node:", node, "pid:", pid
             try:
                 msg_data.node_name = node
-                #print "node:", node, "pid:", pid
 
                 msg_data.cpu = psutil.Process(pid).get_cpu_percent(interval=self.timer_interval)
 
@@ -117,20 +103,16 @@ class RecordResources:
                 msg_data.network.dropin = int(data[6])
                 msg_data.network.dropout = int(data[7])
 
-                #print "message data: ", msg_data
                 msg_list.append(copy(msg_data))
-                #print "message list: ", msg_list
             except (psutil.NoSuchProcess, psutil.AccessDenied) as e:
                 rospy.logerr("collecting error: %s", e)
                 pass
         msg.nodes = msg_list
-        #print "resource msg:", msg
         self.BfW.write_to_bagfile(topic, msg, rospy.Time.now())
 
     def trigger_callback(self, msg):
 
         # Only save node resources if testblock requests them
-        #print "trigger callback: msg \n", msg, " \n testblocks", self.testblock_list, "\n msg trigger:", msg.trigger
         if msg.name in self.testblock_list:
             self.update_requested_nodes(msg)
 
@@ -140,15 +122,9 @@ class RecordResources:
         pid_list = {}
         for (testblock, nodes) in self.testblock_list.iteritems():
             for node in nodes:
-                #for resource, names in node.iteritems():
-                #print "node: ", node,"nodes: ", nodes, "node_list:", node_list
-                #if isinstance(names, list):
-                #    for name in names:
                 if self.get_pid(node) not in pid_list:
                     pid_list.update({node:self.get_pid(node)})
                     print "pid", self.get_pid(node), "for node", node
-                #node_list.update({resource:pid_list})
-        #print "pid list", pid_list
         return pid_list
 
     @staticmethod

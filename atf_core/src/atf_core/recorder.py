@@ -34,14 +34,14 @@ class ATFRecorder:
         # create bag file writer handle
         self.lock_write = Lock()
         self.bag = rosbag.Bag(config["bagfile_output"] + self.config["test_name"] + ".bag", 'w')
-        self.bag_file_writer = atf_core.BagfileWriter(self.bag, self.lock_write)
+        self.bag_file_writer = atf_core.BagfileWriter(self.config, self.bag, self.lock_write)
 
         # Init metric recorder
         self.recorder_plugin_list = []
         if len(recorder_config) > 0:
             for value in recorder_config.values():
                 #print "value=", value
-                self.recorder_plugin_list.append(getattr(atf_recorder_plugins, value)(self.lock_write,
+                self.recorder_plugin_list.append(getattr(atf_recorder_plugins, value)(self.config, self.lock_write,
                                                                                       self.bag_file_writer))
 
         self.topic_pipeline = []

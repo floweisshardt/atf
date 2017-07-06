@@ -9,7 +9,7 @@ from atf_msgs.msg import Api, NodeApi, InterfaceItem
 
 
 class RecordInterface:
-    def __init__(self, write_lock, bag_file_writer):
+    def __init__(self, test_config, write_lock, bag_file_writer):
         self.bag_file_writer = bag_file_writer
 
     def trigger_callback(self, goal):
