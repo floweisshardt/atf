@@ -34,13 +34,13 @@ Further metrics (in development):
 | ```message_match``` | The ```message_match``` metric checks if a message content matches its desired content. | [bool] | snap |
 
 ### Installation
-For installation instruction see [ATF Installation](https://github.com/ipa-fmw/atf/blob/docu/doc/Installation.md).
+For installation instruction see [ATF Installation](https://github.com/ipa-fmw/atf/blob/master/doc/Installation.md).
 
 ### Using the ATF (by examples)
-For examples how to use the ATF see [ATF Examples](https://github.com/ipa-fmw/atf/blob/docu/doc/Examples.md)
+For examples how to use the ATF see [ATF Examples](https://github.com/ipa-fmw/atf/blob/master/doc/Examples.md)
 
 ### Contributing to the ATF
-For examples how to extend the ATF with your own contribution see [ATF Contribution](https://github.com/ipa-fmw/atf/blob/docu/doc/Contribution.md)
+For examples how to extend the ATF with your own contribution see [ATF Contribution](https://github.com/ipa-fmw/atf/blob/master/doc/Contribution.md)
 
 ### Acknowledgments
 The work leading to these results has received funding from the European Community's Seventh Framework Program (FP7/2007-2013) under grant agreement no 609206 [Factory-in-a-Day](http://www.factory-in-a-day.eu/) and the German Federal Ministry for Economic Affairs and Energy under grant agreement no 01MA13001A [ReApp](http://www.reapp-projekt.de/).
