@@ -1,6 +1,7 @@
 # Contributing to the ATF
 ## Extend the ATF with your own metric
 The following steps are needed to implement a new metrics in ATF:
+### Python File
 - Create new python-file for the metrics, using the following nameconvention:
 ```
 calculate_*name*.py
@@ -8,7 +9,7 @@ calculate_*name*.py
 - copy existing structure from one of the implemented metrics, looking like:
 ```python
 class CalculatePublishRateParamHandler
-    def parse_parameter(self, testblock_name, params)	
+    def parse_parameter(self, testblock_name, params):
 class CalculatePublishRate:
     def __init__(self, groundtruth, groundtruth_epsilon):
     def start(self, timestamp):
@@ -18,7 +19,7 @@ class CalculatePublishRate:
     def get_result(self):
 ```
   using the "publish\_rate"-metrics as an example. Replace "PublishRate" with the name of your newly generated metrics.
-- In file ```atf\_metrics\src\atf\_metrics\__init__.py``` add:
+- In file ```atf/src/atf/atf_metrics/src/atf_metrics/__init__.py``` add:
 ```python
 from atf_metrics.calculate_*name* import Calculate*Name*, Calculate*Name*ParamHandler
 ```
@@ -28,7 +29,7 @@ from atf_metrics.calculate_jerk import CalculateJerk, CalculateJerkParamHandler
 ```
   here *name* stands for the name of your new metric (obviously).
   
-- In file ```atf\_metrics\config\metrics.yaml``` add:
+- In file ```atf/src/atf/atf_metrics/config/metrics.yaml``` add:
 ```
 *name*:
    handler: Calculate*Name*ParamHandler
@@ -38,7 +39,8 @@ from atf_metrics.calculate_jerk import CalculateJerk, CalculateJerkParamHandler
 jerk:
   handler: CalculateJerkParamHandler
 ```
-- In file ```atf\_presenter\html\js\atf\_tools\test\_list.js``` add (using "jerk" as an example):
+### ATF Presenter
+- In file ```atf/atf_presenter/html/js/atf_tools/test_list.js``` add (using "jerk" as an example):
 ```javascript
 var plot_options = {
       jerk: {
@@ -75,10 +77,9 @@ if (metric_name == 'path_length') chart_legend_name = testblock_name + "<br>(" +
 if (metric_name == 'publish_rate') chart_legend_name = testblock_name + "<br>(" + metric_data['details']['topic'] + ")"
 if (metric_name == 'interface') chart_legend_name = testblock_name + "<br>(" + metric_data['details'] + ")"
 if (metric_name == 'jerk') chart_legend_name = testblock_name + "<br>(" + metric_data['details']['topic'] + ")"
-if (metric_name == '*name*') chart_legend_name = testblock_name + "<br>(" + metric_data['details'] + ")"
 ```
   add...
 ```javascript
 if (metric_name == '*name*') chart_legend_name = testblock_name + "<br>(" + metric_data['details'] + ")"
 ```
-  to get add information under the metrics-name in the presenter. The "details" you store in the "metrics\_data" will be shown under the metrics-name in brackets.
+To get additional information in the presenter. The "details" you store in the "metrics\_data" will be shown below the metrics-name in brackets.
