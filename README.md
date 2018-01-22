@@ -27,7 +27,7 @@ Further metrics (in development):
 
 | Metric        | Description   | Unit  | Mode (span, snap, min/max) |
 |:-------------:|:--------------|:-----:|:--------------------------:|
-| ```ressources```    | The ```ressources``` metric measures the ressource consumption of a node on the operating system level (CPU, RAM, IO). | [%], [MB], [MB/sec] | snap |
+| ```resources```    | The ```resources``` metric measures the resource consumption of a node on the operating system level (CPU, RAM, IO). | [%], [MB], [MB/sec] | snap |
 | ```path_velocity```      | The ```path_velocity``` metric measures the cartesian velocity (distance differntiated over time) of a TF frame with respect to another frame.    |  [m/sec] | span |
 | ```distance```      | The ```distance``` metric measures the cartesian distance between two TF frames.    |  [m] | snap, min/max |
 | ```obstacle_distance``` | The ```obstacle_distance``` metric measures the distance between two meshes   | [m] | snap, min/max |
