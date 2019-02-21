@@ -7,12 +7,12 @@
 
 ### Running simple atf test apps
 ###### Download and build test apps
-For each [implemented metric](../README.md#implemented-metrics) there is a test app package that uses the metric in a simple application. You can find all the test apps in the [atf_test_apps](https://github.com/ipa-fmw/atf_test_apps) repository.
+For each [implemented metric](../README.md#implemented-metrics) there is a test app package that uses the metric in a simple application. You can find all the test apps in the [atf_test_apps](https://github.com/floweisshardt/atf_test_apps) repository.
 
 1. Get sources
 ```
 cd ~/catkin_ws/src
-wstool set atf_test_apps --git https://github.com/ipa-fmw/atf_test_apps.git
+wstool set atf_test_apps --git https://github.com/floweisshardt/atf_test_apps.git
 wstool update
 ```
 
@@ -108,7 +108,7 @@ if __name__ == '__main__':
     rospy.init_node('test_name')
     rostest.rosrun('application', 'recording', Test, sysargs=None)
 ```
-Alongside with the modifications in the app code, you need to create some configuration files. Please have a look at the [atf test apps repository](https://github.com/ipa-fmw/atf_test_apps) for configuration references. Typically you will have the following files:
+Alongside with the modifications in the app code, you need to create some configuration files. Please have a look at the [atf test apps repository](https://github.com/floweisshardt/atf_test_apps) for configuration references. Typically you will have the following files:
 ```
 config/
 ├── robot_envs                   # directory for environment specific settings, each environment is configured in one <robot_env_name>.yaml file
@@ -155,7 +155,7 @@ If you have your test app written and configuration setup as shown in the [examp
 * ```catkin_make atf_<YOUR_PACKAGE>          ```: triggers all tests in your package
 * ```catkin_make run_tests                   ```: triggers all tests in your catkin workspace
 
-You can use the targets to setup you continuous integration scripts. An example for [travis](https://travis-ci.org/) can be found in the [atf test apps repository](https://github.com/ipa-fmw/atf_test_apps). Have a look at the ```.travis.yml``` file.
+You can use the targets to setup you continuous integration scripts. An example for [travis](https://travis-ci.org/) can be found in the [atf test apps repository](https://github.com/floweisshardt/atf_test_apps). Have a look at the ```.travis.yml``` file.
 
 ### How to use the ATF in a "simulation-in-the-loop" setup using [gazebo](http://gazebosim.org/)
 If you'd like to run tests using gazebo, you just setup a launch file which starts all nodes and add that to your ```test_generation.yaml``` as ```additional_launch_file```. This launch file will then be included in all the tests. As catkin normaly uses multiple threads for executing the tests, we'll need to limit that to only one concurrent job as running multiple gazebo instances at a time causes troubles. Thus run your tests with

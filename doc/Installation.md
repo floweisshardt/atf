@@ -23,8 +23,8 @@ catkin_make
 1. Get ATF sources from github
 ```
 cd ~/catkin_ws/src
-git clone https://github.com/ipa-fmw/atf
-wstool merge -y https://raw.githubusercontent.com/ipa-fmw/atf/master/.travis.rosinstall
+git clone https://github.com/floweisshardt/atf
+wstool merge -y https://raw.githubusercontent.com/floweisshardt/atf/master/.travis.rosinstall
 wstool update
 ```
 
