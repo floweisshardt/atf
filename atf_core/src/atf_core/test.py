@@ -1,4 +1,9 @@
 #!/usr/bin/env python
+import copy
+import json
+import os
+import shutil
+import yaml
 
 from atf_core import Testblock
 
@@ -15,6 +20,7 @@ class Test:
         self.robot_env_name = None
         self.generation_config = None
         # testblocks with metrics
+        metrics_handle = None
         testblocks = []
         
         # result data
@@ -42,3 +48,28 @@ class Test:
         print "result:", self.result
         print "groundtruth_result: ", self.groundtruth_result
         print "groundtruth_error_message", self.groundtruth_error_message
+
+    def export_to_file(self, result):
+        #print "result:", result
+    
+        # we'll always have json export
+        if os.path.exists(self.generation_config["json_output"]):
+        #    shutil.rmtree(self.config["json_output"]) #FIXME will fail if multiple test run concurrently
+            pass
+        else:
+            os.makedirs(self.generation_config["json_output"])
+        shutil.copyfile(os.path.join("/home/fmw/git/atf/build/atf_test_app_time/test_generated", "test_list.json"), os.path.join(self.generation_config["json_output"], "test_list.json"))
+        filename = os.path.join(self.generation_config["json_output"], self.name + ".json")
+        stream = file(filename, 'w')
+        json.dump(copy.copy(result), stream)
+
+        # yaml export is optional
+        if "yaml_output" in self.generation_config:
+            if os.path.exists(self.generation_config["yaml_output"]):
+            #    shutil.rmtree(self.config["yaml_output"]) #FIXME will fail if multiple test run concurrently
+                pass
+            else:
+                os.makedirs(self.generation_config["yaml_output"])
+            filename = os.path.join(self.generation_config["yaml_output"], self.name + ".yaml")
+            stream = file(filename, 'w')
+            yaml.dump(copy.copy(result), stream, default_flow_style=False)

@@ -48,13 +48,15 @@ class ATFConfigurationParser:
                             test.robot_env = self.load_data(rospkg.RosPack().get_path("atf_test_app_time") + "/config/robot_envs/" + robot_env_name + ".yaml")
                             test.generation_config = testgeneration
                             
-                            test.print_to_terminal()
+                            #test.print_to_terminal()
                             #print test.name
                             
+                            test.metrics = self.load_data(rospkg.RosPack().get_path("atf_metrics") + "/config/metrics.yaml")
                             test.testblocks = []
                             for testblock_name in test.test_config.keys():
-                                print testblock_name
+                                #print testblock_name
                                 metric_handles = self.create_metric_handles(test, testblock_name, True)
+                                #print "metric_handles", metric_handles
                                 testblock = Testblock(testblock_name, metric_handles, None)
                                 test.testblocks.append(testblock)
                             
@@ -86,15 +88,15 @@ class ATFConfigurationParser:
     def create_metric_handles(self, test, testblock_name, create_metrics):
         metric_handles = []
         if create_metrics:
-            metrics = test.test_config[testblock_name].keys()
-            print "metrics=", metrics
+            metrics = test.test_config[testblock_name]
+            #print "metrics=", metrics
             metric_handlers_config = self.load_data(rospkg.RosPack().get_path("atf_metrics") + "/config/metrics.yaml")
-            print "metric_handlers_config=", metric_handlers_config
+            #print "metric_handlers_config=", metric_handlers_config
             if  metric_handlers_config and metrics:
                 for metric_name in metrics:
-                    print "metric_name=", metric_name
+                    #print "metric_name=", metric_name
                     metrics_return_list = getattr(atf_metrics, metric_handlers_config[metric_name]["handler"])().parse_parameter(testblock_name, metrics[metric_name])
-                    print "metrics_return_list=", metrics_return_list
+                    #print "metrics_return_list=", metrics_return_list
                     if metrics_return_list and (type(metrics_return_list) == list):
                         for metric_return in metrics_return_list:
                             #print "metric_return=", metric_return
@@ -104,12 +106,12 @@ class ATFConfigurationParser:
         #print "metric_handles=", metric_handles
         return metric_handles
 
-    def create_testblocks(self, config, recorder_handle=None, create_metrics=False):
-        testblocks = {}
-        for testblock_name in config["test_config"].keys():
-            metric_handles = self.create_metric_handles(create_metrics)
-            testblocks[testblock_name] = Testblock(testblock_name, metric_handles, recorder_handle)
-        return testblocks
+    #def create_testblocks(self, config, recorder_handle=None, create_metrics=False):
+    #    testblocks = {}
+    #    for testblock_name in config["test_config"].keys():
+    #        metric_handles = self.create_metric_handles(create_metrics)
+    #        testblocks[testblock_name] = Testblock(testblock_name, metric_handles, recorder_handle)
+    #    return testblocks
 
     def create_testblock_list(self, config):
         testblock_list = {}

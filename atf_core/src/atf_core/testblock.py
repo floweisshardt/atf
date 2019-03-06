@@ -1,19 +1,22 @@
 #!/usr/bin/env python
+import os
 import rospy
+import shutil
 
 from atf_core import StateMachine#, ATFRecorder
 from atf_msgs.msg import TestblockState, TestblockTrigger
 
 class Testblock:
-    def __init__(self, name, metrics, recorder_handle):
+    def __init__(self, name, metric_handles, recorder_handle):
 
         self.name = name
-        self.metrics = metrics
+        self.metric_handles = metric_handles
         self.recorder_handle = recorder_handle
         self.trigger = None
         self.timestamp = None
         self.exception = None
         self.atf_started = False
+        self.state = None
 
         self.m = StateMachine(self.name)
         self.m.add_state(TestblockState.INVALID, self._purged_state)
@@ -58,8 +61,40 @@ class Testblock:
             rospy.logdebug("  <<<<<<<<<<<<<<<<< recording has been triggered with trigger value : '%s'", self.trigger.trigger)
         rospy.logdebug("========> EXIT  _wait_while_transition_is_active ")
 
-    def get_state(self):
-        return self.m.get_current_state()
+    #def get_state(self):
+    #       return self.m.get_current_state()
+
+    def get_result(self):
+        result = {}
+        #overall_groundtruth_result = None
+        #overall_groundtruth_error_message = "groundtruth missmatch for: "
+
+        if self.state == TestblockState.ERROR:
+            rospy.logerr("An error occured during analysis of testblock '%s', no useful results available.")
+            result.update({name: {"status": "error"}})
+        else:
+            #print "testblock.metrics=", testblock.metrics
+            for metric_handle in self.metric_handles:
+                #print "metric_handle=", metric_handle
+                metric_result = metric_handle.get_result()
+                #print "metric_result=", metric_result
+                if metric_result is not False:
+                    (metric_name, data, groundtruth_result, groundtruth, groundtruth_epsilon, details) = metric_result
+                    if metric_name not in result:
+                        result[metric_name] = []
+                    result[metric_name].append({"data":data, "groundtruth_result": groundtruth_result, "groundtruth": groundtruth, "groundtruth_epsilon": groundtruth_epsilon, "details": details})
+                    if groundtruth_result == None:
+                        pass
+                    elif not groundtruth_result:
+                        overall_groundtruth_result = False
+                        overall_groundtruth_error_message += self.name + "(" + metric_name + ": data=" + str(data) + ", groundtruth=" + str(groundtruth) + "+-" + str(groundtruth_epsilon) + " details:" + str(details) + "); "
+                else:
+                    raise ATFAnalyserError("No result for metric '%s' in testblock '%s'" % (metric_name, self.name))
+
+        #if result == {}:
+        #    raise ATFAnalyserError("Analysing failed, no result available.")
+        #return overall_groundtruth_result, overall_groundtruth_error_message, result
+        return result
 
 ###############
 # transitions #
@@ -85,12 +120,12 @@ class Testblock:
 
     def _purge(self):
         rospy.loginfo("Purging testblock '%s'", self.name)
-        for metric in self.metrics:
-            metric.purge(self.timestamp)
+        for metric_handle in self.metric_handles:
+            metric_handle.purge(self.timestamp)
 
     # start
     def start(self):
-        rospy.logdebug("### ENTRY  start  ###")
+        rospy.loginfo("### ENTRY  start  ###")
         # wait for old transition to finish before processing new one
         self._wait_for_transition_is_done()
 
@@ -110,9 +145,9 @@ class Testblock:
 
     def _start(self):
         rospy.loginfo("Starting testblock '%s'", self.name)
-        for metric in self.metrics:
+        for metric_handle in self.metric_handles:
             #print "testblock: start metric", metric # TODO: what needs to be done with metric in case of recording/analysing???
-            metric.start(self.timestamp)
+            metric_handle.start(self.timestamp)
 
     # pause
     def pause(self):
@@ -135,8 +170,8 @@ class Testblock:
 
     def _pause(self):
         rospy.loginfo("Pausing testblock '%s'", self.name)
-        for metric in self.metrics:
-            metric.pause(self.timestamp)
+        for metric_handle in self.metric_handles:
+            metric_handle.pause(self.timestamp)
 
     # stop
     def stop(self):
@@ -166,8 +201,8 @@ class Testblock:
 
     def _stop(self):
         rospy.loginfo("Stopping testblock '%s'", self.name)
-        for metric in self.metrics:
-            metric.stop(self.timestamp)
+        for metric_handle in self.metric_handles:
+            metric_handle.stop(self.timestamp)
 
 ##########
 # states #

@@ -63,23 +63,49 @@ class Analyser:
                         msg = pytype()
                         msg.deserialize(serialized_bytes)
                         j+=1
-                        for testblock_name in test.test_config.keys():
-                            if topic == self.ns + testblock_name + "/trigger":
-                                self.trigger_callback(msg, test)
-                        bar.update(j)
+                        for testblock in test.testblocks:
+                            if topic == self.ns + testblock.name + "/trigger":
+                                #print "topic match for testblock '%s'"%testblock.name
+                                testblock.state = self.process_trigger(msg, testblock)
+                            #print "testblock state for testblock '%s':"%testblock.name, testblock.state
+                        #bar.update(j)
                     except StopIteration as e:
                         print "stop iterator", e
                         break
-                    #except Exception as e:
-                    except StopIteration as e:
+                    except Exception as e:
+                    #except StopIteration as e:
                         count_error += 1
                         continue
-            #except Exception as e:
-            except StopIteration as e:
+            except Exception as e:
+            #except StopIteration as e:
                 print "FATAL exception in bag file", type(e), e
                 continue
             bar.finish()
-            print "%d errors detected during bag processing"%count_error
+            #for testblock in test.testblocks:
+                #print "testblock state for testblock '%s':"%testblock.name, testblock.state
+            
+            # check states for all testblocks
+            for testblock in test.testblocks:
+                if testblock.state == TestblockState.SUCCEEDED:
+                    continue
+                elif testblock.state == TestblockState.ERROR:
+                    raise ATFAnalyserError("Testblock '%s' finished with ERROR." % testblock)
+                else:
+                    raise ATFAnalyserError("Testblock '%s' did not reach an end state before analyser finished (state is '%s'). Probably an error occured outside of monitored testblocks." % (testblock, state))
+            
+            # get result for each testblock
+            overall_test_result = {}
+            for testblock in test.testblocks:
+                result = testblock.get_result()
+                #print "result for testblock '%s' is"%testblock.name, result
+                overall_test_result[testblock.name] = result
+            
+            print "overall_test_result:", overall_test_result
+            
+            # export overall test result to file
+            test.export_to_file(overall_test_result)
+            
+            print "%d errors detected during test processing"%count_error
             i += 1
             
         try:
@@ -100,33 +126,34 @@ class Analyser:
         result.sort()
         return result
 
-    def trigger_callback(self, trigger, test):
-        print "trigger=", trigger
-        print "testblocks:", test.test_config.keys()
+    def process_trigger(self, trigger, testblock):
+        #print "trigger=", trigger
+        #print "trigger.name:", trigger.name
 
-        if trigger.name not in test.test_config.keys():
-            raise ATFAnalyserError("Testblock '%s' not in test_config." % trigger.name)
+        #if trigger.name not in test.test_config.keys():
+        #    raise ATFAnalyserError("Testblock '%s' not in test_config." % trigger.name)
 
         if trigger.trigger == TestblockTrigger.PURGE:
             rospy.loginfo("Purging testblock '%s'", trigger.name)
-            for metric in self.testblocks[trigger.name].metrics:
-                metric.purge(trigger.stamp)
-            self.testblock_states[trigger.name] = TestblockState.PURGED
+            for metric_handle in testblock.metric_handles:
+                metric_handle.purge(trigger.stamp)
+            return TestblockState.PURGED
         elif trigger.trigger == TestblockTrigger.START:
-            rospy.loginfo("Starting testblock '%s'", trigger.name)
-            for metric in self.testblocks[trigger.name].metrics:
-                metric.start(trigger.stamp)
-            self.testblock_states[trigger.name] = TestblockState.ACTIVE
+            print "Starting testblock '%s'"%trigger.name
+            #print "testblock.metric_handles", testblock.metric_handles
+            for metric_handle in testblock.metric_handles:
+                metric_handle.start(trigger.stamp)
+            return TestblockState.ACTIVE
         elif trigger.trigger == TestblockTrigger.PAUSE:
             rospy.loginfo("Pausing testblock '%s'", trigger.name)
-            for metric in self.testblocks[trigger.name].metrics:
-                metric.pause(trigger.stamp)
-            self.testblock_states[trigger.name] = TestblockState.PAUSED
+            for metric_handle in testblock.metric_handles:
+                metric_handle.pause(trigger.stamp)
+            return TestblockState.PAUSED
         elif trigger.trigger == TestblockTrigger.STOP:
             rospy.loginfo("Stopping testblock '%s'", trigger.name)
-            for metric in self.testblocks[trigger.name].metrics:
-                metric.stop(trigger.stamp)
-            self.testblock_states[trigger.name] = TestblockState.SUCCEEDED
+            for metric_handle in testblock.metric_handles:
+                metric_handle.stop(trigger.stamp)
+            return TestblockState.SUCCEEDED
         else:
             raise ATFAnalyserError("Unknown trigger '%s' for testblock '%s'" % (str(trigger.trigger), trigger.name))
 
@@ -141,14 +168,6 @@ class Analyser:
 #                r.sleep()
 #                continue
 
-        # check state of all testblocks
-        for testblock, state in self.testblock_states.items():
-            if state == TestblockState.SUCCEEDED:
-                continue
-            elif state == TestblockState.ERROR:
-                raise ATFAnalyserError("Testblock '%s' finished with ERROR." % testblock)
-            else:
-                raise ATFAnalyserError("Testblock '%s' did not reach an end state before analyser finished (state is '%s'). Probably an error occured outside of monitored testblocks." % (testblock, state))
 
     def get_result(self):
         result = {}
@@ -205,28 +224,7 @@ class Analyser:
             raise ATFAnalyserError("Analysing failed, no result available.")
         return overall_groundtruth_result, overall_groundtruth_error_message, result
 
-    def export_to_file(self, result):
-        # we'll always have json export
-        if os.path.exists(self.config["json_output"]):
-        #    shutil.rmtree(self.config["json_output"]) #FIXME will fail if multiple test run concurrently
-            pass
-        else:
-            os.makedirs(self.config["json_output"])
-        shutil.copyfile(os.path.join(self.config["test_generated_path"], "test_list.json"), os.path.join(self.config["json_output"], "test_list.json"))
-        filename = os.path.join(self.config["json_output"], self.config["test_name"] + ".json")
-        stream = file(filename, 'w')
-        json.dump(copy.copy(result), stream)
-
-        # yaml export is optional
-        if "yaml_output" in self.config:
-            if os.path.exists(self.config["yaml_output"]):
-            #    shutil.rmtree(self.config["yaml_output"]) #FIXME will fail if multiple test run concurrently
-                pass
-            else:
-                os.makedirs(self.config["yaml_output"])
-            filename = os.path.join(self.config["yaml_output"], self.config["test_name"] + ".yaml")
-            stream = file(filename, 'w')
-            yaml.dump(copy.copy(result), stream, default_flow_style=False)
+    
 
 class ATFAnalyserError(Exception):
     pass
@@ -249,8 +247,8 @@ if __name__ == '__main__':
         analyser = Analyser()
         #analyser.wait_for_all_testblocks_to_finish()
         #groundtruth_result, groundtruth_error_message, result = analyser.get_result()
-        if groundtruth_result != None:
-            rospy.logerr("groundtruth_result: '%s', groundtruth_error_message: '%s'", str(groundtruth_result), groundtruth_error_message)
-        analyser.export_to_file(result)
+        #if groundtruth_result != None:
+        #    rospy.logerr("groundtruth_result: '%s', groundtruth_error_message: '%s'", str(groundtruth_result), groundtruth_error_message)
+        #analyser.export_to_file(result)
     else:
         rostest.rosrun("atf_core", 'analysing', TestAnalysing, sysargs=None)
