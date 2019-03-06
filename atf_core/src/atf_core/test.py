@@ -19,15 +19,13 @@ class Test:
         self.robot_env = None
         self.robot_env_name = None
         self.generation_config = None
+
         # testblocks with metrics
         metrics_handle = None
         testblocks = []
         
         # result data
-        self.result = None
-        self.groundtruth_result = None
-        self.groundtruth_error_message = None
-        
+        self.result = None        
     
     def print_to_terminal(self):
         print "\n----------------------------- " + self.name + " ----------------------------------"
@@ -42,14 +40,11 @@ class Test:
         print "robot_env:", self.robot_env
         print "generation_config:", self.generation_config
 
-
     def print_result_to_terminal(self):
         print "\n----------------------------- " + self.name + " ----------------------------------"
         print "result:", self.result
-        print "groundtruth_result: ", self.groundtruth_result
-        print "groundtruth_error_message", self.groundtruth_error_message
 
-    def export_to_file(self, result):
+    def export_to_file(self):
         #print "result:", result
     
         # we'll always have json export
@@ -61,7 +56,7 @@ class Test:
         shutil.copyfile(os.path.join("/home/fmw/git/atf/build/atf_test_app_time/test_generated", "test_list.json"), os.path.join(self.generation_config["json_output"], "test_list.json"))
         filename = os.path.join(self.generation_config["json_output"], self.name + ".json")
         stream = file(filename, 'w')
-        json.dump(copy.copy(result), stream)
+        json.dump(copy.copy(self.result), stream)
 
         # yaml export is optional
         if "yaml_output" in self.generation_config:
@@ -72,4 +67,4 @@ class Test:
                 os.makedirs(self.generation_config["yaml_output"])
             filename = os.path.join(self.generation_config["yaml_output"], self.name + ".yaml")
             stream = file(filename, 'w')
-            yaml.dump(copy.copy(result), stream, default_flow_style=False)
+            yaml.dump(copy.copy(self.result), stream, default_flow_style=False)

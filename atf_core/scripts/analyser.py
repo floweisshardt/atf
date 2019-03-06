@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-import rospy
 import json
 import yaml
 import os
@@ -99,11 +98,12 @@ class Analyser:
                 result = testblock.get_result()
                 #print "result for testblock '%s' is"%testblock.name, result
                 overall_test_result[testblock.name] = result
-            
-            print "overall_test_result:", overall_test_result
+
+            test.result = overall_test_result
+            #print "test.result:", test.result
             
             # export overall test result to file
-            test.export_to_file(overall_test_result)
+            test.export_to_file()
             
             print "%d errors detected during test processing"%count_error
             i += 1
@@ -114,7 +114,7 @@ class Analyser:
             pass
 
 
-        rospy.loginfo("ATF analyser: started!")
+        print "ATF analyser: started!"
 
     def get_file_paths(self, dir, prefix):
         result = []
@@ -134,40 +134,27 @@ class Analyser:
         #    raise ATFAnalyserError("Testblock '%s' not in test_config." % trigger.name)
 
         if trigger.trigger == TestblockTrigger.PURGE:
-            rospy.loginfo("Purging testblock '%s'", trigger.name)
+            #print "Purging testblock '%s'"%trigger.name
             for metric_handle in testblock.metric_handles:
                 metric_handle.purge(trigger.stamp)
             return TestblockState.PURGED
         elif trigger.trigger == TestblockTrigger.START:
-            print "Starting testblock '%s'"%trigger.name
-            #print "testblock.metric_handles", testblock.metric_handles
+            #print "Starting testblock '%s'"%trigger.name
             for metric_handle in testblock.metric_handles:
                 metric_handle.start(trigger.stamp)
             return TestblockState.ACTIVE
         elif trigger.trigger == TestblockTrigger.PAUSE:
-            rospy.loginfo("Pausing testblock '%s'", trigger.name)
+            #print "Pausing testblock '%s'"%trigger.name
             for metric_handle in testblock.metric_handles:
                 metric_handle.pause(trigger.stamp)
             return TestblockState.PAUSED
         elif trigger.trigger == TestblockTrigger.STOP:
-            rospy.loginfo("Stopping testblock '%s'", trigger.name)
+            #print "Stopping testblock '%s'"%trigger.name
             for metric_handle in testblock.metric_handles:
                 metric_handle.stop(trigger.stamp)
             return TestblockState.SUCCEEDED
         else:
             raise ATFAnalyserError("Unknown trigger '%s' for testblock '%s'" % (str(trigger.trigger), trigger.name))
-
-#    def wait_for_all_testblocks_to_finish(self):
-#        # wait for all testblocks
-#        for testblock in self.testblock_states.keys():
-#            r = rospy.Rate(10)
-#            while not (self.testblock_states[testblock] == TestblockState.SUCCEEDED or self.testblock_states[testblock] == TestblockState.ERROR):
-#                #rospy.loginfo("Waiting for testblock '%s' to finish (current state is '%s')." % (testblock, self.testblock_states[testblock]))
-#                if rospy.is_shutdown():
-#                    break
-#                r.sleep()
-#                continue
-
 
     def get_result(self):
         result = {}
@@ -175,23 +162,8 @@ class Analyser:
         overall_groundtruth_error_message = "groundtruth missmatch for: "
 
         for testblock_name, testblock in self.testblocks.items():
-            #print "testblock_name=", testblock_name
-
-            #test_status = TestStatus()
-            #test_status.test_name = self.test_name
-            #test_status.status_analysing = 1
-
-            #testblock_status = TestblockStatus()
-            #testblock_status.name = testblock.testblock_name
-            #testblock_status.status = testblock.get_state()
-
-            #test_status.testblock.append(testblock_status)
-            #test_status.total = self.number_of_tests
-
-            #self.test_status_publisher.publish(test_status)
-
             if self.testblock_states[testblock_name] == TestblockState.ERROR:
-                rospy.logerr("An error occured during analysis of testblock '%s', no useful results available.")
+                print "An error occured during analysis of testblock '%s', no useful results available."%testblock_name
                 result.update({testblock.testblock_name: {"status": "error"}})
             else:
                 #print "testblock.metrics=", testblock.metrics
@@ -214,16 +186,9 @@ class Analyser:
                     else:
                         raise ATFAnalyserError("No result for metric '%s' in testblock '%s'" % (metric_name, testblock_name))
 
-        #test_status = TestStatus()
-        #test_status.test_name = self.test_name
-        #test_status.status_analysing = 3
-        #test_status.total = self.number_of_tests
-        #self.test_status_publisher.publish(test_status)
-
         if result == {}:
             raise ATFAnalyserError("Analysing failed, no result available.")
         return overall_groundtruth_result, overall_groundtruth_error_message, result
-
     
 
 class ATFAnalyserError(Exception):
@@ -233,22 +198,14 @@ class ATFAnalyserError(Exception):
 class TestAnalysing(unittest.TestCase):
     def test_Analysing(self):
         analyser = Analyser()
-#        analyser.wait_for_all_testblocks_to_finish()
-        #self.assertTrue(analyser.test_list, analyser.parsing_error_message)
-        #groundtruth_result, groundtruth_error_message, result = analyser.get_result()
-        analyser.export_to_file(result)
-        if groundtruth_result != None:
-            self.assertTrue(groundtruth_result, groundtruth_error_message)
+        for test in self.tests:
+            print "test.name:", test.name
+            if test.groundtruth_result != None:
+                self.assertTrue(groundtruth_result, groundtruth_error_message)
 
 
 if __name__ == '__main__':
-    #rospy.init_node('test_analysing')
     if "standalone" in sys.argv:
         analyser = Analyser()
-        #analyser.wait_for_all_testblocks_to_finish()
-        #groundtruth_result, groundtruth_error_message, result = analyser.get_result()
-        #if groundtruth_result != None:
-        #    rospy.logerr("groundtruth_result: '%s', groundtruth_error_message: '%s'", str(groundtruth_result), groundtruth_error_message)
-        #analyser.export_to_file(result)
     else:
         rostest.rosrun("atf_core", 'analysing', TestAnalysing, sysargs=None)

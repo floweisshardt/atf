@@ -70,7 +70,7 @@ class Testblock:
         #overall_groundtruth_error_message = "groundtruth missmatch for: "
 
         if self.state == TestblockState.ERROR:
-            rospy.logerr("An error occured during analysis of testblock '%s', no useful results available.")
+            print "An error occured during analysis of testblock '%s', no useful results available."%self.name
             result.update({name: {"status": "error"}})
         else:
             #print "testblock.metrics=", testblock.metrics
