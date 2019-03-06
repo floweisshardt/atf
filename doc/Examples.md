@@ -31,6 +31,7 @@ rosdep install --from-path src -i -y
 ```
 cd ~/catkin_ws
 catkin build --force-cmake
+```
 
 #### Run the test apps
 Run all tests
