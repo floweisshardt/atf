@@ -4,7 +4,6 @@ import rospy
 from atf_core import StateMachine#, ATFRecorder
 from atf_msgs.msg import TestblockState, TestblockTrigger
 
-
 class Testblock:
     def __init__(self, name, metrics, recorder_handle):
 

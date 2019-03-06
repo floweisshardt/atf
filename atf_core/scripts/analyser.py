@@ -3,11 +3,14 @@ import rospy
 import json
 import yaml
 import os
-import unittest
+import progressbar
+import rosbag
 import rostest
 import copy
 import shutil
 import sys
+import time
+import unittest
 
 from atf_core import ATFConfigurationParser
 from atf_msgs.msg import TestblockState, TestblockTrigger
@@ -20,26 +23,88 @@ class Analyser:
 
         # parse configuration
         atf_configuration_parser = ATFConfigurationParser()
-        self.config = atf_configuration_parser.get_config()
-        self.testblocks = atf_configuration_parser.create_testblocks(self.config, None, True)
+        self.tests = atf_configuration_parser.get_tests()
+        #self.testblocks = atf_configuration_parser.create_testblocks(self.config, None, True)
+
+        #print "self.config", self.config
+        #print "self.testblocks", self.testblocks
 
         # monitor states for all testblocks
-        self.testblock_states = {}
-        for testblock in self.testblocks.keys():
-            self.testblock_states[testblock] = TestblockState.INVALID
+        #self.testblock_states = {}
+        #for testblock in self.testblocks.keys():
+        #    self.testblock_states[testblock] = TestblockState.INVALID
 
-        # create trigger subscriber for all testblocks
-        for testblock_name in self.testblocks.keys():
-            topic = self.ns + testblock_name + "/trigger"
-            #print "create subscriber to '%s' from testblock '%s'" % (topic, testblock_name)
-            rospy.Subscriber(topic, TestblockTrigger, self.trigger_callback)
+        start_time = time.time()
+        #self.files = self.config["test_name"]#"/tmp/atf_test_app_time/data/ts0_c0_r0_e0_0.bag" # TODO get real file names from test config
+        #print "self.files", self.files
+        #files = self.get_file_paths(os.path.dirname(self.files), os.path.basename(self.files))
+        i = 1
+        for test in self.tests:
+            inputfile = os.path.join(test.generation_config["bagfile_output"] + test.name + ".bag")
+            print "Processing test %i/%i: %s"%(i,len(self.tests),test.name)
+            try:
+                bag = rosbag.Bag(inputfile)
+            except rosbag.bag.ROSBagException as e:
+                print "FATAL empty bag file", e
+                continue
+            if bag.get_message_count() == 0:
+                print "FATAL empty bag file"
+                continue
+            bar = progressbar.ProgressBar(maxval=bag.get_message_count(), \
+                    widgets=[progressbar.Bar('=', '[', ']'), ' ', progressbar.Percentage()])
+            bar.start()
+            j=0
+            count_error=0
+
+            try:
+                for topic, raw_msg, t in bag.read_messages(raw=True):
+                    try:
+                        msg_type, serialized_bytes, md5sum, pos, pytype = raw_msg
+                        msg = pytype()
+                        msg.deserialize(serialized_bytes)
+                        j+=1
+                        for testblock_name in test.test_config.keys():
+                            if topic == self.ns + testblock_name + "/trigger":
+                                self.trigger_callback(msg, test)
+                        bar.update(j)
+                    except StopIteration as e:
+                        print "stop iterator", e
+                        break
+                    #except Exception as e:
+                    except StopIteration as e:
+                        count_error += 1
+                        continue
+            #except Exception as e:
+            except StopIteration as e:
+                print "FATAL exception in bag file", type(e), e
+                continue
+            bar.finish()
+            print "%d errors detected during bag processing"%count_error
+            i += 1
+            
+        try:
+            print "Processing tests took %s min"%str( round((time.time() - start_time)/60.0,4 ))
+        except:
+            pass
+
 
         rospy.loginfo("ATF analyser: started!")
 
-    def trigger_callback(self, trigger):
-        #print "trigger=", trigger
+    def get_file_paths(self, dir, prefix):
+        result = []
+        for subdir, dirs, files in os.walk(dir):
+            for file in files:
+                full_path = os.path.join(subdir, file)
+                if file.startswith(prefix):
+                    result.append((file,full_path))
+        result.sort()
+        return result
 
-        if trigger.name not in self.config["test_config"].keys():
+    def trigger_callback(self, trigger, test):
+        print "trigger=", trigger
+        print "testblocks:", test.test_config.keys()
+
+        if trigger.name not in test.test_config.keys():
             raise ATFAnalyserError("Testblock '%s' not in test_config." % trigger.name)
 
         if trigger.trigger == TestblockTrigger.PURGE:
@@ -65,16 +130,16 @@ class Analyser:
         else:
             raise ATFAnalyserError("Unknown trigger '%s' for testblock '%s'" % (str(trigger.trigger), trigger.name))
 
-    def wait_for_all_testblocks_to_finish(self):
-        # wait for all testblocks
-        for testblock in self.testblock_states.keys():
-            r = rospy.Rate(10)
-            while not (self.testblock_states[testblock] == TestblockState.SUCCEEDED or self.testblock_states[testblock] == TestblockState.ERROR):
-                #rospy.loginfo("Waiting for testblock '%s' to finish (current state is '%s')." % (testblock, self.testblock_states[testblock]))
-                if rospy.is_shutdown():
-                    break
-                r.sleep()
-                continue
+#    def wait_for_all_testblocks_to_finish(self):
+#        # wait for all testblocks
+#        for testblock in self.testblock_states.keys():
+#            r = rospy.Rate(10)
+#            while not (self.testblock_states[testblock] == TestblockState.SUCCEEDED or self.testblock_states[testblock] == TestblockState.ERROR):
+#                #rospy.loginfo("Waiting for testblock '%s' to finish (current state is '%s')." % (testblock, self.testblock_states[testblock]))
+#                if rospy.is_shutdown():
+#                    break
+#                r.sleep()
+#                continue
 
         # check state of all testblocks
         for testblock, state in self.testblock_states.items():
@@ -170,20 +235,20 @@ class ATFAnalyserError(Exception):
 class TestAnalysing(unittest.TestCase):
     def test_Analysing(self):
         analyser = Analyser()
-        analyser.wait_for_all_testblocks_to_finish()
+#        analyser.wait_for_all_testblocks_to_finish()
         #self.assertTrue(analyser.test_list, analyser.parsing_error_message)
-        groundtruth_result, groundtruth_error_message, result = analyser.get_result()
+        #groundtruth_result, groundtruth_error_message, result = analyser.get_result()
         analyser.export_to_file(result)
         if groundtruth_result != None:
             self.assertTrue(groundtruth_result, groundtruth_error_message)
 
 
 if __name__ == '__main__':
-    rospy.init_node('test_analysing')
+    #rospy.init_node('test_analysing')
     if "standalone" in sys.argv:
         analyser = Analyser()
-        analyser.wait_for_all_testblocks_to_finish()
-        groundtruth_result, groundtruth_error_message, result = analyser.get_result()
+        #analyser.wait_for_all_testblocks_to_finish()
+        #groundtruth_result, groundtruth_error_message, result = analyser.get_result()
         if groundtruth_result != None:
             rospy.logerr("groundtruth_result: '%s', groundtruth_error_message: '%s'", str(groundtruth_result), groundtruth_error_message)
         analyser.export_to_file(result)
