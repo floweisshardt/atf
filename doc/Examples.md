@@ -5,36 +5,56 @@
 * [How to use the ATF with "simulation-in-the-loop"](Examples.md#how-to-use-the-atf-in-a-simulation-in-the-loop-setup-using-gazebo)
 * [How to use the ATF for benchmarking](Examples.md#how-to-use-the-atf-for-benchmarking)
 
-### Running simple atf test apps
-###### Download and build test apps
+## Running simple atf test apps
+### Download and build test apps
 For each [implemented metric](../README.md#implemented-metrics) there is a test app package that uses the metric in a simple application. You can find all the test apps in the [atf_test_apps](https://github.com/floweisshardt/atf_test_apps) repository.
 
-1. Get sources
+#### Get atf_test_apps sources
 ```
 cd ~/catkin_ws/src
-wstool set atf_test_apps --git https://github.com/floweisshardt/atf_test_apps.git
+git clone https://github.com/floweisshardt/atf
+wstool merge -y https://raw.githubusercontent.com/floweisshardt/atf_test_apps/master/.travis.rosinstall
 wstool update
 ```
 
-1. Build and generate tests
+#### Get dependendies
+Note: you need sudo rights!
 ```
+source ~/catkin_ws/devel/setup.bash
+sudo rosdep init
+rosdep update
 cd ~/catkin_ws
-catkin_make --force-cmake
+rosdep install --from-path src -i -y
 ```
 
-###### Run the test apps
-Run all tests:
+#### Compile sources
 ```
 cd ~/catkin_ws
-catkin_make run_tests
-```
-or just tests from a specific package (e.g. for ```atf_test_app_time```):
+catkin build --force-cmake
+
+#### Run the test apps
+Run all tests
 ```
 cd ~/catkin_ws
-catkin_make atf_atf_test_app_time
+catkin run_tests
+```
+or run tests from a specific package (e.g. for ```atf_test_app_time```):
+```
+cd ~/catkin_ws
+catkin build atf_test_app_time --no-deps --catkin-make-args run_tests
+```
+or
+```
+roscd atf_test_app_time
+catkin run_tests --no-deps --this
 ```
 
-###### Check and visualize the results
+#### Check test results
+check test summary with
+```
+catkin_test_results
+```
+
 If all goes well, you should see the recorded bag files in ```/tmp/atf_test_app_time```:
 ```
 ls /tmp/atf_test_app_time/data
@@ -44,6 +64,8 @@ and the (merged) results in ```/tmp/atf_test_app_time/results_yaml```:
 ```
 cat /tmp/atf_test_app_time/results_yaml/merged_ts0_c0_r0_e0.yaml
 ```
+
+#### Visualize the results
 You an use the ATF presenter to visualize the results in a webbrowser:
 ```
 rosrun atf_presenter chromium.sh
@@ -65,7 +87,7 @@ Now for all analyzed metrics you will see a diagramm showing the average results
 <img src="data/atf_presenter4.png" width="500">
 
 ### Integrate the ATF into your own application
-###### Python
+#### Python
 A python app with ATF looks as simple as
 ```
 from atf_core import ATF
@@ -127,7 +149,7 @@ The last thing to modify is your ```package.xml``` and ```CMakeLists.txt```. Ple
 atf_test()
 ```
 
-After a ```catkin_make --force-cmake``` you will find all the generated test files in ```<YOUR_PACKAGE>/test_generated```.
+After a ```catkin build --force-cmake``` you will find all the generated test files in ```<YOUR_PACKAGE>/test_generated```.
 You can run them individually, e.g. the first recording test with
 ```
 rostest <YOUR_PACKAGE> recording_ts0_c0_r0_e0_0.test
@@ -143,24 +165,25 @@ If all analysing tests are done you can merge them and use the ATF presenter for
 rostest <YOUR_PACKAGE> merging.test
 rosrun atf_presenter chromium.sh
 ```
-###### C++
+#### C++
 not yet available
+
 ### Automating ATF test execution
 If you have your test app written and configuration setup as shown in the [example above](Examples.md#integrate-the-atf-into-your-own-application), there are new catkin targets which trigger the execution of tests in a package:
-* ```catkin_make atf_<YOUR_PACKAGE>_cleaning ```: cleans all test artefacts (bag, json and yaml files)
-* ```catkin_make atf_<YOUR_PACKAGE>_recording```: triggers the ```cleaning``` target and all recording tests
-* ```catkin_make atf_<YOUR_PACKAGE>_analysing```: triggers the ```recording``` target and all analysing tests
-* ```catkin_make atf_<YOUR_PACKAGE>_merging  ```: triggers the ```analysing``` target and the merge test
-* ```catkin_make atf_<YOUR_PACKAGE>_uploading```: triggers the ```merging``` target and the uploading test
-* ```catkin_make atf_<YOUR_PACKAGE>          ```: triggers all tests in your package
-* ```catkin_make run_tests                   ```: triggers all tests in your catkin workspace
+* ```catkin atf_<YOUR_PACKAGE>_cleaning ```: cleans all test artefacts (bag, json and yaml files)
+* ```catkin atf_<YOUR_PACKAGE>_recording```: triggers the ```cleaning``` target and all recording tests
+* ```catkin atf_<YOUR_PACKAGE>_analysing```: triggers the ```recording``` target and all analysing tests
+* ```catkin atf_<YOUR_PACKAGE>_merging  ```: triggers the ```analysing``` target and the merge test
+* ```catkin atf_<YOUR_PACKAGE>_uploading```: triggers the ```merging``` target and the uploading test
+* ```catkin atf_<YOUR_PACKAGE>          ```: triggers all tests in your package
+* ```catkin run_tests                   ```: triggers all tests in your catkin workspace
 
 You can use the targets to setup you continuous integration scripts. An example for [travis](https://travis-ci.org/) can be found in the [atf test apps repository](https://github.com/floweisshardt/atf_test_apps). Have a look at the ```.travis.yml``` file.
 
 ### How to use the ATF in a "simulation-in-the-loop" setup using [gazebo](http://gazebosim.org/)
 If you'd like to run tests using gazebo, you just setup a launch file which starts all nodes and add that to your ```test_generation.yaml``` as ```additional_launch_file```. This launch file will then be included in all the tests. As catkin normaly uses multiple threads for executing the tests, we'll need to limit that to only one concurrent job as running multiple gazebo instances at a time causes troubles. Thus run your tests with
 ```
-catkin_make run_tests -j1
+catkin run_tests -j1
 ```
 
 For our travis scripts you can set the ```CATKIN_TEST_ARGUMENTS``` environment variable:
@@ -169,5 +192,9 @@ env:
   global:
     CATKIN_TEST_ARGUMENTS=-j1
 ```
+
 ### How to use the ATF for benchmarking
+TBD
+
+### How to use the ATF with Travis CI
 TBD
