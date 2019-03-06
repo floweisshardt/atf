@@ -1,26 +1,25 @@
 # Installation
-### Installation from release
+## Installation from release
 not yet available
 
-### Installing from source
+## Installing from source
+### Prerequisites:
 
-1. Prerequisites:
-  * Install Ubuntut 14.04 LTS "trusty" (either fresh from an image or using dist-ugrade)
-  * Install ros-indigo-dektop-full as described here: http://wiki.ros.org/indigo/Installation/Ubuntu)
-  * Install additional tools: sudo apt-get install ros-indigo-ros python-wstool
+* Install Ubuntut 16.04 LTS "xenial" (either fresh from an image or using dist-ugrade)
+* Install ROS Kinetic (ros-kinetic-ros-base): http://wiki.ros.org/kinetic/Installation/Ubuntu
+* Install additional tools: sudo apt-get install git python-wstool python-ros* python-catkin-tools build-essential 
 
-1. Create catkin workspace
-
+### Create empty catkin workspace
+Note: adjust workspace directory if needed
 ```
-source /opt/ros/indigo/setup.bash
+source /opt/ros/kinetic/setup.bash
 mkdir -p ~/catkin_ws/src
 cd ~/catkin_ws
-catkin_init_workspace src
-wstool init src
-catkin_make
+catkin init
+catkin build
 ```
 
-1. Get ATF sources from github
+### Get ATF sources from github
 ```
 cd ~/catkin_ws/src
 git clone https://github.com/floweisshardt/atf
@@ -28,23 +27,29 @@ wstool merge -y https://raw.githubusercontent.com/floweisshardt/atf/master/.trav
 wstool update
 ```
 
-1. Get dependendies
-(Note: you need sudo rights!)
+### Get dependendies
+Note: you need sudo rights!
 ```
+source ~/catkin_ws/devel/setup.bash
 sudo rosdep init
 rosdep update
 cd ~/catkin_ws
 rosdep install --from-path src -i -y
 ```
 
-1. Compile sources
+### Compile sources
 ```
 cd ~/catkin_ws
-catkin_make
+catkin build
 ```
 
-1. Source setup.bash
+### Source setup.bash
+Note: You might want to add that to your `~/.bashrc`
 ```
 source ~/catkin_ws/devel/setup.bash
 ```
+
+## Testing ATF
+[Test on local computer](Examples.md)
+
 
