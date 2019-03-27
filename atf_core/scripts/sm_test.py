@@ -5,6 +5,7 @@ import smach_ros
 import threading
 
 from atf_core.sm_atf import SmAtfTestblock
+from atf_core import ATFRecorder
 import atf_core
 
 if __name__ == '__main__':
@@ -29,6 +30,8 @@ if __name__ == '__main__':
         tmp[testblock] = 'succeeded'
     outcome_map = {'succeeded':tmp}
     
+    recorder_handle = ATFRecorder(test)
+
     # Open the container
     with sm_top:
 
@@ -37,12 +40,14 @@ if __name__ == '__main__':
                                    default_outcome='error',
                                    outcome_map=outcome_map)
 
+        sm_con.userdata = sm_top.userdata
+
         # Open the container
         with sm_con:
             # Add states to the container
             for testblock in test.test_config.keys():
                 print "adding testblock:", testblock
-                smach.Concurrence.add(testblock, SmAtfTestblock(testblock))
+                smach.Concurrence.add(testblock, SmAtfTestblock(testblock, recorder_handle))
 
 
         smach.StateMachine.add('CON', sm_con,

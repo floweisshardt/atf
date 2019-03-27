@@ -37,12 +37,12 @@ class ATFRecorder:
         self.bag_file_writer = atf_core.BagfileWriter(self.bag, self.lock_write)
 
         # Init metric recorder
-        self.recorder_plugin_list = []
-        if len(recorder_config) > 0:
-            for value in recorder_config.values():
-                #print "value=", value
-                self.recorder_plugin_list.append(getattr(atf_recorder_plugins, value)(self.lock_write,
-                                                                                      self.bag_file_writer))
+        #self.recorder_plugin_list = []
+        #if len(recorder_config) > 0:
+        #    for value in recorder_config.values():
+        #        #print "value=", value
+        #        self.recorder_plugin_list.append(getattr(atf_recorder_plugins, value)(self.lock_write,
+        #                                                                              self.bag_file_writer))
 
         self.topic_pipeline = []
         self.active_sections = []
@@ -59,8 +59,8 @@ class ATFRecorder:
         #    num_subscriber = ob_sub.get_num_connections()
 
         self.subscriber = []
-        self.topics = ["tf", "robot_status"] #self.get_topics() # FIXME
-        rospy.Timer(rospy.Duration(0.5), self.create_subscriber_callback)
+        #self.topics = ["tf", "robot_status"] #self.get_topics() # FIXME
+        #rospy.Timer(rospy.Duration(0.5), self.create_subscriber_callback)
 
         # test status monitoring
         #self.test_status_publisher = rospy.Publisher(self.ns + "test_status", TestStatus, queue_size=10)
@@ -168,17 +168,18 @@ class ATFRecorder:
                     pass
 
     def record_trigger(self, trigger):
-        print "record_trigger: name=", trigger.name, "trigger=", trigger.trigger, "stamp=", trigger.stamp
+        print "record_trigger:", trigger
+        print "self.test.test_config", self.test.test_config
 
-        if trigger.name not in self.config["test_config"]:
+        if trigger.name not in self.test.test_config:
             raise ATFRecorderError("Testblock '%s' not in test config" % trigger.name)
 
         # Send message to all recorder plugins
         #print "self.recorder_plugin_list=", self.recorder_plugin_list
-        for recorder_plugin in self.recorder_plugin_list:
-            #FIXME: need to filter the topics not needed for current trigger
-            recorder_plugin.trigger_callback(trigger)
-            rospy.logdebug(" recorder plugin callback : '%s'", trigger.name)
+        #for recorder_plugin in self.recorder_plugin_list:
+        #    #FIXME: need to filter the topics not needed for current trigger
+        #    recorder_plugin.trigger_callback(trigger)
+        #    rospy.logdebug(" recorder plugin callback : '%s'", trigger.name)
 
         # Only process message if testblock requests topics
         #print "self.testblock_list=", self.testblock_list

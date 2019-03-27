@@ -12,14 +12,14 @@ from atf_msgs.msg import TestblockTrigger
 ####################
 class SmAtfTestblock(smach.StateMachine):
 
-    def __init__(self, name):
+    def __init__(self, name, recorder_handle):
         smach.StateMachine.__init__(
             self, outcomes=['succeeded','error'],
             input_keys=[],
             output_keys=[])
 
         with self:
-            smach.StateMachine.add('INACTIVE', Inactive(name), 
+            smach.StateMachine.add('INACTIVE', Inactive(name, recorder_handle), 
                                    transitions={'start':'ACTIVE', 
                                                 'error':'error'})
             smach.StateMachine.add('ACTIVE', Active(name), 
@@ -42,14 +42,17 @@ class SmAtfTestblock(smach.StateMachine):
 ### states ###
 ##############
 class Inactive(smach.State):
-    def __init__(self, name):
-        smach.State.__init__(self, outcomes=['start', 'error'])
-        print "Init Inactive"
-        rospy.Subscriber(name, TestblockTrigger, self.trigger_cb)
+    def __init__(self, name, recorder_handle):
+        smach.State.__init__(self, input_keys=['recorder_handle'], outcomes=['start', 'error'])
+        rospy.Subscriber("atf/" + name + "/trigger", TestblockTrigger, self.trigger_cb)
         self.trigger = None
+        self.recorder_handle = recorder_handle
 
     def trigger_cb(self, msg):
-        self.trigger = msg.trigger
+        # record to bag file
+        #userdata.recorder_handle.record_trigger(self.trigger)
+        self.recorder_handle.record_trigger(msg)
+        self.trigger = msg
 
     def execute(self, userdata):
         self.trigger = None
@@ -58,7 +61,7 @@ class Inactive(smach.State):
             if self.trigger == None:
                 r.sleep()
                 continue
-            if self.trigger == TestblockTrigger.START:
+            if self.trigger.trigger == TestblockTrigger.START:
                 outcome = 'start'
             else:
                 outcome = 'error'
@@ -69,8 +72,7 @@ class Inactive(smach.State):
 class Active(smach.State):
     def __init__(self, name):
         smach.State.__init__(self, outcomes=['pause', 'purge', 'stop', 'error'])
-        print "Init Active"
-        rospy.Subscriber(name, TestblockTrigger, self.trigger_cb)
+        rospy.Subscriber("atf/" + name + "/trigger", TestblockTrigger, self.trigger_cb)
         self.trigger = None
 
     def trigger_cb(self, msg):
@@ -81,6 +83,7 @@ class Active(smach.State):
         r = rospy.Rate(1)
         while not rospy.is_shutdown():
             if self.trigger == None:
+                # TODO record topics for testblock to bag file
                 r.sleep()
                 continue
             if self.trigger == TestblockTrigger.START:
@@ -100,8 +103,7 @@ class Active(smach.State):
 class Pause(smach.State):
     def __init__(self, name):
         smach.State.__init__(self, outcomes=['start', 'purge', 'stop', 'error'])
-        print "Init Paused"
-        rospy.Subscriber(name, TestblockTrigger, self.trigger_cb)
+        rospy.Subscriber("atf/" + name + "/trigger", TestblockTrigger, self.trigger_cb)
         self.trigger = None
 
     def trigger_cb(self, msg):
@@ -131,8 +133,7 @@ class Pause(smach.State):
 class Purge(smach.State):
     def __init__(self, name):
         smach.State.__init__(self, outcomes=['start', 'pause', 'stop', 'error'])
-        print "Init Purged"
-        rospy.Subscriber(name, TestblockTrigger, self.trigger_cb)
+        rospy.Subscriber("atf/" + name + "/trigger", TestblockTrigger, self.trigger_cb)
         self.trigger = None
 
     def trigger_cb(self, msg):
