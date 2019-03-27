@@ -4,7 +4,8 @@ import smach
 import smach_ros
 import threading
 
-from atf_core.sm_atf import SmAtfTestblock#Inactive, Active, Pause, Purge
+from atf_core.sm_atf import SmAtfTestblock
+import atf_core
 
 if __name__ == '__main__':
     rospy.init_node('state_machine')
@@ -13,13 +14,20 @@ if __name__ == '__main__':
     sm_top = smach.StateMachine(outcomes=['succeeded', 'error'])
     
     sm_top.userdata.config = "initial config"
-    testblocks = { #FIXME get this from the test config
-        'testblock_3s':{},
-        'testblock_5s':{},
-        'testblock_8s':{}}
 
+    # get test config
+    test_name = rospy.get_param("/atf/test_name")
+    print "test_name:", test_name
+    atf_configuration_parser = atf_core.ATFConfigurationParser()
+    tests = atf_configuration_parser.get_tests()
+    for test in tests:
+        print "test.name:", test.name
+        if test_name == test.name:
+            break
+    print "current test:", test.name
+        
     tmp = {}
-    for testblock in testblocks:
+    for testblock in test.test_config.keys():
         tmp[testblock] = 'succeeded'
     outcome_map = {'succeeded':tmp}
     
@@ -37,7 +45,7 @@ if __name__ == '__main__':
         # Open the container
         with sm_con:
             # Add states to the container
-            for testblock in testblocks:
+            for testblock in test.test_config.keys():
                 print "adding testblock:", testblock
                 smach.Concurrence.add(testblock, SmAtfTestblock(testblock))
 

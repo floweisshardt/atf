@@ -2,41 +2,10 @@
 import rospy
 import smach
 import smach_ros
-import actionlib
 from atf_core.atf import ATFError
+import atf_core
 
 from atf_msgs.msg import TestblockTrigger
-
-######################
-### ATF controller ###
-######################
-class ATFController():
-    def __init__(self):
-        self.testblocks = { #FIXME get this from test config
-            'testblock_3s':{},
-            'testblock_5s':{},
-            'testblock_8s':{}}
-        self.publisher = {}
-        for testblock in self.testblocks:
-            self.publisher[testblock] = rospy.Publisher(testblock, TestblockTrigger, queue_size=10)
-
-        rospy.sleep(1) #wait for all publishers to be ready
-    
-    def start(self, testblock):
-        if testblock not in self.testblocks.keys():
-            raise ATFError("testblock %s not in list of testblocks"%testblock)
-        print "starting testblock", testblock
-        trigger = TestblockTrigger()
-        trigger.trigger = TestblockTrigger.START
-        self.publisher[testblock].publish(trigger)
-
-    def stop(self, testblock):
-        if testblock not in self.testblocks.keys():
-            raise ATFError("testblock %s not in list of testblocks"%testblock)
-        print "stopping testblock", testblock
-        trigger = TestblockTrigger()
-        trigger.trigger = TestblockTrigger.STOP
-        self.publisher[testblock].publish(trigger)
 
 ####################
 ### testblock SM ###
