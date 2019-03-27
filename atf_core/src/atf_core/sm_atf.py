@@ -1,55 +1,114 @@
 #!/usr/bin/env python
 import rospy
 import smach
+import smach_ros
+import actionlib
+from atf_core.atf import ATFError
 
+from atf_msgs.msg import TestblockTrigger
+
+######################
+### ATF controller ###
+######################
+class ATFController():
+    def __init__(self):
+        self.testblocks = { #FIXME get this from test config
+            'testblock_3s':{},
+            'testblock_5s':{},
+            'testblock_8s':{}}
+        self.publisher = {}
+        for testblock in self.testblocks:
+            self.publisher[testblock] = rospy.Publisher(testblock, TestblockTrigger, queue_size=10)
+
+        rospy.sleep(1) #wait for all publishers to be ready
+    
+    def start(self, testblock):
+        if testblock not in self.testblocks.keys():
+            raise ATFError("testblock %s not in list of testblocks"%testblock)
+        print "starting testblock", testblock
+        trigger = TestblockTrigger()
+        trigger.trigger = TestblockTrigger.START
+        self.publisher[testblock].publish(trigger)
+
+    def stop(self, testblock):
+        if testblock not in self.testblocks.keys():
+            raise ATFError("testblock %s not in list of testblocks"%testblock)
+        print "stopping testblock", testblock
+        trigger = TestblockTrigger()
+        trigger.trigger = TestblockTrigger.STOP
+        self.publisher[testblock].publish(trigger)
+
+####################
+### testblock SM ###
+####################
 class SmAtfTestblock(smach.StateMachine):
 
-    def __init__(self):
+    def __init__(self, name):
         smach.StateMachine.__init__(
             self, outcomes=['succeeded','error'],
             input_keys=['config'],
             output_keys=[])
 
         with self:
-            smach.StateMachine.add('INACTIVE', Inactive(), 
+            smach.StateMachine.add('INACTIVE', Inactive(name), 
                                    transitions={'start':'ACTIVE', 
                                                 'error':'error'})
-            smach.StateMachine.add('ACTIVE', Active(), 
+            smach.StateMachine.add('ACTIVE', Active(name), 
                                    transitions={'pause':'PAUSE',
                                                 'purge':'PURGE',
                                                 'stop':'succeeded',
                                                 'error':'error'})
-            smach.StateMachine.add('PAUSE', Pause(), 
+            smach.StateMachine.add('PAUSE', Pause(name), 
                                    transitions={'start':'ACTIVE',
                                                 'purge':'PURGE',
                                                 'stop':'succeeded',
                                                 'error':'error'})
-            smach.StateMachine.add('PURGE', Purge(), 
+            smach.StateMachine.add('PURGE', Purge(name), 
                                    transitions={'start':'ACTIVE',
                                                 'pause':'PAUSE',
                                                 'stop':'succeeded',
                                                 'error':'error'})
 
+##############
+### states ###
+##############
 class Inactive(smach.State):
-    def __init__(self):
-        smach.State.__init__(self, input_keys=['config', 'testblock'], output_keys=['config', 'testblock'], outcomes=['start', 'error'])
-        # Your state initialization goes here
+    def __init__(self, name):
+        smach.State.__init__(self, input_keys=['config'], output_keys=['config', 'testblock'], outcomes=['start', 'error'])
         print "Init Inactive"
+        rospy.Subscriber(name, TestblockTrigger, self.trigger_cb)
+        self.trigger = None
+
+    def trigger_cb(self, msg):
+        self.trigger = msg.trigger
 
     def execute(self, userdata):
         print "userdata.config:", userdata.config
-        rospy.sleep(3)
-        if True:
-            return 'start'
-        else:
-            return 'error'
+        r = rospy.Rate(1)
+        while not rospy.is_shutdown():
+            print "self.trigger", self.trigger
+            if self.trigger == None:
+                r.sleep()
+                continue
+            if self.trigger == TestblockTrigger.START:
+                print "outcome start"
+                outcome = 'start'
+            else:
+                print "outcome error"
+                outcome = 'error'
+            self.trigger = None
+            return outcome
 
 
 class Active(smach.State):
-    def __init__(self):
+    def __init__(self, name):
         smach.State.__init__(self, input_keys=['config', 'testblock'], outcomes=['pause', 'purge', 'stop', 'error'])
-        # Your state initialization goes here
         print "Init Active"
+        rospy.Subscriber(name, TestblockTrigger, self.trigger_cb)
+        self.trigger = None
+
+    def trigger_cb(self, msg):
+        self.trigger = msg.trigger
 
     def execute(self, userdata):
         print "userdata.config:", userdata.config
@@ -60,10 +119,14 @@ class Active(smach.State):
             return 'error'
 
 class Pause(smach.State):
-    def __init__(self):
+    def __init__(self, name):
         smach.State.__init__(self, input_keys=['config', 'testblock'], outcomes=['start', 'purge', 'stop', 'error'])
-        # Your state initialization goes here
         print "Init Paused"
+        rospy.Subscriber(name, TestblockTrigger, self.trigger_cb)
+        self.trigger = None
+
+    def trigger_cb(self, msg):
+        self.trigger = msg.trigger
 
     def execute(self, userdata):
         print "userdata.config:", userdata.config
@@ -74,10 +137,14 @@ class Pause(smach.State):
             return 'error'
 
 class Purge(smach.State):
-    def __init__(self):
+    def __init__(self, name):
         smach.State.__init__(self, input_keys=['config', 'testblock'], outcomes=['start', 'pause', 'stop', 'error'])
-        # Your state initialization goes here
         print "Init Purged"
+        rospy.Subscriber(name, TestblockTrigger, self.trigger_cb)
+        self.trigger = None
+
+    def trigger_cb(self, msg):
+        self.trigger = msg.trigger
 
     def execute(self, userdata):
         print "userdata.config:", userdata.config

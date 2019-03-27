@@ -14,10 +14,14 @@ if __name__ == '__main__':
     
     sm_top.userdata.config = "initial config"
     testblocks = { #FIXME get this from the test config
-        'TESTBLOCK1':{},
-        'TESTBLOCK2':{},
-        'TESTBLOCK3':{}}
+        'testblock_3s':{},
+        'testblock_5s':{},
+        'testblock_8s':{}}
 
+    tmp = {}
+    for testblock in testblocks:
+        tmp[testblock] = 'succeeded'
+    outcome_map = {'succeeded':tmp}
     
     # Open the container
     with sm_top:
@@ -25,9 +29,7 @@ if __name__ == '__main__':
         # Create the sub SMACH state machine
         sm_con = smach.Concurrence(outcomes=['succeeded','error'],
                                    default_outcome='error',
-                                   outcome_map={'succeeded':
-                                       { 'TESTBLOCK1':'succeeded',
-                                         'TESTBLOCK2':'succeeded'}},
+                                   outcome_map=outcome_map,
                                    input_keys=['config'])
 
         sm_con.userdata.config = sm_top.userdata.config
@@ -37,7 +39,7 @@ if __name__ == '__main__':
             # Add states to the container
             for testblock in testblocks:
                 print "adding testblock:", testblock
-                smach.Concurrence.add(testblock, SmAtfTestblock())
+                smach.Concurrence.add(testblock, SmAtfTestblock(testblock))
 
 
         smach.StateMachine.add('CON', sm_con,
@@ -48,7 +50,9 @@ if __name__ == '__main__':
     sis.start()
 
     # Execute SMACH plan
+    print "before execute"
     outcome = sm_top.execute()
+    print "after execute"
 
 #    rospy.spin()
 

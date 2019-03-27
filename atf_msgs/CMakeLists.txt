@@ -31,7 +31,7 @@ add_message_files(
 
 add_action_files(
     FILES
-        Recorder.action
+        TestblockTrigger.action
 )
 
 generate_messages(
