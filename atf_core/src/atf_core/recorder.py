@@ -167,6 +167,10 @@ class ATFRecorder:
                 except Exception:
                     pass
 
+    def record_status(self, status):
+        print "status", status
+        self.bag_file_writer.write_to_bagfile("atf/status", status, status.stamp)
+
     def record_trigger(self, trigger):
         print "record_trigger:", trigger
         print "self.test.test_config", self.test.test_config

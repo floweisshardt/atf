@@ -2,10 +2,11 @@
 import rospy
 import smach
 import smach_ros
+import threading
 from atf_core.atf import ATFError
 import atf_core
 
-from atf_msgs.msg import TestblockTrigger
+from atf_msgs.msg import TestblockTrigger, TestblockStatus
 
 ####################
 ### testblock SM ###
@@ -19,143 +20,190 @@ class SmAtfTestblock(smach.StateMachine):
             output_keys=[])
 
         with self:
+            self.userdata.name = name
             smach.StateMachine.add('INACTIVE', Inactive(name, recorder_handle), 
                                    transitions={'start':'ACTIVE', 
-                                                'error':'error'})
-            smach.StateMachine.add('ACTIVE', Active(name), 
-                                   transitions={'pause':'PAUSE',
-                                                'purge':'PURGE',
-                                                'stop':'succeeded',
-                                                'error':'error'})
-            smach.StateMachine.add('PAUSE', Pause(name), 
-                                   transitions={'start':'ACTIVE',
-                                                'purge':'PURGE',
-                                                'stop':'succeeded',
-                                                'error':'error'})
-            smach.StateMachine.add('PURGE', Purge(name), 
-                                   transitions={'start':'ACTIVE',
-                                                'pause':'PAUSE',
-                                                'stop':'succeeded',
-                                                'error':'error'})
+                                                'error':'ERROR'})
+            smach.StateMachine.add('ACTIVE', Active(name, recorder_handle), 
+                                   transitions={'pause':'ERROR', #FIXME PAUSE
+                                                'purge':'ERROR', #FIXME PURGE
+                                                'stop':'SUCCEEDED',
+                                                'error':'ERROR'})
+#            smach.StateMachine.add('PAUSE', Pause(name, recorder_handle), 
+#                                   transitions={'start':'ACTIVE',
+#                                                'purge':'PURGE',
+#                                                'stop':'succeeded',
+#                                                'error':'error'})
+#            smach.StateMachine.add('PURGE', Purge(name, recorder_handle), 
+#                                   transitions={'start':'ACTIVE',
+#                                                'pause':'PAUSE',
+#                                                'stop':'succeeded',
+#                                                'error':'error'})
+            smach.StateMachine.add('SUCCEEDED', GenericRecorderState(name, recorder_handle, TestblockStatus.SUCCEEDED), 
+                                   transitions={'done':'succeeded'})
+            smach.StateMachine.add('ERROR', GenericRecorderState(name, recorder_handle, TestblockStatus.ERROR), 
+                                   transitions={'done':'error'})
 
 ##############
 ### states ###
 ##############
 class Inactive(smach.State):
     def __init__(self, name, recorder_handle):
-        smach.State.__init__(self, input_keys=['recorder_handle'], outcomes=['start', 'error'])
-        rospy.Subscriber("atf/" + name + "/trigger", TestblockTrigger, self.trigger_cb)
+        smach.State.__init__(self, input_keys=['name'], outcomes=['start', 'error'])
         self.trigger = None
         self.recorder_handle = recorder_handle
+        self._trigger_cond = threading.Condition()
+        rospy.Subscriber("atf/trigger", TestblockTrigger, self.trigger_cb, name)
 
-    def trigger_cb(self, msg):
-        # record to bag file
-        #userdata.recorder_handle.record_trigger(self.trigger)
-        self.recorder_handle.record_trigger(msg)
-        self.trigger = msg
+    def trigger_cb(self, msg, name):
+        if msg.name == name:
+            with self._trigger_cond:
+                self.trigger = msg
+                self._trigger_cond.notify()
+        
 
     def execute(self, userdata):
         self.trigger = None
-        r = rospy.Rate(1)
-        while not rospy.is_shutdown():
-            if self.trigger == None:
-                r.sleep()
-                continue
-            if self.trigger.trigger == TestblockTrigger.START:
-                outcome = 'start'
-            else:
-                outcome = 'error'
-            self.trigger = None
-            return outcome
+        # record to bag file
+        status = TestblockStatus()
+        status.stamp = rospy.Time.now()
+        status.name = userdata.name
+        status.status = TestblockStatus.INACTIVE
+        self.recorder_handle.record_status(status)
+
+        with self._trigger_cond:
+            self._trigger_cond.wait()
+
+        if self.trigger.trigger == TestblockTrigger.START:
+            outcome = 'start'
+        else:
+            rospy.logerr("%s: Invalid transition from inactive state"%userdata.name)
+            outcome = 'error'
+        self.trigger = None
+        return outcome
 
 
 class Active(smach.State):
-    def __init__(self, name):
-        smach.State.__init__(self, outcomes=['pause', 'purge', 'stop', 'error'])
-        rospy.Subscriber("atf/" + name + "/trigger", TestblockTrigger, self.trigger_cb)
+    def __init__(self, name, recorder_handle):
+        smach.State.__init__(self, input_keys=['name'], outcomes=['pause', 'purge', 'stop', 'error'])
         self.trigger = None
+        self.recorder_handle = recorder_handle
+        self._trigger_cond = threading.Condition()
+        rospy.Subscriber("atf/trigger", TestblockTrigger, self.trigger_cb, name)
 
-    def trigger_cb(self, msg):
-        self.trigger = msg.trigger
+    def trigger_cb(self, msg, name):
+        if msg.name == name:
+            with self._trigger_cond:
+                self.trigger = msg
+                self._trigger_cond.notify()
 
     def execute(self, userdata):
         self.trigger = None
-        r = rospy.Rate(1)
-        while not rospy.is_shutdown():
-            if self.trigger == None:
-                # TODO record topics for testblock to bag file
-                r.sleep()
-                continue
-            if self.trigger == TestblockTrigger.START:
-                rospy.logerr("calling start, but testblock is already in active state")
-                outcome = 'error'
-            elif self.trigger == TestblockTrigger.PAUSE:
-                outcome = 'pause'
-            elif self.trigger == TestblockTrigger.PURGE:
-                outcome = 'purge'
-            elif self.trigger == TestblockTrigger.STOP:
-                outcome = 'stop'
-            else:
-                outcome = 'error'
-            self.trigger = None
-            return outcome
+        # record to bag file
+        status = TestblockStatus()
+        status.stamp = rospy.Time.now()
+        status.name = userdata.name
+        status.status = TestblockStatus.ACTIVE
+        self.recorder_handle.record_status(status)
 
+        with self._trigger_cond:
+            self._trigger_cond.wait()
+
+        if self.trigger.trigger == TestblockTrigger.START:
+            rospy.logerr("calling start, but testblock is already in active state")
+            outcome = 'error'
+        elif self.trigger.trigger == TestblockTrigger.PAUSE:
+            outcome = 'pause'
+        elif self.trigger.trigger == TestblockTrigger.PURGE:
+            outcome = 'purge'
+        elif self.trigger.trigger == TestblockTrigger.STOP:
+            outcome = 'stop'
+        else:
+            rospy.logerr("%s: Invalid transition from active state"%userdata.name)
+            outcome = 'error'
+        self.trigger = None
+        return outcome
+
+class GenericRecorderState(smach.State):
+    def __init__(self, name, recorder_handle, status):
+        smach.State.__init__(self, input_keys=['name'], outcomes=['done'])
+        self.recorder_handle = recorder_handle
+
+    def execute(self, userdata):
+        # record to bag file
+        status = TestblockStatus()
+        status.stamp = rospy.Time.now()
+        status.name = userdata.name
+        status.status = TestblockStatus.SUCCEEDED
+        self.recorder_handle.record_status(status)
+        return 'done'
+
+"""
 class Pause(smach.State):
-    def __init__(self, name):
-        smach.State.__init__(self, outcomes=['start', 'purge', 'stop', 'error'])
-        rospy.Subscriber("atf/" + name + "/trigger", TestblockTrigger, self.trigger_cb)
+    def __init__(self, name, recorder_handle):
+        smach.State.__init__(self, input_keys=['name'], outcomes=['start', 'purge', 'stop', 'error'])
         self.trigger = None
+        self.recorder_handle = recorder_handle
+        self._trigger_cond = threading.Condition()
+        rospy.Subscriber("atf/trigger", TestblockTrigger, self.trigger_cb, name)
 
-    def trigger_cb(self, msg):
-        self.trigger = msg.trigger
+    def trigger_cb(self, msg, name):
+        if msg.name == name:
+            with self._trigger_cond:
+                self.trigger = msg
+                self._trigger_cond.notify()
 
     def execute(self, userdata):
         self.trigger = None
-        r = rospy.Rate(1)
-        while not rospy.is_shutdown():
-            if self.trigger == None:
-                r.sleep()
-                continue
-            if self.trigger == TestblockTrigger.START:
-                outcome = 'start'
-            elif self.trigger == TestblockTrigger.PAUSE:
-                rospy.logerr("calling pause, but testblock is already in pause state")
-                outcome = 'error'
-            elif self.trigger == TestblockTrigger.PURGE:
-                outcome = 'purge'
-            elif self.trigger == TestblockTrigger.STOP:
-                outcome = 'stop'
-            else:
-                outcome = 'error'
-            self.trigger = None
-            return outcome
+        with self._trigger_cond:
+            self._trigger_cond.wait()
+
+        if self.trigger == TestblockTrigger.START:
+            outcome = 'start'
+        elif self.trigger == TestblockTrigger.PAUSE:
+            rospy.logerr("calling pause, but testblock is already in pause state")
+            outcome = 'error'
+        elif self.trigger == TestblockTrigger.PURGE:
+            outcome = 'purge'
+        elif self.trigger == TestblockTrigger.STOP:
+            outcome = 'stop'
+        else:
+            rospy.logerr("%s: Invalid transition from pause state")
+            outcome = 'error'
+        self.trigger = None
+        return outcome
 
 class Purge(smach.State):
-    def __init__(self, name):
-        smach.State.__init__(self, outcomes=['start', 'pause', 'stop', 'error'])
-        rospy.Subscriber("atf/" + name + "/trigger", TestblockTrigger, self.trigger_cb)
+    def __init__(self, name, recorder_handle):
+        smach.State.__init__(self, input_keys=['name'], outcomes=['start', 'pause', 'stop', 'error'])
         self.trigger = None
+        self.recorder_handle = recorder_handle
+        self._trigger_cond = threading.Condition()
+        rospy.Subscriber("atf/trigger", TestblockTrigger, self.trigger_cb, name)
 
-    def trigger_cb(self, msg):
-        self.trigger = msg.trigger
+    def trigger_cb(self, msg, name):
+        if msg.name == name:
+            with self._trigger_cond:
+                self.trigger = msg
+                self._trigger_cond.notify()
 
     def execute(self, userdata):
         self.trigger = None
-        r = rospy.Rate(1)
-        while not rospy.is_shutdown():
-            if self.trigger == None:
-                r.sleep()
-                continue
-            if self.trigger == TestblockTrigger.START:
-                outcome = 'start'
-            elif self.trigger == TestblockTrigger.PAUSE:
-                outcome = 'pause'
-            elif self.trigger == TestblockTrigger.PURGE:
-                rospy.logerr("calling purge, but testblock is already in purge state")
-                outcome = 'error'
-            elif self.trigger == TestblockTrigger.STOP:
-                outcome = 'stop'
-            else:
-                outcome = 'error'
-            self.trigger = None
-            return outcome
+        with self._trigger_cond:
+            self._trigger_cond.wait()
+
+        if self.trigger == TestblockTrigger.START:
+            outcome = 'start'
+        elif self.trigger == TestblockTrigger.PAUSE:
+            outcome = 'pause'
+        elif self.trigger == TestblockTrigger.PURGE:
+            rospy.logerr("calling purge, but testblock is already in purge state")
+            outcome = 'error'
+        elif self.trigger == TestblockTrigger.STOP:
+            outcome = 'stop'
+        else:
+            rospy.logerr("Invalid transition from purge state")
+            outcome = 'error'
+        self.trigger = None
+        return outcome
+"""

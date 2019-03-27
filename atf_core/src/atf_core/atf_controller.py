@@ -24,7 +24,7 @@ class ATFController():
         self.publisher = {}
         for testblock in self.test.test_config.keys():
             print "testblock", testblock
-            self.publisher[testblock] = rospy.Publisher("atf/" + testblock + "/trigger", TestblockTrigger, queue_size=10)
+            self.publisher[testblock] = rospy.Publisher("atf/trigger", TestblockTrigger, queue_size=10)
 
         rospy.sleep(1) #wait for all publishers to be ready
     
