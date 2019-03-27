@@ -15,7 +15,7 @@ class SmAtfTestblock(smach.StateMachine):
     def __init__(self, name):
         smach.StateMachine.__init__(
             self, outcomes=['succeeded','error'],
-            input_keys=['config'],
+            input_keys=[],
             output_keys=[])
 
         with self:
@@ -43,7 +43,7 @@ class SmAtfTestblock(smach.StateMachine):
 ##############
 class Inactive(smach.State):
     def __init__(self, name):
-        smach.State.__init__(self, input_keys=['config'], output_keys=['config', 'testblock'], outcomes=['start', 'error'])
+        smach.State.__init__(self, outcomes=['start', 'error'])
         print "Init Inactive"
         rospy.Subscriber(name, TestblockTrigger, self.trigger_cb)
         self.trigger = None
@@ -52,18 +52,15 @@ class Inactive(smach.State):
         self.trigger = msg.trigger
 
     def execute(self, userdata):
-        print "userdata.config:", userdata.config
+        self.trigger = None
         r = rospy.Rate(1)
         while not rospy.is_shutdown():
-            print "self.trigger", self.trigger
             if self.trigger == None:
                 r.sleep()
                 continue
             if self.trigger == TestblockTrigger.START:
-                print "outcome start"
                 outcome = 'start'
             else:
-                print "outcome error"
                 outcome = 'error'
             self.trigger = None
             return outcome
@@ -71,7 +68,7 @@ class Inactive(smach.State):
 
 class Active(smach.State):
     def __init__(self, name):
-        smach.State.__init__(self, input_keys=['config', 'testblock'], outcomes=['pause', 'purge', 'stop', 'error'])
+        smach.State.__init__(self, outcomes=['pause', 'purge', 'stop', 'error'])
         print "Init Active"
         rospy.Subscriber(name, TestblockTrigger, self.trigger_cb)
         self.trigger = None
@@ -80,16 +77,29 @@ class Active(smach.State):
         self.trigger = msg.trigger
 
     def execute(self, userdata):
-        print "userdata.config:", userdata.config
-        rospy.sleep(3)
-        if True:
-            return 'pause'
-        else:
-            return 'error'
+        self.trigger = None
+        r = rospy.Rate(1)
+        while not rospy.is_shutdown():
+            if self.trigger == None:
+                r.sleep()
+                continue
+            if self.trigger == TestblockTrigger.START:
+                rospy.logerr("calling start, but testblock is already in active state")
+                outcome = 'error'
+            elif self.trigger == TestblockTrigger.PAUSE:
+                outcome = 'pause'
+            elif self.trigger == TestblockTrigger.PURGE:
+                outcome = 'purge'
+            elif self.trigger == TestblockTrigger.STOP:
+                outcome = 'stop'
+            else:
+                outcome = 'error'
+            self.trigger = None
+            return outcome
 
 class Pause(smach.State):
     def __init__(self, name):
-        smach.State.__init__(self, input_keys=['config', 'testblock'], outcomes=['start', 'purge', 'stop', 'error'])
+        smach.State.__init__(self, outcomes=['start', 'purge', 'stop', 'error'])
         print "Init Paused"
         rospy.Subscriber(name, TestblockTrigger, self.trigger_cb)
         self.trigger = None
@@ -98,16 +108,29 @@ class Pause(smach.State):
         self.trigger = msg.trigger
 
     def execute(self, userdata):
-        print "userdata.config:", userdata.config
-        rospy.sleep(3)
-        if True:
-            return 'stop'
-        else:
-            return 'error'
+        self.trigger = None
+        r = rospy.Rate(1)
+        while not rospy.is_shutdown():
+            if self.trigger == None:
+                r.sleep()
+                continue
+            if self.trigger == TestblockTrigger.START:
+                outcome = 'start'
+            elif self.trigger == TestblockTrigger.PAUSE:
+                rospy.logerr("calling pause, but testblock is already in pause state")
+                outcome = 'error'
+            elif self.trigger == TestblockTrigger.PURGE:
+                outcome = 'purge'
+            elif self.trigger == TestblockTrigger.STOP:
+                outcome = 'stop'
+            else:
+                outcome = 'error'
+            self.trigger = None
+            return outcome
 
 class Purge(smach.State):
     def __init__(self, name):
-        smach.State.__init__(self, input_keys=['config', 'testblock'], outcomes=['start', 'pause', 'stop', 'error'])
+        smach.State.__init__(self, outcomes=['start', 'pause', 'stop', 'error'])
         print "Init Purged"
         rospy.Subscriber(name, TestblockTrigger, self.trigger_cb)
         self.trigger = None
@@ -116,9 +139,22 @@ class Purge(smach.State):
         self.trigger = msg.trigger
 
     def execute(self, userdata):
-        print "userdata.config:", userdata.config
-        rospy.sleep(3)
-        if True:
-            return 'stop'
-        else:
-            return 'error'
+        self.trigger = None
+        r = rospy.Rate(1)
+        while not rospy.is_shutdown():
+            if self.trigger == None:
+                r.sleep()
+                continue
+            if self.trigger == TestblockTrigger.START:
+                outcome = 'start'
+            elif self.trigger == TestblockTrigger.PAUSE:
+                outcome = 'pause'
+            elif self.trigger == TestblockTrigger.PURGE:
+                rospy.logerr("calling purge, but testblock is already in purge state")
+                outcome = 'error'
+            elif self.trigger == TestblockTrigger.STOP:
+                outcome = 'stop'
+            else:
+                outcome = 'error'
+            self.trigger = None
+            return outcome

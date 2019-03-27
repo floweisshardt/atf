@@ -13,8 +13,6 @@ if __name__ == '__main__':
     # Create a SMACH state machine
     sm_top = smach.StateMachine(outcomes=['succeeded', 'error'])
     
-    sm_top.userdata.config = "initial config"
-
     # get test config
     test_name = rospy.get_param("/atf/test_name")
     print "test_name:", test_name
@@ -37,10 +35,7 @@ if __name__ == '__main__':
         # Create the sub SMACH state machine
         sm_con = smach.Concurrence(outcomes=['succeeded','error'],
                                    default_outcome='error',
-                                   outcome_map=outcome_map,
-                                   input_keys=['config'])
-
-        sm_con.userdata.config = sm_top.userdata.config
+                                   outcome_map=outcome_map)
 
         # Open the container
         with sm_con:
