@@ -16,7 +16,7 @@ class Testblock:
         self.timestamp = None
         self.exception = None
         self.atf_started = False
-        self.state = None
+        #self.state = None
 
         self.m = StateMachine(self.name)
         self.m.add_state(TestblockState.INVALID, self._purged_state)
@@ -61,15 +61,15 @@ class Testblock:
             rospy.logdebug("  <<<<<<<<<<<<<<<<< recording has been triggered with trigger value : '%s'", self.trigger.trigger)
         rospy.logdebug("========> EXIT  _wait_while_transition_is_active ")
 
-    #def get_state(self):
-    #       return self.m.get_current_state()
+    def get_state(self):
+        return self.m.get_current_state()
 
     def get_result(self):
         result = {}
         #overall_groundtruth_result = None
         #overall_groundtruth_error_message = "groundtruth missmatch for: "
 
-        if self.state == TestblockState.ERROR:
+        if self.get_state() == TestblockState.ERROR:
             print "An error occured during analysis of testblock '%s', no useful results available."%self.name
             result.update({name: {"status": "error"}})
         else:

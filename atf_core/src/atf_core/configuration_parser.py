@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+import atf_core
 import yaml
 import rospkg
 import rosparam
@@ -8,16 +9,18 @@ import os
 from atf_core import Test, Testblock
 
 class ATFConfigurationParser:
-    def __init__(self):
+    def __init__(self, recorder_handle = None):
         self.ns = "/atf/"
+        cfg = rosparam.get_param(self.ns)
+        print "cfg:", cfg
 
         self.parsing_error_message = ""
 
         # get full config from parameter server (test_config = list of all test configs)
-        self.config = rosparam.get_param(self.ns)
+        #self.config = rosparam.get_param(self.ns)
         
-        testsuites = self.load_data(rospkg.RosPack().get_path("atf_test_app_time") + "/config/test_suites.yaml")
-        testgeneration = self.load_data(rospkg.RosPack().get_path("atf_test_app_time") + "/config/test_generation_config.yaml")
+        testsuites = self.load_data(rospkg.RosPack().get_path(cfg["package_name"]) + "/config/test_suites.yaml")
+        testgeneration = self.load_data(rospkg.RosPack().get_path(cfg["package_name"]) + "/config/test_generation_config.yaml")
         #print "testsuites:", testsuites
         #print "testgeneration:", testgeneration
         self.tests = []
@@ -37,15 +40,16 @@ class ATFConfigurationParser:
                             name = "ts" + str(testsuite_id) + "_c" + str(test_config_id) + "_r" + str(robot_id) + "_e" + str(robot_env_id) + "_" + str(repetition)
                             #print name
                             test = Test()
+                            test.package_name = cfg["package_name"]
                             test.name = name
                             test.testsuite_name = testsuite_name
                             test.testsuite = None
                             test.test_config_name = test_config_name
-                            test.test_config = self.load_data(rospkg.RosPack().get_path("atf_test_app_time") + "/config/test_configs/" + test_config_name + ".yaml")
+                            test.test_config = self.load_data(rospkg.RosPack().get_path(test.package_name) + "/config/test_configs/" + test_config_name + ".yaml")
                             test.robot_name = robot_name
-                            test.robot = self.load_data(rospkg.RosPack().get_path("atf_test_app_time") + "/config/robots/" + robot_name + ".yaml")
+                            test.robot_config = self.load_data(rospkg.RosPack().get_path(test.package_name) + "/config/robots/" + robot_name + ".yaml")
                             test.robot_env_name = robot_env_name
-                            test.robot_env = self.load_data(rospkg.RosPack().get_path("atf_test_app_time") + "/config/robot_envs/" + robot_env_name + ".yaml")
+                            test.robot_env_config = self.load_data(rospkg.RosPack().get_path(test.package_name) + "/config/robot_envs/" + robot_env_name + ".yaml")
                             test.generation_config = testgeneration
                             
                             #test.print_to_terminal()
@@ -57,7 +61,7 @@ class ATFConfigurationParser:
                                 #print testblock_name
                                 metric_handles = self.create_metric_handles(test, testblock_name, True)
                                 #print "metric_handles", metric_handles
-                                testblock = Testblock(testblock_name, metric_handles, None)
+                                testblock = Testblock(testblock_name, metric_handles, recorder_handle)
                                 test.testblocks.append(testblock)
                             
                             self.tests.append(test)
@@ -113,43 +117,7 @@ class ATFConfigurationParser:
     #        testblocks[testblock_name] = Testblock(testblock_name, metric_handles, recorder_handle)
     #    return testblocks
 
-    def create_testblock_list(self, config):
-        testblock_list = {}
-        #print "-------------------"
-        for testblock in config["test_config"].keys():
-            #print "testbock=", testblock
-            for metric in config["test_config"][testblock].keys():
-                #print "metric=", metric
-                #print "robot_config=", config["robot_config"]
-                if metric in config["robot_config"]:
-                    #print "metric is in robot_config"
-                    try:
-                        testblock_list[testblock]
-                    except KeyError:
-                        testblock_list[testblock] = config["robot_config"][metric]["topics"]
-                    else:
-                        for topic in config["robot_config"][metric]["topics"]:
-                            #add heading "/" to all topics to make them global (rostopic.get_topic_class() cannot handle non global topics)
-                            if topic[0] != "/":
-                                topic = "/" + topic
-                            testblock_list[testblock].append(topic)
-                else:
-                    #print "metric is NOT in robot_config"
-                    try:
-                        for item in config["test_config"][testblock][metric]:
-                            #print "item=", item
-                            if "topic" in item:
-                                if testblock not in testblock_list:
-                                    testblock_list.update({testblock: []})
-                                topic = item['topic']
-                                #print "topic=", topic
-                                #add heading "/" to all topics to make them global (rostopic.get_topic_class() cannot handle non global topics)
-                                if topic[0] != "/":
-                                    topic = "/" + topic
-                                testblock_list[testblock].append(topic)
-                    except TypeError as e:
-                        raise ATFConfigurationError("TypeError: %s" % str(e))
-        return testblock_list
+
 
     def load_data(self, filename):
         #print "config parser filename:", filename

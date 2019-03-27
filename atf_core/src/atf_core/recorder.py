@@ -13,27 +13,27 @@ from atf_msgs.msg import TestblockTrigger
 
 
 class ATFRecorder:
-    def __init__(self, config, testblock_list):
+    def __init__(self, test):
         self.ns = "/atf/"
-        self.config = config
-        #print "recorder_core: config=", self.config
+        self.test = test
+        print "recorder_core: self.test:", self.test
 
         recorder_config = self.load_data(rospkg.RosPack().get_path("atf_recorder_plugins") +
                                          "/config/recorder_plugins.yaml")
 
         try:
             # delete test_results directories and create new ones
-            if os.path.exists(self.config["bagfile_output"]):
-            #    shutil.rmtree(self.config["bagfile_output"]) #FIXME will fail if multiple test run concurrently
+            if os.path.exists(self.test.generation_config["bagfile_output"]):
+            #    shutil.rmtree(self.tests.generation_config"bagfile_output"]) #FIXME will fail if multiple test run concurrently
                 pass
             else:
-                os.makedirs(self.config["bagfile_output"])
+                os.makedirs(self.test.generation_config["bagfile_output"])
         except OSError:
             pass
 
         # create bag file writer handle
         self.lock_write = Lock()
-        self.bag = rosbag.Bag(config["bagfile_output"] + self.config["test_name"] + ".bag", 'w')
+        self.bag = rosbag.Bag(self.test.generation_config["bagfile_output"] + self.test.name + ".bag", 'w')
         self.bag_file_writer = atf_core.BagfileWriter(self.bag, self.lock_write)
 
         # Init metric recorder
@@ -47,7 +47,7 @@ class ATFRecorder:
         self.topic_pipeline = []
         self.active_sections = []
         self.requested_topics = []
-        self.testblock_list = testblock_list
+        self.testblock_list = self.create_testblock_list(test)
 
         # Wait for obstacle_distance node
         #rospy.loginfo(rospy.get_name() + ": Waiting for obstacle distance node...")
@@ -59,7 +59,7 @@ class ATFRecorder:
         #    num_subscriber = ob_sub.get_num_connections()
 
         self.subscriber = []
-        self.topics = self.get_topics()
+        self.topics = ["tf", "robot_status"] #self.get_topics() # FIXME
         rospy.Timer(rospy.Duration(0.5), self.create_subscriber_callback)
 
         # test status monitoring
@@ -81,12 +81,12 @@ class ATFRecorder:
         rospy.on_shutdown(self.shutdown)
         
         # wait for topics and services to become active
-        for topic in self.config["robot_config"]["wait_for_topics"]:
+        for topic in test.robot_config["wait_for_topics"]:
             rospy.loginfo("Waiting for topic '%s'...", topic)
             rospy.wait_for_message(topic, rospy.AnyMsg)
             rospy.loginfo("... got message on topic '%s'.", topic)
 
-        for service in self.config["robot_config"]["wait_for_services"]:
+        for service in test.robot_config["wait_for_services"]:
             rospy.loginfo("Waiting for service '%s'...", service)
             rospy.wait_for_service(service)
             rospy.loginfo("... service '%s' available.", service)
@@ -94,20 +94,54 @@ class ATFRecorder:
         rospy.sleep(1) #wait for subscribers to get active (rospy bug?)
         rospy.loginfo("ATF recorder: started!")
 
+    def create_testblock_list(self, test):
+        testblock_list = {}
+        #print "-------------------"
+        print "test.test_config:", test.test_config
+        testblock_list = {'testblock_small': ['/topic1', '/topic2', '/topic3', '/tf'], 'testblock_large': ['/tf', '/topic1', '/topic2', '/topic3']} # FIXME
+#        for testblock_name, testblock_data in test.test_config.items():
+#            print "testblock_name:", testblock_name
+#            print "testblock_data:", testblock_data
+#            for metric_name, metric_data in testblock_data.items():
+#                print "metric_name=", metric_name
+#                print "metric_data=", metric_data
+#                print "robot_config=", test.robot_config
+#                if metric_name in test.robot_config.keys():
+#                    #print "metric is in robot_config"
+#                    try:
+#                        testblock_list[testblock]
+#                    except KeyError:
+#                        testblock_list[testblock] = config["robot_config"][metric]["topics"]
+#                    else:
+#                        for topic in config["robot_config"][metric]["topics"]:
+#                            #add heading "/" to all topics to make them global (rostopic.get_topic_class() cannot handle non global topics)
+#                            if topic[0] != "/":
+#                                topic = "/" + topic
+#                            testblock_list[testblock].append(topic)
+#                else:
+#                    #print "metric is NOT in robot_config"
+#                    try:
+#                        for item in config["robot_config"][metric]:
+#                            #print "item=", item
+#                            if "topic" in item:
+#                                if testblock not in testblock_list:
+#                                    testblock_list.update({testblock: []})
+#                                topic = item['topic']
+#                                #print "topic=", topic
+#                                #add heading "/" to all topics to make them global (rostopic.get_topic_class() cannot handle non global topics)
+#                                if topic[0] != "/":
+#                                    topic = "/" + topic
+#                                testblock_list[testblock].append(topic)
+#                    except TypeError as e:
+#                        raise ATFConfigurationError("TypeError: %s" % str(e))
+        return testblock_list
+
     def shutdown(self):
         rospy.loginfo("Shutdown ATF recorder and close bag file.")
         rospy.sleep(1) # let all threads finish writing to bag file
         self.lock_write.acquire()
         self.bag.close()
         self.lock_write.release()
-
-        #test_status = TestStatus()
-        #test_status.test_name = self.bag_name
-        #test_status.status_recording = 3
-        #test_status.status_analysing = 0
-        #test_status.total = self.number_of_tests
-
-        #self.test_status_publisher.publish(test_status)
 
     def add_requested_topics(self, testblock_name):
         for topic in self.testblock_list[testblock_name]:
@@ -123,7 +157,7 @@ class ATFRecorder:
                 self.topic_pipeline.remove(topic)
 
     def create_subscriber_callback(self, event):
-        #print "self.topics=", self.topics
+        print "self.topics=", self.topics
         for topic in self.topics:
             if topic not in self.subscriber:
                 try:
@@ -134,7 +168,7 @@ class ATFRecorder:
                     pass
 
     def record_trigger(self, trigger):
-        #print "record_trigger: name=", trigger.name, "trigger=", trigger.trigger, "stamp=", trigger.stamp
+        print "record_trigger: name=", trigger.name, "trigger=", trigger.trigger, "stamp=", trigger.stamp
 
         if trigger.name not in self.config["test_config"]:
             raise ATFRecorderError("Testblock '%s' not in test config" % trigger.name)
@@ -178,8 +212,10 @@ class ATFRecorder:
     def get_topics(self):
         topics = []
         #print "self.testblock_list=", self.testblock_list
-        for testblock in self.testblock_list:
-            for topic in self.testblock_list[testblock]:
+        for testblock in self.test.testblocks:
+            print "testblock:", testblock
+            print "testblock.name:", testblock.name
+            for topic in testblock.testblock_list[testblock]:
                 if topic not in topics:
                     topics.append(topic)
         return topics

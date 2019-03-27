@@ -118,16 +118,17 @@ class GenerateTests:
                     #arg(name="robot", value=self.test_list[test_name]["robot"]),
                     #include(arg(name="test_status_list", value="$(find " + self.package_name + ")/test_status.yaml"),
                     #        file="$(find atf_status_server)/launch/atf_status_server.launch"),
+                    param(name=self.ns + "package_name", value=self.package_name),
                     param(name=self.ns + "test_name", value=subtest_name),
                     param(name=self.ns + "test_config_name", value=self.test_list[test_name]["test_config"]),
                     param(name=self.ns + "robot_config_name", value=self.test_list[test_name]["robot"]),
                     param(name=self.ns + "robot_env_config_name", value=self.test_list[test_name]["robot_env"]),
-                    rosparam(param=self.ns + "test_config", command="load", file="$(find " + self.package_name + ")/" + os.path.join(self.generation_config["test_config_path"], self.test_list[test_name]["test_config"] + ".yaml")),
-                    rosparam(param=self.ns + "robot_config", command="load", file="$(find " + self.package_name + ")/" + os.path.join(self.generation_config["robot_config_path"], self.test_list[test_name]["robot"] + ".yaml")),
-                    rosparam(param=self.ns + "robot_env_config", command="load", file="$(find " + self.package_name + ")/" + os.path.join(self.generation_config["robot_env_config_path"], self.test_list[test_name]["robot_env"] + ".yaml")),
-                    param(name=self.ns + "bagfile_output", value=self.generation_config["bagfile_output"]),
-                    param(name=self.ns + "json_output", value=self.generation_config["json_output"]),
-                    param(name=self.ns + "yaml_output", value=self.generation_config["yaml_output"]),
+                    #rosparam(param=self.ns + "test_config", command="load", file="$(find " + self.package_name + ")/" + os.path.join(self.generation_config["test_config_path"], self.test_list[test_name]["test_config"] + ".yaml")),
+                    #rosparam(param=self.ns + "robot_config", command="load", file="$(find " + self.package_name + ")/" + os.path.join(self.generation_config["robot_config_path"], self.test_list[test_name]["robot"] + ".yaml")),
+                    #rosparam(param=self.ns + "robot_env_config", command="load", file="$(find " + self.package_name + ")/" + os.path.join(self.generation_config["robot_env_config_path"], self.test_list[test_name]["robot_env"] + ".yaml")),
+                    #param(name=self.ns + "bagfile_output", value=self.generation_config["bagfile_output"]),
+                    #param(name=self.ns + "json_output", value=self.generation_config["json_output"]),
+                    #param(name=self.ns + "yaml_output", value=self.generation_config["yaml_output"]),
                 )
 
                 if "additional_launch_file" in self.generation_config:

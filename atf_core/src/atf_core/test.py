@@ -9,14 +9,15 @@ from atf_core import Testblock
 
 class Test:
     def __init__(self):
+        self.package_name = None
         self.name = None
         self.testsuite = None
         self.testsuite_name = None
         self.test_config = None
         self.test_config_name = None
-        self.robot = None
+        self.robot_config = None
         self.robot_name = None
-        self.robot_env = None
+        self.robot_env_config = None
         self.robot_env_name = None
         self.generation_config = None
 
@@ -36,8 +37,8 @@ class Test:
         print "---data---"
         print "testsuite:", self.testsuite
         print "test_config:", self.test_config
-        print "robot:", self.robot
-        print "robot_env:", self.robot_env
+        print "robot_config:", self.robot_config
+        print "robot_env_config:", self.robot_env_config
         print "generation_config:", self.generation_config
 
     def print_result_to_terminal(self):
@@ -53,7 +54,7 @@ class Test:
             pass
         else:
             os.makedirs(self.generation_config["json_output"])
-        shutil.copyfile(os.path.join("/home/fmw/git/atf/build/atf_test_app_time/test_generated", "test_list.json"), os.path.join(self.generation_config["json_output"], "test_list.json"))
+        shutil.copyfile(os.path.join("/home/fmw/git/atf/build/atf_test_app_time/test_generated", "test_list.json"), os.path.join(self.generation_config["json_output"], "test_list.json")) #FIXME get package name from config files
         filename = os.path.join(self.generation_config["json_output"], self.name + ".json")
         stream = file(filename, 'w')
         json.dump(copy.copy(self.result), stream)
