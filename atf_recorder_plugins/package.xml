@@ -16,4 +16,6 @@
     <depend>atf_msgs</depend>
     <depend>rospy</depend>
 
+     <exec_depend>python-psutil</exec_depend>
+
 </package>

@@ -4,123 +4,111 @@ import psutil
 import time
 import xmlrpclib
 import rosnode
+import yaml
 
-from copy import copy
+from copy import copy, deepcopy
 from re import findall
 from subprocess import check_output, CalledProcessError
-from atf_msgs.msg import Resources, IO, Network
-from atf_recorder import BagfileWriter
-
+from atf_msgs.msg import NodeResources, Resources, IO, Network, TestblockTrigger
 
 class RecordResources:
-    def __init__(self, topic_prefix, config_file, robot_config_file, write_lock, bag_file):
-        self.topic_prefix = topic_prefix
-        self.test_config = config_file
+    def __init__(self,test_config, write_lock, bag_file_writer):
+        self.topic_prefix = "atf/"
+        self.test_config = test_config
 
-        self.resources_timer_frequency = 4.0  # Hz
+        self.resources_timer_frequency = 10.0  # Hz
         self.timer_interval = 1/self.resources_timer_frequency
 
         self.testblock_list = self.create_testblock_list()
         self.pid_list = self.create_pid_list()
-        self.requested_nodes = {}
+        self.requested_nodes = []
         self.res_pipeline = {}
 
-        self.BfW = BagfileWriter(bag_file, write_lock)
+        self.BfW = bag_file_writer
 
         rospy.Timer(rospy.Duration.from_sec(self.timer_interval), self.collect_resource_data)
 
     def update_requested_nodes(self, msg):
+        counter = 0
+        requested_nodes = []
+        if msg.trigger == TestblockTrigger.START:
+            print "START Trigger"
 
-        if msg.trigger.trigger == Trigger.ACTIVATE:
             for node in self.testblock_list[msg.name]:
-                if node not in self.requested_nodes:
-                    self.requested_nodes[node] = copy(self.testblock_list[msg.name][node])
-                    self.res_pipeline[node] = copy(self.testblock_list[msg.name][node])
-                else:
-                    for res in self.testblock_list[msg.name][node]:
-                        self.requested_nodes[node].append(res)
-                        if res not in self.res_pipeline[node]:
-                            self.res_pipeline[node].append(res)
+                print "node:", node
+                if not node in requested_nodes:
+                    requested_nodes.append(node)
+                self.requested_nodes = deepcopy(requested_nodes)
+                counter += 1
 
-        elif msg.trigger.trigger == Trigger.FINISH:
-            for node in self.testblock_list[msg.name]:
-                for res in self.testblock_list[msg.name][node]:
-                    self.requested_nodes[node].remove(res)
-                    if res not in self.requested_nodes[node]:
-                        self.res_pipeline[node].remove(res)
-                    if len(self.requested_nodes[node]) == 0:
-                        del self.requested_nodes[node]
-                        del self.res_pipeline[node]
+        elif msg.trigger == TestblockTrigger.STOP:
+            print "STOP Trigger"
 
     def create_testblock_list(self):
-
         testblock_list = {}
-        for testblock in self.test_config:
+        node_list = []
+        counter = 0
+        print "testconfig: ", self.test_config["test_config"]
+        for testblock, tests in self.test_config["test_config"].iteritems():
             try:
-                self.test_config[testblock]["resources"]
+                tests
+                print "testblock tests: ", tests
+
             except KeyError:
+                rospy.logerr("No nodes for resources to record")
                 continue
             else:
-                for resource in self.test_config[testblock]["resources"]:
-                    try:
-                        testblock_list[testblock]
-                    except KeyError:
-                        testblock_list.update({testblock: {}})
-
-                    for node_name in self.test_config[testblock]["resources"][resource]:
-
-                        if node_name not in testblock_list[testblock]:
-                            testblock_list[testblock].update({node_name: [resource]})
-                        elif resource not in testblock_list[testblock][node_name]:
-                            testblock_list[testblock][node_name].append(resource)
-
+                for resource, nodes in tests.iteritems():
+                    if str(resource).__contains__("resource"):
+                        print "nodes", nodes
+                        node_list.extend(nodes[0]["nodes"])
+            counter += 1
+            try:
+                testblock_list[testblock]
+            except KeyError:
+                testblock_list.update({testblock: []})
+            print "node list:", node_list
+            testblock_list.update({testblock: node_list})
+        print "testblock list: ", testblock_list
         return testblock_list
 
     def collect_resource_data(self, event):
-        pipeline = copy(self.res_pipeline)
-        if not len(pipeline) == 0:
-            msg = Resources()
-            topic = self.topic_prefix + "resources"
+        msg = Resources()
+        msg_list = []
+        topic = self.topic_prefix + "resources"
+        msg_data = NodeResources()
+        for node, pid in self.pid_list.iteritems():
+            if pid is None:
+                continue
+            try:
+                msg_data.node_name = node
 
-            for node in pipeline:
-                msg_data = NodeResources()
-                pid = self.pid_list[node]
+                msg_data.cpu = psutil.Process(pid).get_cpu_percent(interval=self.timer_interval)
 
-                if pid is None:
-                    continue
+                msg_data.memory = psutil.Process(pid).get_memory_percent()
 
-                try:
-                    msg_data.node_name = node
+                data = findall('\d+', str(psutil.Process(pid).get_io_counters()))
+                msg_data.io.read_count = int(data[0])
+                msg_data.io.write_count = int(data[1])
+                msg_data.io.read_bytes = int(data[2])
+                msg_data.io.write_bytes = int(data[3])
 
-                    if "cpu" in pipeline[node]:
-                        msg_data.cpu = psutil.Process(pid).cpu_percent(interval=self.timer_interval)
+                data = findall('\d+', str(psutil.net_io_counters()))
+                msg_data.network.bytes_sent = int(data[0])
+                msg_data.network.bytes_recv = int(data[1])
+                msg_data.network.packets_sent = int(data[2])
+                msg_data.network.packets_recv = int(data[3])
+                msg_data.network.errin = int(data[4])
+                msg_data.network.errout = int(data[5])
+                msg_data.network.dropin = int(data[6])
+                msg_data.network.dropout = int(data[7])
 
-                    if "mem" in pipeline[node]:
-                        msg_data.memory = psutil.Process(pid).memory_percent()
-
-                    if "io" in pipeline[node]:
-                        data = findall('\d+', str(psutil.Process(pid).io_counters()))
-                        msg_data.io.read_count = int(data[0])
-                        msg_data.io.write_count = int(data[1])
-                        msg_data.io.read_bytes = int(data[2])
-                        msg_data.io.write_bytes = int(data[3])
-
-                    if "network" in pipeline[node]:
-                        data = findall('\d+', str(psutil.net_io_counters()))
-                        msg_data.network.bytes_sent = int(data[0])
-                        msg_data.network.bytes_recv = int(data[1])
-                        msg_data.network.packets_sent = int(data[2])
-                        msg_data.network.packets_recv = int(data[3])
-                        msg_data.network.errin = int(data[4])
-                        msg_data.network.errout = int(data[5])
-                        msg_data.network.dropin = int(data[6])
-                        msg_data.network.dropout = int(data[7])
-
-                    msg.nodes.append(msg_data)
-                except (psutil.NoSuchProcess, psutil.AccessDenied):
-                    pass
-
-            self.BfW.write_to_bagfile(topic, msg, rospy.Time.from_sec(time.time()))
+                msg_list.append(copy(msg_data))
+            except (psutil.NoSuchProcess, psutil.AccessDenied) as e:
+                rospy.logerr("collecting error: %s", e)
+                pass
+        msg.nodes = msg_list
+        self.BfW.write_to_bagfile(topic, msg, rospy.Time.now())
 
     def trigger_callback(self, msg):
 
@@ -128,17 +116,16 @@ class RecordResources:
         if msg.name in self.testblock_list:
             self.update_requested_nodes(msg)
 
-        if msg.trigger.trigger == Trigger.ERROR:
-            self.res_pipeline = []
 
     def create_pid_list(self):
         node_list = {}
+        pid_list = {}
         for (testblock, nodes) in self.testblock_list.iteritems():
             for node in nodes:
-                if node not in node_list:
-                    node_list[node] = self.get_pid(node)
-
-        return node_list
+                if self.get_pid(node) not in pid_list:
+                    pid_list.update({node:self.get_pid(node)})
+                    print "pid", self.get_pid(node), "for node", node
+        return pid_list
 
     @staticmethod
     def get_pid(name):
