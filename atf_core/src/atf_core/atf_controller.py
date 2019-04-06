@@ -22,9 +22,9 @@ class ATFController():
         self.test = test
 
         self.publisher = {}
-        for testblock in self.test.test_config.keys():
-            print "testblock", testblock
-            self.publisher[testblock] = rospy.Publisher("atf/trigger", TestblockTrigger, queue_size=10)
+        #for testblock in self.test.test_config.keys():
+        #    print "testblock", testblock
+        self.publisher = rospy.Publisher("atf/trigger", TestblockTrigger, queue_size=10)
 
         rospy.sleep(1) #wait for all publishers to be ready
     
@@ -36,7 +36,7 @@ class ATFController():
         trigger.stamp = rospy.Time.now()
         trigger.name = testblock
         trigger.trigger = TestblockTrigger.START
-        self.publisher[testblock].publish(trigger)
+        self.publisher.publish(trigger)
 
     def stop(self, testblock):
         if testblock not in self.test.test_config.keys():
@@ -46,4 +46,4 @@ class ATFController():
         trigger.stamp = rospy.Time.now()
         trigger.name = testblock
         trigger.trigger = TestblockTrigger.STOP
-        self.publisher[testblock].publish(trigger)
+        self.publisher.publish(trigger)
