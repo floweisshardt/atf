@@ -49,12 +49,15 @@ class CalculatePublishRate:
     def callback(self, msg):
         if self.active:
             self.counter += 1
+            print "counter=", counter
 
     def start(self, timestamp):
+        print "--> publish rate start"
         self.active = True
         self.start_time = timestamp
 
     def stop(self, timestamp):
+        print "--> publish rate stop"
         self.active = False
         self.stop_time = timestamp
         self.finished = True
@@ -65,6 +68,7 @@ class CalculatePublishRate:
         pass
 
     def purge(self, timestamp):
+        # TODO: Implement purge as soon as pause is implemented
         pass
 
     def get_result(self):

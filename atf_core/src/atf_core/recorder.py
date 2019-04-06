@@ -59,7 +59,8 @@ class ATFRecorder:
         #    num_subscriber = ob_sub.get_num_connections()
 
         self.subscriber = []
-        #self.topics = ["tf", "robot_status"] #self.get_topics() # FIXME
+        #self.topics = ["tf", "robot_status"] 
+        self.topics = self.get_topics() # FIXME
         #rospy.Timer(rospy.Duration(0.5), self.create_subscriber_callback)
 
         # test status monitoring
@@ -217,12 +218,17 @@ class ATFRecorder:
     def get_topics(self):
         topics = []
         #print "self.testblock_list=", self.testblock_list
-        for testblock in self.test.testblocks:
-            print "testblock:", testblock
-            print "testblock.name:", testblock.name
-            for topic in testblock.testblock_list[testblock]:
-                if topic not in topics:
-                    topics.append(topic)
+        #print "self.test.test_config=", self.test.test_config
+        for testblock, testblock_data in self.test.test_config.items():
+            #print "testblock=", testblock
+            #print "testblock_data=", testblock_data
+            for metric, metric_data in testblock_data.items():
+                #print "metric=", metric
+                #print "metric_data=", metric_data
+                for entry in metric_data:
+                    if entry["topic"] not in topics:
+                        topics.append(entry["topic"])
+                        #print "topics=", topics
         return topics
 
 class ATFRecorderError(Exception):

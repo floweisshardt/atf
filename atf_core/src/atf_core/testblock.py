@@ -19,8 +19,8 @@ class Testblock:
 
     def get_result(self):
         result = {}
-        #overall_groundtruth_result = None
-        #overall_groundtruth_error_message = "groundtruth missmatch for: "
+        overall_groundtruth_result = None
+        overall_groundtruth_error_message = "groundtruth missmatch for: "
 
         if self.status == TestblockStatus.ERROR:
             print "An error occured during analysis of testblock '%s', no useful results available."%self.name
@@ -30,13 +30,15 @@ class Testblock:
             for metric_handle in self.metric_handles:
                 #print "metric_handle=", metric_handle
                 metric_result = metric_handle.get_result()
-                #print "metric_result=", metric_result
+                print "metric_result=", metric_result
                 if metric_result is not False:
                     (metric_name, data, groundtruth_result, groundtruth, groundtruth_epsilon, details) = metric_result
                     if metric_name not in result:
                         result[metric_name] = []
                     result[metric_name].append({"data":data, "groundtruth_result": groundtruth_result, "groundtruth": groundtruth, "groundtruth_epsilon": groundtruth_epsilon, "details": details})
+                    print "groundtruth_result=", groundtruth_result
                     if groundtruth_result == None:
+                        print "no groundtruth_result"
                         pass
                     elif not groundtruth_result:
                         overall_groundtruth_result = False
