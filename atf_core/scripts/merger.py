@@ -11,14 +11,13 @@ import sys
 from atf_core import ATFConfigurationParser
 
 class Merger():
-    def __init__(self):
-        self.ns = "/atf/"
+    def __init__(self, package_name):
         self.result = False
 
         #self.atf_configuration_parser = ATFConfigurationParser()
         #self.config = self.atf_configuration_parser.get_config()
         # parse configuration
-        self.atf_configuration_parser = ATFConfigurationParser()
+        self.atf_configuration_parser = ATFConfigurationParser(package_name)
         #self.tests = atf_configuration_parser.get_tests()
 
     def merge(self):
@@ -101,7 +100,7 @@ class Merger():
                             test_data_merged[testblock_name][metric_name][i]['data']['max'] = max(test_data_merged[testblock_name][metric_name][i]['data']['values'])
                             test_data_merged[testblock_name][metric_name][i]['data']['average'] = round(sum(test_data_merged[testblock_name][metric_name][i]['data']['values'])/len(test_data_merged[testblock_name][metric_name][i]['data']['values']), 3)
 
-                #print "test_data_merged after average=", test_data_merged
+                print "test_data_merged after average=", test_data_merged
 
                 # write to file
                 filename = os.path.join(self.atf_configuration_parser.generation_config["json_output"], "merged_" + test_name + ".json")
@@ -136,13 +135,14 @@ class Merger():
 
 class TestMerging(unittest.TestCase):
     def test_merging_results(self):
-        merger = Merger()
+        merger = Merger(sys.argv[1])
         merger.merge()
         self.assertTrue(merger.result, "Could not merge results.")
 
 if __name__ == '__main__':
+    print "merging for package", sys.argv[1]
     if "standalone" in sys.argv:
-        merger = Merger()
+        merger = Merger(sys.argv[1])
         merger.merge()
     else:
-        rostest.rosrun("atf_core", 'merging', TestMerging, sysargs=None)
+        rostest.rosrun("atf_core", 'merging', TestMerging, sysargs=sys.argv)

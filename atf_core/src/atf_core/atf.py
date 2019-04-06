@@ -2,7 +2,7 @@
 import rospy
 import atf_core
 
-from atf_msgs.msg import TestblockState
+from atf_msgs.msg import TestblockStatus
 
 class ATF:
     def __init__(self):
@@ -94,7 +94,7 @@ class ATF:
         message = ""
         for testblock in self.test.testblocks:
             state = testblock.get_state()
-            if not state == TestblockState.SUCCEEDED:
+            if not state == TestblockStatus.SUCCEEDED:
                 error = True
                 message += "Testblock '%s' did not succeed (finished with state '%d');\n " % (testblock.name, state)
         if error:

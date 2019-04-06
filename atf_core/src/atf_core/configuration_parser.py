@@ -9,18 +9,14 @@ import os
 from atf_core import Test, Testblock
 
 class ATFConfigurationParser:
-    def __init__(self, recorder_handle = None):
-        self.ns = "/atf/"
-        cfg = rosparam.get_param(self.ns)
-        print "cfg:", cfg
-
+    def __init__(self, package_name, recorder_handle = None):
         self.parsing_error_message = ""
 
         # get full config from parameter server (test_config = list of all test configs)
         #self.config = rosparam.get_param(self.ns)
         
-        testsuites = self.load_data(rospkg.RosPack().get_path(cfg["package_name"]) + "/config/test_suites.yaml")
-        testgeneration = self.load_data(rospkg.RosPack().get_path(cfg["package_name"]) + "/config/test_generation_config.yaml")
+        testsuites = self.load_data(rospkg.RosPack().get_path(package_name) + "/config/test_suites.yaml")
+        testgeneration = self.load_data(rospkg.RosPack().get_path(package_name) + "/config/test_generation_config.yaml")
         self.generation_config = testgeneration
         #print "testsuites:", testsuites
         #print "testgeneration:", testgeneration
@@ -41,7 +37,7 @@ class ATFConfigurationParser:
                             name = "ts" + str(testsuite_id) + "_c" + str(test_config_id) + "_r" + str(robot_id) + "_e" + str(robot_env_id) + "_" + str(repetition)
                             #print name
                             test = Test()
-                            test.package_name = cfg["package_name"]
+                            test.package_name = package_name
                             test.name = name
                             test.testsuite_name = testsuite_name
                             test.testsuite = None

@@ -16,13 +16,13 @@ from atf_msgs.msg import TestblockStatus, TestblockStatus
 
 
 class Analyser:
-    def __init__(self):
+    def __init__(self, package_name):
         print "ATF analyser: started!"
         self.ns = "/atf/"
         self.error = False
 
         # parse configuration
-        atf_configuration_parser = ATFConfigurationParser()
+        atf_configuration_parser = ATFConfigurationParser(package_name)
         self.tests = atf_configuration_parser.get_tests()
         #self.testblocks = atf_configuration_parser.create_testblocks(self.config, None, True)
 
@@ -32,7 +32,7 @@ class Analyser:
         # monitor states for all testblocks
         #self.testblock_states = {}
         #for testblock in self.testblocks.keys():
-        #    self.testblock_states[testblock] = TestblockState.INVALID
+        #    self.testblock_states[testblock] = TestblockStatus.INVALID
 
         start_time = time.time()
         #self.files = self.config["test_name"]#"/tmp/atf_test_app_time/data/ts0_c0_r0_e0_0.bag" # TODO get real file names from test config
@@ -155,7 +155,7 @@ class Analyser:
         overall_groundtruth_error_message = "groundtruth missmatch for: "
 
         for testblock_name, testblock in self.testblocks.items():
-            if self.testblock_states[testblock_name] == TestblockState.ERROR:
+            if self.testblock_states[testblock_name] == TestblockStatus.ERROR:
                 print "An error occured during analysis of testblock '%s', no useful results available."%testblock_name
                 result.update({testblock.testblock_name: {"status": "error"}})
             else:
@@ -190,15 +190,16 @@ class ATFAnalyserError(Exception):
 
 class TestAnalysing(unittest.TestCase):
     def test_Analysing(self):
-        analyser = Analyser()
-        for test in self.tests:
-            print "test.name:", test.name
-            if test.groundtruth_result != None:
-                self.assertTrue(groundtruth_result, groundtruth_error_message)
+        analyser = Analyser(sys.argv[1])
+        #for test in self.tests:
+        #    print "test.name:", test.name
+        #    if test.groundtruth_result != None:
+        #        self.assertTrue(groundtruth_result, groundtruth_error_message)
 
 
 if __name__ == '__main__':
+    print "analysing for package", sys.argv[1]
     if "standalone" in sys.argv:
-        analyser = Analyser()
+        analyser = Analyser(sys.argv[1])
     else:
-        rostest.rosrun("atf_core", 'analysing', TestAnalysing, sysargs=None)
+        rostest.rosrun("atf_core", 'analysing', TestAnalysing, sysargs=sys.argv)

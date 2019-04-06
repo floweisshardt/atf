@@ -20,9 +20,12 @@ class Recorder():
         self.sm_top = smach.StateMachine(outcomes=['succeeded', 'error'])
         
         # get test config
+        package_name = rospy.get_param("/atf/package_name")
+        print "package_name:", package_name
         test_name = rospy.get_param("/atf/test_name")
         print "test_name:", test_name
-        atf_configuration_parser = atf_core.ATFConfigurationParser()
+        
+        atf_configuration_parser = atf_core.ATFConfigurationParser(package_name)
         tests = atf_configuration_parser.get_tests()
         for test in tests:
             print "test.name:", test.name
