@@ -4,7 +4,7 @@ import rospy
 import shutil
 
 from atf_core import StateMachine#, ATFRecorder
-from atf_msgs.msg import TestblockState, TestblockTrigger
+from atf_msgs.msg import TestblockStatus, TestblockTrigger
 
 class Testblock:
     def __init__(self, name, metric_handles, recorder_handle):
@@ -16,26 +16,23 @@ class Testblock:
         self.timestamp = None
         self.exception = None
         self.atf_started = False
-        #self.state = None
-
-
-    def get_state(self):
-        return self.m.get_current_state()
+        self.status = None
 
     def get_result(self):
         result = {}
         #overall_groundtruth_result = None
         #overall_groundtruth_error_message = "groundtruth missmatch for: "
 
-        if self.get_state() == TestblockState.ERROR:
+        if self.status == TestblockStatus.ERROR:
             print "An error occured during analysis of testblock '%s', no useful results available."%self.name
             result.update({name: {"status": "error"}})
         else:
-            #print "testblock.metrics=", testblock.metrics
+            print "testblock.metrics=", self.metric_handles
             for metric_handle in self.metric_handles:
-                #print "metric_handle=", metric_handle
+                print "metric_handle=", metric_handle
                 metric_result = metric_handle.get_result()
-                #print "metric_result=", metric_result
+                print "metric_result=", metric_result
+                asdasdasdfasdff
                 if metric_result is not False:
                     (metric_name, data, groundtruth_result, groundtruth, groundtruth_epsilon, details) = metric_result
                     if metric_name not in result:
@@ -47,7 +44,7 @@ class Testblock:
                         overall_groundtruth_result = False
                         overall_groundtruth_error_message += self.name + "(" + metric_name + ": data=" + str(data) + ", groundtruth=" + str(groundtruth) + "+-" + str(groundtruth_epsilon) + " details:" + str(details) + "); "
                 else:
-                    raise ATFAnalyserError("No result for metric '%s' in testblock '%s'" % (metric_name, self.name))
+                    raise ATFTestblockError("No result for metric '%s' in testblock '%s'" % (metric_name, self.name))
 
         #if result == {}:
         #    raise ATFAnalyserError("Analysing failed, no result available.")

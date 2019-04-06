@@ -77,7 +77,7 @@ class Inactive(smach.State):
         if self.trigger.trigger == TestblockTrigger.START:
             outcome = 'start'
         else:
-            rospy.logerr("%s: Invalid transition from inactive state"%userdata.name)
+            rospy.logerr("%s: Invalid transition '%d' from inactive state"%(userdata.name, self.trigger.trigger))
             outcome = 'error'
         self.trigger = None
         return outcome

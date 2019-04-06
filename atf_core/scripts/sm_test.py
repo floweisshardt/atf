@@ -8,6 +8,29 @@ from atf_core.sm_atf import SmAtfTestblock
 from atf_core import ATFRecorder
 import atf_core
 
+#class Recorder():
+#    def __init__(self):
+
+
+#class Test(unittest.TestCase):
+#    def setUp(self):
+#        self.app = Application()
+
+#    def tearDown(self):
+#        pass
+
+#    def test_Recording(self):
+#        self.app.execute()
+
+#if __name__ == '__main__':
+#    rospy.init_node('test_name')
+#    if "standalone" in sys.argv:
+#        app = Application()
+#        app.execute()
+#    else:
+#        rostest.rosrun('application', 'recording', Test, sysargs=None)
+
+
 if __name__ == '__main__':
     rospy.init_node('state_machine')
 

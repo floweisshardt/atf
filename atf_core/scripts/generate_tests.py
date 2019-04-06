@@ -120,9 +120,9 @@ class GenerateTests:
                     #        file="$(find atf_status_server)/launch/atf_status_server.launch"),
                     param(name=self.ns + "package_name", value=self.package_name),
                     param(name=self.ns + "test_name", value=subtest_name),
-                    param(name=self.ns + "test_config_name", value=self.test_list[test_name]["test_config"]),
-                    param(name=self.ns + "robot_config_name", value=self.test_list[test_name]["robot"]),
-                    param(name=self.ns + "robot_env_config_name", value=self.test_list[test_name]["robot_env"]),
+                    #param(name=self.ns + "test_config_name", value=self.test_list[test_name]["test_config"]),
+                    #param(name=self.ns + "robot_config_name", value=self.test_list[test_name]["robot"]),
+                    #param(name=self.ns + "robot_env_config_name", value=self.test_list[test_name]["robot_env"]),
                     #rosparam(param=self.ns + "test_config", command="load", file="$(find " + self.package_name + ")/" + os.path.join(self.generation_config["test_config_path"], self.test_list[test_name]["test_config"] + ".yaml")),
                     #rosparam(param=self.ns + "robot_config", command="load", file="$(find " + self.package_name + ")/" + os.path.join(self.generation_config["robot_config_path"], self.test_list[test_name]["robot"] + ".yaml")),
                     #rosparam(param=self.ns + "robot_env_config", command="load", file="$(find " + self.package_name + ")/" + os.path.join(self.generation_config["robot_env_config_path"], self.test_list[test_name]["robot_env"] + ".yaml")),
@@ -153,6 +153,7 @@ class GenerateTests:
                                 incl.append(param(name=str(robot_env_param_name), value=str(robot_env_param_value)))
                     test_record.append(incl)
 
+                test_record.append(node(name="recorder", pkg="atf_core", type="sm_test.py", required="true", output="log")),
                 test_record.append(test({'test-name': "recording_" + subtest_name, 'pkg': self.package_name, 'type': self.generation_config['app_executable'],
                           'time-limit': str(self.generation_config["time_limit_recording"]), 'required': "true"}))
 

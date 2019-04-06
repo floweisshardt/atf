@@ -12,7 +12,7 @@ import time
 import unittest
 
 from atf_core import ATFConfigurationParser
-from atf_msgs.msg import TestblockState, TestblockTrigger
+from atf_msgs.msg import TestblockStatus, TestblockStatus
 
 
 class Analyser:
@@ -63,15 +63,29 @@ class Analyser:
                         msg.deserialize(serialized_bytes)
                         j+=1
                         for testblock in test.testblocks:
-                            if topic == self.ns + testblock.name + "/trigger":
+                            #print "testblock", testblock.name
+                            if topic == "atf/status" and msg.name == testblock.name:
                                 #print "topic match for testblock '%s'"%testblock.name
-                                testblock.state = self.process_trigger(msg, testblock)
-                            #print "testblock state for testblock '%s':"%testblock.name, testblock.state
+                                testblock.status = msg.status
+                                print "testblock status for testblock '%s':"%testblock.name, testblock.status
+                                if testblock.status == TestblockStatus.ACTIVE:
+                                    print "testblock is active"
+                                    print "testblock.metric_handles", testblock.metric_handles
+                                    for metric_handle in testblock.metric_handles:
+                                        print "calling start on metric", metric_handle
+                                        metric_handle.start(msg.stamp)
+                                elif testblock.status == TestblockStatus.SUCCEEDED:
+                                    print "testblock is succeeded"
+                                    print "testblock.metric_handles", testblock.metric_handles
+                                    for metric_handle in testblock.metric_handles:
+                                        print "calling stop on metric", metric_handle
+                                        metric_handle.stop(msg.stamp)
                         #bar.update(j)
                     except StopIteration as e:
                         print "stop iterator", e
                         break
                     except Exception as e:
+                        print "Exception", e
                     #except StopIteration as e:
                         count_error += 1
                         continue
@@ -80,17 +94,18 @@ class Analyser:
                 print "FATAL exception in bag file", type(e), e
                 continue
             bar.finish()
-            #for testblock in test.testblocks:
-                #print "testblock state for testblock '%s':"%testblock.name, testblock.state
+
+            for testblock in test.testblocks:
+                print "---testblock status for testblock '%s':"%testblock.name, testblock.status
             
             # check states for all testblocks
             for testblock in test.testblocks:
-                if testblock.state == TestblockState.SUCCEEDED:
+                if testblock.status == TestblockStatus.SUCCEEDED:
                     continue
-                elif testblock.state == TestblockState.ERROR:
+                elif testblock.status == TestblockStatus.ERROR:
                     raise ATFAnalyserError("Testblock '%s' finished with ERROR." % testblock)
                 else:
-                    raise ATFAnalyserError("Testblock '%s' did not reach an end state before analyser finished (state is '%s'). Probably an error occured outside of monitored testblocks." % (testblock, state))
+                    raise ATFAnalyserError("Testblock '%s' did not reach an end state before analyser finished (state is '%s'). Probably an error occured outside of monitored testblocks." % (testblock.name, testblock.status))
             
             # get result for each testblock
             overall_test_result = {}
@@ -125,36 +140,6 @@ class Analyser:
                     result.append((file,full_path))
         result.sort()
         return result
-
-    def process_trigger(self, trigger, testblock):
-        #print "trigger=", trigger
-        #print "trigger.name:", trigger.name
-
-        #if trigger.name not in test.test_config.keys():
-        #    raise ATFAnalyserError("Testblock '%s' not in test_config." % trigger.name)
-
-        if trigger.trigger == TestblockTrigger.PURGE:
-            #print "Purging testblock '%s'"%trigger.name
-            for metric_handle in testblock.metric_handles:
-                metric_handle.purge(trigger.stamp)
-            return TestblockState.PURGED
-        elif trigger.trigger == TestblockTrigger.START:
-            #print "Starting testblock '%s'"%trigger.name
-            for metric_handle in testblock.metric_handles:
-                metric_handle.start(trigger.stamp)
-            return TestblockState.ACTIVE
-        elif trigger.trigger == TestblockTrigger.PAUSE:
-            #print "Pausing testblock '%s'"%trigger.name
-            for metric_handle in testblock.metric_handles:
-                metric_handle.pause(trigger.stamp)
-            return TestblockState.PAUSED
-        elif trigger.trigger == TestblockTrigger.STOP:
-            #print "Stopping testblock '%s'"%trigger.name
-            for metric_handle in testblock.metric_handles:
-                metric_handle.stop(trigger.stamp)
-            return TestblockState.SUCCEEDED
-        else:
-            raise ATFAnalyserError("Unknown trigger '%s' for testblock '%s'" % (str(trigger.trigger), trigger.name))
 
     def get_result(self):
         result = {}
