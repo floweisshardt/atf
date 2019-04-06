@@ -3,7 +3,6 @@ import os
 import rospy
 import shutil
 
-from atf_core import StateMachine#, ATFRecorder
 from atf_msgs.msg import TestblockStatus, TestblockTrigger
 
 class Testblock:

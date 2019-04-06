@@ -3,7 +3,6 @@ import rospy
 import smach
 import smach_ros
 import threading
-from atf_core.atf import ATFError
 import atf_core
 
 from atf_msgs.msg import TestblockTrigger, TestblockStatus

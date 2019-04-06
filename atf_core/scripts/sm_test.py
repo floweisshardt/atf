@@ -7,10 +7,7 @@ import sys
 import threading
 import unittest
 
-from atf_core.sm_atf import SmAtfTestblock
-from atf_core import ATFRecorder
 import atf_core
-from atf_core.atf import ATFError
 
 class Recorder():
     def __init__(self):
@@ -41,7 +38,7 @@ class Recorder():
         outcome_map = {'succeeded':outcome_map_succeeded,
                         'error':outcome_map_error}
         
-        recorder_handle = ATFRecorder(test)
+        recorder_handle = atf_core.ATFRecorder(test)
 
         # Open the container
         with self.sm_top:
@@ -58,7 +55,7 @@ class Recorder():
                 # Add states to the container
                 for testblock in test.test_config.keys():
                     print "adding testblock:", testblock
-                    smach.Concurrence.add(testblock, SmAtfTestblock(testblock, recorder_handle))
+                    smach.Concurrence.add(testblock, atf_core.SmAtfTestblock(testblock, recorder_handle))
             
             # TODO preempt all other concurrent States as soon as one state returns 'error'
 
