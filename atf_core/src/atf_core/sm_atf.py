@@ -76,6 +76,8 @@ class Inactive(smach.State):
 
         if self.trigger.trigger == TestblockTrigger.START:
             outcome = 'start'
+        elif self.trigger.trigger == TestblockTrigger.ERROR:
+            outcome = 'error'
         else:
             rospy.logerr("%s: Invalid transition '%d' from inactive state"%(userdata.name, self.trigger.trigger))
             outcome = 'error'
@@ -118,6 +120,8 @@ class Active(smach.State):
             outcome = 'purge'
         elif self.trigger.trigger == TestblockTrigger.STOP:
             outcome = 'stop'
+        elif self.trigger.trigger == TestblockTrigger.ERROR:
+            outcome = 'error'
         else:
             rospy.logerr("%s: Invalid transition from active state"%userdata.name)
             outcome = 'error'
@@ -188,7 +192,7 @@ class Purge(smach.State):
                 self._trigger_cond.notify()
 
     def execute(self, userdata):
-        self.trigger = None
+        self.trigger = None 
         with self._trigger_cond:
             self._trigger_cond.wait()
 

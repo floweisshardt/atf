@@ -6,6 +6,7 @@ import rostest
 import os
 import copy
 import json
+import sys
 
 from atf_core import ATFConfigurationParser
 
@@ -14,8 +15,11 @@ class Merger():
         self.ns = "/atf/"
         self.result = False
 
-        self.atf_configuration_parser = ATFConfigurationParser()
-        self.config = self.atf_configuration_parser.get_config()
+        #self.atf_configuration_parser = ATFConfigurationParser()
+        #self.config = self.atf_configuration_parser.get_config()
+        # parse configuration
+        atf_configuration_parser = ATFConfigurationParser()
+        self.tests = atf_configuration_parser.get_tests()
 
     def merge(self):
         test_list = self.atf_configuration_parser.load_data(os.path.join(self.config["json_output"], "test_list.json"))
@@ -137,5 +141,7 @@ class TestMerging(unittest.TestCase):
         self.assertTrue(merger.result, "Could not merge results.")
 
 if __name__ == '__main__':
-    rospy.init_node('test_merging')
-    rostest.rosrun("atf_core", 'merging', TestMerging, sysargs=None)
+    if "standalone" in sys.argv:
+        merger = Merger()
+    else:
+        rostest.rosrun("atf_core", 'merging', TestMerging, sysargs=None)

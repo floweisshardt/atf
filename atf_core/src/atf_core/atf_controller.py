@@ -30,7 +30,9 @@ class ATFController():
     
     def start(self, testblock):
         if testblock not in self.test.test_config.keys():
-            raise ATFError("testblock %s not in list of testblocks"%testblock)
+            error_msg = "testblock %s not in list of testblocks"%testblock
+            self.error(error_msg)
+            raise ATFError(error_msg)
         print "starting testblock", testblock
         trigger = TestblockTrigger()
         trigger.stamp = rospy.Time.now()
@@ -40,10 +42,19 @@ class ATFController():
 
     def stop(self, testblock):
         if testblock not in self.test.test_config.keys():
-            raise ATFError("testblock %s not in list of testblocks"%testblock)
+            error_msg = "testblock %s not in list of testblocks"%testblock
+            self.error(error_msg)
+            raise ATFError(error_msg)
         print "stopping testblock", testblock
         trigger = TestblockTrigger()
         trigger.stamp = rospy.Time.now()
         trigger.name = testblock
         trigger.trigger = TestblockTrigger.STOP
+        self.publisher.publish(trigger)
+        
+    def error(self, error_msg):
+        trigger = TestblockTrigger()
+        trigger.stamp = rospy.Time.now()
+        trigger.name = error_msg
+        trigger.trigger = TestblockTrigger.ERROR
         self.publisher.publish(trigger)

@@ -27,12 +27,11 @@ class Testblock:
             print "An error occured during analysis of testblock '%s', no useful results available."%self.name
             result.update({name: {"status": "error"}})
         else:
-            print "testblock.metrics=", self.metric_handles
+            #print "testblock.metrics=", self.metric_handles
             for metric_handle in self.metric_handles:
-                print "metric_handle=", metric_handle
+                #print "metric_handle=", metric_handle
                 metric_result = metric_handle.get_result()
-                print "metric_result=", metric_result
-                asdasdasdfasdff
+                #print "metric_result=", metric_result
                 if metric_result is not False:
                     (metric_name, data, groundtruth_result, groundtruth, groundtruth_epsilon, details) = metric_result
                     if metric_name not in result:

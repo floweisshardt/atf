@@ -17,6 +17,7 @@ from atf_msgs.msg import TestblockStatus, TestblockStatus
 
 class Analyser:
     def __init__(self):
+        print "ATF analyser: started!"
         self.ns = "/atf/"
         self.error = False
 
@@ -67,18 +68,18 @@ class Analyser:
                             if topic == "atf/status" and msg.name == testblock.name:
                                 #print "topic match for testblock '%s'"%testblock.name
                                 testblock.status = msg.status
-                                print "testblock status for testblock '%s':"%testblock.name, testblock.status
+                                #print "testblock status for testblock '%s':"%testblock.name, testblock.status
                                 if testblock.status == TestblockStatus.ACTIVE:
-                                    print "testblock is active"
-                                    print "testblock.metric_handles", testblock.metric_handles
+                                    #print "testblock is active"
+                                    #print "testblock.metric_handles", testblock.metric_handles
                                     for metric_handle in testblock.metric_handles:
-                                        print "calling start on metric", metric_handle
+                                        #print "calling start on metric", metric_handle
                                         metric_handle.start(msg.stamp)
                                 elif testblock.status == TestblockStatus.SUCCEEDED:
-                                    print "testblock is succeeded"
-                                    print "testblock.metric_handles", testblock.metric_handles
+                                    #print "testblock is succeeded"
+                                    #print "testblock.metric_handles", testblock.metric_handles
                                     for metric_handle in testblock.metric_handles:
-                                        print "calling stop on metric", metric_handle
+                                        #print "calling stop on metric", metric_handle
                                         metric_handle.stop(msg.stamp)
                         #bar.update(j)
                     except StopIteration as e:
@@ -95,8 +96,8 @@ class Analyser:
                 continue
             bar.finish()
 
-            for testblock in test.testblocks:
-                print "---testblock status for testblock '%s':"%testblock.name, testblock.status
+            #for testblock in test.testblocks:
+                #print "---testblock status for testblock '%s':"%testblock.name, testblock.status
             
             # check states for all testblocks
             for testblock in test.testblocks:
@@ -122,14 +123,21 @@ class Analyser:
             
             print "%d errors detected during test processing"%count_error
             i += 1
-            
+        
+        print "merger start"
+        
+        for test in self.tests:
+            print "test=", test
+            print "test.name=", test.name
+        
+        print "merger done"
+        
         try:
             print "Processing tests took %s min"%str( round((time.time() - start_time)/60.0,4 ))
         except:
             pass
 
-
-        print "ATF analyser: started!"
+        print "ATF analyser: done!"
 
     def get_file_paths(self, dir, prefix):
         result = []

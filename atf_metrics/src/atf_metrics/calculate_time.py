@@ -49,11 +49,11 @@ class CalculateTime:
         self.finished = False
 
     def start(self, timestamp):
-        print "---->>>> CalculateTime start"
+        #print "---->>>> CalculateTime start"
         self.start_time = timestamp
 
     def stop(self, timestamp):
-        print "---->>>> CalculateTime stop"
+        #print "---->>>> CalculateTime stop"
         self.stop_time = timestamp
         self.finished = True
 
@@ -66,10 +66,10 @@ class CalculateTime:
         pass
 
     def get_result(self):
-        print "---->>>> CalculateTime get_result"
+        #print "---->>>> CalculateTime get_result"
         groundtruth_result = None
         details = None
-        print "self.finished", self.finished
+        #print "self.finished", self.finished
         if self.finished:
             data = round((self.stop_time - self.start_time).to_sec(), 3)
             if self.groundtruth != None and self.groundtruth_epsilon != None:

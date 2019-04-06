@@ -153,8 +153,8 @@ class GenerateTests:
                                 incl.append(param(name=str(robot_env_param_name), value=str(robot_env_param_value)))
                     test_record.append(incl)
 
-                test_record.append(node(name="recorder", pkg="atf_core", type="sm_test.py", required="true", output="log")),
-                test_record.append(test({'test-name': "recording_" + subtest_name, 'pkg': self.package_name, 'type': self.generation_config['app_executable'],
+                test_record.append(node(pkg=self.package_name, type=self.generation_config['app_executable'], name="$(anon application)", required="true", output="screen")),
+                test_record.append(test({'pkg':'atf_core', 'type':'sm_test.py', 'test-name': "recording_" + subtest_name,
                           'time-limit': str(self.generation_config["time_limit_recording"]), 'required': "true"}))
 
                 xmlstr = minidom.parseString(ElementTree.tostring(test_record)).toprettyxml(indent="    ")

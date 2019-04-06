@@ -10,6 +10,7 @@ import unittest
 from atf_core.sm_atf import SmAtfTestblock
 from atf_core import ATFRecorder
 import atf_core
+from atf_core.atf import ATFError
 
 class Recorder():
     def __init__(self):
@@ -29,10 +30,13 @@ class Recorder():
                 break
         print "current test:", test.name
             
-        tmp = {}
+        outcome_map_succeeded = {}
+        outcome_map_error = {}
         for testblock in test.test_config.keys():
-            tmp[testblock] = 'succeeded'
-        outcome_map = {'succeeded':tmp}
+            outcome_map_succeeded[testblock] = 'succeeded'
+            outcome_map_error[testblock] = 'error'
+        outcome_map = {'succeeded':outcome_map_succeeded,
+                        'error':outcome_map_error}
         
         recorder_handle = ATFRecorder(test)
 
@@ -52,7 +56,8 @@ class Recorder():
                 for testblock in test.test_config.keys():
                     print "adding testblock:", testblock
                     smach.Concurrence.add(testblock, SmAtfTestblock(testblock, recorder_handle))
-
+            
+            # TODO preempt all other concurrent States as soon as one state returns 'error'
 
             smach.StateMachine.add('CON', sm_con,
                                     transitions={'succeeded':'succeeded',
@@ -62,7 +67,7 @@ class Recorder():
         self.sis.start()
         
     def execute(self):
-        self.sm_top.execute()
+        outcome = self.sm_top.execute()
 
 class Test(unittest.TestCase):
 
@@ -74,7 +79,7 @@ class Test(unittest.TestCase):
         pass
 
     def test_Recording(self):
-        self.rec.sm_top.execute()
+        self.assertEqual(self.rec.sm_top.execute(), 'succeeded')
 
 if __name__ == '__main__':
     rospy.init_node('test_name')
