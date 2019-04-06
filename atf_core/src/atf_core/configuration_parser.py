@@ -21,6 +21,7 @@ class ATFConfigurationParser:
         
         testsuites = self.load_data(rospkg.RosPack().get_path(cfg["package_name"]) + "/config/test_suites.yaml")
         testgeneration = self.load_data(rospkg.RosPack().get_path(cfg["package_name"]) + "/config/test_generation_config.yaml")
+        self.generation_config = testgeneration
         #print "testsuites:", testsuites
         #print "testgeneration:", testgeneration
         self.tests = []

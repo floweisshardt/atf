@@ -18,11 +18,11 @@ class Merger():
         #self.atf_configuration_parser = ATFConfigurationParser()
         #self.config = self.atf_configuration_parser.get_config()
         # parse configuration
-        atf_configuration_parser = ATFConfigurationParser()
-        self.tests = atf_configuration_parser.get_tests()
+        self.atf_configuration_parser = ATFConfigurationParser()
+        #self.tests = atf_configuration_parser.get_tests()
 
     def merge(self):
-        test_list = self.atf_configuration_parser.load_data(os.path.join(self.config["json_output"], "test_list.json"))
+        test_list = self.atf_configuration_parser.load_data(os.path.join(self.atf_configuration_parser.generation_config["json_output"], "test_list.json"))
         #print "test_list=", test_list
         for test in test_list:
             #print "test=", test
@@ -34,7 +34,7 @@ class Merger():
                 test_data_merged = {}
                 for subtest in subtests:
                     #print "subtest=", subtest
-                    subtest_data = self.atf_configuration_parser.load_data(os.path.join(self.config["json_output"], subtest + ".json"))
+                    subtest_data = self.atf_configuration_parser.load_data(os.path.join(self.atf_configuration_parser.generation_config["json_output"], subtest + ".json"))
                     #print "subtest_data=", subtest_data
                     if subtest_data != None:
                         for testblock_name, testblock_data in subtest_data.items():
@@ -104,11 +104,11 @@ class Merger():
                 #print "test_data_merged after average=", test_data_merged
 
                 # write to file
-                filename = os.path.join(self.config["json_output"], "merged_" + test_name + ".json")
+                filename = os.path.join(self.atf_configuration_parser.generation_config["json_output"], "merged_" + test_name + ".json")
                 stream = file(filename, 'w')
                 json.dump(copy.copy(test_data_merged), stream)
 
-                filename = os.path.join(self.config["yaml_output"], "merged_" + test_name + ".yaml")
+                filename = os.path.join(self.atf_configuration_parser.generation_config["yaml_output"], "merged_" + test_name + ".yaml")
                 if not filename == "":
                     stream = file(filename, 'w')
                     yaml.dump(copy.copy(test_data_merged), stream, default_flow_style=False)
@@ -143,5 +143,6 @@ class TestMerging(unittest.TestCase):
 if __name__ == '__main__':
     if "standalone" in sys.argv:
         merger = Merger()
+        merger.merge()
     else:
         rostest.rosrun("atf_core", 'merging', TestMerging, sysargs=None)
