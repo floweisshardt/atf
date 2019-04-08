@@ -56,7 +56,10 @@ class ATFConfigurationParser:
                             test.testblocks = []
                             for testblock_name in test.test_config.keys():
                                 #print testblock_name
-                                metric_handles = self.create_metric_handles(test, testblock_name, True)
+                                if recorder_handle != None:
+                                    metric_handles = None
+                                else:
+                                    metric_handles = self.create_metric_handles(test, testblock_name, True)
                                 #print "metric_handles", metric_handles
                                 testblock = Testblock(testblock_name, metric_handles, recorder_handle)
                                 test.testblocks.append(testblock)
@@ -68,7 +71,7 @@ class ATFConfigurationParser:
                 test_config_id += 1
                 robot_id = 0
             testsuite_id += 1
-        print "number of tests:", len(self.tests)
+        #print "number of tests:", len(self.tests)
         
         
         #print "config loader: config=", self.config

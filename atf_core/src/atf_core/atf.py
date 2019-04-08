@@ -18,10 +18,10 @@ class ATF():
         atf_configuration_parser = atf_core.ATFConfigurationParser(package_name)
         tests = atf_configuration_parser.get_tests()
         for test in tests:
-            print "test.name:", test.name
+            #print "test.name:", test.name
             if test_name == test.name:
                 break
-        print "current test:", test.name
+        #print "current test:", test.name
         self.test = test
 
         self.publisher = {}

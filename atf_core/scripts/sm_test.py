@@ -25,10 +25,10 @@ class Recorder():
         atf_configuration_parser = atf_core.ATFConfigurationParser(package_name)
         tests = atf_configuration_parser.get_tests()
         for test in tests:
-            print "test.name:", test.name
+            #print "test.name:", test.name
             if test_name == test.name:
                 break
-        print "current test:", test.name
+        #print "current test:", test.name
             
         outcome_map_succeeded = {}
         outcome_map_error = {}
@@ -54,7 +54,7 @@ class Recorder():
             with sm_con:
                 # Add states to the container
                 for testblock in test.test_config.keys():
-                    print "adding testblock:", testblock
+                    #print "adding testblock:", testblock
                     smach.Concurrence.add(testblock, atf_core.SmAtfTestblock(testblock, recorder_handle))
             
             # TODO preempt all other concurrent States as soon as one state returns 'error'
@@ -86,9 +86,9 @@ if __name__ == '__main__':
     if "standalone" in sys.argv:
         rec = Recorder()
         # Execute SMACH plan
-        print "before execute"
+        #print "before execute"
         rec.sm_top.execute()
-        print "after execute"
+        #print "after execute"
         rec.sis.stop()
     else:
         rostest.rosrun('application', 'recording', Test, sysargs=None)

@@ -38,7 +38,7 @@ class SmAtfTestblock(smach.StateMachine):
 #                                                'pause':'PAUSE',
 #                                                'stop':'succeeded',
 #                                                'error':'error'})
-            smach.StateMachine.add('SUCCEEDED', GenericRecorderState(name, recorder_handle, TestblockStatus.SUCCEEDED), 
+            smach.StateMachine.add('SUCCEEDED', Stopped(name, recorder_handle), 
                                    transitions={'done':'succeeded'})
             smach.StateMachine.add('ERROR', GenericRecorderState(name, recorder_handle, TestblockStatus.ERROR), 
                                    transitions={'done':'error'})
@@ -107,6 +107,10 @@ class Active(smach.State):
         status.status = TestblockStatus.ACTIVE
         self.recorder_handle.record_status(status)
 
+        # start to record metric topics into bag file
+        self.recorder_handle.start_recording(userdata.name)
+
+        # wait for next transition trigger
         with self._trigger_cond:
             self._trigger_cond.wait()
 
@@ -126,6 +130,25 @@ class Active(smach.State):
             outcome = 'error'
         self.trigger = None
         return outcome
+
+class Stopped(smach.State):
+    def __init__(self, name, recorder_handle):
+        smach.State.__init__(self, input_keys=['name'], outcomes=['done', 'error'])
+        self.recorder_handle = recorder_handle
+
+    def execute(self, userdata):
+        self.trigger = None
+        # record to bag file
+        status = TestblockStatus()
+        status.stamp = rospy.Time.now()
+        status.name = userdata.name
+        status.status = TestblockStatus.SUCCEEDED
+        self.recorder_handle.record_status(status)
+
+        # start to record metric topics into bag file
+        self.recorder_handle.stop_recording(userdata.name)
+
+        return 'done'
 
 class GenericRecorderState(smach.State):
     def __init__(self, name, recorder_handle, status):
