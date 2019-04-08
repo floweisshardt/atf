@@ -36,7 +36,7 @@ class ATF():
             error_msg = "testblock %s not in list of testblocks"%testblock
             self.error(error_msg)
             raise atf_core.ATFError(error_msg)
-        print "starting testblock", testblock
+        rospy.loginfo("starting testblock %s"%testblock)
         trigger = TestblockTrigger()
         trigger.stamp = rospy.Time.now()
         trigger.name = testblock
@@ -48,7 +48,7 @@ class ATF():
             error_msg = "testblock %s not in list of testblocks"%testblock
             self.error(error_msg)
             raise atf_core.ATFError(error_msg)
-        print "stopping testblock", testblock
+        rospy.loginfo("stopping testblock %s"%testblock)
         trigger = TestblockTrigger()
         trigger.stamp = rospy.Time.now()
         trigger.name = testblock

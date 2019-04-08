@@ -65,23 +65,21 @@ class Analyser:
                         j+=1
                         for testblock in test.testblocks:
                             #print "testblock", testblock.name
-                            if topic == "atf/status" and msg.name == testblock.name:
-                                #print "topic match for testblock '%s'"%testblock.name
-                                testblock.status = msg.status
-                                #print "testblock status for testblock '%s':"%testblock.name, testblock.status
-                                if testblock.status == TestblockStatus.ACTIVE:
-                                    #print "testblock is active"
-                                    #print "testblock.metric_handles", testblock.metric_handles
-                                    for metric_handle in testblock.metric_handles:
+                            #print "testblock.metric_handles", testblock.metric_handles
+                            for metric_handle in testblock.metric_handles:
+                                if topic == "atf/status" and msg.name == testblock.name:
+                                    #print "topic match for testblock '%s'"%testblock.name
+                                    #print "testblock status for testblock '%s':"%testblock.name, testblock.status
+                                    testblock.status = msg.status
+                                    if testblock.status == TestblockStatus.ACTIVE:
                                         #print "calling start on metric", metric_handle
                                         metric_handle.start(msg.stamp)
-                                elif testblock.status == TestblockStatus.SUCCEEDED:
-                                    #print "testblock is succeeded"
-                                    #print "testblock.metric_handles", testblock.metric_handles
-                                    for metric_handle in testblock.metric_handles:
+                                    elif testblock.status == TestblockStatus.SUCCEEDED:
                                         #print "calling stop on metric", metric_handle
                                         metric_handle.stop(msg.stamp)
-                        #bar.update(j)
+                                else:
+                                    metric_handle.update(topic, msg)
+                    #bar.update(j)
                     except StopIteration as e:
                         print "stop iterator", e
                         break
@@ -123,14 +121,6 @@ class Analyser:
             
             print "%d errors detected during test processing"%count_error
             i += 1
-        
-        print "merger start"
-        
-        for test in self.tests:
-            print "test=", test
-            print "test.name=", test.name
-        
-        print "merger done"
         
         try:
             print "Processing tests took %s min"%str( round((time.time() - start_time)/60.0,4 ))
