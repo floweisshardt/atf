@@ -78,7 +78,7 @@ class Analyser:
                                         #print "calling stop on metric", metric_handle
                                         metric_handle.stop(msg.stamp)
                                 else:
-                                    metric_handle.update(topic, msg)
+                                    metric_handle.update(topic, msg, t)
                     #bar.update(j)
                     except StopIteration as e:
                         print "stop iterator", e

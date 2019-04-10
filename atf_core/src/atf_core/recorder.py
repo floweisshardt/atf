@@ -190,7 +190,7 @@ class ATFRecorder:
             else:
                 self.active_topics[topic]["testblocks"].append(testblock_name)
 
-        #print ">>> start recording for %s, active_topics="%testblock_name, self.active_topics
+        print ">>> start recording for %s, active_topics="%testblock_name, self.active_topics
 
     def stop_recording(self, testblock_name):
         if testblock_name not in self.test.test_config:
@@ -208,8 +208,10 @@ class ATFRecorder:
         #print "<<< stop recording for %s, active_topics="%testblock_name, self.active_topics
 
     def get_topics_of_testblock(self, testblock_name):
-        testblock_data = self.test.test_config[testblock_name]
         topics = []
+        
+        # topics from test_config
+        testblock_data = self.test.test_config[testblock_name]
         #print "testblock_data=", testblock_data
         for metric, metric_data in testblock_data.items():
             #print "metric=", metric
@@ -218,11 +220,26 @@ class ATFRecorder:
                 if "topic" in entry:
                     topic = entry["topic"]
                     if topic not in topics:
-                        if not topic.startswith("/"): # we need to use global topics because rostopic.get_topic_class(topic) can not handle non-global topics
-                            topic = "/" + topic
                         topics.append(topic)
                         #print "topics==============", topics
-        return topics
+
+        # topics from robot_config
+        #print "self.test.robot_config", self.test.robot_config
+        for topic in self.test.robot_config["topics"]:
+            if topic not in topics:
+                topics.append(topic)
+
+        #print "topics", topics
+
+        # fix global topic prefix
+        topics_global = []
+        for topic in topics:
+            if topic.startswith("/"): # we need to use global topics because rostopic.get_topic_class(topic) can not handle non-global topics
+                topics_global.append(topic)
+            else:
+                topics_global.append("/" + topic)
+        #print "topics_global", topics_global
+        return topics_global
 
 
     def record_trigger(self, trigger):
