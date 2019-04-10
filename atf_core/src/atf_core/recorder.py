@@ -225,9 +225,9 @@ class ATFRecorder:
 
         # topics from robot_config
         #print "self.test.robot_config", self.test.robot_config
-        for topic in self.test.robot_config["topics"]:
-            if topic not in topics:
-                topics.append(topic)
+        #for topic in self.test.robot_config["topics"]:
+        #    if topic not in topics:
+        #        topics.append(topic)
 
         #print "topics", topics
 
