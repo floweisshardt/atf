@@ -24,7 +24,7 @@ class Testblock:
 
         if self.status == TestblockStatus.ERROR:
             print "An error occured during analysis of testblock '%s', no useful results available."%self.name
-            result.update({name: {"status": "error"}})
+            result.update({self.name: {"status": "error"}})
         else:
             #print "testblock.metrics=", self.metric_handles
             for metric_handle in self.metric_handles:

@@ -4,11 +4,13 @@ testblock_small:
     - groundtruth: 3
       groundtruth_epsilon: 0.5
   path_length:
-    - root_frame: link1
+    - topic: /tf
+      root_frame: link1
       measured_frame: link2
       groundtruth: 6.28
       groundtruth_epsilon: 1.5
-    - root_frame: link1
+    - topic: /tf
+      root_frame: link1
       measured_frame: link3
       groundtruth: 0.0
       groundtruth_epsilon: 1.5
@@ -27,11 +29,13 @@ testblock_large:
     - groundtruth: 5
       groundtruth_epsilon: 0.5
   path_length:
-    - root_frame: link1
+    - topic: /tf
+      root_frame: link1
       measured_frame: link2
       groundtruth: 12.56
       groundtruth_epsilon: 1.5
-    - root_frame: link1
+    - topic: /tf
+      root_frame: link1
       measured_frame: link3
       groundtruth: 0
       groundtruth_epsilon: 1.5

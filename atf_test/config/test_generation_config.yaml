@@ -1,15 +1,15 @@
 suites_file: config/test_suites.yaml                                # Path of the test_suite file
 test_config_path: config/test_configs                               # Path of the test_config file
 robot_config_path: config/robots                                    # Folder which contains the robot_config files
-robot_env_config_path: "config/robot_envs"                          # Folder which contains the robot_env_config files
+robot_env_config_path: config/robot_envs                            # Folder which contains the robot_env_config files
 repetitions: 2                                                      # Number of repetitions per test
 
-app_executable: "application.py"                                    # Name of the application's executable file
-additional_launch_file: "launch/application.launch"                 # Path of the additional launch file
+app_executable: application.py                                      # Name of the application's executable file
+additional_launch_file: launch/application.launch                   # Path of the additional launch file
 
-bagfile_output: "/tmp/atf_test/data/"                               # Folder for bagfile output
-json_output: "/tmp/atf_test/results_json/"                          # Folder for the json files output
-yaml_output: "/tmp/atf_test/results_yaml/"                          # Folder for the yaml files output
+bagfile_output: /tmp/atf_test/data/                                 # Folder for bagfile output
+json_output: /tmp/atf_test/results_json/                            # Folder for the json files output
+yaml_output: /tmp/atf_test/results_yaml/                            # Folder for the yaml files output
 
 speed_factor_analysis: 2.0                                          # Factor to speedup analysis (can lower accuracy if to fast, especially path_length)
 

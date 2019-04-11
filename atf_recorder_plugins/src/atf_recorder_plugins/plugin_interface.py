@@ -12,8 +12,8 @@ class RecordInterface:
     def __init__(self, write_lock, bag_file_writer):
         self.bag_file_writer = bag_file_writer
 
-    def trigger_callback(self, goal):
-        #print "RecordInterface goal=", goal
+    def trigger_callback(self, testblock_name):
+        #print "RecordInterface testblock_name=", testblock_name
 
         publishers = {}
         subscribers = {}
@@ -23,7 +23,7 @@ class RecordInterface:
 
         while not rospy.is_shutdown():
             try:
-                master = rosgraph.Master("plugin_interface_" + goal.name)
+                master = rosgraph.Master("plugin_interface_" + testblock_name)
                 publishers, subscribers, services = master.getSystemState()
                 topic_types = master.getTopicTypes()
                 service_types = self.get_service_types(services)
@@ -49,11 +49,11 @@ class RecordInterface:
         #TODO actions
 
         #print "api_dict=\n", api_dict
-        api = self.dict_to_msg(api_dict)
+        api = self.dict_to_msg(testblock_name, api_dict)
         #print "api=\n", api
 
         # write api to bagfile
-        self.bag_file_writer.write_to_bagfile("/atf/" + goal.name + "/api", api, rospy.Time.now())
+        self.bag_file_writer.write_to_bagfile("/atf/api", api, api.stamp)
 
     def get_service_types(self, services):
         service_types = []
@@ -99,8 +99,10 @@ class RecordInterface:
                 return item[1]
         return None
 
-    def dict_to_msg(self, api_dict):
+    def dict_to_msg(self, testblock_name, api_dict):
         api = Api()
+        api.stamp = rospy.Time.now()
+        api.testblock_name = testblock_name
         #print "api=", api
         # fill Api message
         for node, data in api_dict.items():

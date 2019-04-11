@@ -67,7 +67,7 @@ class Analyser:
                             #print "testblock", testblock.name
                             #print "testblock.metric_handles", testblock.metric_handles
                             for metric_handle in testblock.metric_handles:
-                                if topic == "atf/status" and msg.name == testblock.name:
+                                if topic == "/atf/status" and msg.name == testblock.name:
                                     #print "topic match for testblock '%s'"%testblock.name
                                     #print "testblock status for testblock '%s':"%testblock.name, testblock.status
                                     testblock.status = msg.status

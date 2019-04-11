@@ -11,9 +11,6 @@ from atf_core import Test, Testblock
 class ATFConfigurationParser:
     def __init__(self, package_name, recorder_handle = None):
         self.parsing_error_message = ""
-
-        # get full config from parameter server (test_config = list of all test configs)
-        #self.config = rosparam.get_param(self.ns)
         
         testsuites = self.load_data(rospkg.RosPack().get_path(package_name) + "/config/test_suites.yaml")
         testgeneration = self.load_data(rospkg.RosPack().get_path(package_name) + "/config/test_generation_config.yaml")
@@ -82,9 +79,6 @@ class ATFConfigurationParser:
         #print "config loader: test_config=\n", self.test_config
         #self.robot_config = self.config["robot_config"]
         #print "config loader: robot_config=\n", self.robot_config
-
-    def get_config(self):
-        return self.config
     
     def get_tests(self):
         return self.tests
@@ -109,15 +103,6 @@ class ATFConfigurationParser:
                         raise ATFConfigurationError("no valid metric configuration for metric '%s' in testblock '%s'" %(metric_name, testblock_name))
         #print "metric_handles=", metric_handles
         return metric_handles
-
-    #def create_testblocks(self, config, recorder_handle=None, create_metrics=False):
-    #    testblocks = {}
-    #    for testblock_name in config["test_config"].keys():
-    #        metric_handles = self.create_metric_handles(create_metrics)
-    #        testblocks[testblock_name] = Testblock(testblock_name, metric_handles, recorder_handle)
-    #    return testblocks
-
-
 
     def load_data(self, filename):
         #print "config parser filename:", filename

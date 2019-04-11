@@ -65,8 +65,11 @@ class CalculateTime:
         # TODO: Implement purge as soon as pause is implemented
         pass
 
-    def update(self, topic, msg):
+    def update(self, topic, msg, t):
         pass
+
+    def get_topics(self):
+            return []
 
     def get_result(self):
         #print "---->>>> CalculateTime get_result"

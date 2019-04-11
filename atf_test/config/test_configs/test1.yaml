@@ -5,7 +5,8 @@ testblock_small:
     - topic: tf
       root_frame: link1
       measured_frame: link2
-    - root_frame: link1
+    - topic: tf
+      root_frame: link1
       measured_frame: link3
   publish_rate:
     - topic: topic1
@@ -17,7 +18,8 @@ testblock_large:
     - topic: tf
       root_frame: link1
       measured_frame: link2
-    - root_frame: link1
+    - topic: tf
+      root_frame: link1
       measured_frame: link3
   publish_rate:
     - topic: /topic1

@@ -63,10 +63,13 @@ class CalculatePublishRate:
         # TODO: Implement purge as soon as pause is implemented
         pass
 
-    def update(self, topic, msg):
+    def update(self, topic, msg, t):
         if self.active:
             if topic == self.topic:
                 self.counter += 1
+
+    def get_topics(self):
+            return []
 
     def get_result(self):
         groundtruth_result = None

@@ -106,6 +106,8 @@ class CalculatePathLength:
                     self.trans_old = trans
                     self.rot_old = rot
 
+    def get_topics(self):
+            return []
 
     def get_result(self):
         groundtruth_result = None
