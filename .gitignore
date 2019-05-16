@@ -40,6 +40,7 @@ qtcreator-*
 
 # temporary files
 *~
+*.orig
 
 # merge conflict files
 *.orig
@@ -51,3 +52,5 @@ qtcreator-*
 # Catkin custom files
 CATKIN_IGNORE
 test_generated
+
+.idea/*
