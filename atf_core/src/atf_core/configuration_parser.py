@@ -32,7 +32,7 @@ class ATFConfigurationParser:
                         #print "robot_env:", robot_env_name
                         for repetition in range(0,testgeneration["repetitions"]):
                             name = "ts" + str(testsuite_id) + "_c" + str(test_config_id) + "_r" + str(robot_id) + "_e" + str(robot_env_id) + "_" + str(repetition)
-                            #print name
+                            #print "rep = %d, name=%s"%(repetition, name)
                             test = Test()
                             test.package_name = package_name
                             test.name = name
@@ -68,6 +68,7 @@ class ATFConfigurationParser:
                 test_config_id += 1
                 robot_id = 0
             testsuite_id += 1
+            test_config_id = 0
         #print "number of tests:", len(self.tests)
         
         

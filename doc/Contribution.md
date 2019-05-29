@@ -13,9 +13,9 @@ class CalculatePublishRateParamHandler
 class CalculatePublishRate:
     def __init__(self, groundtruth, groundtruth_epsilon):
     def start(self, timestamp):
-    def stop(self, timestamp):  
+    def stop(self, timestamp):
     def pause(self, timestamp):
-    def purge(self, timestamp):   
+    def purge(self, timestamp):
     def get_result(self):
 ```
   using the "publish\_rate"-metrics as an example. Replace "PublishRate" with the name of your newly generated metrics.

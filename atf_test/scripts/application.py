@@ -23,7 +23,7 @@ class Application:
         self.pub_tf_circle("link1", "link2", radius=1, time=3)
         self.atf.stop("testblock_small")
 
-        # large testblock (circle r=1, time=5
+        # large testblock (circle r=1, time=5)
         self.atf.start("testblock_large")
         self.pub_tf_circle("link1", "link2", radius=2, time=5)
         self.atf.stop("testblock_large")

@@ -36,7 +36,10 @@ class CalculatePublishRate:
 
         self.active = False
         self.finished = False
-        self.topic = topic
+        if topic.startswith("/"): # we need to use global topics because rostopic.get_topic_class(topic) can not handle non-global topics and recorder will always record global topics starting with "/"
+            self.topic = topic
+        else:
+            self.topic = "/" + topic
         self.groundtruth = groundtruth
         self.groundtruth_epsilon = groundtruth_epsilon
         self.counter = 0

@@ -16,7 +16,7 @@ class ATFRecorder:
     def __init__(self, test):
         self.ns = "/atf/"
         self.test = test
-        #print "recorder_core: self.test:", self.test
+        #print "recorder_core: self.test.name:", self.test.name
 
         recorder_config = self.load_data(rospkg.RosPack().get_path("atf_recorder_plugins") +
                                          "/config/recorder_plugins.yaml")
