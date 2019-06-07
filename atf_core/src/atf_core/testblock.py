@@ -44,7 +44,7 @@ class Testblock:
                         overall_groundtruth_result = False
                         overall_groundtruth_error_message += self.name + "(" + metric_name + ": data=" + str(data) + ", groundtruth=" + str(groundtruth) + "+-" + str(groundtruth_epsilon) + " details:" + str(details) + "); "
                 else:
-                    raise ATFTestblockError("No result for metric '%s' in testblock '%s'" % (metric_name, self.name))
+                    raise ATFTestblockError("No result for metrics in testblock '%s'" % (self.name))
 
         #if result == {}:
         #    raise ATFAnalyserError("Analysing failed, no result available.")

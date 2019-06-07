@@ -25,6 +25,7 @@ class CalculateDistanceToObstaclesParamHandler:
 class CalculateDistanceToObstacles:
     def __init__(self, links, collision_object="all"):
         self.active = False
+        self.started = False
         self.finished = False
         self.links = links
         self.collision_objects = collision_object
@@ -35,6 +36,7 @@ class CalculateDistanceToObstacles:
 
     def start(self):
         self.active = True
+        self.started = True
 
     def stop(self):
         self.active = False
@@ -82,7 +84,7 @@ class CalculateDistanceToObstacles:
         save[link_name + " to " + co].append(distance)
 
     def get_result(self):
-        if self.finished:
+        if self.started and self.finished:
             obstacle_distance_minimum = {}
 
             for distance in self.distances:

@@ -34,27 +34,30 @@ class CalculatePublishRateParamHandler:
 class CalculatePublishRate:
     def __init__(self, topic, groundtruth, groundtruth_epsilon):
 
-        self.active = False
+        self.started = False
         self.finished = False
+        self.active = False
+        self.groundtruth = groundtruth
+        self.groundtruth_epsilon = groundtruth_epsilon
         if topic.startswith("/"): # we need to use global topics because rostopic.get_topic_class(topic) can not handle non-global topics and recorder will always record global topics starting with "/"
             self.topic = topic
         else:
             self.topic = "/" + topic
-        self.groundtruth = groundtruth
-        self.groundtruth_epsilon = groundtruth_epsilon
+
         self.counter = 0
         self.start_time = None
         self.stop_time = None
 
     def start(self, timestamp):
         #print "--> publish rate start"
-        self.active = True
         self.start_time = timestamp
+        self.active = True
+        self.started = True
 
     def stop(self, timestamp):
         #print "--> publish rate stop"
-        self.active = False
         self.stop_time = timestamp
+        self.active = False
         self.finished = True
 
     def pause(self, timestamp):
@@ -77,7 +80,7 @@ class CalculatePublishRate:
     def get_result(self):
         groundtruth_result = None
         details = {"topic": self.topic}
-        if self.finished:
+        if self.started and self.finished: #  we check if the testblock was ever started and stoped
             data = round(self.counter / (self.stop_time - self.start_time).to_sec(), 3)
             if self.groundtruth != None and self.groundtruth_epsilon != None:
                 if math.fabs(self.groundtruth - data) <= self.groundtruth_epsilon:

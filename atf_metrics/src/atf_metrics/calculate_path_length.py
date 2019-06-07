@@ -44,8 +44,11 @@ class CalculatePathLength:
         :param measured_frame: name of the second frame. The distance will be measured in relation to the root_frame.
         :type  measured_frame: string
         """
-
+        self.started = False
+        self.finished = False
         self.active = False
+        self.groundtruth = groundtruth
+        self.groundtruth_epsilon = groundtruth_epsilon
         self.topic = topic
         self.root_frame = root_frame
         self.measured_frame = measured_frame
@@ -54,15 +57,12 @@ class CalculatePathLength:
         self.first_value = True
         self.trans_old = []
         self.rot_old = []
-        self.groundtruth = groundtruth
-        self.groundtruth_epsilon = groundtruth_epsilon
-        self.finished = False
 
-        #self.listener = tf.TransformListener()
         self.t = tf.Transformer(True, rospy.Duration(10.0))
 
     def start(self, timestamp):
         self.active = True
+        self.started = True
 
     def stop(self, timestamp):
         self.active = False
@@ -112,7 +112,7 @@ class CalculatePathLength:
     def get_result(self):
         groundtruth_result = None
         details = {"root_frame": self.root_frame, "measured_frame": self.measured_frame}
-        if self.finished:
+        if self.started and self.finished: #  we check if the testblock was ever started and stoped
             data = round(self.path_length, 3)
             if self.groundtruth != None and self.groundtruth_epsilon != None:
                 if math.fabs(self.groundtruth - data) <= self.groundtruth_epsilon:

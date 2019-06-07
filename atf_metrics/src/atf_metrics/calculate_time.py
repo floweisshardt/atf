@@ -42,19 +42,24 @@ class CalculateTime:
         Class for calculating the time between the trigger 'ACTIVATE' and 'FINISH' on the topic assigned to the
         testblock.
         """
-        self.start_time = None
-        self.stop_time = None
+        self.started = False
+        self.finished = False
+        self.active = False
         self.groundtruth = groundtruth
         self.groundtruth_epsilon = groundtruth_epsilon
-        self.finished = False
+        self.start_time = None
+        self.stop_time = None
 
     def start(self, timestamp):
         #print "---->>>> CalculateTime start"
         self.start_time = timestamp
+        self.active = True
+        self.started = True
 
     def stop(self, timestamp):
         #print "---->>>> CalculateTime stop"
         self.stop_time = timestamp
+        self.active = False
         self.finished = True
 
     def pause(self, timestamp):
@@ -76,7 +81,8 @@ class CalculateTime:
         groundtruth_result = None
         details = None
         #print "self.finished", self.finished
-        if self.finished:
+        return False #FIXME
+        if self.started and self.finished: #  we check if the testblock was ever started and stoped
             data = round((self.stop_time - self.start_time).to_sec(), 3)
             if self.groundtruth != None and self.groundtruth_epsilon != None:
                 if math.fabs(self.groundtruth - data) <= self.groundtruth_epsilon:

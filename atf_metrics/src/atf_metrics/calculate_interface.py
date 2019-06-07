@@ -39,15 +39,19 @@ class CalculateInterface:
         """
         Class for calculating the interface type.
         """
+        self.started = False
         self.finished = False
+        self.active = False
         self.api_dict = {}
         self.testblock_name = testblock_name
         self.metric = metric
 
     def start(self, timestamp):
-        pass
+        self.active = True
+        self.started = True
 
     def stop(self, timestamp):
+        self.active = False
         self.finished = True
 
     def pause(self, timestamp):
@@ -55,7 +59,7 @@ class CalculateInterface:
 
     def purge(self, timestamp):
         pass
-    
+
     def update(self, topic, msg, t):
         #print "msg=", msg
         if topic == "/atf/api":
@@ -159,7 +163,7 @@ class CalculateInterface:
                                 groundtruth_result = True
                                 data = 100.0
         #print details
-        if self.finished:
+        if self.started and self.finished: #  we check if the testblock was ever started and stoped
             return "interface", data, groundtruth_result, groundtruth, groundtruth_epsilon, details
         else:
             return False
