@@ -42,7 +42,6 @@ include_directories(
 
 install(
     PROGRAMS
-        scripts/analyse_all.py
         scripts/analyser.py
         scripts/cleaner.py
         scripts/dropbox_uploader.sh
