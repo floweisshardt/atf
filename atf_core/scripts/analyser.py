@@ -22,9 +22,9 @@ class Analyser:
         self.error = False
 
         # parse configuration
-        atf_configuration_parser = ATFConfigurationParser(package_name)
-        self.tests = atf_configuration_parser.get_tests()
-        #self.testblocks = atf_configuration_parser.create_testblocks(self.config, None, True)
+        self.configuration_parser = ATFConfigurationParser(package_name)
+        self.tests = self.configuration_parser.get_tests()
+        #self.testblocks = self.configuration_parser.create_testblocks(self.config, None, True)
 
         #print "self.config", self.config
         #print "self.testblocks", self.testblocks
@@ -117,11 +117,17 @@ class Analyser:
             #print "test.result:", test.result
             
             # export overall test result to file
-            test.export_to_file()
+            self.configuration_parser.export_to_file(test.result, os.path.join(test.generation_config["json_output"], test.name + ".json"))
+            self.configuration_parser.export_to_file(test.result, os.path.join(test.generation_config["yaml_output"], test.name + ".yaml"))
             
             print "%d errors detected during test processing"%count_error
             i += 1
         
+        #export test list
+        test_list = self.configuration_parser.get_test_list()
+        self.configuration_parser.export_to_file(test_list, os.path.join(test.generation_config["json_output"], "test_list.json"))
+        self.configuration_parser.export_to_file(test_list, os.path.join(test.generation_config["yaml_output"], "test_list.yaml"))
+
         try:
             print "Processing tests took %s min"%str( round((time.time() - start_time)/60.0,4 ))
         except:

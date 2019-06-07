@@ -158,7 +158,7 @@ class CalculateInterface:
                                 details += ", all interfaces of node " + node_name + ": OK"
                                 groundtruth_result = True
                                 data = 100.0
-        print details
+        #print details
         if self.finished:
             return "interface", data, groundtruth_result, groundtruth, groundtruth_epsilon, details
         else:

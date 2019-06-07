@@ -50,7 +50,7 @@ function(atf_test)
             #add_rostest(${TEST_GENERATED_PATH}/analysing/${TEST_NAME_ANALYSING} DEPENDENCIES ${_TARGET_NAME_RECORDING})
         endforeach()
 
-        add_rostest(${TEST_GENERATED_PATH}/analysing.test DEPENDENCIES ${_TARGET_NAME_RECORDING})
+        add_rostest(${TEST_GENERATED_PATH}/analysing.test DEPENDENCIES ${_TARGET_NAMES_RECORDING})
         add_rostest(${TEST_GENERATED_PATH}/merging.test DEPENDENCIES atf_${PROJECT_NAME}_analysing)
         add_rostest(${TEST_GENERATED_PATH}/uploading.test DEPENDENCIES atf_${PROJECT_NAME}_merging)
 

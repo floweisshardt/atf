@@ -41,13 +41,13 @@ class ATFRecorder:
 
         # Init metric recorder
         self.recorder_plugin_list = []
-        print "recorder_config", recorder_config
+        #print "recorder_config", recorder_config
         if len(recorder_config) > 0:
             for value in recorder_config.values():
-                print "value=", value
+                #print "value=", value
                 self.recorder_plugin_list.append(getattr(atf_recorder_plugins, value)(self.lock_write,
                                                                                       self.bag_file_writer))
-        print "self.recorder_plugin_list", self.recorder_plugin_list
+        #print "self.recorder_plugin_list", self.recorder_plugin_list
 
         self.active_topics = {}
 
@@ -107,7 +107,7 @@ class ATFRecorder:
             else:
                 self.active_topics[topic]["testblocks"].append(testblock_name)
 
-        print ">>> start recording for %s, active_topics="%testblock_name, self.active_topics
+        #print ">>> start recording for %s, active_topics="%testblock_name, self.active_topics
         self.lock.release()
 
         # Send message to all recorder plugins
@@ -184,23 +184,6 @@ class ATFRecorder:
 
     def global_topic_callback(self, msg, name):
         self.bag_file_writer.write_to_bagfile(name, msg, rospy.Time.now())
-
-#    def get_topics(self):
-#        topics = []
-#        print "self.testblock_list=", self.testblock_list
-#        print "self.test.test_config=", self.test.test_config
-#        for testblock, testblock_data in self.test.test_config.items():
-#            #print "testblock=", testblock
-#            #print "testblock_data=", testblock_data
-#            for metric, metric_data in testblock_data.items():
-#                #print "metric=", metric
-#                print "metric_data=", metric_data
-#                for entry in metric_data:
-#                    if "topic" in entry:
-#                        if entry["topic"] not in topics:
-#                            topics.append(entry["topic"])
-#                            #print "topics==============", topics
-#        return topics
 
 class ATFRecorderError(Exception):
     pass

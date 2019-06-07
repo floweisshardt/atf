@@ -5,6 +5,8 @@ import rospkg
 import rosparam
 import atf_metrics
 import os
+import itertools as it
+import json
 
 from atf_core import Test, Testblock
 
@@ -12,26 +14,31 @@ class ATFConfigurationParser:
     def __init__(self, package_name, recorder_handle = None):
         self.parsing_error_message = ""
         
-        testsuites = self.load_data(rospkg.RosPack().get_path(package_name) + "/config/test_suites.yaml")
+        self.testsuites = self.load_data(rospkg.RosPack().get_path(package_name) + "/config/test_suites.yaml")
         testgeneration = self.load_data(rospkg.RosPack().get_path(package_name) + "/config/test_generation_config.yaml")
         self.generation_config = testgeneration
-        #print "testsuites:", testsuites
+        #print "testsuites:", self.testsuites
         #print "testgeneration:", testgeneration
         self.tests = []
+        self.test_list = []
         testsuite_id = 0
         test_config_id = 0
         robot_id = 0
         robot_env_id = 0
-        for testsuite_name in testsuites.keys(): # TODO fix package name
+        for testsuite_name in self.testsuites.keys(): # TODO fix package name
             #print "testsuite:", testsuite_name
-            for test_config_name in testsuites[testsuite_name]["test_configs"]:
+            for test_config_name in self.testsuites[testsuite_name]["test_configs"]:
                 #print "test_config:", test_config_name
-                for robot_name in testsuites[testsuite_name]["robots"]:
+                for robot_name in self.testsuites[testsuite_name]["robots"]:
                     #print "robot:", robot_name
-                    for robot_env_name in testsuites[testsuite_name]["robot_envs"]:
+                    for robot_env_name in self.testsuites[testsuite_name]["robot_envs"]:
                         #print "robot_env:", robot_env_name
+                        test_group_name = "ts" + str(testsuite_id) + "_c" + str(test_config_id) + "_r" + str(robot_id) + "_e" + str(robot_env_id)
+                        test_list_element = {}
+                        test_list_element[test_group_name] = {}
+                        test_list_element[test_group_name]["subtests"] = []
                         for repetition in range(0,testgeneration["repetitions"]):
-                            name = "ts" + str(testsuite_id) + "_c" + str(test_config_id) + "_r" + str(robot_id) + "_e" + str(robot_env_id) + "_" + str(repetition)
+                            name = test_group_name + "_" + str(repetition)
                             #print "rep = %d, name=%s"%(repetition, name)
                             test = Test()
                             test.package_name = package_name
@@ -62,6 +69,13 @@ class ATFConfigurationParser:
                                 test.testblocks.append(testblock)
                             
                             self.tests.append(test)
+                            test_list_element[test_group_name]["subtests"].append(test.name)
+                            
+                        
+                        test_list_element[test_group_name]["robot"] = test.robot_name
+                        test_list_element[test_group_name]["robot_env"] = test.robot_env_name
+                        test_list_element[test_group_name]["test_config"] = test.test_config_name
+                        self.test_list.append(test_list_element)
                         robot_env_id += 1
                     robot_id += 1
                     robot_env_id = 0
@@ -70,19 +84,24 @@ class ATFConfigurationParser:
             testsuite_id += 1
             test_config_id = 0
         #print "number of tests:", len(self.tests)
-        
-        
-        #print "config loader: config=", self.config
 
-        #self.test_name = self.config["test_name"]
-        #print "config loader: test_name=\n", self.test_name
-        #self.test_config = self.config["test_config"]
-        #print "config loader: test_config=\n", self.test_config
-        #self.robot_config = self.config["robot_config"]
-        #print "config loader: robot_config=\n", self.robot_config
-    
     def get_tests(self):
         return self.tests
+    
+    def get_test_list(self):
+        return self.test_list
+    
+    def export_to_file(self, data, target):
+        if not os.path.exists(os.path.dirname(target)):
+            os.makedirs(os.path.dirname(target))
+        stream = file(target, 'w')
+        file_extension = os.path.splitext(target)[1]
+        if file_extension == ".json": # get file extension
+            json.dump(data, stream)
+        elif file_extension == ".yaml": # get file extension
+            yaml.dump(data, stream, default_flow_style=False)
+        else:
+            raise ATFConfigurationError("ATF cannot export file extension %s"%(file_extension))
 
     def create_metric_handles(self, test, testblock_name, create_metrics):
         metric_handles = []

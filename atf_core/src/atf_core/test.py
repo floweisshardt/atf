@@ -44,29 +44,3 @@ class Test:
     def print_result_to_terminal(self):
         print "\n----------------------------- " + self.name + " ----------------------------------"
         print "result:", self.result
-
-    def export_to_file(self):
-        #print "result:", result
-    
-        # we'll always have json export
-        #if os.path.exists(self.generation_config["json_output"]):
-        #    shutil.rmtree(self.config["json_output"]) #FIXME will fail if multiple test run concurrently
-        #    pass
-        #else:
-        #    os.makedirs(self.generation_config["json_output"])
-        #print "---------------copyfile from %s to %s"%(os.path.join("/home/fmw/git/atf/build/atf_test_app_time/test_generated", "test_list.json"), os.path.join(self.generation_config["json_output"], "test_list.json"))
-        #shutil.copyfile(os.path.join("/home/fmw/git/atf/build/atf_test_app_time/test_generated", "test_list.json"), os.path.join(self.generation_config["json_output"], "test_list.json")) #FIXME get package name from config files
-        #filename = os.path.join(self.generation_config["json_output"], self.name + ".json")
-        #stream = file(filename, 'w')
-        #json.dump(copy.copy(self.result), stream)
-
-        # yaml export is optional
-        if "yaml_output" in self.generation_config:
-            if os.path.exists(self.generation_config["yaml_output"]):
-            #    shutil.rmtree(self.config["yaml_output"]) #FIXME will fail if multiple test run concurrently
-                pass
-            else:
-                os.makedirs(self.generation_config["yaml_output"])
-            filename = os.path.join(self.generation_config["yaml_output"], self.name + ".yaml")
-            stream = file(filename, 'w')
-            yaml.dump(copy.copy(self.result), stream, default_flow_style=False)

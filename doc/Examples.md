@@ -206,8 +206,13 @@ TBD
 same as above
 
 #### Recording
+Record a single test
 ```
 roslaunch atf_core recording.launch pkg:=atf_test pkg_full_path:=`rospack find atf_test` test_name:=ts0_c0_r0_e0_0
+```
+record all tests
+```
+TDB
 ```
 
 #### Analysing
