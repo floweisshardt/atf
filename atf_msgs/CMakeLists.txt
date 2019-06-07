@@ -25,13 +25,13 @@ add_message_files(
         ObstacleDistanceLink.msg
         Resources.msg
         TestStatus.msg
-        TestblockState.msg
+        TestblockStatus.msg
         TestblockTrigger.msg
 )
 
 add_action_files(
     FILES
-        Recorder.action
+        TestblockTrigger.action
 )
 
 generate_messages(

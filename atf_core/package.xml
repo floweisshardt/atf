@@ -19,5 +19,8 @@
     <depend>atf_recorder_plugins</depend>
     <depend>atf_status_server</depend>
     <depend>python-lxml</depend>
+    <depend>python-progressbar</depend>
+    <depend>smach</depend>
+    <depend>smach_ros</depend>
 
 </package>

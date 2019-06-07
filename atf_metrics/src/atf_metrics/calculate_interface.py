@@ -43,10 +43,6 @@ class CalculateInterface:
         self.api_dict = {}
         self.testblock_name = testblock_name
         self.metric = metric
-        rospy.Subscriber("/atf/" + self.testblock_name + "/api", Api, self.api_callback)
-
-    def api_callback(self, msg):
-        self.api_dict = self.msg_to_dict(msg)
 
     def start(self, timestamp):
         pass
@@ -59,6 +55,13 @@ class CalculateInterface:
 
     def purge(self, timestamp):
         pass
+    
+    def update(self, topic, msg, t):
+        #print "msg=", msg
+        if topic == "/atf/api":
+            if msg.testblock_name == self.testblock_name:
+                #print "new api=", msg
+                self.api_dict = self.msg_to_dict(msg)
 
     def msg_to_dict(self, msg):
         api_dict = {}
@@ -94,6 +97,21 @@ class CalculateInterface:
                 else:
                     return True, False # only name OK, but type failed
         return False, False
+
+    def get_topics(self):
+        topics = []
+        #print "self.metric=", self.metric
+        if "publishers" in self.metric.keys():
+            for topic_with_type in self.metric["publishers"]:
+                topic = topic_with_type[0]
+                if topic not in topics:
+                    topics.append(topic)
+        if "subscribers" in self.metric.keys():
+            for topic_with_type in self.metric["subscribers"]:
+                topic = topic_with_type[0]
+                if topic not in topics:
+                    topics.append(topic)
+        return topics
 
     def get_result(self):
         # As interface metric is not numeric, we'll use the following numeric representation:
@@ -140,7 +158,7 @@ class CalculateInterface:
                                 details += ", all interfaces of node " + node_name + ": OK"
                                 groundtruth_result = True
                                 data = 100.0
-        print details
+        #print details
         if self.finished:
             return "interface", data, groundtruth_result, groundtruth, groundtruth_epsilon, details
         else:

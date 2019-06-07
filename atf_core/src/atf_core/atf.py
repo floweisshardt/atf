@@ -2,75 +2,62 @@
 import rospy
 import atf_core
 
-from atf_msgs.msg import TestblockState
+from atf_msgs.msg import TestblockTrigger
 
-class ATF:
+###########
+### ATF ###
+###########
+class ATF():
     def __init__(self):
-        self.initialized = False
-        self.finished = False
-        atf_configuration_parser = atf_core.ATFConfigurationParser()
-        self.config = atf_configuration_parser.get_config()
-        #print "atf: config=", self.config
-        self.testblock_list = atf_configuration_parser.create_testblock_list(self.config)
-        #print "atf: testblock_list=", self.testblock_list
+        # get test config
+        package_name = rospy.get_param("/atf/package_name")
+        print "package_name:", package_name
+        test_name = rospy.get_param("/atf/test_name")
+        print "test_name:", test_name
 
-        self.recorder_handle = atf_core.ATFRecorder(self.config, self.testblock_list)
-        self.testblocks = atf_configuration_parser.create_testblocks(self.config, self.recorder_handle)
-        self.init()
+        atf_configuration_parser = atf_core.ATFConfigurationParser(package_name)
+        tests = atf_configuration_parser.get_tests()
+        for test in tests:
+            #print "test.name:", test.name
+            if test_name == test.name:
+                break
+        #print "current test:", test.name
+        self.test = test
 
-    def init(self):
-        if self.finished:
-            raise ATFError("Calling ATF init while ATF is already finished.")
-        if self.initialized:
-            raise ATFError("Calling ATF init while ATF is already initialized.")
-        self.initialized = True
-        for testblock in self.testblocks.values():
-            testblock._run()
+        self.publisher = {}
+        #for testblock in self.test.test_config.keys():
+        #    print "testblock", testblock
+        self.publisher = rospy.Publisher("atf/trigger", TestblockTrigger, queue_size=10)
 
+        rospy.sleep(1) #wait for all publishers to be ready
+    
     def start(self, testblock):
-        if self.finished:
-            raise ATFError("Calling ATF start for testblock '%s' while ATF is already finished." % testblock)
-        if not self.initialized:
-            raise ATFError("Calling ATF start for testblock '%s' before ATF has been initialized." % testblock)
-        self.initialized = True
-        if testblock not in self.config["test_config"]:
-            raise ATFError("Testblock '%s' not in test_config." % testblock)
-        self.testblocks[testblock].start()
+        if testblock not in self.test.test_config.keys():
+            error_msg = "testblock %s not in list of testblocks"%testblock
+            self.error(error_msg)
+            raise atf_core.ATFError(error_msg)
+        rospy.loginfo("starting testblock %s"%testblock)
+        trigger = TestblockTrigger()
+        trigger.stamp = rospy.Time.now()
+        trigger.name = testblock
+        trigger.trigger = TestblockTrigger.START
+        self.publisher.publish(trigger)
 
     def stop(self, testblock):
-        self.testblocks[testblock].stop()
-
-    def shutdown(self):
-        rospy.loginfo("Shutdown ATF.")
-        if not self.initialized:
-            raise ATFError("Calling ATF finish before ATF has been initialized.")
-        if self.finished:
-            raise ATFError("Calling ATF finish while ATF is already finished.")
-        self.finished = True
-
-        # stop testblocks if not already stopped
-        for testblock_name, testblock in self.testblocks.items():
-            if testblock.get_state() not in testblock.m.endStates and testblock.trigger == None:
-                rospy.logwarn("Stopping testblock '%s' automatically because ATF stop is trigged and testblock is not in an end state.", testblock_name)
-                testblock.stop()
-
-        # wait for all testblocks to finish
-        for testblock_name, testblock in self.testblocks.items():
-            r = rospy.Rate(10)
-            while not testblock._finished():
-                r.sleep()
-                continue
-
-        # check end state for each testblock
-        error = False
-        message = ""
-        for testblock_name, testblock in self.testblocks.items():
-            state = testblock.get_state()
-            if not state == TestblockState.SUCCEEDED:
-                error = True
-                message += "Testblock '%s' did not succeed (finished with state '%d');\n " % (testblock_name, state)
-        if error:
-            raise ATFError(message)
-
-class ATFError(Exception):
-    pass
+        if testblock not in self.test.test_config.keys():
+            error_msg = "testblock %s not in list of testblocks"%testblock
+            self.error(error_msg)
+            raise atf_core.ATFError(error_msg)
+        rospy.loginfo("stopping testblock %s"%testblock)
+        trigger = TestblockTrigger()
+        trigger.stamp = rospy.Time.now()
+        trigger.name = testblock
+        trigger.trigger = TestblockTrigger.STOP
+        self.publisher.publish(trigger)
+        
+    def error(self, error_msg):
+        trigger = TestblockTrigger()
+        trigger.stamp = rospy.Time.now()
+        trigger.name = error_msg
+        trigger.trigger = TestblockTrigger.ERROR
+        self.publisher.publish(trigger)

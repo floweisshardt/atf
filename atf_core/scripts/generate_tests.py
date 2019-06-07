@@ -66,7 +66,7 @@ class GenerateTests:
 
         self.test_generated_path = os.path.join(self.package_bin_path, "test_generated")
         self.test_generated_recording_path = os.path.join(self.test_generated_path, "recording")
-        self.test_generated_analysing_path = os.path.join(self.test_generated_path, "analysing")
+        #self.test_generated_analysing_path = os.path.join(self.test_generated_path, "analysing")
         self.create_folders()
         self.test_list = self.generate_test_list()
 
@@ -77,7 +77,7 @@ class GenerateTests:
         shutil.copyfile(self.package_src_path + "/package.xml", self.package_bin_path + "/package.xml")
         os.makedirs(self.test_generated_path)
         os.makedirs(self.test_generated_recording_path)
-        os.makedirs(self.test_generated_analysing_path)
+        #os.makedirs(self.test_generated_analysing_path)
 
     def generate_tests(self):
         em = lxml.builder.ElementMaker()
@@ -101,11 +101,11 @@ class GenerateTests:
 
             # Cleaning
             test_clean = launch(
-                param(name=self.ns + "bag_output", value=self.generation_config["bagfile_output"]),
-                param(name=self.ns + "json_output", value=self.generation_config["json_output"]),
-                param(name=self.ns + "yaml_output", value=self.generation_config["yaml_output"]),
+                #param(name=self.ns + "bag_output", value=self.generation_config["bagfile_output"]),
+                #param(name=self.ns + "json_output", value=self.generation_config["json_output"]),
+                #param(name=self.ns + "yaml_output", value=self.generation_config["yaml_output"]),
                 test({'test-name': "cleaning", 'pkg': "atf_core", 'type': "cleaner.py",
-                      'time-limit': "10"})
+                      'time-limit': "10", 'args': self.package_name})
             )
             xmlstr = minidom.parseString(ElementTree.tostring(test_clean)).toprettyxml(indent="    ")
             filepath = os.path.join(self.test_generated_path, "cleaning.test")
@@ -118,16 +118,17 @@ class GenerateTests:
                     #arg(name="robot", value=self.test_list[test_name]["robot"]),
                     #include(arg(name="test_status_list", value="$(find " + self.package_name + ")/test_status.yaml"),
                     #        file="$(find atf_status_server)/launch/atf_status_server.launch"),
+                    param(name=self.ns + "package_name", value=self.package_name),
                     param(name=self.ns + "test_name", value=subtest_name),
-                    param(name=self.ns + "test_config_name", value=self.test_list[test_name]["test_config"]),
-                    param(name=self.ns + "robot_config_name", value=self.test_list[test_name]["robot"]),
-                    param(name=self.ns + "robot_env_config_name", value=self.test_list[test_name]["robot_env"]),
-                    rosparam(param=self.ns + "test_config", command="load", file="$(find " + self.package_name + ")/" + os.path.join(self.generation_config["test_config_path"], self.test_list[test_name]["test_config"] + ".yaml")),
-                    rosparam(param=self.ns + "robot_config", command="load", file="$(find " + self.package_name + ")/" + os.path.join(self.generation_config["robot_config_path"], self.test_list[test_name]["robot"] + ".yaml")),
-                    rosparam(param=self.ns + "robot_env_config", command="load", file="$(find " + self.package_name + ")/" + os.path.join(self.generation_config["robot_env_config_path"], self.test_list[test_name]["robot_env"] + ".yaml")),
-                    param(name=self.ns + "bagfile_output", value=self.generation_config["bagfile_output"]),
-                    param(name=self.ns + "json_output", value=self.generation_config["json_output"]),
-                    param(name=self.ns + "yaml_output", value=self.generation_config["yaml_output"]),
+                    #param(name=self.ns + "test_config_name", value=self.test_list[test_name]["test_config"]),
+                    #param(name=self.ns + "robot_config_name", value=self.test_list[test_name]["robot"]),
+                    #param(name=self.ns + "robot_env_config_name", value=self.test_list[test_name]["robot_env"]),
+                    #rosparam(param=self.ns + "test_config", command="load", file="$(find " + self.package_name + ")/" + os.path.join(self.generation_config["test_config_path"], self.test_list[test_name]["test_config"] + ".yaml")),
+                    #rosparam(param=self.ns + "robot_config", command="load", file="$(find " + self.package_name + ")/" + os.path.join(self.generation_config["robot_config_path"], self.test_list[test_name]["robot"] + ".yaml")),
+                    #rosparam(param=self.ns + "robot_env_config", command="load", file="$(find " + self.package_name + ")/" + os.path.join(self.generation_config["robot_env_config_path"], self.test_list[test_name]["robot_env"] + ".yaml")),
+                    #param(name=self.ns + "bagfile_output", value=self.generation_config["bagfile_output"]),
+                    #param(name=self.ns + "json_output", value=self.generation_config["json_output"]),
+                    #param(name=self.ns + "yaml_output", value=self.generation_config["yaml_output"]),
                 )
 
                 if "additional_launch_file" in self.generation_config:
@@ -152,7 +153,8 @@ class GenerateTests:
                                 incl.append(param(name=str(robot_env_param_name), value=str(robot_env_param_value)))
                     test_record.append(incl)
 
-                test_record.append(test({'test-name': "recording_" + subtest_name, 'pkg': self.package_name, 'type': self.generation_config['app_executable'],
+                test_record.append(node(pkg=self.package_name, type=self.generation_config['app_executable'], name="$(anon application)", required="true", output="screen")),
+                test_record.append(test({'pkg':'atf_core', 'type':'sm_test.py', 'test-name': "recording_" + subtest_name,
                           'time-limit': str(self.generation_config["time_limit_recording"]), 'required': "true"}))
 
                 xmlstr = minidom.parseString(ElementTree.tostring(test_record)).toprettyxml(indent="    ")
@@ -160,43 +162,43 @@ class GenerateTests:
                 with open(filepath, "w") as f:
                     f.write(xmlstr)
 
-                # Analysing
-                test_analyse = launch(
-                    #include(arg(name="test_status_list", value="$(find " + self.package_name + ")/test_status.yaml"),
-                    #        file="$(find atf_status_server)/launch/atf_status_server.launch"),
-                    param(name=self.ns + "test_name", value=subtest_name),
-                    param(name=self.ns + "test_config_name", value=self.test_list[test_name]["test_config"]),
-                    rosparam(param=self.ns + "test_config", command="load", file="$(find " + self.package_name + ")/" + os.path.join(self.generation_config["test_config_path"], self.test_list[test_name]["test_config"] + ".yaml")),
-                    #param(name="test_config", value=self.test_list[test_name]["test_config"]),
-                    #param(name="test_config_file", value="$(find " + self.package_name + ")/" + self.generation_config["test_config_file"]),
-                    param(name=self.ns + "test_generated_path", value=self.test_generated_path),
-                    #param(name="yaml_output", value=self.yaml_output),
-                    #param(name="json_output", value=self.json_output),
-                    param(name=self.ns + "json_output", value=self.generation_config["json_output"]),
-                    param(name=self.ns + "yaml_output", value=self.generation_config["yaml_output"]),
-                    #param(name="number_of_tests", value=str(len(self.test_list))),
-                    node(name="player", pkg="rosbag", type="play", required="true", output="log", args="--delay=5.0 --clock " +
-                                                                                         "--rate=" + str(self.speed_factor_analysis) + " " +
-                                                                                         os.path.join(self.generation_config["bagfile_output"], subtest_name +
-                                                                                         ".bag")),
-                    test({'test-name': "analysing_" + subtest_name, 'pkg': "atf_core", 'type': "analyser.py",
-                          'time-limit': str(self.generation_config["time_limit_analysing"]), 'required': "true"})
-                )
+            # Analysing
+            test_analyse = launch(
+                #include(arg(name="test_status_list", value="$(find " + self.package_name + ")/test_status.yaml"),
+                #        file="$(find atf_status_server)/launch/atf_status_server.launch"),
+                #param(name=self.ns + "test_name", value=subtest_name),
+                #param(name=self.ns + "test_config_name", value=self.test_list[test_name]["test_config"]),
+                #rosparam(param=self.ns + "test_config", command="load", file="$(find " + self.package_name + ")/" + os.path.join(self.generation_config["test_config_path"], self.test_list[test_name]["test_config"] + ".yaml")),
+                #param(name="test_config", value=self.test_list[test_name]["test_config"]),
+                #param(name="test_config_file", value="$(find " + self.package_name + ")/" + self.generation_config["test_config_file"]),
+                #param(name=self.ns + "test_generated_path", value=self.test_generated_path),
+                #param(name="yaml_output", value=self.yaml_output),
+                #param(name="json_output", value=self.json_output),
+                #param(name=self.ns + "json_output", value=self.generation_config["json_output"]),
+                #param(name=self.ns + "yaml_output", value=self.generation_config["yaml_output"]),
+                #param(name="number_of_tests", value=str(len(self.test_list))),
+                #node(name="player", pkg="rosbag", type="play", required="true", output="log", args="--delay=5.0 --clock " +
+                #                                                                        "--rate=" + str(self.speed_factor_analysis) + " " +
+                #                                                                        os.path.join(self.generation_config["bagfile_output"], subtest_name +
+                #                                                                        ".bag")),
+                test({'test-name': "analysing", 'pkg': "atf_core", 'type': "analyser.py",
+                        'time-limit': str(self.generation_config["time_limit_analysing"]), 'required': "true", 'args': self.package_name})
+            )
 
-                xmlstr = minidom.parseString(ElementTree.tostring(test_analyse)).toprettyxml(indent="    ")
-                filepath = os.path.join(self.test_generated_analysing_path, "analysing_" + subtest_name) + ".test"
-                with open(filepath, "w") as f:
-                    f.write(xmlstr)
+            xmlstr = minidom.parseString(ElementTree.tostring(test_analyse)).toprettyxml(indent="    ")
+            filepath = os.path.join(self.test_generated_path, "analysing.test")
+            with open(filepath, "w") as f:
+                f.write(xmlstr)
 
             # Merging
             test_merge = launch(
-                param(name=self.ns + "test_name", value=test_name),
-                param(name=self.ns + "test_config_name", value=self.test_list[test_name]["test_config"]),
-                rosparam(param=self.ns + "test_config", command="load", file="$(find " + self.package_name + ")/" + os.path.join(self.generation_config["test_config_path"], self.test_list[test_name]["test_config"] + ".yaml")),
-                param(name=self.ns + "yaml_output", value=self.generation_config["yaml_output"]),
-                param(name=self.ns + "json_output", value=self.generation_config["json_output"]),
+                #param(name=self.ns + "test_name", value=test_name),
+                #param(name=self.ns + "test_config_name", value=self.test_list[test_name]["test_config"]),
+                #rosparam(param=self.ns + "test_config", command="load", file="$(find " + self.package_name + ")/" + os.path.join(self.generation_config["test_config_path"], self.test_list[test_name]["test_config"] + ".yaml")),
+                #param(name=self.ns + "yaml_output", value=self.generation_config["yaml_output"]),
+                #param(name=self.ns + "json_output", value=self.generation_config["json_output"]),
                 test({'test-name': "merging", 'pkg': "atf_core", 'type': "merger.py",
-                      'time-limit': "10"})
+                      'time-limit': "10", 'args': self.package_name})
             )
             xmlstr = minidom.parseString(ElementTree.tostring(test_merge)).toprettyxml(indent="    ")
             filepath = os.path.join(self.test_generated_path, "merging.test")

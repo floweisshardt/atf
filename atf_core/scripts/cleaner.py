@@ -4,32 +4,35 @@ import unittest
 import rostest
 import shutil
 import os
+import sys
 
 from atf_core import ATFConfigurationParser
 
 
 class Cleaner():
-    def __init__(self):
+    def __init__(self, package_name):
         self.result = False
 
-        self.atf_configuration_parser = ATFConfigurationParser()
-        self.config = self.atf_configuration_parser.get_config()
+        self.atf_configuration_parser = ATFConfigurationParser(package_name)
 
     def clean(self):
-        if os.path.exists(self.config["bag_output"]):
-            shutil.rmtree(self.config["bag_output"])
-        if os.path.exists(self.config["json_output"]):
-            shutil.rmtree(self.config["json_output"])
-        if os.path.exists(self.config["yaml_output"]):
-            shutil.rmtree(self.config["yaml_output"])
+        if os.path.exists(self.atf_configuration_parser.generation_config["bagfile_output"]):
+            shutil.rmtree(self.atf_configuration_parser.generation_config["bagfile_output"])
+        if os.path.exists(self.atf_configuration_parser.generation_config["json_output"]):
+            shutil.rmtree(self.atf_configuration_parser.generation_config["json_output"])
+        if os.path.exists(self.atf_configuration_parser.generation_config["yaml_output"]):
+            shutil.rmtree(self.atf_configuration_parser.generation_config["yaml_output"])
         self.result = True
 
-class TestMerging(unittest.TestCase):
+class TestCleaning(unittest.TestCase):
     def test_cleaning_results(self):
-        cleaner = Cleaner()
+        cleaner = Cleaner(sys.argv[1])
         cleaner.clean()
-        self.assertTrue(cleaner.result, "Could not merge results.")
+        self.assertTrue(cleaner.result, "Could not clean results.")
 
 if __name__ == '__main__':
-    rospy.init_node('test_merging')
-    rostest.rosrun("atf_core", 'merging', TestMerging, sysargs=None)
+    print "cleaning for package", sys.argv[1]
+    if "standalone" in sys.argv:
+        cleaner = Cleaner(sys.argv[1])
+    else:
+        rostest.rosrun("atf_core", 'cleaning', TestCleaning, sysargs=sys.argv)

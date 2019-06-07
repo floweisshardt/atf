@@ -40,16 +40,17 @@ function(atf_test)
             add_rostest(${TEST_GENERATED_PATH}/recording/${TEST_NAME_RECORDING} DEPENDENCIES _run_tests_${PROJECT_NAME}_rostest_test_generated_cleaning.test)
 
             # analysing
-            string(REPLACE "recording_" "analysing_" TEST_NAME_ANALYSING ${TEST_NAME_RECORDING})
-            set(TARGET_NAME_ANALYSING run_tests_${PROJECT_NAME}_rostest_test_generated_analysing_${TEST_NAME_ANALYSING})
-            set(_TARGET_NAME_ANALYSING _run_tests_${PROJECT_NAME}_rostest_test_generated_analysing_${TEST_NAME_ANALYSING})
-            string(REPLACE "/" "_" TARGET_NAME_ANALYSING ${TARGET_NAME_ANALYSING})
-            string(REPLACE "/" "_" _TARGET_NAME_ANALYSING ${_TARGET_NAME_ANALYSING})
-            list(APPEND TARGET_NAMES_ANALYSING ${TARGET_NAME_ANALYSING})
-            list(APPEND _TARGET_NAMES_ANALYSING ${_TARGET_NAME_ANALYSING})
-            add_rostest(${TEST_GENERATED_PATH}/analysing/${TEST_NAME_ANALYSING} DEPENDENCIES ${_TARGET_NAME_RECORDING})
+            #string(REPLACE "recording_" "analysing_" TEST_NAME_ANALYSING ${TEST_NAME_RECORDING})
+            #set(TARGET_NAME_ANALYSING run_tests_${PROJECT_NAME}_rostest_test_generated_analysing_${TEST_NAME_ANALYSING})
+            #set(_TARGET_NAME_ANALYSING _run_tests_${PROJECT_NAME}_rostest_test_generated_analysing_${TEST_NAME_ANALYSING})
+            #string(REPLACE "/" "_" TARGET_NAME_ANALYSING ${TARGET_NAME_ANALYSING})
+            #string(REPLACE "/" "_" _TARGET_NAME_ANALYSING ${_TARGET_NAME_ANALYSING})
+            #list(APPEND TARGET_NAMES_ANALYSING ${TARGET_NAME_ANALYSING})
+            #list(APPEND _TARGET_NAMES_ANALYSING ${_TARGET_NAME_ANALYSING})
+            #add_rostest(${TEST_GENERATED_PATH}/analysing/${TEST_NAME_ANALYSING} DEPENDENCIES ${_TARGET_NAME_RECORDING})
         endforeach()
 
+        add_rostest(${TEST_GENERATED_PATH}/analysing.test DEPENDENCIES ${_TARGET_NAMES_RECORDING})
         add_rostest(${TEST_GENERATED_PATH}/merging.test DEPENDENCIES atf_${PROJECT_NAME}_analysing)
         add_rostest(${TEST_GENERATED_PATH}/uploading.test DEPENDENCIES atf_${PROJECT_NAME}_merging)
 
@@ -68,7 +69,7 @@ function(atf_test)
             COMMAND echo "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaanalysing"
             DEPENDS
                 atf_${PROJECT_NAME}_recording
-                ${_TARGET_NAMES_ANALYSING}
+                _run_tests_${PROJECT_NAME}_rostest_test_generated_analysing.test
         )
         add_custom_target(atf_${PROJECT_NAME}_merging
             COMMAND echo "mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmerging"

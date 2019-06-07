@@ -42,12 +42,12 @@ include_directories(
 
 install(
     PROGRAMS
-        scripts/analyse_all.py
         scripts/analyser.py
         scripts/cleaner.py
         scripts/dropbox_uploader.sh
         scripts/merger.py
         scripts/record_all.py
+        scripts/sm_test.py
         test/test_dropbox_uploader.py
     DESTINATION
         ${CATKIN_PACKAGE_BIN_DESTINATION}

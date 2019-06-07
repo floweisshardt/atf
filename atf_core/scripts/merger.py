@@ -1,24 +1,25 @@
 #!/usr/bin/env python
 import rospy
-import yaml
 import unittest
 import rostest
 import os
 import copy
-import json
+import sys
 
 from atf_core import ATFConfigurationParser
 
 class Merger():
-    def __init__(self):
-        self.ns = "/atf/"
+    def __init__(self, package_name):
         self.result = False
 
-        self.atf_configuration_parser = ATFConfigurationParser()
-        self.config = self.atf_configuration_parser.get_config()
+        # parse configuration
+        self.configuration_parser = ATFConfigurationParser(package_name)
 
     def merge(self):
-        test_list = self.atf_configuration_parser.load_data(os.path.join(self.config["json_output"], "test_list.json"))
+        test_list = self.configuration_parser.get_test_list()
+        #print "test_list=", test_list
+        assert type(test_list) == list, 'test list is not a list'
+        assert len(test_list) != 0, 'test list is empty'
         #print "test_list=", test_list
         for test in test_list:
             #print "test=", test
@@ -30,7 +31,7 @@ class Merger():
                 test_data_merged = {}
                 for subtest in subtests:
                     #print "subtest=", subtest
-                    subtest_data = self.atf_configuration_parser.load_data(os.path.join(self.config["json_output"], subtest + ".json"))
+                    subtest_data = self.configuration_parser.load_data(os.path.join(self.configuration_parser.generation_config["json_output"], subtest + ".json"))
                     #print "subtest_data=", subtest_data
                     if subtest_data != None:
                         for testblock_name, testblock_data in subtest_data.items():
@@ -68,7 +69,7 @@ class Merger():
                                         # check if merging is possible, if not: append
                                         is_in, element_number = self.is_in_metric_data_list(copy.deepcopy(metric_data), copy.deepcopy(test_data_merged[testblock_name][metric_name]))
                                         if is_in:
-                                            print "--> merge", metric_data['data'], "into element_number:", element_number
+                                            #print "--> merge", metric_data['data'], "into element_number:", element_number
                                             # merge values
                                             test_data_merged[testblock_name][metric_name][element_number]['data']['values'].append(metric_data['data'])
                                             # merge groundtruth_result (take the worst result)
@@ -100,14 +101,8 @@ class Merger():
                 #print "test_data_merged after average=", test_data_merged
 
                 # write to file
-                filename = os.path.join(self.config["json_output"], "merged_" + test_name + ".json")
-                stream = file(filename, 'w')
-                json.dump(copy.copy(test_data_merged), stream)
-
-                filename = os.path.join(self.config["yaml_output"], "merged_" + test_name + ".yaml")
-                if not filename == "":
-                    stream = file(filename, 'w')
-                    yaml.dump(copy.copy(test_data_merged), stream, default_flow_style=False)
+                self.configuration_parser.export_to_file(test_data_merged, os.path.join(self.configuration_parser.generation_config["json_output"], "merged_" + test_name + ".json"))
+                self.configuration_parser.export_to_file(test_data_merged, os.path.join(self.configuration_parser.generation_config["yaml_output"], "merged_" + test_name + ".yaml"))
         self.result = True
 
     def is_in_metric_data_list(self, data, data_list):
@@ -132,10 +127,15 @@ class Merger():
 
 class TestMerging(unittest.TestCase):
     def test_merging_results(self):
-        merger = Merger()
+        merger = Merger(sys.argv[1])
         merger.merge()
         self.assertTrue(merger.result, "Could not merge results.")
 
 if __name__ == '__main__':
-    rospy.init_node('test_merging')
-    rostest.rosrun("atf_core", 'merging', TestMerging, sysargs=None)
+    print "merging for package", sys.argv[1]
+    if "standalone" in sys.argv:
+        merger = Merger(sys.argv[1])
+        merger.merge()
+        print "merging done for package", sys.argv[1]
+    else:
+        rostest.rosrun("atf_core", 'merging', TestMerging, sysargs=sys.argv)

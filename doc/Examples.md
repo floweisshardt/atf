@@ -37,17 +37,17 @@ catkin build --force-cmake
 Run all tests
 ```
 cd ~/catkin_ws
-catkin run_tests
+catkin run_tests -j1
 ```
 or run tests from a specific package (e.g. for ```atf_test_app_time```):
 ```
 cd ~/catkin_ws
-catkin build atf_test_app_time --no-deps --catkin-make-args run_tests
+catkin build atf_test_app_time --no-deps --catkin-make-args run_tests -j1
 ```
 or
 ```
 roscd atf_test_app_time
-catkin run_tests --no-deps --this
+catkin run_tests --no-deps --this -j1
 ```
 
 #### Check test results
@@ -199,3 +199,28 @@ TBD
 
 ### How to use the ATF with Travis CI
 TBD
+
+### Manual test execution (without rostest)
+
+#### Generation
+same as above
+
+#### Recording
+Record a single test
+```
+roslaunch atf_core recording.launch pkg:=atf_test pkg_full_path:=`rospack find atf_test` test_name:=ts0_c0_r0_e0_0
+```
+record all tests
+```
+TDB
+```
+
+#### Analysing
+```
+rosrun atf_core analyser.py atf_test
+```
+
+check results
+```
+cat /tmp/atf_test/results_yaml/ts0_c0_r0_e0_0.yaml
+```
