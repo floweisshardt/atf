@@ -81,7 +81,6 @@ class CalculateTime:
         groundtruth_result = None
         details = None
         #print "self.finished", self.finished
-        return False #FIXME
         if self.started and self.finished: #  we check if the testblock was ever started and stoped
             data = round((self.stop_time - self.start_time).to_sec(), 3)
             if self.groundtruth != None and self.groundtruth_epsilon != None:
