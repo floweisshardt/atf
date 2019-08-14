@@ -29,7 +29,8 @@ class ATF():
         #    print "testblock", testblock
         self.publisher = rospy.Publisher("atf/trigger", TestblockTrigger, queue_size=10)
 
-        rospy.sleep(1) #wait for all publishers to be ready
+        # make sure to wait with the application for the statemachine in sm_test.py to be initialized
+        rospy.wait_for_message("/state_machine/machine/smach/container_status", rospy.AnyMsg)
     
     def start(self, testblock):
         if testblock not in self.test.test_config.keys():
