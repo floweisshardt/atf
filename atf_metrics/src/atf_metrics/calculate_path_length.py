@@ -1,8 +1,9 @@
 #!/usr/bin/env python
-import rospy
 import tf
 import math
+import rospy
 import tf2_msgs
+import tf2_ros
 import threading
 
 class CalculatePathLengthParamHandler:
@@ -86,7 +87,11 @@ class CalculatePathLength:
                     self.t.setTransform(transform)
 
                     # get latest transform
-                    (trans, rot) = self.t.lookupTransform(self.root_frame, self.measured_frame, rospy.Time(0))
+                    try:
+                        (trans, rot) = self.t.lookupTransform(self.root_frame, self.measured_frame, rospy.Time(0))
+                    except tf2_ros.LookupException as e:
+                        rospy.logwarn("Exception in metric 'path_length' %s %s",type(e), e)
+                        continue
 
                     if self.first_value:
                         self.trans_old = trans
