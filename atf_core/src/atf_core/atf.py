@@ -31,6 +31,7 @@ class ATF():
 
         # make sure to wait with the application for the statemachine in sm_test.py to be initialized
         rospy.wait_for_message("/state_machine/machine/smach/container_status", rospy.AnyMsg)
+        rospy.sleep(1)
     
     def start(self, testblock):
         if testblock not in self.test.test_config.keys():
