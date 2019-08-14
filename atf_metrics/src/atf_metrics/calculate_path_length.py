@@ -28,7 +28,7 @@ class CalculatePathLengthParamHandler:
                 groundtruth = metric["groundtruth"]
                 groundtruth_epsilon = metric["groundtruth_epsilon"]
             except (TypeError, KeyError):
-                rospy.logwarn("No groundtruth parameters given, skipping groundtruth evaluation for metric 'path_length' in testblock '%s'", testblock_name)
+                #rospy.logwarn_throttle(10, "No groundtruth parameters given, skipping groundtruth evaluation for metric 'path_length' in testblock '%s'"%testblock_name)
                 groundtruth = None
                 groundtruth_epsilon = None
             metrics.append(CalculatePathLength(metric["topic"], metric["root_frame"], metric["measured_frame"], groundtruth, groundtruth_epsilon))
