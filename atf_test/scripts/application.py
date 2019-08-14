@@ -14,7 +14,6 @@ class Application:
 
         self.pub_freq = 20.0 # Hz
         self.br = tf.TransformBroadcaster()
-        rospy.sleep(3) #wait for tf broadcaster to get active (rospy bug?)
 
     def execute(self):
 
