@@ -25,7 +25,7 @@ class CalculatePublishRateParamHandler:
                 groundtruth = metric["groundtruth"]
                 groundtruth_epsilon = metric["groundtruth_epsilon"]
             except (TypeError, KeyError):
-                rospy.logwarn("No groundtruth parameters given, skipping groundtruth evaluation for metric 'publish_rate' in testblock '%s'", testblock_name)
+                #rospy.logwarn_throttle(10, "No groundtruth parameters given, skipping groundtruth evaluation for metric 'publish_rate' in testblock '%s'"%testblock_name)
                 groundtruth = None
                 groundtruth_epsilon = None
             metrics.append(CalculatePublishRate(metric["topic"], groundtruth, groundtruth_epsilon))
