@@ -151,6 +151,7 @@ class Analyser:
 
         for test in self.tests:
             #print "test =", test
+            #print "test.name =", test.name
             for testblock in test.testblocks:
                 #print "testblock =", testblock
                 #print "testblock.name =", testblock.name
@@ -176,11 +177,19 @@ class Analyser:
                             elif not groundtruth_result:
                                 overall_groundtruth_result = False
                                 overall_groundtruth_error_message += testblock.name + "(" + metric_name + ": data=" + str(data) + ", groundtruth=" + str(groundtruth) + "+-" + str(groundtruth_epsilon) + " details:" + str(details) + "); "
+                            #print "overall_groundtruth_result =", overall_groundtruth_result
+                            #print "overall_groundtruth_error_message =", overall_groundtruth_error_message
                         else:
                             raise ATFAnalyserError("No results for testblock '%s'" % (testblock.name))
 
         if result == {}:
             raise ATFAnalyserError("Analysing failed, no result available.")
+        
+        # overwrite overall_groundtruth_error_message if all tests are OK
+        if overall_groundtruth_result == None or overall_groundtruth_result:
+            overall_groundtruth_result = True
+            overall_groundtruth_error_message = "All tests OK"
+
         return overall_groundtruth_result, overall_groundtruth_error_message, result
     
     def print_result(self, result):
