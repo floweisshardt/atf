@@ -65,12 +65,10 @@ class ATFRecorder:
             rospy.wait_for_service(service)
             rospy.loginfo("... service '%s' available.", service)
 
-        rospy.sleep(1) #wait for subscribers to get active (rospy bug?)
         rospy.loginfo("ATF recorder: started!")
 
     def shutdown(self):
         rospy.loginfo("Shutdown ATF recorder and close bag file.")
-        rospy.sleep(1) # let all threads finish writing to bag file
         self.lock_write.acquire()
         self.bag.close()
         self.lock_write.release()

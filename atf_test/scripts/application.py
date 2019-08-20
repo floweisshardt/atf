@@ -27,7 +27,8 @@ class Application:
         self.pub_tf_circle("link1", "link2", radius=2, time=5)
         self.atf.stop("testblock_large")
 
-        #self.atf.shutdown()
+        # shutdown atf
+        self.atf.shutdown()
 
     def pub_tf_circle(self, parent_frame_id, child1_frame_id, radius=1, time=1):
         rate = rospy.Rate(int(self.pub_freq))
