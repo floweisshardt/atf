@@ -85,7 +85,6 @@ class Analyser:
                         break
                     except Exception as e:
                         print "Exception", e
-                    #except StopIteration as e:
                         count_error += 1
                         continue
             except Exception as e:
@@ -150,35 +149,67 @@ class Analyser:
         overall_groundtruth_result = None
         overall_groundtruth_error_message = "groundtruth missmatch for: "
 
-        for testblock_name, testblock in self.testblocks.items():
-            if self.testblock_states[testblock_name] == TestblockStatus.ERROR:
-                print "An error occured during analysis of testblock '%s', no useful results available."%testblock_name
-                result.update({testblock.testblock_name: {"status": "error"}})
-            else:
-                #print "testblock.metrics=", testblock.metrics
-                for metric_handle in testblock.metrics:
-                    #print "metric_handle=", metric_handle
-                    metric_result = metric_handle.get_result()
-                    #print "metric_result=", metric_result
-                    if metric_result is not False:
-                        (metric_name, data, groundtruth_result, groundtruth, groundtruth_epsilon, details) = metric_result
-                        if testblock_name not in result:
-                            result[testblock_name] = {}
-                        if metric_name not in result[testblock_name]:
-                            result[testblock_name][metric_name] = []
-                        result[testblock_name][metric_name].append({"data":data, "groundtruth_result": groundtruth_result, "groundtruth": groundtruth, "groundtruth_epsilon": groundtruth_epsilon, "details": details})
-                        if groundtruth_result == None:
-                            pass
-                        elif not groundtruth_result:
-                            overall_groundtruth_result = False
-                            overall_groundtruth_error_message += testblock_name + "(" + metric_name + ": data=" + str(data) + ", groundtruth=" + str(groundtruth) + "+-" + str(groundtruth_epsilon) + " details:" + str(details) + "); "
-                    else:
-                        raise ATFAnalyserError("No result for metric '%s' in testblock '%s'" % (metric_name, testblock_name))
+        for test in self.tests:
+            #print "test =", test
+            #print "test.name =", test.name
+            for testblock in test.testblocks:
+                #print "testblock =", testblock
+                #print "testblock.name =", testblock.name
+                #print "testbloc.status =", testblock.status
+                if testblock.status == TestblockStatus.ERROR:
+                    print "An error occured during analysis of testblock '%s', no useful results available."%testblock.name
+                    result.update({testblock.name: {"status": "error"}})
+                else:
+                    #print "testblock.metrics=", testblock.metrics
+                    for metric_handle in testblock.metric_handles:
+                        #print "metric_handle=", metric_handle
+                        metric_result = metric_handle.get_result()
+                        #print "metric_result=", metric_result
+                        if metric_result is not False:
+                            (metric_name, data, groundtruth_result, groundtruth, groundtruth_epsilon, details) = metric_result
+                            if testblock.name not in result:
+                                result[testblock.name] = {}
+                            if metric_name not in result[testblock.name]:
+                                result[testblock.name][metric_name] = []
+                            result[testblock.name][metric_name].append({"data":data, "groundtruth_result": groundtruth_result, "groundtruth": groundtruth, "groundtruth_epsilon": groundtruth_epsilon, "details": details})
+                            if groundtruth_result == None:
+                                pass
+                            elif not groundtruth_result:
+                                overall_groundtruth_result = False
+                                overall_groundtruth_error_message += testblock.name + "(" + metric_name + ": data=" + str(data) + ", groundtruth=" + str(groundtruth) + "+-" + str(groundtruth_epsilon) + " details:" + str(details) + "); "
+                            #print "overall_groundtruth_result =", overall_groundtruth_result
+                            #print "overall_groundtruth_error_message =", overall_groundtruth_error_message
+                        else:
+                            raise ATFAnalyserError("No results for testblock '%s'" % (testblock.name))
 
         if result == {}:
             raise ATFAnalyserError("Analysing failed, no result available.")
+        
+        # overwrite overall_groundtruth_error_message if all tests are OK
+        if overall_groundtruth_result == None or overall_groundtruth_result:
+            overall_groundtruth_result = True
+            overall_groundtruth_error_message = "All tests OK"
+
         return overall_groundtruth_result, overall_groundtruth_error_message, result
     
+    def print_result(self, result):
+        (overall_groundtruth_result, overall_groundtruth_error_message, result_details) = result
+        #print "overall_groundtruth_result =", overall_groundtruth_result
+        if overall_groundtruth_result:
+            print "\n"
+            print "********************"
+            print "*** ALL TESTS OK ***"
+            print "********************"
+            print "\n"
+        else:
+            print "\n"
+            print "*************************"
+            print "*** SOME TESTS FAILED ***"
+            print "*************************"
+            print "\n"
+        print "*** overall_groundtruth_error_message ***\n", overall_groundtruth_error_message
+        print "\n"
+        print "*** result details ***\n", result_details
 
 class ATFAnalyserError(Exception):
     pass
@@ -187,15 +218,17 @@ class ATFAnalyserError(Exception):
 class TestAnalysing(unittest.TestCase):
     def test_Analysing(self):
         analyser = Analyser(sys.argv[1])
-        #for test in self.tests:
-        #    print "test.name:", test.name
-        #    if test.groundtruth_result != None:
-        #        self.assertTrue(groundtruth_result, groundtruth_error_message)
-
+        result = analyser.get_result()
+        analyser.print_result(result)
+        (overall_groundtruth_result, overall_groundtruth_error_message, result_details) = result
+        self.assertTrue(overall_groundtruth_result, overall_groundtruth_error_message)
 
 if __name__ == '__main__':
     print "analysing for package", sys.argv[1]
     if "standalone" in sys.argv:
         analyser = Analyser(sys.argv[1])
+        result = analyser.get_result()
+        analyser.print_result(result)
+
     else:
         rostest.rosrun("atf_core", 'analysing', TestAnalysing, sysargs=sys.argv)
