@@ -6,6 +6,8 @@ import tf2_msgs
 import tf2_ros
 import threading
 
+from atf_msgs.msg import MetricResult, KeyValue
+
 class CalculatePathLengthParamHandler:
     def __init__(self):
         """
@@ -115,15 +117,40 @@ class CalculatePathLength:
             return []
 
     def get_result(self):
-        groundtruth_result = None
-        details = {"root_frame": self.root_frame, "measured_frame": self.measured_frame}
-        if self.started and self.finished: #  we check if the testblock was ever started and stoped
-            data = round(self.path_length, 3)
-            if self.groundtruth != None and self.groundtruth_epsilon != None:
-                if math.fabs(self.groundtruth - data) <= self.groundtruth_epsilon:
-                    groundtruth_result = True
+        metric_result = MetricResult()
+        metric_result.name = "path_length"
+        metric_result.started = self.started # FIXME remove
+        metric_result.finished = self.finished # FIXME remove
+        metric_result.data = None
+        metric_result.groundtruth = self.groundtruth
+        metric_result.groundtruth_epsilon = self.groundtruth_epsilon
+        
+        # assign default value
+        metric_result.groundtruth_result = None
+        metric_result.groundtruth_error_message = None
+
+        if metric_result.started and metric_result.finished: #  we check if the testblock was ever started and stopped
+            # calculate metric data
+            metric_result.data = round(self.path_length, 3)
+
+            # fill details as KeyValue messages
+            details = []
+            details.append(KeyValue("root_frame", self.root_frame))
+            details.append(KeyValue("measured_frame", self.measured_frame))
+            metric_result.details = details
+
+            # evaluate metric data
+            if metric_result.groundtruth != None and metric_result.groundtruth_epsilon != None:
+                if math.fabs(metric_result.groundtruth - metric_result.data) <= metric_result.groundtruth_epsilon:
+                    metric_result.groundtruth_result = True
+                    metric_result.groundtruth_error_message = "all OK"
                 else:
-                    groundtruth_result = False
-            return "path_length", data, groundtruth_result, self.groundtruth, self.groundtruth_epsilon, details
-        else:
-            return False
+                    metric_result.groundtruth_result = False
+                    metric_result.groundtruth_error_message = "groundtruth missmatch: %f not within %f+-%f"%(metric_result.data, metric_result.groundtruth, metric_result.groundtruth_epsilon)
+                    #print metric_result.groundtruth_error_message
+
+        if metric_result.data == None:
+            raise ATFAnalyserError("Analysing failed, no metric result available for metric '%s'."%metric_result.name)
+
+        #print "\nmetric_result:\n", metric_result
+        return metric_result
