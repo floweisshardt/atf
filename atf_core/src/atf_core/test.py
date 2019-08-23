@@ -36,6 +36,8 @@ class Test:
                 test_result.groundtruth_result = False
                 test_result.groundtruth_error_message += "\n   - testblock '%s': %s"%(testblock_result.name, testblock_result.groundtruth_error_message)
                 #print test_result.groundtruth_error_message
+            if test_result.groundtruth_result == None and testblock_result.groundtruth_result:
+                test_result.groundtruth_result = True
 
         if len(test_result.results) == 0:
             raise ATFAnalyserError("Analysing failed, no test result available for test '%s'."%test_result.name)

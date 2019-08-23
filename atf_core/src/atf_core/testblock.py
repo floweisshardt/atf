@@ -48,6 +48,8 @@ class Testblock:
                         testblock_result.groundtruth_result = False
                         testblock_result.groundtruth_error_message += "\n     - metric '%s': %s"%(metric_result.name, metric_result.groundtruth_error_message)
                         #print testblock_result.groundtruth_error_message
+                    if testblock_result.groundtruth_result == None and metric_result.groundtruth_result:
+                        testblock_result.groundtruth_result = True
                 else:
                     raise ATFTestblockError("No result for metrics in testblock '%s'" % (self.name))
 

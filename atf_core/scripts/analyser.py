@@ -142,6 +142,8 @@ class Analyser:
                 atf_result.groundtruth_result = False
                 atf_result.groundtruth_error_message += "\n - test '%s': %s"%(test_result.name, test_result.groundtruth_error_message)
                 #print atf_result.groundtruth_error_message
+            if atf_result.groundtruth_result == None and test_result.groundtruth_result:
+                atf_result.groundtruth_result = True
 
         if len(atf_result.results) == 0:
             raise ATFAnalyserError("Analysing failed, no atf result available.")
