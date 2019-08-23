@@ -100,6 +100,8 @@ class ATFConfigurationParser:
             json.dump(data, stream)
         elif file_extension == ".yaml": # get file extension
             yaml.dump(data, stream, default_flow_style=False)
+        elif file_extension == ".txt":
+            stream.write(str(data))
         else:
             raise ATFConfigurationError("ATF cannot export file extension %s"%(file_extension))
 
