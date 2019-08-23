@@ -1,6 +1,9 @@
 #!/usr/bin/env python
+import math
 import rospy
+
 from atf_msgs.msg import Api
+from atf_msgs.msg import MetricResult, KeyValue
 
 class CalculateInterfaceParamHandler:
     def __init__(self):
@@ -42,6 +45,8 @@ class CalculateInterface:
         self.started = False
         self.finished = False
         self.active = False
+        self.groundtruth = 100         # this is the max score
+        self.groundtruth_epsilon = 0   # no deviation from max score allowed
         self.api_dict = {}
         self.testblock_name = testblock_name
         self.metric = metric
@@ -117,21 +122,14 @@ class CalculateInterface:
                     topics.append(topic)
         return topics
 
-    def get_result(self):
+    def calculate_data_and_details(self):
         # As interface metric is not numeric, we'll use the following numeric representation:
         # max score = 100.0
         # node in api: score = 33.3
         # all interfaces available: score = 66.6
         # all types correct: score = 100.0
         data = None
-        groundtruth_result = None # interface metric not usable without groundtruth
-        groundtruth = 100         # this is the max score
-        groundtruth_epsilon = 0   # no deviation from max score allowed
         details = None
-
-        #print "self.metric=", self.metric
-        #print "self.api_dict=", self.api_dict
-
         node_name = self.metric['node']
         if node_name not in self.api_dict:
             details = "node " + node_name + " is not in api"
@@ -162,8 +160,47 @@ class CalculateInterface:
                                 details += ", all interfaces of node " + node_name + ": OK"
                                 groundtruth_result = True
                                 data = 100.0
-        #print details
-        if self.started and self.finished: #  we check if the testblock was ever started and stoped
-            return "interface", data, groundtruth_result, groundtruth, groundtruth_epsilon, details
-        else:
-            return False
+        return data, details
+
+    def get_result(self):
+        interface_data, interface_details = self.calculate_data_and_details()
+        groundtruth_result = None # interface metric not usable without groundtruth
+        groundtruth = 100         # this is the max score
+        groundtruth_epsilon = 0   # no deviation from max score allowed
+
+        metric_result = MetricResult()
+        metric_result.name = "path_length"
+        metric_result.started = self.started # FIXME remove
+        metric_result.finished = self.finished # FIXME remove
+        metric_result.data = None
+        metric_result.groundtruth = self.groundtruth
+        metric_result.groundtruth_epsilon = self.groundtruth_epsilon
+        
+        # assign default value
+        metric_result.groundtruth_result = None
+        metric_result.groundtruth_error_message = None
+
+        if metric_result.started and metric_result.finished: #  we check if the testblock was ever started and stopped
+            # calculate metric data
+            metric_result.data = interface_data
+
+            # fill details as KeyValue messages
+            details = []
+            details.append(KeyValue("api_status", interface_details))
+            metric_result.details = details
+
+            # evaluate metric data
+            if metric_result.groundtruth != None and metric_result.groundtruth_epsilon != None:
+                if math.fabs(metric_result.groundtruth - metric_result.data) <= metric_result.groundtruth_epsilon:
+                    metric_result.groundtruth_result = True
+                    metric_result.groundtruth_error_message = "all OK"
+                else:
+                    metric_result.groundtruth_result = False
+                    metric_result.groundtruth_error_message = "groundtruth missmatch: %f not within %f+-%f"%(metric_result.data, metric_result.groundtruth, metric_result.groundtruth_epsilon)
+                    #print metric_result.groundtruth_error_message
+
+        if metric_result.data == None:
+            raise ATFAnalyserError("Analysing failed, no metric result available for metric '%s'."%metric_result.name)
+
+        #print "\nmetric_result:\n", metric_result
+        return metric_result

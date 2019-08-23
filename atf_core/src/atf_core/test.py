@@ -1,11 +1,6 @@
 #!/usr/bin/env python
-import copy
-import json
-import os
-import shutil
-import yaml
 
-from atf_core import Testblock
+from atf_msgs.msg import TestResult
 
 class Test:
     def __init__(self):
@@ -23,24 +18,29 @@ class Test:
 
         # testblocks with metrics
         metrics_handle = None
-        testblocks = []
-        
-        # result data
-        self.result = None        
+        self.testblocks = []
     
-    def print_to_terminal(self):
-        print "\n----------------------------- " + self.name + " ----------------------------------"
-        print "testsuite_name:", self.testsuite_name
-        print "test_config_name:", self.test_config_name
-        print "robot_name:", self.robot_name
-        print "robot_env_name:", self.robot_env_name
-        print "---data---"
-        print "testsuite:", self.testsuite
-        print "test_config:", self.test_config
-        print "robot_config:", self.robot_config
-        print "robot_env_config:", self.robot_env_config
-        print "generation_config:", self.generation_config
+    def get_result(self):
+        test_result = TestResult()
+        test_result.name = self.name
+        test_result.groundtruth_result = None
+        for testblock in self.testblocks:
+            # get result
+            testblock_result = testblock.get_result()
 
-    def print_result_to_terminal(self):
-        print "\n----------------------------- " + self.name + " ----------------------------------"
-        print "result:", self.result
+            # append result
+            test_result.results.append(testblock_result)
+
+            # aggregate result
+            if testblock_result.groundtruth_result != None and not testblock_result.groundtruth_result:
+                test_result.groundtruth_result = False
+                test_result.groundtruth_error_message += "\n   - testblock '%s': %s"%(testblock_result.name, testblock_result.groundtruth_error_message)
+                #print test_result.groundtruth_error_message
+            if test_result.groundtruth_result == None and testblock_result.groundtruth_result:
+                test_result.groundtruth_result = True
+
+        if len(test_result.results) == 0:
+            raise ATFAnalyserError("Analysing failed, no test result available for test '%s'."%test_result.name)
+
+        #print "\ntest_result:\n", test_result
+        return test_result

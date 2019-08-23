@@ -1,0 +1,9 @@
+string name
+bool started
+bool finished
+float64 data
+bool groundtruth_result
+string groundtruth_error_message
+float64 groundtruth
+float64 groundtruth_epsilon
+KeyValue[] details

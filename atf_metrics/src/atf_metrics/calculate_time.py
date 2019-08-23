@@ -2,6 +2,8 @@
 import rospy
 import math
 
+from atf_msgs.msg import MetricResult, KeyValue
+
 class CalculateTimeParamHandler:
     def __init__(self):
         """
@@ -51,13 +53,11 @@ class CalculateTime:
         self.stop_time = None
 
     def start(self, timestamp):
-        #print "---->>>> CalculateTime start"
         self.start_time = timestamp
         self.active = True
         self.started = True
 
     def stop(self, timestamp):
-        #print "---->>>> CalculateTime stop"
         self.stop_time = timestamp
         self.active = False
         self.finished = True
@@ -77,17 +77,38 @@ class CalculateTime:
             return []
 
     def get_result(self):
-        #print "---->>>> CalculateTime get_result"
-        groundtruth_result = None
-        details = None
-        #print "self.finished", self.finished
-        if self.started and self.finished: #  we check if the testblock was ever started and stoped
-            data = round((self.stop_time - self.start_time).to_sec(), 3)
-            if self.groundtruth != None and self.groundtruth_epsilon != None:
-                if math.fabs(self.groundtruth - data) <= self.groundtruth_epsilon:
-                    groundtruth_result = True
+        metric_result = MetricResult()
+        metric_result.name = "time"
+        metric_result.started = self.started # FIXME remove
+        metric_result.finished = self.finished # FIXME remove
+        metric_result.data = None
+        metric_result.groundtruth = self.groundtruth
+        metric_result.groundtruth_epsilon = self.groundtruth_epsilon
+        
+        # assign default value
+        metric_result.groundtruth_result = None
+        metric_result.groundtruth_error_message = None
+
+        if metric_result.started and metric_result.finished: #  we check if the testblock was ever started and stopped
+            # calculate metric data
+            metric_result.data = round((self.stop_time - self.start_time).to_sec(), 3)
+
+            # fill details as KeyValue messages
+            details = []
+            metric_result.details = details
+
+            # evaluate metric data
+            if metric_result.groundtruth != None and metric_result.groundtruth_epsilon != None:
+                if math.fabs(metric_result.groundtruth - metric_result.data) <= metric_result.groundtruth_epsilon:
+                    metric_result.groundtruth_result = True
+                    metric_result.groundtruth_error_message = "all OK"
                 else:
-                    groundtruth_result = False
-            return "time", data, groundtruth_result, self.groundtruth, self.groundtruth_epsilon, details
-        else:
-            return False
+                    metric_result.groundtruth_result = False
+                    metric_result.groundtruth_error_message = "groundtruth missmatch: %f not within %f+-%f"%(metric_result.data, metric_result.groundtruth, metric_result.groundtruth_epsilon)
+                    #print metric_result.groundtruth_error_message
+
+        if metric_result.data == None:
+            raise ATFAnalyserError("Analysing failed, no metric result available for metric '%s'."%metric_result.name)
+
+        #print "\nmetric_result:\n", metric_result
+        return metric_result
