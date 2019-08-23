@@ -4,9 +4,9 @@
     <version>0.1.0</version>
     <description>Messages, services and actions for the ATF.</description>
 
-    <maintainer email="florian.weisshardt@ipa.fraunhofer.de">Florian Weisshardt</maintainer>
+    <maintainer email="florian.weisshardt@mojin-robotics.de">Florian Weisshardt</maintainer>
 
-    <author email="florian.weisshardt@ipa.fraunhofer.de">Florian Weisshardt</author>
+    <author email="florian.weisshardt@mojin-robotics.de">Florian Weisshardt</author>
     <author>Florian Koehler</author>
 
     <license>Apache 2.0</license>
