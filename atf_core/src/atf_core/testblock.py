@@ -1,9 +1,6 @@
 #!/usr/bin/env python
-import os
-import rospy
-import shutil
 
-from atf_msgs.msg import TestblockStatus, TestblockTrigger
+from atf_msgs.msg import TestblockResult, TestblockStatus
 
 class Testblock:
     def __init__(self, name, metric_handles, recorder_handle):
@@ -18,38 +15,47 @@ class Testblock:
         self.status = None
 
     def get_result(self):
-        result = {}
-        overall_groundtruth_result = None
-        overall_groundtruth_error_message = "groundtruth missmatch for: "
+
+        # validate testblock
+        if self.status == TestblockStatus.SUCCEEDED:
+            pass
+        elif self.status == TestblockStatus.ERROR:
+            raise ATFAnalyserError("Testblock '%s' finished with ERROR." % self.name)
+        else:
+            raise ATFAnalyserError("Testblock '%s' did not reach an end state before analyser finished (state is '%s'). Probably an error occured outside of monitored testblocks." % (self.name, self.status))
+
+        testblock_result = TestblockResult()
+        testblock_result.name = self.name
+        testblock_result.groundtruth_result = None
 
         if self.status == TestblockStatus.ERROR:
-            print "An error occured during analysis of testblock '%s', no useful results available."%self.name
-            result.update({self.name: {"status": "error"}})
+            testblock_result.groundtruth_result = False
+            testblock_result.groundtruth_error_message = "An error occured during analysis of testblock '%s', no useful results available."%self.name
+            print testblock_result.groundtruth_error_message
         else:
             #print "testblock.metrics=", self.metric_handles
             for metric_handle in self.metric_handles:
-                #print "metric_handle=", metric_handle
+                # get result
                 metric_result = metric_handle.get_result()
-                #print "metric_result=", metric_result
-                if metric_result is not False:
-                    (metric_name, data, groundtruth_result, groundtruth, groundtruth_epsilon, details) = metric_result
-                    if metric_name not in result:
-                        result[metric_name] = []
-                    result[metric_name].append({"data":data, "groundtruth_result": groundtruth_result, "groundtruth": groundtruth, "groundtruth_epsilon": groundtruth_epsilon, "details": details})
-                    #print "groundtruth_result=", groundtruth_result
-                    if groundtruth_result == None:
-                        #print "no groundtruth_result"
-                        pass
-                    elif not groundtruth_result:
-                        overall_groundtruth_result = False
-                        overall_groundtruth_error_message += self.name + "(" + metric_name + ": data=" + str(data) + ", groundtruth=" + str(groundtruth) + "+-" + str(groundtruth_epsilon) + " details:" + str(details) + "); "
+
+                # check if result is valid
+                if metric_result.started and metric_result.finished: # FIXME remove and check within metrics
+                    # append result
+                    testblock_result.results.append(metric_result)
+
+                    # aggregate result
+                    if metric_result.groundtruth_result != None and not metric_result.groundtruth_result:
+                        testblock_result.groundtruth_result = False
+                        testblock_result.groundtruth_error_message += "\n     - metric '%s': %s"%(metric_result.name, metric_result.groundtruth_error_message)
+                        #print testblock_result.groundtruth_error_message
                 else:
                     raise ATFTestblockError("No result for metrics in testblock '%s'" % (self.name))
 
-        #if result == {}:
-        #    raise ATFAnalyserError("Analysing failed, no result available.")
-        #return overall_groundtruth_result, overall_groundtruth_error_message, result
-        return result
+        if len(testblock_result.results) == 0:
+            raise ATFAnalyserError("Analysing failed, no testblock result available for testblock '%s'."%testblock_result.name)
+
+        #print "\ntestblock_result:\n", testblock_result
+        return testblock_result
 
 class ATFTestblockError(Exception):
     pass
