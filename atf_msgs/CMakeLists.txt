@@ -14,19 +14,24 @@ find_package(catkin REQUIRED COMPONENTS
 
 add_message_files(
     FILES
+        AtfResult.msg
         Api.msg
         IO.msg
         Interface.msg
         InterfaceItem.msg
+        KeyValue.msg
+        MetricResult.msg
         Network.msg
         NodeApi.msg
         NodeResources.msg
         ObstacleDistance.msg
         ObstacleDistanceLink.msg
         Resources.msg
-        TestStatus.msg
+        TestblockResult.msg
         TestblockStatus.msg
         TestblockTrigger.msg
+        TestResult.msg
+        TestStatus.msg
 )
 
 add_action_files(
