@@ -36,11 +36,11 @@ class CalculateUserResultParamHandler:
                 #rospy.logwarn_throttle(10, "No groundtruth parameters given, skipping groundtruth evaluation for metric 'user_result' in testblock '%s'"%testblock_name)
                 groundtruth = None
                 groundtruth_epsilon = None
-            metrics.append(CalculateUserResult(groundtruth, groundtruth_epsilon))
+            metrics.append(CalculateUserResult(testblock_name, groundtruth, groundtruth_epsilon))
         return metrics
 
 class CalculateUserResult:
-    def __init__(self, groundtruth, groundtruth_epsilon):
+    def __init__(self, testblock_name, groundtruth, groundtruth_epsilon):
         """
         Class for collecting the the user result.
         """
@@ -49,6 +49,7 @@ class CalculateUserResult:
         self.active = False
         self.groundtruth = groundtruth
         self.groundtruth_epsilon = groundtruth_epsilon
+        self.testblock_name = testblock_name
         self.testblock_result = None
 
     def start(self, timestamp):
@@ -73,7 +74,8 @@ class CalculateUserResult:
 
     def update(self, topic, msg, t):
         if topic == "/atf/user_result":
-            self.testblock_result = msg
+            if msg.name == self.testblock_name:
+                self.testblock_result = msg
 
     def get_topics(self):
         return ["/atf/user_result"]
