@@ -52,10 +52,6 @@ class GenerateTests:
                 self.upload_result = self.generation_config["upload_result"]
             else:
                 self.upload_result = False
-            if "speed_factor_analysis" in self.generation_config:
-                self.speed_factor_analysis = self.generation_config["speed_factor_analysis"]
-            else:
-                self.speed_factor_analysis = 1
         except KeyError as e:
             error_message = "ATF: Warning: parsing test configuration incomplete. Missing Key: " + str(e)
             print error_message
@@ -164,23 +160,6 @@ class GenerateTests:
 
             # Analysing
             test_analyse = launch(
-                #include(arg(name="test_status_list", value="$(find " + self.package_name + ")/test_status.yaml"),
-                #        file="$(find atf_status_server)/launch/atf_status_server.launch"),
-                #param(name=self.ns + "test_name", value=subtest_name),
-                #param(name=self.ns + "test_config_name", value=self.test_list[test_name]["test_config"]),
-                #rosparam(param=self.ns + "test_config", command="load", file="$(find " + self.package_name + ")/" + os.path.join(self.generation_config["test_config_path"], self.test_list[test_name]["test_config"] + ".yaml")),
-                #param(name="test_config", value=self.test_list[test_name]["test_config"]),
-                #param(name="test_config_file", value="$(find " + self.package_name + ")/" + self.generation_config["test_config_file"]),
-                #param(name=self.ns + "test_generated_path", value=self.test_generated_path),
-                #param(name="yaml_output", value=self.yaml_output),
-                #param(name="json_output", value=self.json_output),
-                #param(name=self.ns + "json_output", value=self.generation_config["json_output"]),
-                #param(name=self.ns + "yaml_output", value=self.generation_config["yaml_output"]),
-                #param(name="number_of_tests", value=str(len(self.test_list))),
-                #node(name="player", pkg="rosbag", type="play", required="true", output="log", args="--delay=5.0 --clock " +
-                #                                                                        "--rate=" + str(self.speed_factor_analysis) + " " +
-                #                                                                        os.path.join(self.generation_config["bagfile_output"], subtest_name +
-                #                                                                        ".bag")),
                 test({'test-name': "analysing", 'pkg': "atf_core", 'type': "analyser.py",
                         'time-limit': str(self.generation_config["time_limit_analysing"]), 'required': "true", 'args': self.package_name})
             )
