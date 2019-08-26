@@ -42,6 +42,9 @@ testblock_small:
     - topic: topic9
       groundtruth: 99
       groundtruth_epsilon: 5
+  user_result:
+    - groundtruth: 0.8
+      groundtruth_epsilon: 0.2
 testblock_large:
   time:
     - groundtruth: 5
@@ -85,6 +88,9 @@ testblock_large:
     - topic: /topic9
       groundtruth: 99
       groundtruth_epsilon: 5
+  user_result:
+    - groundtruth: 0.8
+      groundtruth_epsilon: 0.2
   interface:
     - node: publisher1
       publishers: 
