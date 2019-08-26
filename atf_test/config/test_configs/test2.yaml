@@ -12,6 +12,12 @@ testblock_small:
     - topic: topic1
     - topic: topic2
     - topic: topic3
+    - topic: topic4
+    - topic: topic5
+    - topic: topic6
+    - topic: topic7
+    - topic: topic8
+    - topic: topic9
 testblock_large:
   time: []
   path_length:
@@ -25,6 +31,12 @@ testblock_large:
     - topic: /topic1
     - topic: /topic2
     - topic: /topic3
+    - topic: /topic4
+    - topic: /topic5
+    - topic: /topic6
+    - topic: /topic7
+    - topic: /topic8
+    - topic: /topic9
   interface:
     - node: publisher1
       publishers: 
@@ -32,4 +44,25 @@ testblock_large:
     - node: publisher2
       publishers: 
         - [topic2, std_msgs/String]
+    - node: publisher3
+      publishers: 
+        - [topic3, std_msgs/String]
+    - node: publisher4
+      publishers: 
+        - [topic4, std_msgs/String]
+    - node: publisher5
+      publishers: 
+        - [topic5, std_msgs/String]
+    - node: publisher6
+      publishers: 
+        - [topic6, std_msgs/String]
+    - node: publisher7
+      publishers: 
+        - [topic7, std_msgs/String]
+    - node: publisher8
+      publishers: 
+        - [topic8, std_msgs/String]
+    - node: publisher9
+      publishers: 
+        - [topic9, std_msgs/String]        
 # testblock_all empty
