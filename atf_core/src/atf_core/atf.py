@@ -73,7 +73,7 @@ class ATF():
                 rospy.logdebug("still waiting for active states in path 'SM_ATF/CON' to be prepempted. active_states: %s", str(self.sm_container_status.active_states))
                 r.sleep()
                 continue
-        rospy.sleep(3) # FIXME we need to wait until sm_test.py is shutdown properly so that bag file can be closed by recorder.py in on_shutdown
+        rospy.sleep(10) # FIXME we need to wait until sm_test.py is shutdown properly so that bag file can be closed by recorder.py in on_shutdown
         rospy.logdebug("atf application is shutdown.")
 
     def set_user_result(self, testblock, data, details = []):
