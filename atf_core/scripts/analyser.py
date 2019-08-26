@@ -45,10 +45,12 @@ class Analyser:
             try:
                 bag = rosbag.Bag(inputfile)
             except rosbag.bag.ROSBagException as e:
-                print "FATAL empty bag file", e
+                print "ERROR empty bag file", e
+                i += 1
                 continue
             if bag.get_message_count() == 0:
-                print "FATAL empty bag file"
+                print "ERROR empty bag file"
+                i += 1
                 continue
             bar = progressbar.ProgressBar(maxval=bag.get_message_count(), \
                     widgets=[progressbar.Bar('=', '[', ']'), ' ', progressbar.Percentage()])
