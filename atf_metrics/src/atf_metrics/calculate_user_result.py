@@ -81,9 +81,6 @@ class CalculateUserResult:
         return ["/atf/user_result"]
 
     def get_result(self):
-        if len(self.testblock_result.results) != 1:
-            raise ATFError("multiple user results found")
-
         metric_result = MetricResult()
         metric_result.name = "user_result"
         metric_result.started = self.started # FIXME remove
@@ -98,6 +95,12 @@ class CalculateUserResult:
 
         if metric_result.started and metric_result.finished: #  we check if the testblock was ever started and stopped
             # calculate metric data
+            if self.testblock_result == None:
+                print "ERROR user results not set"
+                metric_result.data = None
+            if len(self.testblock_result.results) > 1:
+                print "ERROR multiple user results found"
+                metric_result.data = None
             metric_result.data = self.testblock_result.results[0].data
 
             # fill details as KeyValue messages

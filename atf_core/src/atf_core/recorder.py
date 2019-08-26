@@ -10,6 +10,7 @@ import atf_core
 
 from threading import Lock
 from atf_msgs.msg import TestblockTrigger
+from tf2_msgs.msg import TFMessage
 
 
 class ATFRecorder:
@@ -48,19 +49,6 @@ class ATFRecorder:
                                                                                       self.bag_file_writer))
         #print "self.recorder_plugin_list", self.recorder_plugin_list
 
-        self.active_topics = {}
-        self.subscribers = {}
-
-        for testblock in self.test.testblocks:
-            for topic in self.get_topics_of_testblock(testblock.name):
-                if topic not in self.subscribers.keys():
-                    # add new entry to active topics
-                    self.subscribers[topic] = {}
-                    self.subscribers[topic]["testblocks"] = [testblock.name]
-                    self.subscribers[topic]["subscriber"] = self.create_subscriber(topic)
-                else:
-                    self.subscribers[topic]["testblocks"].append(testblock.name)
-
         #rospy.Service(self.topic + "recorder_command", RecorderCommand, self.command_callback)
         rospy.on_shutdown(self.shutdown)
         
@@ -75,7 +63,26 @@ class ATFRecorder:
             rospy.wait_for_service(service)
             rospy.loginfo("... service '%s' available.", service)
 
+        self.active_topics = {}
+        self.subscribers = {}
+
+        rospy.Timer(rospy.Duration(0.1), self.create_subscriber_callback)
+
         rospy.loginfo("ATF recorder: started!")
+
+    def create_subscriber_callback(self, event):
+        for testblock in self.test.testblocks:
+            for topic in self.get_topics_of_testblock(testblock.name):
+                if topic not in self.subscribers.keys():
+                    subscriber = self.create_subscriber(topic)
+                    if subscriber == None:
+                        continue
+                    # add new entry to active topics
+                    self.subscribers[topic] = {}
+                    self.subscribers[topic]["testblocks"] = [testblock.name]
+                    self.subscribers[topic]["subscriber"] = subscriber
+                else:
+                    self.subscribers[topic]["testblocks"].append(testblock.name)
 
     def shutdown(self):
         rospy.loginfo("Shutdown ATF recorder and close bag file.")
@@ -89,12 +96,16 @@ class ATFRecorder:
             rospy.logerr(msg)
             raise ATFRecorderError(msg)
         try:
-            msg_class, _, _ = rostopic.get_topic_class(topic)
+            if topic == "/tf":
+                msg_class = TFMessage
+            else:
+                msg_class, _, _ = rostopic.get_topic_class(topic)
             subscriber = rospy.Subscriber(topic, msg_class, self.global_topic_callback, callback_args=topic)
         except Exception as e:
             msg = "Error while adding a subscriber for %s: %s."%(topic, e)
             rospy.logerr(msg)
-            raise ATFRecorderError(msg)
+            #raise ATFRecorderError(msg)
+            return None
         return subscriber
 
     def record_status(self, status):
