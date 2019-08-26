@@ -14,7 +14,6 @@ from atf_msgs.msg import TestblockTrigger
 
 class ATFRecorder:
     def __init__(self, test):
-        self.ns = "/atf/"
         self.test = test
         #print "recorder_core: self.test.name:", self.test.name
 
