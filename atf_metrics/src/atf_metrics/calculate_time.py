@@ -108,7 +108,8 @@ class CalculateTime:
                     #print metric_result.groundtruth_error_message
 
         if metric_result.data == None:
-            raise ATFAnalyserError("Analysing failed, no metric result available for metric '%s'."%metric_result.name)
+            metric_result.groundtruth_result = False
+            metric_result.groundtruth_error_message = "no result"
 
         #print "\nmetric_result:\n", metric_result
         return metric_result

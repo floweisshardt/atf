@@ -169,7 +169,7 @@ class CalculateInterface:
         groundtruth_epsilon = 0   # no deviation from max score allowed
 
         metric_result = MetricResult()
-        metric_result.name = "path_length"
+        metric_result.name = "interface"
         metric_result.started = self.started # FIXME remove
         metric_result.finished = self.finished # FIXME remove
         metric_result.data = None
@@ -200,7 +200,8 @@ class CalculateInterface:
                     #print metric_result.groundtruth_error_message
 
         if metric_result.data == None:
-            raise ATFAnalyserError("Analysing failed, no metric result available for metric '%s'."%metric_result.name)
+            metric_result.groundtruth_result = False
+            metric_result.groundtruth_error_message = "no result"
 
         #print "\nmetric_result:\n", metric_result
         return metric_result
