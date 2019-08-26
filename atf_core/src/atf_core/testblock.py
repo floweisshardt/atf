@@ -16,14 +16,6 @@ class Testblock:
 
     def get_result(self):
 
-        # validate testblock
-        if self.status == TestblockStatus.SUCCEEDED:
-            pass
-        elif self.status == TestblockStatus.ERROR:
-            raise ATFAnalyserError("Testblock '%s' finished with ERROR." % self.name)
-        else:
-            raise ATFAnalyserError("Testblock '%s' did not reach an end state before analyser finished (state is '%s'). Probably an error occured outside of monitored testblocks." % (self.name, self.status))
-
         testblock_result = TestblockResult()
         testblock_result.name = self.name
         testblock_result.groundtruth_result = None
@@ -38,20 +30,16 @@ class Testblock:
                 # get result
                 metric_result = metric_handle.get_result()
 
-                # check if result is valid
-                if metric_result.started and metric_result.finished: # FIXME remove and check within metrics
-                    # append result
-                    testblock_result.results.append(metric_result)
+                # append result
+                testblock_result.results.append(metric_result)
 
-                    # aggregate result
-                    if metric_result.groundtruth_result != None and not metric_result.groundtruth_result:
-                        testblock_result.groundtruth_result = False
-                        testblock_result.groundtruth_error_message += "\n     - metric '%s': %s"%(metric_result.name, metric_result.groundtruth_error_message)
-                        #print testblock_result.groundtruth_error_message
-                    if testblock_result.groundtruth_result == None and metric_result.groundtruth_result:
-                        testblock_result.groundtruth_result = True
-                else:
-                    raise ATFTestblockError("No result for metrics in testblock '%s'" % (self.name))
+                # aggregate result
+                if metric_result.groundtruth_result != None and not metric_result.groundtruth_result:
+                    testblock_result.groundtruth_result = False
+                    testblock_result.groundtruth_error_message += "\n     - metric '%s': %s"%(metric_result.name, metric_result.groundtruth_error_message)
+                    #print testblock_result.groundtruth_error_message
+                if testblock_result.groundtruth_result == None and metric_result.groundtruth_result:
+                    testblock_result.groundtruth_result = True
 
         if len(testblock_result.results) == 0:
             raise ATFAnalyserError("Analysing failed, no testblock result available for testblock '%s'."%testblock_result.name)
