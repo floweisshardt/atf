@@ -76,7 +76,7 @@ class ATF():
         rospy.sleep(3) # FIXME we need to wait until sm_test.py is shutdown properly so that bag file can be closed by recorder.py in on_shutdown
         rospy.logdebug("atf application is shutdown.")
 
-    def set_user_result(self, testblock, data, details):
+    def set_user_result(self, testblock, data, details = []):
         if not isinstance(data, float) and not isinstance(data, int):
             error_msg = "user_result.data is not a float or int. data=%s, type=%s"%(str(data), type(data))
             self._send_error(error_msg)
