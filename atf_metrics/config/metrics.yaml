@@ -1,14 +1,16 @@
-time:
-  handler: CalculateTimeParamHandler
-path_length:
-  handler: CalculatePathLengthParamHandler
-resources:
-  handler: CalculateResourcesParamHandler
-obstacle_distance:
-  handler: CalculateDistanceToObstaclesParamHandler
-publish_rate:
-  handler: CalculatePublishRateParamHandler
-interface:
-    handler: CalculateInterfaceParamHandler
 # example:
 #   handler: ExampleParamHandler
+interface:
+    handler: CalculateInterfaceParamHandler
+obstacle_distance:
+  handler: CalculateDistanceToObstaclesParamHandler
+path_length:
+  handler: CalculatePathLengthParamHandler
+publish_rate:
+  handler: CalculatePublishRateParamHandler
+resources:
+  handler: CalculateResourcesParamHandler
+time:
+  handler: CalculateTimeParamHandler
+user_result:
+  handler: CalculateUserResultParamHandler
