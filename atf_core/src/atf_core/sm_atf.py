@@ -100,16 +100,15 @@ class Active(smach.State):
 
     def execute(self, userdata):
         self.trigger = None
-
-        # start to record metric topics into bag file
-        self.recorder_handle.start_recording(userdata.name)
-
         # record to bag file
         status = TestblockStatus()
         status.stamp = rospy.Time.now()
         status.name = userdata.name
         status.status = TestblockStatus.ACTIVE
         self.recorder_handle.record_status(status)
+
+        # start to record metric topics into bag file
+        self.recorder_handle.start_recording(userdata.name)
 
         # wait for next transition trigger
         with self._trigger_cond:

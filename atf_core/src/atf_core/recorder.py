@@ -77,7 +77,7 @@ class ATFRecorder:
                     subscriber = self.create_subscriber(topic)
                     if subscriber == None:
                         continue
-                    # add new entry to active topics
+                    # add new entry to subscribers dictionary
                     self.subscribers[topic] = {}
                     self.subscribers[topic]["testblocks"] = [testblock.name]
                     self.subscribers[topic]["subscriber"] = subscriber
@@ -130,7 +130,7 @@ class ATFRecorder:
         #print "self.recorder_plugin_list=", self.recorder_plugin_list
         for recorder_plugin in self.recorder_plugin_list:
             #FIXME: need to filter the topics not needed for current trigger
-            rospy.loginfo("recorder plugin callback for testblock: '%s'", testblock_name)
+            rospy.logdebug("recorder plugin callback for testblock: '%s'", testblock_name)
             recorder_plugin.trigger_callback(testblock_name)
 
     def stop_recording(self, testblock_name):
