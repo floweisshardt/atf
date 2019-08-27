@@ -7,6 +7,8 @@ find_package(catkin REQUIRED COMPONENTS
     atf_recorder_plugins
     atf_status_server
 #    obstacle_distance
+    smach
+    smach_ros
     rospy
 )
 
@@ -23,6 +25,8 @@ catkin_package(
         atf_recorder_plugins
         atf_status_server
     #    obstacle_distance
+        smach
+        smach_ros
         rospy
     CFG_EXTRAS
         ${PROJECT_NAME}-extras.cmake
