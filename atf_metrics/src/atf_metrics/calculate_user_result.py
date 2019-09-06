@@ -54,13 +54,15 @@ class CalculateUserResult:
 
     def start(self, timestamp):
         if self.testblock_result != None:
-            raise ATFError("user_result should be None but is already set")
+            #raise ATFError("user_result should be None but is already set")
+            print "WARN: user_result should be None but is already set for testblock %s"%self.testblock_name
         self.active = True
         self.started = True
 
     def stop(self, timestamp):
         if self.testblock_result == None:
-            raise ATFError("user_result is not set")
+            #raise ATFError("user_result is not set")
+            print "WARN: user_result for testblock %s is not set"%self.testblock_name
         self.active = False
         self.finished = True
 
@@ -96,19 +98,20 @@ class CalculateUserResult:
         if metric_result.started and metric_result.finished: #  we check if the testblock was ever started and stopped
             # calculate metric data
             if self.testblock_result == None:
-                print "ERROR user results not set"
+                print "ERROR user result for testblock %s not set"%self.testblock_name
                 metric_result.data = None
-            if len(self.testblock_result.results) > 1:
-                print "ERROR multiple user results found"
+            elif len(self.testblock_result.results) > 1:
+                print "ERROR multiple user results found for testblock %s"%self.testblock_name
                 metric_result.data = None
-            metric_result.data = self.testblock_result.results[0].data
+            else:
+                metric_result.data = self.testblock_result.results[0].data
 
             # fill details as KeyValue messages
             details = []
             metric_result.details = details
 
             # evaluate metric data
-            if metric_result.groundtruth != None and metric_result.groundtruth_epsilon != None:
+            if metric_result.data != None and metric_result.groundtruth != None and metric_result.groundtruth_epsilon != None:
                 if math.fabs(metric_result.groundtruth - metric_result.data) <= metric_result.groundtruth_epsilon:
                     metric_result.groundtruth_result = True
                     metric_result.groundtruth_error_message = "all OK"

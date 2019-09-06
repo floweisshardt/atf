@@ -114,7 +114,7 @@ class CalculatePathLength:
                     self.rot_old = rot
 
     def get_topics(self):
-            return []
+        return []
 
     def get_result(self):
         metric_result = MetricResult()
@@ -140,7 +140,7 @@ class CalculatePathLength:
             metric_result.details = details
 
             # evaluate metric data
-            if metric_result.groundtruth != None and metric_result.groundtruth_epsilon != None:
+            if metric_result.data != None and metric_result.groundtruth != None and metric_result.groundtruth_epsilon != None:
                 if math.fabs(metric_result.groundtruth - metric_result.data) <= metric_result.groundtruth_epsilon:
                     metric_result.groundtruth_result = True
                     metric_result.groundtruth_error_message = "all OK"
