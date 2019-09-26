@@ -144,7 +144,7 @@ class GenerateTests:
                             for robot_env_arg_name, robot_env_arg_value in robot_env_config["additional_arguments"].items():
                                 incl.append(arg(name=str(robot_env_arg_name), value=str(robot_env_arg_value)))
                     if "additional_parameters" in robot_env_config:
-                        if len(robot_env_config["additional_arguments"]) > 0:
+                        if len(robot_env_config["additional_parameters"]) > 0:
                             for robot_env_param_name, robot_env_param_value in robot_env_config["additional_parameters"].items():
                                 incl.append(param(name=str(robot_env_param_name), value=str(robot_env_param_value)))
                     test_record.append(incl)
