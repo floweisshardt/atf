@@ -217,7 +217,11 @@ TDB
 
 #### Analysing
 ```
-rosrun atf_core analyser.py atf_test
+rosrun atf_core analyser.py atf_test standalone
+```
+or for rull result print
+```
+rosrun atf_core analyser.py atf_test standalone verbose
 ```
 
 check results
