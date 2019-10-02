@@ -8,3 +8,4 @@ int8 ERROR       = 4
 time stamp
 string name
 int8 status
+MetricResult user_result

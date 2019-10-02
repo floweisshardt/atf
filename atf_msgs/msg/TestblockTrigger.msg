@@ -7,3 +7,4 @@ uint8 ERROR       = 4
 time stamp
 string name
 uint8 trigger
+MetricResult user_result

@@ -63,19 +63,19 @@ class CalculatePathLength:
 
         self.t = tf.Transformer(True, rospy.Duration(10.0))
 
-    def start(self, timestamp):
+    def start(self, status):
         self.active = True
         self.started = True
 
-    def stop(self, timestamp):
+    def stop(self, status):
         self.active = False
         self.finished = True
 
-    def pause(self, timestamp):
+    def pause(self, status):
         self.active = False
         self.first_value = True
 
-    def purge(self, timestamp):
+    def purge(self, status):
         pass
 
     def update(self, topic, msg, t):

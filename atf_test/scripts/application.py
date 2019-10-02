@@ -7,6 +7,7 @@ import math
 import sys
 
 import atf_core
+from atf_msgs.msg import MetricResult
 
 class Application:
     def __init__(self):
@@ -20,14 +21,19 @@ class Application:
         # small testblock (circle r=0.5, time=3)
         self.atf.start("testblock_small")
         self.pub_tf_circle("link1", "link2", radius=1, time=3)
-        self.atf.set_user_result("testblock_small", 0.8)
-        self.atf.stop("testblock_small")
+
+        # user result
+        metric_result = MetricResult()
+        metric_result.data = 0.8
+        metric_result.groundtruth_result = True
+        metric_result.groundtruth_error_message = "all ok in application of atf_test"
+        self.atf.stop("testblock_small", metric_result)
 
         # large testblock (circle r=1, time=5)
         self.atf.start("testblock_large")
         self.pub_tf_circle("link1", "link2", radius=2, time=5)
-        self.atf.set_user_result("testblock_large", 0.8, [])
-        self.atf.stop("testblock_large")
+        metric_result.data = 0.7
+        self.atf.stop("testblock_large", metric_result)
 
         # shutdown atf
         self.atf.shutdown()

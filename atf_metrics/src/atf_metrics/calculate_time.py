@@ -52,21 +52,21 @@ class CalculateTime:
         self.start_time = None
         self.stop_time = None
 
-    def start(self, timestamp):
-        self.start_time = timestamp
+    def start(self, status):
+        self.start_time = status.stamp
         self.active = True
         self.started = True
 
-    def stop(self, timestamp):
-        self.stop_time = timestamp
+    def stop(self, status):
+        self.stop_time = status.stamp
         self.active = False
         self.finished = True
 
-    def pause(self, timestamp):
+    def pause(self, status):
         # TODO: Implement pause time calculation
         pass
 
-    def purge(self, timestamp):
+    def purge(self, status):
         # TODO: Implement purge as soon as pause is implemented
         pass
 

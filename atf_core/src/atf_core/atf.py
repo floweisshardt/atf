@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 import rospy
 import atf_core
+import copy
 
 from atf_msgs.msg import MetricResult, TestblockResult, TestblockTrigger
 from smach_msgs.msg import SmachContainerStatus
@@ -26,7 +27,6 @@ class ATF():
         self.test = test
 
         self.publisher_trigger = rospy.Publisher("atf/trigger", TestblockTrigger, queue_size=10)
-        self.publisher_user_result = rospy.Publisher("atf/user_result", TestblockResult, queue_size=10)
         rospy.Subscriber("/state_machine/machine/smach/container_status", SmachContainerStatus, self._sm_status_cb)
 
         # make sure to wait with the application for the statemachine in sm_test.py to be initialized
@@ -47,16 +47,40 @@ class ATF():
         trigger.trigger = TestblockTrigger.START
         self.publisher_trigger.publish(trigger)
 
-    def stop(self, testblock):
+    def stop(self, testblock, metric_result = None):
         if testblock not in self.test.test_config.keys():
             error_msg = "testblock %s not in list of testblocks"%testblock
             self._send_error(error_msg)
             raise atf_core.ATFError(error_msg)
+        
+        if metric_result != None:
+
+            #TODO  check if metric_result is of type atf_msgs/MetricResult
+
+            metric_result = copy.deepcopy(metric_result) # deepcopy is needed to be able to overwrite metric_result.name
+            metric_result.name = "user_result"
+            
+            rospy.loginfo("setting user result for testblock %s"%testblock)
+            if not isinstance(metric_result.data, float) and not isinstance(metric_result.data, int):
+                error_msg = "metric_result.data of testblock %s for metric %s is not a float or int. data=%s, type=%s"%(testblock, metric_result.name, str(metric_result.data), type(metric_result.data))
+                self._send_error(error_msg)
+                raise atf_core.ATFError(error_msg)
+            if type(metric_result.details) is not list:
+                error_msg = "metric_result.details of testblock %s for metric %s is not a list. detail=%s"%str(testblock, metric_result.name, metric_result.details)
+                self._send_error(error_msg)
+                raise atf_core.ATFError(error_msg)
+
+        else:
+            rospy.loginfo("no user result set")
+
         rospy.loginfo("stopping testblock %s"%testblock)
         trigger = TestblockTrigger()
         trigger.stamp = rospy.Time.now()
         trigger.name = testblock
         trigger.trigger = TestblockTrigger.STOP
+        print "metric_result=", metric_result
+        if metric_result != None:
+            trigger.user_result = metric_result
         self.publisher_trigger.publish(trigger)
 
     def shutdown(self):
@@ -75,23 +99,6 @@ class ATF():
                 continue
         rospy.sleep(10) # FIXME we need to wait until sm_test.py is shutdown properly so that bag file can be closed by recorder.py in on_shutdown
         rospy.logdebug("atf application is shutdown.")
-
-    def set_user_result(self, testblock, data, details = []):
-        if not isinstance(data, float) and not isinstance(data, int):
-            error_msg = "user_result.data is not a float or int. data=%s, type=%s"%(str(data), type(data))
-            self._send_error(error_msg)
-            raise atf_core.ATFError(error_msg)
-        if type(details) is not list:
-            error_msg = "user_result.details is not a list. detail=%s"%str(details)
-            self._send_error(error_msg)
-            raise atf_core.ATFError(error_msg)
-        metric_result = MetricResult()
-        metric_result.data = data
-        metric_result.details = details
-        testblock_result = TestblockResult()
-        testblock_result.name = testblock
-        testblock_result.results.append(metric_result)
-        self.publisher_user_result.publish(testblock_result)
 
     def _send_error(self, error_msg):
         trigger = TestblockTrigger()

@@ -2,7 +2,6 @@
 import rospy
 import math
 
-from atf_core import ATFError
 from atf_msgs.msg import MetricResult, KeyValue
 
 class CalculateUserResultParamHandler:
@@ -50,43 +49,56 @@ class CalculateUserResult:
         self.groundtruth = groundtruth
         self.groundtruth_epsilon = groundtruth_epsilon
         self.testblock_name = testblock_name
-        self.testblock_result = None
+        self.metric_result = None
 
-    def start(self, timestamp):
-        if self.testblock_result != None:
-            #raise ATFError("user_result should be None but is already set")
+    def start(self, status):
+        if self.metric_result != None:
             print "WARN: user_result should be None but is already set for testblock %s"%self.testblock_name
         self.active = True
         self.started = True
 
-    def stop(self, timestamp):
-        if self.testblock_result == None:
-            #raise ATFError("user_result is not set")
-            print "WARN: user_result for testblock %s is not set"%self.testblock_name
+    def stop(self, status):
+        if self.metric_result != None:
+            print "WARN: user_result should be None but is already set for testblock %s"%self.testblock_name
+        self.metric_result = status.user_result
         self.active = False
         self.finished = True
 
-    def pause(self, timestamp):
+    def pause(self, status):
         # TODO: Implement pause
         pass
 
-    def purge(self, timestamp):
+    def purge(self, status):
         # TODO: Implement purge as soon as pause is implemented
         pass
 
     def update(self, topic, msg, t):
-        if topic == "/atf/user_result":
-            if msg.name == self.testblock_name:
-                self.testblock_result = msg
+        pass
 
     def get_topics(self):
-        return ["/atf/user_result"]
+        return []
 
     def get_result(self):
         metric_result = MetricResult()
         metric_result.name = "user_result"
         metric_result.started = self.started # FIXME remove
         metric_result.finished = self.finished # FIXME remove
+
+        # check if user result is set
+        if not (self.metric_result.groundtruth_result == False\
+            and self.metric_result.groundtruth_error_message == ""\
+            and self.metric_result.groundtruth == 0.0\
+            and self.metric_result.groundtruth_epsilon == 0.0):
+            #print "groundtruth data is set from user within atf application for testblock %s. Skipping groundtruth evaluation from test_config"%self.testblock_name
+            # use data from user result
+            metric_result.data                      = self.metric_result.data
+            metric_result.groundtruth_result        = self.metric_result.groundtruth_result
+            metric_result.groundtruth_error_message = self.metric_result.groundtruth_error_message
+            metric_result.groundtruth               = self.metric_result.groundtruth
+            metric_result.groundtruth_epsilon       = self.metric_result.groundtruth_epsilon
+            metric_result.details                   = self.metric_result.details
+            return metric_result
+
         metric_result.data = None
         metric_result.groundtruth = self.groundtruth
         metric_result.groundtruth_epsilon = self.groundtruth_epsilon
@@ -97,18 +109,14 @@ class CalculateUserResult:
 
         if metric_result.started and metric_result.finished: #  we check if the testblock was ever started and stopped
             # calculate metric data
-            if self.testblock_result == None:
+            if self.metric_result == None:
                 print "ERROR user result for testblock %s not set"%self.testblock_name
                 metric_result.data = None
-            elif len(self.testblock_result.results) > 1:
-                print "ERROR multiple user results found for testblock %s"%self.testblock_name
-                metric_result.data = None
             else:
-                metric_result.data = self.testblock_result.results[0].data
+                metric_result.data = self.metric_result.data
 
             # fill details as KeyValue messages
-            details = []
-            metric_result.details = details
+            metric_result.details = self.metric_result.details
 
             # evaluate metric data
             if metric_result.data != None and metric_result.groundtruth != None and metric_result.groundtruth_epsilon != None:
