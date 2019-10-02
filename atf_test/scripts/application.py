@@ -32,6 +32,9 @@ class Application:
         # large testblock (circle r=1, time=5)
         self.atf.start("testblock_large")
         self.pub_tf_circle("link1", "link2", radius=2, time=5)
+
+        # user result
+        metric_result = MetricResult()
         metric_result.data = 0.7
         self.atf.stop("testblock_large", metric_result)
 
