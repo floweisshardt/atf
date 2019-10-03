@@ -14,8 +14,8 @@ find_package(catkin REQUIRED COMPONENTS
 
 add_message_files(
     FILES
-        AtfResult.msg
         Api.msg
+        AtfResult.msg
         IO.msg
         Interface.msg
         InterfaceItem.msg

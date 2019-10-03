@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 2.8.3)
 project(atf_metrics)
 
 find_package(catkin REQUIRED COMPONENTS
+    atf_msgs
     rospy
     tf
 #    obstacle_distance
@@ -14,17 +15,14 @@ catkin_python_setup()
 ###################################
 
 catkin_package(CATKIN_DEPENDS
-    rospy
+    atf_msgs
 #    obstacle_distance
 )
 
 ###########
 ## Build ##
 ###########
-
-include_directories(
-    ${catkin_INCLUDE_DIRS}
-)
+# noting to build, this is only python
 
 #############
 ## Install ##

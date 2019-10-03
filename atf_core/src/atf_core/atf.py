@@ -1,8 +1,9 @@
 #!/usr/bin/env python
 import rospy
 import atf_core
+import copy
 
-from atf_msgs.msg import TestblockTrigger
+from atf_msgs.msg import MetricResult, TestblockResult, TestblockTrigger
 from smach_msgs.msg import SmachContainerStatus
 
 ###########
@@ -25,41 +26,62 @@ class ATF():
         #print "current test:", test.name
         self.test = test
 
-        self.publisher = {}
-        #for testblock in self.test.test_config.keys():
-        #    print "testblock", testblock
-        self.publisher = rospy.Publisher("atf/trigger", TestblockTrigger, queue_size=10)
-        rospy.Subscriber("/state_machine/machine/smach/container_status", SmachContainerStatus, self.sm_status_cb)
+        self.publisher_trigger = rospy.Publisher("atf/trigger", TestblockTrigger, queue_size=10)
+        rospy.Subscriber("/state_machine/machine/smach/container_status", SmachContainerStatus, self._sm_status_cb)
 
         # make sure to wait with the application for the statemachine in sm_test.py to be initialized
         rospy.loginfo("waiting for smach container in test_sm to be ready...")
         rospy.wait_for_message("/state_machine/machine/smach/container_status", rospy.AnyMsg)
-        rospy.sleep(1)
+        rospy.sleep(3) # FIXME remove
         rospy.loginfo("...smach container in sm_test is ready.")
     
     def start(self, testblock):
         if testblock not in self.test.test_config.keys():
             error_msg = "testblock %s not in list of testblocks"%testblock
-            self.error(error_msg)
+            self._send_error(error_msg)
             raise atf_core.ATFError(error_msg)
         rospy.loginfo("starting testblock %s"%testblock)
         trigger = TestblockTrigger()
         trigger.stamp = rospy.Time.now()
         trigger.name = testblock
         trigger.trigger = TestblockTrigger.START
-        self.publisher.publish(trigger)
+        self.publisher_trigger.publish(trigger)
 
-    def stop(self, testblock):
+    def stop(self, testblock, metric_result = None):
         if testblock not in self.test.test_config.keys():
             error_msg = "testblock %s not in list of testblocks"%testblock
-            self.error(error_msg)
+            self._send_error(error_msg)
             raise atf_core.ATFError(error_msg)
+        
+        if metric_result != None:
+
+            #TODO  check if metric_result is of type atf_msgs/MetricResult
+
+            metric_result = copy.deepcopy(metric_result) # deepcopy is needed to be able to overwrite metric_result.name
+            metric_result.name = "user_result"
+            
+            rospy.loginfo("setting user result for testblock %s"%testblock)
+            if not isinstance(metric_result.data, float) and not isinstance(metric_result.data, int):
+                error_msg = "metric_result.data of testblock %s for metric %s is not a float or int. data=%s, type=%s"%(testblock, metric_result.name, str(metric_result.data), type(metric_result.data))
+                self._send_error(error_msg)
+                raise atf_core.ATFError(error_msg)
+            if type(metric_result.details) is not list:
+                error_msg = "metric_result.details of testblock %s for metric %s is not a list. detail=%s"%str(testblock, metric_result.name, metric_result.details)
+                self._send_error(error_msg)
+                raise atf_core.ATFError(error_msg)
+
+        else:
+            rospy.loginfo("no user result set")
+
         rospy.loginfo("stopping testblock %s"%testblock)
         trigger = TestblockTrigger()
         trigger.stamp = rospy.Time.now()
         trigger.name = testblock
         trigger.trigger = TestblockTrigger.STOP
-        self.publisher.publish(trigger)
+        print "metric_result=", metric_result
+        if metric_result != None:
+            trigger.user_result = metric_result
+        self.publisher_trigger.publish(trigger)
 
     def shutdown(self):
         rospy.logdebug("shutting down atf application")
@@ -75,15 +97,15 @@ class ATF():
                 rospy.logdebug("still waiting for active states in path 'SM_ATF/CON' to be prepempted. active_states: %s", str(self.sm_container_status.active_states))
                 r.sleep()
                 continue
-        rospy.sleep(3) # FIXME we need to wait until sm_test.py is shutdown properly so that bag file can be closed by recorder.py in on_shutdown
+        rospy.sleep(10) # FIXME we need to wait until sm_test.py is shutdown properly so that bag file can be closed by recorder.py in on_shutdown
         rospy.logdebug("atf application is shutdown.")
 
-    def error(self, error_msg):
+    def _send_error(self, error_msg):
         trigger = TestblockTrigger()
         trigger.stamp = rospy.Time.now()
         trigger.name = error_msg
         trigger.trigger = TestblockTrigger.ERROR
-        self.publisher.publish(trigger)
+        self.publisher_trigger.publish(trigger)
 
-    def sm_status_cb(self, msg):
+    def _sm_status_cb(self, msg):
         self.sm_container_status = msg

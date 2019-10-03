@@ -51,18 +51,18 @@ class CalculateInterface:
         self.testblock_name = testblock_name
         self.metric = metric
 
-    def start(self, timestamp):
+    def start(self, status):
         self.active = True
         self.started = True
 
-    def stop(self, timestamp):
+    def stop(self, status):
         self.active = False
         self.finished = True
 
-    def pause(self, timestamp):
+    def pause(self, status):
         pass
 
-    def purge(self, timestamp):
+    def purge(self, status):
         pass
 
     def update(self, topic, msg, t):
@@ -190,7 +190,7 @@ class CalculateInterface:
             metric_result.details = details
 
             # evaluate metric data
-            if metric_result.groundtruth != None and metric_result.groundtruth_epsilon != None:
+            if metric_result.data != None and metric_result.groundtruth != None and metric_result.groundtruth_epsilon != None:
                 if math.fabs(metric_result.groundtruth - metric_result.data) <= metric_result.groundtruth_epsilon:
                     metric_result.groundtruth_result = True
                     metric_result.groundtruth_error_message = "all OK"

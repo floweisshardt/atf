@@ -50,22 +50,22 @@ class CalculatePublishRate:
         self.start_time = None
         self.stop_time = None
 
-    def start(self, timestamp):
-        self.start_time = timestamp
+    def start(self, status):
+        self.start_time = status.stamp
         self.active = True
         self.started = True
 
-    def stop(self, timestamp):
-        self.stop_time = timestamp
+    def stop(self, status):
+        self.stop_time = status.stamp
         self.active = False
         self.finished = True
 
-    def pause(self, timestamp):
+    def pause(self, status):
         # TODO: Implement pause time and counter calculation
         #FIXME: check rate calculation in case of pause (counter, start_time and stop_time)
         pass
 
-    def purge(self, timestamp):
+    def purge(self, status):
         # TODO: Implement purge as soon as pause is implemented
         pass
 
@@ -75,7 +75,7 @@ class CalculatePublishRate:
                 self.counter += 1
 
     def get_topics(self):
-            return []
+        return []
 
     def get_result(self):
         metric_result = MetricResult()
@@ -100,7 +100,7 @@ class CalculatePublishRate:
             metric_result.details = details
 
             # evaluate metric data
-            if metric_result.groundtruth != None and metric_result.groundtruth_epsilon != None:
+            if metric_result.data != None and metric_result.groundtruth != None and metric_result.groundtruth_epsilon != None:
                 if math.fabs(metric_result.groundtruth - metric_result.data) <= metric_result.groundtruth_epsilon:
                     metric_result.groundtruth_result = True
                     metric_result.groundtruth_error_message = "all OK"

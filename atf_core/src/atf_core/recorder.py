@@ -10,11 +10,11 @@ import atf_core
 
 from threading import Lock
 from atf_msgs.msg import TestblockTrigger
+from tf2_msgs.msg import TFMessage
 
 
 class ATFRecorder:
     def __init__(self, test):
-        self.ns = "/atf/"
         self.test = test
         #print "recorder_core: self.test.name:", self.test.name
 
@@ -49,8 +49,6 @@ class ATFRecorder:
                                                                                       self.bag_file_writer))
         #print "self.recorder_plugin_list", self.recorder_plugin_list
 
-        self.active_topics = {}
-
         #rospy.Service(self.topic + "recorder_command", RecorderCommand, self.command_callback)
         rospy.on_shutdown(self.shutdown)
         
@@ -65,7 +63,26 @@ class ATFRecorder:
             rospy.wait_for_service(service)
             rospy.loginfo("... service '%s' available.", service)
 
+        self.active_topics = {}
+        self.subscribers = {}
+
+        rospy.Timer(rospy.Duration(0.1), self.create_subscriber_callback)
+
         rospy.loginfo("ATF recorder: started!")
+
+    def create_subscriber_callback(self, event):
+        for testblock in self.test.testblocks:
+            for topic in self.get_topics_of_testblock(testblock.name):
+                if topic not in self.subscribers.keys():
+                    subscriber = self.create_subscriber(topic)
+                    if subscriber == None:
+                        continue
+                    # add new entry to subscribers dictionary
+                    self.subscribers[topic] = {}
+                    self.subscribers[topic]["testblocks"] = [testblock.name]
+                    self.subscribers[topic]["subscriber"] = subscriber
+                else:
+                    self.subscribers[topic]["testblocks"].append(testblock.name)
 
     def shutdown(self):
         rospy.loginfo("Shutdown ATF recorder and close bag file.")
@@ -76,15 +93,19 @@ class ATFRecorder:
     def create_subscriber(self, topic):
         if not topic.startswith("/"):
             msg = "topic %s is not a global topic. Needs to start with '/'"%topic
-            print msg
+            rospy.logerr(msg)
             raise ATFRecorderError(msg)
         try:
-            msg_class, _, _ = rostopic.get_topic_class(topic)
+            if topic == "/tf":
+                msg_class = TFMessage
+            else:
+                msg_class, _, _ = rostopic.get_topic_class(topic)
             subscriber = rospy.Subscriber(topic, msg_class, self.global_topic_callback, callback_args=topic)
         except Exception as e:
-            msg = "Error while add a subscriber for %s: %s."%(topic, e)
-            print msg
-            raise ATFRecorderError(msg)
+            msg = "Error while adding a subscriber for %s: %s."%(topic, e)
+            rospy.logerr(msg)
+            #raise ATFRecorderError(msg)
+            return None
         return subscriber
 
     def record_status(self, status):
@@ -98,12 +119,9 @@ class ATFRecorder:
 
         for topic in self.get_topics_of_testblock(testblock_name):
             if topic not in self.active_topics.keys():
-                # add new entry to active topics
-                self.active_topics[topic] = {}
-                self.active_topics[topic]["testblocks"] = [testblock_name]
-                self.active_topics[topic]["subscriber"] = self.create_subscriber(topic)
+                self.active_topics[topic] = [testblock_name]
             else:
-                self.active_topics[topic]["testblocks"].append(testblock_name)
+                self.active_topics[topic].append(testblock_name)
 
         #print ">>> start recording for %s, active_topics="%testblock_name, self.active_topics
         self.lock.release()
@@ -112,8 +130,8 @@ class ATFRecorder:
         #print "self.recorder_plugin_list=", self.recorder_plugin_list
         for recorder_plugin in self.recorder_plugin_list:
             #FIXME: need to filter the topics not needed for current trigger
+            rospy.logdebug("recorder plugin callback for testblock: '%s'", testblock_name)
             recorder_plugin.trigger_callback(testblock_name)
-            rospy.logdebug(" recorder plugin callback : '%s'", testblock_name)
 
     def stop_recording(self, testblock_name):
         self.lock.acquire()
@@ -123,11 +141,9 @@ class ATFRecorder:
         for topic in self.get_topics_of_testblock(testblock_name):
             #print "self.active_topics", self.active_topics
             if topic in self.active_topics.keys():
-                self.active_topics[topic]["testblocks"].remove(testblock_name)
+                self.active_topics[topic].remove(testblock_name)
             #print "self.active_topics of topic '%s'"%topic, self.active_topics[topic]
-            if len(self.active_topics[topic]["testblocks"]) == 0:
-                if self.active_topics[topic]["subscriber"] != None:
-                    self.active_topics[topic]["subscriber"].unregister()
+            if len(self.active_topics[topic]) == 0:
                 self.active_topics.pop(topic)
 
         #print "<<< stop recording for %s, active_topics="%testblock_name, self.active_topics
@@ -181,7 +197,8 @@ class ATFRecorder:
         return doc
 
     def global_topic_callback(self, msg, name):
-        self.bag_file_writer.write_to_bagfile(name, msg, rospy.Time.now())
+        if name in self.active_topics.keys():
+            self.bag_file_writer.write_to_bagfile(name, msg, rospy.Time.now())
 
 class ATFRecorderError(Exception):
     pass

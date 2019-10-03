@@ -24,6 +24,27 @@ testblock_small:
     - topic: topic3
       groundtruth: 33
       groundtruth_epsilon: 5
+    - topic: topic4
+      groundtruth: 44
+      groundtruth_epsilon: 5
+    - topic: topic5
+      groundtruth: 55
+      groundtruth_epsilon: 5
+    - topic: topic6
+      groundtruth: 66
+      groundtruth_epsilon: 5
+    - topic: topic7
+      groundtruth: 77
+      groundtruth_epsilon: 5
+    - topic: topic8
+      groundtruth: 88
+      groundtruth_epsilon: 5
+    - topic: topic9
+      groundtruth: 99
+      groundtruth_epsilon: 5
+  user_result:
+    - groundtruth: 0.8
+      groundtruth_epsilon: 0.2
 testblock_large:
   time:
     - groundtruth: 5
@@ -49,6 +70,27 @@ testblock_large:
     - topic: /topic3
       groundtruth: 33
       groundtruth_epsilon: 5
+    - topic: /topic4
+      groundtruth: 44
+      groundtruth_epsilon: 5
+    - topic: /topic5
+      groundtruth: 55
+      groundtruth_epsilon: 5
+    - topic: /topic6
+      groundtruth: 66
+      groundtruth_epsilon: 5
+    - topic: /topic7
+      groundtruth: 77
+      groundtruth_epsilon: 5
+    - topic: /topic8
+      groundtruth: 88
+      groundtruth_epsilon: 5
+    - topic: /topic9
+      groundtruth: 99
+      groundtruth_epsilon: 5
+  user_result:
+    - groundtruth: 0.8
+      groundtruth_epsilon: 0.2
   interface:
     - node: publisher1
       publishers: 
@@ -56,4 +98,25 @@ testblock_large:
     - node: publisher2
       publishers: 
         - [topic2, std_msgs/String]
+    - node: publisher3
+      publishers: 
+        - [topic3, std_msgs/String]
+    - node: publisher4
+      publishers: 
+        - [topic4, std_msgs/String]
+    - node: publisher5
+      publishers: 
+        - [topic5, std_msgs/String]
+    - node: publisher6
+      publishers: 
+        - [topic6, std_msgs/String]
+    - node: publisher7
+      publishers: 
+        - [topic7, std_msgs/String]
+    - node: publisher8
+      publishers: 
+        - [topic8, std_msgs/String]
+    - node: publisher9
+      publishers: 
+        - [topic9, std_msgs/String]
 # testblock_all empty

@@ -75,10 +75,10 @@ class Analyser:
                                     testblock.status = msg.status
                                     if testblock.status == TestblockStatus.ACTIVE:
                                         #print "calling start on metric", metric_handle
-                                        metric_handle.start(msg.stamp)
+                                        metric_handle.start(msg)
                                     elif testblock.status == TestblockStatus.SUCCEEDED:
                                         #print "calling stop on metric", metric_handle
-                                        metric_handle.stop(msg.stamp)
+                                        metric_handle.stop(msg)
                                 else:
                                     metric_handle.update(topic, msg, t)
                     #bar.update(j)

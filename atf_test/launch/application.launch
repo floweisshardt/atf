@@ -4,4 +4,10 @@
     <node name="publisher1" pkg="rostopic" type="rostopic" args="pub topic1 std_msgs/String 'data: 'hello'' -r11" output="screen"/> 
     <node name="publisher2" pkg="rostopic" type="rostopic" args="pub topic2 std_msgs/String 'data: 'hello'' -r22" output="screen"/>
     <node name="publisher3" pkg="rostopic" type="rostopic" args="pub topic3 std_msgs/String 'data: 'hello'' -r33" output="screen"/>
+    <node name="publisher4" pkg="rostopic" type="rostopic" args="pub topic4 std_msgs/String 'data: 'hello'' -r44" output="screen"/>
+    <node name="publisher5" pkg="rostopic" type="rostopic" args="pub topic5 std_msgs/String 'data: 'hello'' -r55" output="screen"/>
+    <node name="publisher6" pkg="rostopic" type="rostopic" args="pub topic6 std_msgs/String 'data: 'hello'' -r66" output="screen"/>
+    <node name="publisher7" pkg="rostopic" type="rostopic" args="pub topic7 std_msgs/String 'data: 'hello'' -r77" output="screen"/>
+    <node name="publisher8" pkg="rostopic" type="rostopic" args="pub topic8 std_msgs/String 'data: 'hello'' -r88" output="screen"/>
+    <node name="publisher9" pkg="rostopic" type="rostopic" args="pub topic9 std_msgs/String 'data: 'hello'' -r99" output="screen"/>
 </launch>

@@ -4,7 +4,7 @@ import math
 
 from atf_msgs.msg import MetricResult, KeyValue
 
-class CalculateTimeParamHandler:
+class CalculateUserResultParamHandler:
     def __init__(self):
         """
         Class for returning the corresponding metric class with the given parameter.
@@ -18,7 +18,7 @@ class CalculateTimeParamHandler:
         """
         metrics = []
 
-        # special case for time (can have empty list of parameters, thus adding dummy groundtruth information)
+        # special case for user_result (can have empty list of parameters, thus adding dummy groundtruth information)
         if params == []:
             params.append({"groundtruth":None, "groundtruth_epsilon":None})
 
@@ -32,38 +32,40 @@ class CalculateTimeParamHandler:
                 groundtruth = metric["groundtruth"]
                 groundtruth_epsilon = metric["groundtruth_epsilon"]
             except (TypeError, KeyError):
-                #rospy.logwarn_throttle(10, "No groundtruth parameters given, skipping groundtruth evaluation for metric 'time' in testblock '%s'"%testblock_name)
+                #rospy.logwarn_throttle(10, "No groundtruth parameters given, skipping groundtruth evaluation for metric 'user_result' in testblock '%s'"%testblock_name)
                 groundtruth = None
                 groundtruth_epsilon = None
-            metrics.append(CalculateTime(groundtruth, groundtruth_epsilon))
+            metrics.append(CalculateUserResult(testblock_name, groundtruth, groundtruth_epsilon))
         return metrics
 
-class CalculateTime:
-    def __init__(self, groundtruth, groundtruth_epsilon):
+class CalculateUserResult:
+    def __init__(self, testblock_name, groundtruth, groundtruth_epsilon):
         """
-        Class for calculating the time between the trigger 'ACTIVATE' and 'FINISH' on the topic assigned to the
-        testblock.
+        Class for collecting the the user result.
         """
         self.started = False
         self.finished = False
         self.active = False
         self.groundtruth = groundtruth
         self.groundtruth_epsilon = groundtruth_epsilon
-        self.start_time = None
-        self.stop_time = None
+        self.testblock_name = testblock_name
+        self.metric_result = None
 
     def start(self, status):
-        self.start_time = status.stamp
+        if self.metric_result != None:
+            print "WARN: user_result should be None but is already set for testblock %s"%self.testblock_name
         self.active = True
         self.started = True
 
     def stop(self, status):
-        self.stop_time = status.stamp
+        if self.metric_result != None:
+            print "WARN: user_result should be None but is already set for testblock %s"%self.testblock_name
+        self.metric_result = status.user_result
         self.active = False
         self.finished = True
 
     def pause(self, status):
-        # TODO: Implement pause time calculation
+        # TODO: Implement pause
         pass
 
     def purge(self, status):
@@ -78,9 +80,25 @@ class CalculateTime:
 
     def get_result(self):
         metric_result = MetricResult()
-        metric_result.name = "time"
+        metric_result.name = "user_result"
         metric_result.started = self.started # FIXME remove
         metric_result.finished = self.finished # FIXME remove
+
+        # check if user result is set
+        if not (self.metric_result.groundtruth_result == False\
+            and self.metric_result.groundtruth_error_message == ""\
+            and self.metric_result.groundtruth == 0.0\
+            and self.metric_result.groundtruth_epsilon == 0.0):
+            #print "groundtruth data is set from user within atf application for testblock %s. Skipping groundtruth evaluation from test_config"%self.testblock_name
+            # use data from user result
+            metric_result.data                      = self.metric_result.data
+            metric_result.groundtruth_result        = self.metric_result.groundtruth_result
+            metric_result.groundtruth_error_message = self.metric_result.groundtruth_error_message
+            metric_result.groundtruth               = self.metric_result.groundtruth
+            metric_result.groundtruth_epsilon       = self.metric_result.groundtruth_epsilon
+            metric_result.details                   = self.metric_result.details
+            return metric_result
+
         metric_result.data = None
         metric_result.groundtruth = self.groundtruth
         metric_result.groundtruth_epsilon = self.groundtruth_epsilon
@@ -91,11 +109,14 @@ class CalculateTime:
 
         if metric_result.started and metric_result.finished: #  we check if the testblock was ever started and stopped
             # calculate metric data
-            metric_result.data = round((self.stop_time - self.start_time).to_sec(), 3)
+            if self.metric_result == None:
+                print "ERROR user result for testblock %s not set"%self.testblock_name
+                metric_result.data = None
+            else:
+                metric_result.data = self.metric_result.data
 
             # fill details as KeyValue messages
-            details = []
-            metric_result.details = details
+            metric_result.details = self.metric_result.details
 
             # evaluate metric data
             if metric_result.data != None and metric_result.groundtruth != None and metric_result.groundtruth_epsilon != None:

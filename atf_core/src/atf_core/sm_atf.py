@@ -86,7 +86,7 @@ class Inactive(smach.State):
 
 class Active(smach.State):
     def __init__(self, name, recorder_handle):
-        smach.State.__init__(self, input_keys=['name'], outcomes=['pause', 'purge', 'stop', 'error'])
+        smach.State.__init__(self, input_keys=['name'], output_keys=['user_result'], outcomes=['pause', 'purge', 'stop', 'error'])
         self.trigger = None
         self.recorder_handle = recorder_handle
         self._trigger_cond = threading.Condition()
@@ -122,6 +122,7 @@ class Active(smach.State):
         elif self.trigger.trigger == TestblockTrigger.PURGE:
             outcome = 'purge'
         elif self.trigger.trigger == TestblockTrigger.STOP:
+            userdata.user_result = self.trigger.user_result
             outcome = 'stop'
         elif self.trigger.trigger == TestblockTrigger.ERROR:
             outcome = 'error'
@@ -133,20 +134,22 @@ class Active(smach.State):
 
 class Stopped(smach.State):
     def __init__(self, name, recorder_handle):
-        smach.State.__init__(self, input_keys=['name'], outcomes=['done', 'error'])
+        smach.State.__init__(self, input_keys=['name', 'user_result'], outcomes=['done', 'error'])
         self.recorder_handle = recorder_handle
 
     def execute(self, userdata):
         self.trigger = None
+
+        # start to record metric topics into bag file
+        self.recorder_handle.stop_recording(userdata.name)
+
         # record to bag file
         status = TestblockStatus()
         status.stamp = rospy.Time.now()
         status.name = userdata.name
         status.status = TestblockStatus.SUCCEEDED
+        status.user_result = userdata.user_result
         self.recorder_handle.record_status(status)
-
-        # start to record metric topics into bag file
-        self.recorder_handle.stop_recording(userdata.name)
 
         return 'done'
 
