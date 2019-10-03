@@ -158,26 +158,32 @@ class ATFRecorder:
         # topics from test_config
         testblock_data = self.test.test_config[testblock_name]
         #print "testblock_data=", testblock_data
-        for metric, metric_data in testblock_data.items():
-            #print "metric=", metric
-            #print "metric_data=", metric_data
-            for entry in metric_data:
-                # read all "topic" entries
-                if "topic" in entry:
-                    topic = entry["topic"]
-                    if topic not in topics:
-                        topics.append(topic)
-                        #print "topics==============", topics
+#        for metric, metric_data in testblock_data.items():
+#            #print "metric=", metric
+#            #print "metric_data=", metric_data
+#            for entry in metric_data:
+#                # read all "topic" entries
+#                if "topic" in entry:
+#                    topic = entry["topic"]
+#                    if topic not in topics:
+#                        topics.append(topic)
+#                        #print "topics==============", topics
 
         # ask each metric about its topics
         for testblock in self.test.testblocks:
-            #print "testblock=", testblock
-            for metric_handle in testblock.metric_handles:
-                #print "metric_handle=", metric_handle
-                for topic in metric_handle.get_topics():
-                    #print "topic=", topic
-                    if topic not in topics:
-                        topics.append(topic)
+            #print "testblock.name =", testblock.name
+            if testblock.name == testblock_name:
+                for metric_handle in testblock.metric_handles:
+                    #print "metric_handle=", metric_handle
+                    for topic in metric_handle.get_topics():
+                        #print "topic=", topic
+                        if topic not in topics:
+                            topics.append(topic)
+                    print "  topics for metric %s of testblock %s ="%(str(metric_handle), testblock.name), topics
+            else:
+                #print "testblock names do not match %s %s"%(testblock.name, testblock_name)
+                continue
+        #print "topics of testblock %s ="%testblock_name, topics
 
         # fix global topic prefix
         topics_global = []
@@ -186,7 +192,7 @@ class ATFRecorder:
                 topics_global.append(topic)
             else:
                 topics_global.append("/" + topic)
-        #print "topics_global", topics_global
+        #print "topics_global of testblock %s ="%testblock_name, topics_global
         return topics_global
 
 
