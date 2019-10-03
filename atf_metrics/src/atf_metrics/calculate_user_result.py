@@ -85,7 +85,7 @@ class CalculateUserResult:
         metric_result.finished = self.finished # FIXME remove
 
         # check if user result is set
-        if not (self.metric_result.groundtruth_result == False\
+        if self.metric_result != None and not (self.metric_result.groundtruth_result == False\
             and self.metric_result.groundtruth_error_message == ""\
             and self.metric_result.groundtruth == 0.0\
             and self.metric_result.groundtruth_epsilon == 0.0):

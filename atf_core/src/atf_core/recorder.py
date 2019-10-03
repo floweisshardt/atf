@@ -65,8 +65,10 @@ class ATFRecorder:
 
         self.active_topics = {}
         self.subscribers = {}
+        self.tf_static_messages = []
 
         rospy.Timer(rospy.Duration(0.1), self.create_subscriber_callback)
+        rospy.Timer(rospy.Duration(0.1), self.tf_static_timer_callback)
 
         rospy.loginfo("ATF recorder: started!")
 
@@ -96,11 +98,12 @@ class ATFRecorder:
             rospy.logerr(msg)
             raise ATFRecorderError(msg)
         try:
-            if topic == "/tf":
+            if topic == "/tf" or topic == "/tf_static":
                 msg_class = TFMessage
             else:
                 msg_class, _, _ = rostopic.get_topic_class(topic)
             subscriber = rospy.Subscriber(topic, msg_class, self.global_topic_callback, callback_args=topic)
+            rospy.logdebug("created subsriber for topic %s", topic)
         except Exception as e:
             msg = "Error while adding a subscriber for %s: %s."%(topic, e)
             rospy.logerr(msg)
@@ -197,8 +200,23 @@ class ATFRecorder:
         return doc
 
     def global_topic_callback(self, msg, name):
+        # catch /tf_static messages because they are latched and would only be published once at the beginning but not at the beginning of each testblock
+        # TODO generalize for other latched topics
+        if name == "/tf_static": 
+            self.tf_static_messages.append(msg)
+        
         if name in self.active_topics.keys():
             self.bag_file_writer.write_to_bagfile(name, msg, rospy.Time.now())
+
+    def tf_static_timer_callback(self, event):
+            # republish latched /tf_static messages to /tf_static again
+            if "/tf_static" in self.active_topics.keys():
+                for latched_msg in self.tf_static_messages:
+                    pub_msg = TFMessage()
+                    for transform in latched_msg.transforms:
+                        transform.header.stamp = rospy.Time.now()
+                        pub_msg.transforms.append(transform)
+                    self.bag_file_writer.write_to_bagfile("/tf_static", pub_msg, rospy.Time.now())
 
 class ATFRecorderError(Exception):
     pass
