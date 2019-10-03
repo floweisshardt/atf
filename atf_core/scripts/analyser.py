@@ -48,6 +48,10 @@ class Analyser:
                 print "ERROR empty bag file", e
                 i += 1
                 continue
+            except IOError as e:
+                print "Error bag file not found", e
+                i += 1
+                continue
             if bag.get_message_count() == 0:
                 print "ERROR empty bag file"
                 i += 1

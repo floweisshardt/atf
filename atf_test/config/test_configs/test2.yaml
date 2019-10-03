@@ -2,12 +2,12 @@
 testblock_small:
   time: []
   path_length:
-    - topic: tf
+    - topics: [/tf]
       root_frame: link1
       measured_frame: link2
-    - topic: tf
+    - topics: [/tf, /tf_static]
       root_frame: link1
-      measured_frame: link3
+      measured_frame: link2_static
   publish_rate:
     - topic: topic1
     - topic: topic2
@@ -22,12 +22,12 @@ testblock_small:
 testblock_large:
   time: []
   path_length:
-    - topic: tf
+    - topics: [/tf]
       root_frame: link1
       measured_frame: link2
-    - topic: tf
+    - topics: [/tf, /tf_static]
       root_frame: link1
-      measured_frame: link3
+      measured_frame: link2_static
   publish_rate:
     - topic: /topic1
     - topic: /topic2
@@ -66,5 +66,5 @@ testblock_large:
         - [topic8, std_msgs/String]
     - node: publisher9
       publishers: 
-        - [topic9, std_msgs/String]        
+        - [topic9, std_msgs/String]
 # testblock_all empty

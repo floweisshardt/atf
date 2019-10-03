@@ -34,14 +34,14 @@ class CalculatePathLengthParamHandler:
                 #rospy.logwarn_throttle(10, "No groundtruth parameters given, skipping groundtruth evaluation for metric 'path_length' in testblock '%s'"%testblock_name)
                 groundtruth = None
                 groundtruth_epsilon = None
-            metrics.append(CalculatePathLength(metric["topic"], metric["root_frame"], metric["measured_frame"], groundtruth, groundtruth_epsilon))
+            metrics.append(CalculatePathLength(metric["topics"], metric["root_frame"], metric["measured_frame"], groundtruth, groundtruth_epsilon))
         return metrics
 
 class CalculatePathLength:
-    def __init__(self, topic, root_frame, measured_frame, groundtruth, groundtruth_epsilon):
+    def __init__(self, topics, root_frame, measured_frame, groundtruth, groundtruth_epsilon):
         """
         Class for calculating the distance covered by the given frame in relation to a given root frame.
-        The tf data is sent over the tf topic given in the robot_config.yaml.
+        The tf data is sent over the tf topics given in the test_config.yaml.
         :param root_frame: name of the first frame
         :type  root_frame: string
         :param measured_frame: name of the second frame. The distance will be measured in relation to the root_frame.
@@ -52,11 +52,10 @@ class CalculatePathLength:
         self.active = False
         self.groundtruth = groundtruth
         self.groundtruth_epsilon = groundtruth_epsilon
-        self.topic = topic
+        self.topics = topics
         self.root_frame = root_frame
         self.measured_frame = measured_frame
         self.path_length = 0.0
-        self.tf_sampling_freq = 20.0  # Hz
         self.first_value = True
         self.trans_old = []
         self.rot_old = []
@@ -79,42 +78,47 @@ class CalculatePathLength:
         pass
 
     def update(self, topic, msg, t):
-        #print "update"
+        # make sure we're handling a TFMessage (from /tf or /tf_static)
+        # TODO check type instead of topic names
+        if topic in self.topics:
+            for transform in msg.transforms:
+                #print "transform.header.stamp =", transform.header.stamp, "t =", t, "now =", rospy.Time.now(), "frame_id =", transform.header.frame_id, "child_frame_id =", transform.child_frame_id
+                self.t.setTransform(transform)
+
+        # get path increment if testblock is active
         if self.active:
-            #print "active"
-            #print "topic=", topic, "self.topic=", self.topic
-            if topic == self.topic:
-                for transform in msg.transforms:
-                    #update transformer
-                    self.t.setTransform(transform)
+            self.get_path_increment()
+                    
+    def get_path_increment(self):
+        try:
+            (trans, rot) = self.t.lookupTransform(self.root_frame, self.measured_frame, rospy.Time(0))
+        except tf2_ros.LookupException as e:
+            #print "Exception in metric 'path_length' %s %s"%(type(e), e)
+            return
+        
+        #print "got transform successfully"
 
-                    # get latest transform
-                    try:
-                        (trans, rot) = self.t.lookupTransform(self.root_frame, self.measured_frame, rospy.Time(0))
-                    except tf2_ros.LookupException as e:
-                        rospy.logwarn("Exception in metric 'path_length' %s %s",type(e), e)
-                        continue
+        if self.first_value:
+            self.trans_old = trans
+            self.rot_old = rot
+            self.first_value = False
+            return
+        #print "transformations: \n", "trans[0]", trans[0], "self.trans_old[0]",self.trans_old[0], "trans[1]", trans[1], "self.trans_old[1]",self.trans_old[1], "trans[2]",trans[2], "self.trans_old[2]",self.trans_old[2], "\n ------------------------------------------------ "
+        path_increment = math.sqrt((trans[0] - self.trans_old[0]) ** 2 + (trans[1] - self.trans_old[1]) ** 2 +
+                                (trans[2] - self.trans_old[2]) ** 2)
 
-                    if self.first_value:
-                        self.trans_old = trans
-                        self.rot_old = rot
-                        self.first_value = False
-                        return
-                    #print "transformations: \n", "trans[0]", trans[0], "self.trans_old[0]",self.trans_old[0], "trans[1]", trans[1], "self.trans_old[1]",self.trans_old[1], "trans[2]",trans[2], "self.trans_old[2]",self.trans_old[2], "\n ------------------------------------------------ "
-                    path_increment = math.sqrt((trans[0] - self.trans_old[0]) ** 2 + (trans[1] - self.trans_old[1]) ** 2 +
-                                            (trans[2] - self.trans_old[2]) ** 2)
-                    if(path_increment < 1):
-                        #rospy.logwarn("Transformation: %s, Path Increment: %s",str(trans), str(path_increment))
-                        self.path_length += path_increment
+        # filter beamed transformations (more than 1m from one tf message to another)
+        if(path_increment < 1):
+            self.path_length += path_increment
+            #print "path_increment between %s and %s = %f"%(self.root_frame, self.measured_frame, path_increment)
+        else:
+            print "Transformation Failed! \n Transformation: %s, Path Increment: %s"%(str(trans), str(path_increment))
 
-                    else:
-                        rospy.logwarn("Transformation Failed! \n Transformation: %s, Path Increment: %s",str(trans), str(path_increment))
-
-                    self.trans_old = trans
-                    self.rot_old = rot
+        self.trans_old = trans
+        self.rot_old = rot
 
     def get_topics(self):
-        return []
+        return self.topics
 
     def get_result(self):
         metric_result = MetricResult()

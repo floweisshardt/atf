@@ -75,7 +75,7 @@ class CalculatePublishRate:
                 self.counter += 1
 
     def get_topics(self):
-        return []
+        return [self.topic]
 
     def get_result(self):
         metric_result = MetricResult()

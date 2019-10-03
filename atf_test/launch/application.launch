@@ -10,4 +10,5 @@
     <node name="publisher7" pkg="rostopic" type="rostopic" args="pub topic7 std_msgs/String 'data: 'hello'' -r77" output="screen"/>
     <node name="publisher8" pkg="rostopic" type="rostopic" args="pub topic8 std_msgs/String 'data: 'hello'' -r88" output="screen"/>
     <node name="publisher9" pkg="rostopic" type="rostopic" args="pub topic9 std_msgs/String 'data: 'hello'' -r99" output="screen"/>
+    <node pkg="tf2_ros" type="static_transform_publisher" name="link2_static_transform_publisher" args="1 0 0 0 0 0 link2 link2_static" />
 </launch>

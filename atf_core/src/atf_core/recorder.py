@@ -65,8 +65,10 @@ class ATFRecorder:
 
         self.active_topics = {}
         self.subscribers = {}
+        self.tf_static_messages = []
 
         rospy.Timer(rospy.Duration(0.1), self.create_subscriber_callback)
+        rospy.Timer(rospy.Duration(0.1), self.tf_static_timer_callback)
 
         rospy.loginfo("ATF recorder: started!")
 
@@ -96,11 +98,12 @@ class ATFRecorder:
             rospy.logerr(msg)
             raise ATFRecorderError(msg)
         try:
-            if topic == "/tf":
+            if topic == "/tf" or topic == "/tf_static":
                 msg_class = TFMessage
             else:
                 msg_class, _, _ = rostopic.get_topic_class(topic)
             subscriber = rospy.Subscriber(topic, msg_class, self.global_topic_callback, callback_args=topic)
+            rospy.logdebug("created subsriber for topic %s", topic)
         except Exception as e:
             msg = "Error while adding a subscriber for %s: %s."%(topic, e)
             rospy.logerr(msg)
@@ -155,26 +158,32 @@ class ATFRecorder:
         # topics from test_config
         testblock_data = self.test.test_config[testblock_name]
         #print "testblock_data=", testblock_data
-        for metric, metric_data in testblock_data.items():
-            #print "metric=", metric
-            #print "metric_data=", metric_data
-            for entry in metric_data:
-                # read all "topic" entries
-                if "topic" in entry:
-                    topic = entry["topic"]
-                    if topic not in topics:
-                        topics.append(topic)
-                        #print "topics==============", topics
+#        for metric, metric_data in testblock_data.items():
+#            #print "metric=", metric
+#            #print "metric_data=", metric_data
+#            for entry in metric_data:
+#                # read all "topic" entries
+#                if "topic" in entry:
+#                    topic = entry["topic"]
+#                    if topic not in topics:
+#                        topics.append(topic)
+#                        #print "topics==============", topics
 
         # ask each metric about its topics
         for testblock in self.test.testblocks:
-            #print "testblock=", testblock
-            for metric_handle in testblock.metric_handles:
-                #print "metric_handle=", metric_handle
-                for topic in metric_handle.get_topics():
-                    #print "topic=", topic
-                    if topic not in topics:
-                        topics.append(topic)
+            #print "testblock.name =", testblock.name
+            if testblock.name == testblock_name:
+                for metric_handle in testblock.metric_handles:
+                    #print "metric_handle=", metric_handle
+                    for topic in metric_handle.get_topics():
+                        #print "topic=", topic
+                        if topic not in topics:
+                            topics.append(topic)
+                    print "  topics for metric %s of testblock %s ="%(str(metric_handle), testblock.name), topics
+            else:
+                #print "testblock names do not match %s %s"%(testblock.name, testblock_name)
+                continue
+        #print "topics of testblock %s ="%testblock_name, topics
 
         # fix global topic prefix
         topics_global = []
@@ -183,7 +192,7 @@ class ATFRecorder:
                 topics_global.append(topic)
             else:
                 topics_global.append("/" + topic)
-        #print "topics_global", topics_global
+        #print "topics_global of testblock %s ="%testblock_name, topics_global
         return topics_global
 
 
@@ -197,8 +206,23 @@ class ATFRecorder:
         return doc
 
     def global_topic_callback(self, msg, name):
+        # catch /tf_static messages because they are latched and would only be published once at the beginning but not at the beginning of each testblock
+        # TODO generalize for other latched topics
+        if name == "/tf_static": 
+            self.tf_static_messages.append(msg)
+        
         if name in self.active_topics.keys():
             self.bag_file_writer.write_to_bagfile(name, msg, rospy.Time.now())
+
+    def tf_static_timer_callback(self, event):
+            # republish latched /tf_static messages to /tf_static again
+            if "/tf_static" in self.active_topics.keys():
+                for latched_msg in self.tf_static_messages:
+                    pub_msg = TFMessage()
+                    for transform in latched_msg.transforms:
+                        transform.header.stamp = rospy.Time.now()
+                        pub_msg.transforms.append(transform)
+                    self.bag_file_writer.write_to_bagfile("/tf_static", pub_msg, rospy.Time.now())
 
 class ATFRecorderError(Exception):
     pass
