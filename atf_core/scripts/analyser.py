@@ -182,8 +182,8 @@ class TestAnalysing(unittest.TestCase):
     def test_Analysing(self):
         analyser = Analyser(sys.argv[1])
         atf_result = analyser.get_result()
+        analyser.print_result_details(atf_result)
         analyser.print_result(atf_result)
-        #analyser.print_result(atf_result)
         if atf_result.groundtruth_result != None:
             self.assertTrue(atf_result.groundtruth_result, atf_result.groundtruth_error_message)
 
@@ -192,8 +192,9 @@ if __name__ == '__main__':
     if "standalone" in sys.argv:
         analyser = Analyser(sys.argv[1])
         atf_result = analyser.get_result()
+        if "verbose" in sys.argv:
+            analyser.print_result_details(atf_result)
         analyser.print_result(atf_result)
-        #analyser.print_result_details(atf_result)
 
     else:
         rostest.rosrun("atf_core", 'analysing', TestAnalysing, sysargs=sys.argv)
