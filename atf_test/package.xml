@@ -16,6 +16,7 @@
     <depend>roslaunch</depend>
     <depend>rospy</depend>
     <depend>rostopic</depend>
+    <depend>tf2_ros</depend>
 
     <test_depend>rostest</test_depend>
 
