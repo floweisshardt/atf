@@ -68,9 +68,9 @@ class RecordInterface:
                 except rospy.ServiceException as e:
                     rospy.logerr("Information is invalid for the service : %s . %s" % (service_name_str, e))
                     continue
-                #except rospy.ServiceIOException as e:
-                #    rospy.logerr("Unable to communicate with service : %s . %s" % (service_name_str, e))
-                #    continue
+                except rosservice.ROSServiceIOException as e:
+                    rospy.logerr("Unable to communicate with service : %s . %s" % (service_name_str, e))
+                    continue
         return service_types
 
     def add_api(self, api, api_descriptor, api_state, types):
