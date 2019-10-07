@@ -162,8 +162,7 @@ class Analyser:
         print "**********************"
         print "*** result details ***"
         print "**********************"
-        for test_result in atf_result.results:
-            print test_result
+        print atf_result
 
 class ATFAnalyserError(Exception):
     pass
