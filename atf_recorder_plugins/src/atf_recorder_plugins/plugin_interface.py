@@ -10,6 +10,7 @@ from atf_msgs.msg import Api, NodeApi, InterfaceItem
 
 class RecordInterface:
     def __init__(self, write_lock, bag_file_writer):
+        self.name = "interface"
         self.bag_file_writer = bag_file_writer
 
     def trigger_callback(self, testblock_name):
@@ -67,7 +68,7 @@ class RecordInterface:
                 except rospy.ServiceException as e:
                     rospy.logerr("Information is invalid for the service : %s . %s" % (service_name_str, e))
                     continue
-                except rospy.ServiceIOException as e:
+                except rosservice.ROSServiceIOException as e:
                     rospy.logerr("Unable to communicate with service : %s . %s" % (service_name_str, e))
                     continue
         return service_types
@@ -97,7 +98,7 @@ class RecordInterface:
             if item[0] == name:
                 #print "type=", item[1]
                 return item[1]
-        return None
+        return ""
 
     def dict_to_msg(self, testblock_name, api_dict):
         api = Api()

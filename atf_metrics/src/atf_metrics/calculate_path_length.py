@@ -1,10 +1,11 @@
 #!/usr/bin/env python
-import tf
 import math
+import os
 import rospy
+import sys
+import tf
 import tf2_msgs
 import tf2_ros
-import threading
 
 from atf_msgs.msg import MetricResult, KeyValue
 
@@ -91,12 +92,13 @@ class CalculatePathLength:
                     
     def get_path_increment(self):
         try:
+            sys.stdout = open(os.devnull, 'w') # supress stdout
             (trans, rot) = self.t.lookupTransform(self.root_frame, self.measured_frame, rospy.Time(0))
         except tf2_ros.LookupException as e:
+            #sys.stdout = sys.__stdout__  # restore stdout
             #print "Exception in metric 'path_length' %s %s"%(type(e), e)
             return
-        
-        #print "got transform successfully"
+        sys.stdout = sys.__stdout__  # restore stdout
 
         if self.first_value:
             self.trans_old = trans
@@ -108,11 +110,12 @@ class CalculatePathLength:
                                 (trans[2] - self.trans_old[2]) ** 2)
 
         # filter beamed transformations (more than 1m from one tf message to another)
-        if(path_increment < 1):
+        jump_threshold = 10.0
+        if(path_increment < jump_threshold):
             self.path_length += path_increment
             #print "path_increment between %s and %s = %f"%(self.root_frame, self.measured_frame, path_increment)
         else:
-            print "Transformation Failed! \n Transformation: %s, Path Increment: %s"%(str(trans), str(path_increment))
+            print "Path increment %f exceeds jump_threshold of %f"%(path_increment, jump_threshold)
 
         self.trans_old = trans
         self.rot_old = rot

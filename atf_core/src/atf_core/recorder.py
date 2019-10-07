@@ -65,7 +65,7 @@ class ATFRecorder:
 
         self.active_topics = {}
         self.subscribers = {}
-        self.tf_static_messages = []
+        self.tf_static_message = TFMessage()
 
         rospy.Timer(rospy.Duration(0.1), self.create_subscriber_callback)
         rospy.Timer(rospy.Duration(0.1), self.tf_static_timer_callback)
@@ -132,9 +132,10 @@ class ATFRecorder:
         # Send message to all recorder plugins
         #print "self.recorder_plugin_list=", self.recorder_plugin_list
         for recorder_plugin in self.recorder_plugin_list:
-            #FIXME: need to filter the topics not needed for current trigger
-            rospy.logdebug("recorder plugin callback for testblock: '%s'", testblock_name)
-            recorder_plugin.trigger_callback(testblock_name)
+            # filter the recorder plugins not needed for current trigger/testblock
+            if recorder_plugin.name in self.test.test_config[testblock_name].keys():
+                #rospy.loginfo("recorder plugin callback for testblock: '%s'", testblock_name)
+                recorder_plugin.trigger_callback(testblock_name)
 
     def stop_recording(self, testblock_name):
         self.lock.acquire()
@@ -179,7 +180,7 @@ class ATFRecorder:
                         #print "topic=", topic
                         if topic not in topics:
                             topics.append(topic)
-                    print "  topics for metric %s of testblock %s ="%(str(metric_handle), testblock.name), topics
+                    #print "  topics for metric %s of testblock %s ="%(str(metric_handle), testblock.name), topics
             else:
                 #print "testblock names do not match %s %s"%(testblock.name, testblock_name)
                 continue
@@ -208,21 +209,31 @@ class ATFRecorder:
     def global_topic_callback(self, msg, name):
         # catch /tf_static messages because they are latched and would only be published once at the beginning but not at the beginning of each testblock
         # TODO generalize for other latched topics
-        if name == "/tf_static": 
-            self.tf_static_messages.append(msg)
+        if name == "/tf_static":
+            #check if message is already in list of messages
+            for transform in msg.transforms:
+                if not self.is_transform_in_tf_message(transform, self.tf_static_message):
+                    self.tf_static_message.transforms.append(transform)
+                    #rospy.loginfo("added to self.tf_static_message.transforms. len = %d", len(self.tf_static_message.transforms))
         
         if name in self.active_topics.keys():
             self.bag_file_writer.write_to_bagfile(name, msg, rospy.Time.now())
 
+    def is_transform_in_tf_message(self, transform, tf_message):
+        for t in tf_message.transforms:
+
+            if t.header.frame_id == transform.header.frame_id and t.child_frame_id == transform.child_frame_id:
+                #rospy.logerr("transform is in tf_message. frame_if=%s, child_frame_id=%s", t.header.frame_id, t.child_frame_id)
+                return True
+        #rospy.loginfo("transform not in tf_message: %s --> %s", transform.header.frame_id, transform.child_frame_id)
+        return False
+
     def tf_static_timer_callback(self, event):
             # republish latched /tf_static messages to /tf_static again
             if "/tf_static" in self.active_topics.keys():
-                for latched_msg in self.tf_static_messages:
-                    pub_msg = TFMessage()
-                    for transform in latched_msg.transforms:
-                        transform.header.stamp = rospy.Time.now()
-                        pub_msg.transforms.append(transform)
-                    self.bag_file_writer.write_to_bagfile("/tf_static", pub_msg, rospy.Time.now())
+                for transform in self.tf_static_message.transforms:
+                    transform.header.stamp = rospy.Time.now()
+                self.bag_file_writer.write_to_bagfile("/tf_static", self.tf_static_message, rospy.Time.now())
 
 class ATFRecorderError(Exception):
     pass
