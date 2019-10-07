@@ -16,26 +16,13 @@ from atf_msgs.msg import AtfResult, TestblockStatus, TestResult
 class Analyser:
     def __init__(self, package_name):
         print "ATF analyser: started!"
+        start_time = time.time()
         self.ns = "/atf/"
         self.error = False
 
         # parse configuration
         self.configuration_parser = ATFConfigurationParser(package_name)
         self.tests = self.configuration_parser.get_tests()
-        #self.testblocks = self.configuration_parser.create_testblocks(self.config, None, True)
-
-        #print "self.config", self.config
-        #print "self.testblocks", self.testblocks
-
-        # monitor states for all testblocks
-        #self.testblock_states = {}
-        #for testblock in self.testblocks.keys():
-        #    self.testblock_states[testblock] = TestblockStatus.INVALID
-
-        start_time = time.time()
-        #self.files = self.config["test_name"]#"/tmp/atf_test_app_time/data/ts0_c0_r0_e0_0.bag" # TODO get real file names from test config
-        #print "self.files", self.files
-        #files = self.get_file_paths(os.path.dirname(self.files), os.path.basename(self.files))
 
         # generate results
         i = 1
@@ -85,7 +72,6 @@ class Analyser:
                                         metric_handle.stop(msg)
                                 else:
                                     metric_handle.update(topic, msg, t)
-                    #bar.update(j)
                     except StopIteration as e:
                         print "stop iterator", e
                         break
@@ -93,6 +79,7 @@ class Analyser:
                         print "Exception", e
                         count_error += 1
                         continue
+                    bar.update(j)
             except Exception as e:
                 print "FATAL exception in bag file", type(e), e
                 continue
@@ -110,7 +97,7 @@ class Analyser:
         #self.configuration_parser.export_to_file(test_list, os.path.join(test.generation_config["yaml_output"], "test_list.yaml"))
 
         try:
-            print "Processing tests took %s min"%str( round((time.time() - start_time)/60.0,4 ))
+            print "Processing tests took %s sec"%str( round((time.time() - start_time),4 ))
         except:
             pass
 
@@ -146,8 +133,7 @@ class Analyser:
             # aggregate result
             if test_result.groundtruth_result != None and not test_result.groundtruth_result:
                 atf_result.groundtruth_result = False
-                atf_result.groundtruth_error_message += "\n - test '%s': %s"%(test_result.name, test_result.groundtruth_error_message)
-                #print atf_result.groundtruth_error_message
+                atf_result.groundtruth_error_message += "\n - test '%s' (%s, %s, %s): %s"%(test_result.name, test_result.robot, test_result.robot_env, test_result.test_config, test_result.groundtruth_error_message)
             if atf_result.groundtruth_result == None and test_result.groundtruth_result:
                 atf_result.groundtruth_result = True
 
@@ -176,7 +162,8 @@ class Analyser:
         print "**********************"
         print "*** result details ***"
         print "**********************"
-        print atf_result
+        for test_result in atf_result.results:
+            print test_result
 
 class ATFAnalyserError(Exception):
     pass

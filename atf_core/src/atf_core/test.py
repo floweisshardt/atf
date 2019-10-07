@@ -23,6 +23,9 @@ class Test:
     def get_result(self):
         test_result = TestResult()
         test_result.name = self.name
+        test_result.robot = self.robot_name
+        test_result.robot_env = self.robot_env_name
+        test_result.test_config = self.test_config_name
         test_result.groundtruth_result = None
         for testblock in self.testblocks:
             # get result
