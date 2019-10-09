@@ -3,7 +3,7 @@ import rospy
 import atf_core
 import copy
 
-from atf_msgs.msg import MetricResult, TestblockResult, TestblockTrigger
+from atf_msgs.msg import MetricResult, TestblockTrigger
 from smach_msgs.msg import SmachContainerStatus
 
 ###########
@@ -32,7 +32,6 @@ class ATF():
         # make sure to wait with the application for the statemachine in sm_test.py to be initialized
         rospy.loginfo("waiting for smach container in test_sm to be ready...")
         rospy.wait_for_message("/state_machine/machine/smach/container_status", rospy.AnyMsg)
-        rospy.sleep(3) # FIXME remove
         rospy.loginfo("...smach container in sm_test is ready.")
     
     def start(self, testblock):
@@ -78,7 +77,6 @@ class ATF():
         trigger.stamp = rospy.Time.now()
         trigger.name = testblock
         trigger.trigger = TestblockTrigger.STOP
-        print "metric_result=", metric_result
         if metric_result != None:
             trigger.user_result = metric_result
         self.publisher_trigger.publish(trigger)
@@ -97,7 +95,6 @@ class ATF():
                 rospy.logdebug("still waiting for active states in path 'SM_ATF/CON' to be prepempted. active_states: %s", str(self.sm_container_status.active_states))
                 r.sleep()
                 continue
-        rospy.sleep(10) # FIXME we need to wait until sm_test.py is shutdown properly so that bag file can be closed by recorder.py in on_shutdown
         rospy.logdebug("atf application is shutdown.")
 
     def _send_error(self, error_msg):
