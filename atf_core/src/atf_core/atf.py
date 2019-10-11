@@ -32,6 +32,7 @@ class ATF():
         # make sure to wait with the application for the statemachine in sm_test.py to be initialized
         rospy.loginfo("waiting for smach container in test_sm to be ready...")
         rospy.wait_for_message("/state_machine/machine/smach/container_status", rospy.AnyMsg)
+        rospy.sleep(1) # wait for sm_test to initialize all subscribers (rospy bug?)
         rospy.loginfo("...smach container in sm_test is ready.")
     
     def start(self, testblock):
