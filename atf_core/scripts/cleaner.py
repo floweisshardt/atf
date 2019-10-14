@@ -18,6 +18,8 @@ class Cleaner():
     def clean(self):
         if os.path.exists(self.atf_configuration_parser.generation_config["bagfile_output"]):
             shutil.rmtree(self.atf_configuration_parser.generation_config["bagfile_output"])
+        if os.path.exists(self.atf_configuration_parser.generation_config["txt_output"]):
+            shutil.rmtree(self.atf_configuration_parser.generation_config["txt_output"])
         if os.path.exists(self.atf_configuration_parser.generation_config["json_output"]):
             shutil.rmtree(self.atf_configuration_parser.generation_config["json_output"])
         if os.path.exists(self.atf_configuration_parser.generation_config["yaml_output"]):
