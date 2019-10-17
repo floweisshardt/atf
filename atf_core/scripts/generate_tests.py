@@ -127,26 +127,30 @@ class GenerateTests:
                     #param(name=self.ns + "yaml_output", value=self.generation_config["yaml_output"]),
                 )
 
+                # robot params
+                if "additional_parameters" in robot_config:
+                    if len(robot_config["additional_parameters"]) > 0:
+                        for robot_param_name, robot_param_value in robot_config["additional_parameters"].items():
+                            test_record.append(param(name=str(robot_param_name), value=str(robot_param_value)))
+                # robot_env params
+                if "additional_parameters" in robot_env_config:
+                    if len(robot_env_config["additional_parameters"]) > 0:
+                        for robot_env_param_name, robot_env_param_value in robot_env_config["additional_parameters"].items():
+                            test_record.append(param(name=str(robot_env_param_name), value=str(robot_env_param_value)))
+
                 if "additional_launch_file" in self.generation_config:
                     incl = include(file="$(find " + self.package_name + ")/" + self.generation_config["additional_launch_file"])
-                    # robot args and params
+                    # robot args
                     if "additional_arguments" in robot_config:
                         if len(robot_config["additional_arguments"]) > 0:
                             for robot_arg_name, robot_arg_value in robot_config["additional_arguments"].items():
                                 incl.append(arg(name=str(robot_arg_name), value=str(robot_arg_value)))
-                    if "additional_parameters" in robot_config:
-                        if len(robot_config["additional_parameters"]) > 0:
-                            for robot_param_name, robot_param_value in robot_config["additional_parameters"].items():
-                                incl.append(param(name=str(robot_param_name), value=str(robot_param_value)))
-                    # robot_env args and params
+                    # robot_env args
                     if "additional_arguments" in robot_env_config:
                         if len(robot_env_config["additional_arguments"]) > 0:
                             for robot_env_arg_name, robot_env_arg_value in robot_env_config["additional_arguments"].items():
                                 incl.append(arg(name=str(robot_env_arg_name), value=str(robot_env_arg_value)))
-                    if "additional_parameters" in robot_env_config:
-                        if len(robot_env_config["additional_parameters"]) > 0:
-                            for robot_env_param_name, robot_env_param_value in robot_env_config["additional_parameters"].items():
-                                incl.append(param(name=str(robot_env_param_name), value=str(robot_env_param_value)))
+                    
                     test_record.append(incl)
 
                 test_record.append(node(pkg=self.package_name, type=self.generation_config['app_executable'], name="$(anon application)", required="true", output="screen")),
