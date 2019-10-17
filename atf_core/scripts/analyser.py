@@ -73,10 +73,10 @@ class Analyser:
                                 else:
                                     metric_handle.update(topic, msg, t)
                     except StopIteration as e:
-                        print "stop iterator", e
+                        print "stop iterator", type(e), e
                         break
                     except Exception as e:
-                        print "Exception", e
+                        print "general Exception in ATF analyser", type(e), e
                         count_error += 1
                         continue
                     bar.update(j)
