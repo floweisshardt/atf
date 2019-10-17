@@ -5,6 +5,7 @@ import rospy
 import sys
 import tf
 import tf2_msgs
+import tf2_py
 import tf2_ros
 
 from atf_msgs.msg import MetricResult, KeyValue
@@ -95,8 +96,20 @@ class CalculatePathLength:
             sys.stdout = open(os.devnull, 'w') # supress stdout
             (trans, rot) = self.t.lookupTransform(self.root_frame, self.measured_frame, rospy.Time(0))
         except tf2_ros.LookupException as e:
-            #sys.stdout = sys.__stdout__  # restore stdout
+            sys.stdout = sys.__stdout__  # restore stdout
             #print "Exception in metric 'path_length' %s %s"%(type(e), e)
+            return
+        except tf2_py.ExtrapolationException as e:
+            sys.stdout = sys.__stdout__  # restore stdout
+            #print "Exception in metric 'path_length' %s %s"%(type(e), e)
+            return
+        except tf2_py.ConnectivityException as e:
+            sys.stdout = sys.__stdout__  # restore stdout
+            #print "Exception in metric 'path_length' %s %s"%(type(e), e)
+            return
+        except Exception as e:
+            sys.stdout = sys.__stdout__  # restore stdout
+            print "general exeption in calculate_path_length:", type(e), e
             return
         sys.stdout = sys.__stdout__  # restore stdout
 
