@@ -31,7 +31,7 @@ class GenerateTests:
         self.test_generation_config_file = arguments[2]
         self.package_src_path = arguments[3]
         self.package_bin_path = arguments[4]
-        self.atf_configuration_parser = atf_core.ATFConfigurationParser(self.package_name, self.test_generation_config_file)
+        self.atf_configuration_parser = atf_core.ATFConfigurationParser(self.package_src_path, self.test_generation_config_file, skip_metrics=True)
         self.tests = self.atf_configuration_parser.get_tests()
 
         self.test_list = {}

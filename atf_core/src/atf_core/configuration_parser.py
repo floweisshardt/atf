@@ -11,14 +11,19 @@ import json
 from atf_core import Test, Testblock
 
 class ATFConfigurationParser:
-    def __init__(self, package_name, test_generation_config_file = None, recorder_handle = None):
+    def __init__(self, package_name, test_generation_config_file = None, skip_metrics = False):
         if test_generation_config_file == None:
             test_generation_config_file = "atf/test_generation_config.yaml"
             print "ATF Warning: No test_generation_config_file specified. Continue using default '%s'"%test_generation_config_file
 
         self.parsing_error_message = ""
         
-        self.generation_config = self.load_data(os.path.join(rospkg.RosPack().get_path(package_name), test_generation_config_file))
+        if "/" in package_name: # assume no package but full path to package (needed for generate_tests.py in travis because RPS_PACKAGE_PATH is not yet set correclty)
+            full_path_to_test_package = package_name
+        else: # assume package name only
+            full_path_to_test_package = rospkg.RosPack().get_path(package_name)
+
+        self.generation_config = self.load_data(os.path.join(full_path_to_test_package, test_generation_config_file))
         #print "generation_config:", self.generation_config
 
         # check for required parameters
@@ -45,7 +50,6 @@ class ATFConfigurationParser:
                 ("time_limit_uploading", 60.0),
                 ("upload_data", False),
                 ("upload_result", False)]
-        
         for key, default_value in keys:
             if key not in self.generation_config.keys():
                 self.generation_config[key] = default_value
@@ -81,27 +85,27 @@ class ATFConfigurationParser:
                                 test.testsuite_name = testsuite_name
                                 test.testsuite = None
                                 test.test_config_name = test_config_name
-                                test.test_config = self.load_data(os.path.join(rospkg.RosPack().get_path(test.package_name), self.generation_config["tests_config_path"], test_config_name + ".yaml"))
+                                test.test_config = self.load_data(os.path.join(full_path_to_test_package, self.generation_config["tests_config_path"], test_config_name + ".yaml"))
                                 test.robot_name = robot_name
-                                test.robot_config = self.load_data(os.path.join(rospkg.RosPack().get_path(test.package_name), self.generation_config["robots_config_path"], robot_name + ".yaml"))
+                                test.robot_config = self.load_data(os.path.join(full_path_to_test_package, self.generation_config["robots_config_path"], robot_name + ".yaml"))
                                 test.env_name = env_name
-                                test.env_config = self.load_data(os.path.join(rospkg.RosPack().get_path(test.package_name), self.generation_config["envs_config_path"], env_name + ".yaml"))
+                                test.env_config = self.load_data(os.path.join(full_path_to_test_package, self.generation_config["envs_config_path"], env_name + ".yaml"))
                                 test.testblockset_name = testblockset_name
-                                test.testblockset_config = self.load_data(os.path.join(rospkg.RosPack().get_path(test.package_name), self.generation_config["testblocksets_config_path"], testblockset_name + ".yaml"))
+                                test.testblockset_config = self.load_data(os.path.join(full_path_to_test_package, self.generation_config["testblocksets_config_path"], testblockset_name + ".yaml"))
                                 
                                 #test.print_to_terminal()
                                 #print test.name
                                 
-                                test.metrics = self.load_data(rospkg.RosPack().get_path("atf_metrics") + "/config/metrics.yaml")
-                                test.testblocks = []
-                                for testblock_name in test.testblockset_config.keys():
-                                    if recorder_handle != None:
-                                        metric_handles = None
-                                    else:
+                                if not skip_metrics:
+                                    test.metrics = self.load_data(rospkg.RosPack().get_path("atf_metrics") + "/config/metrics.yaml")
+                                    test.testblocks = []
+                                    for testblock_name in test.testblockset_config.keys():
                                         metric_handles = self.create_metric_handles(test, testblock_name, True)
-                                    #print "metric_handles", metric_handles
-                                    testblock = Testblock(testblock_name, metric_handles, recorder_handle)
-                                    test.testblocks.append(testblock)
+                                        #print "metric_handles", metric_handles
+                                        testblock = Testblock(testblock_name, metric_handles, None)
+                                        test.testblocks.append(testblock)
+                                else:
+                                    print "ATF: skip_metrics is set. Skipping metric and testblock configuration."
                                 
                                 self.tests.append(test)
                                 test_list_element[test_group_name]["subtests"].append(test.name)
