@@ -164,12 +164,12 @@ class GenerateTests:
         if test.generation_config["upload_data"]:
             test_upload.append(
                 xml_test({'test-name': "uploading_data", 'pkg': "atf_core", 'type': "test_dropbox_uploader.py",
-                        'time-limit': str(self.time_limit_uploading), 'args': "-f " + os.path.join(self.package_src_path, "config/.dropbox_uploader_config") + " upload " + self.bagfile_output + " " + os.path.join(self.package_name, "data")}))
+                        'time-limit': str(self.time_limit_uploading), 'args': "-f " + os.path.join(self.package_src_path, "atf/.dropbox_uploader_config") + " upload " + self.bagfile_output + " " + os.path.join(self.package_name, "data")}))
 
         if test.generation_config["upload_result"]:
             test_upload.append(
                 xml_test({'test-name': "uploading_results", 'pkg': "atf_core", 'type': "test_dropbox_uploader.py",
-                        'time-limit': str(self.atf_configuration_parser.generation_config["time_limit_uploading"]), 'args': "-f " + os.path.join(self.package_src_path, "config/.dropbox_uploader_config") + " upload " + self.atf_configuration_parser.generation_config["json_output"] + " " + os.path.join(self.package_name, "results")}))
+                        'time-limit': str(self.atf_configuration_parser.generation_config["time_limit_uploading"]), 'args': "-f " + os.path.join(self.package_src_path, "atf/.dropbox_uploader_config") + " upload " + self.atf_configuration_parser.generation_config["txt_output"] + " " + os.path.join(self.package_name, "results")}))
 
         xmlstr = minidom.parseString(ElementTree.tostring(test_upload)).toprettyxml(indent="    ")
         filepath = os.path.join(self.test_generated_path, "uploading.test")
