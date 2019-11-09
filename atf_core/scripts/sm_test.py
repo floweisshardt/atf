@@ -19,7 +19,7 @@ class Recorder():
         # get test config
         package_name = rospy.get_param("/atf/package_name")
         print "package_name:", package_name
-        test_generation_config_file = rospy.get_param("/atf/test_generation_config_file")
+        test_generation_config_file = rospy.get_param("/atf/test_generation_config_file", "atf/test_generation_config.yaml")
         print "test_generation_config_file:", test_generation_config_file
         test_name = rospy.get_param("/atf/test_name")
         print "test_name:", test_name
