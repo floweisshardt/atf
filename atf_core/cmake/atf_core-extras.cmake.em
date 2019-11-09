@@ -51,8 +51,7 @@ function(atf_test TEST_GENERATION_CONFIG_FILE)
         endforeach()
 
         add_rostest(${TEST_GENERATED_PATH}/analysing.test DEPENDENCIES ${_TARGET_NAMES_RECORDING})
-        #add_rostest(${TEST_GENERATED_PATH}/merging.test DEPENDENCIES atf_${PROJECT_NAME}_analysing)
-        add_rostest(${TEST_GENERATED_PATH}/uploading.test DEPENDENCIES atf_${PROJECT_NAME}_merging)
+        add_rostest(${TEST_GENERATED_PATH}/uploading.test DEPENDENCIES atf_${PROJECT_NAME}_analysing)
 
         add_custom_target(atf_${PROJECT_NAME}_cleaning
             COMMAND echo "cccccccccccccccccccccccccccccccleaning"
@@ -71,16 +70,10 @@ function(atf_test TEST_GENERATION_CONFIG_FILE)
                 atf_${PROJECT_NAME}_recording
                 _run_tests_${PROJECT_NAME}_rostest_test_generated_analysing.test
         )
-        add_custom_target(atf_${PROJECT_NAME}_merging
-            COMMAND echo "mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmerging"
-            DEPENDS
-                atf_${PROJECT_NAME}_analysing
-                _run_tests_${PROJECT_NAME}_rostest_test_generated_merging.test
-        )
         add_custom_target(atf_${PROJECT_NAME}_uploading
             COMMAND echo "uuuuuuuuuuuuuuuuuuuuuuuuuuuuuuploading"
             DEPENDS
-                atf_${PROJECT_NAME}_merging
+                atf_${PROJECT_NAME}_analysing
                 _run_tests_${PROJECT_NAME}_rostest_test_generated_uploading.test
         )
         add_custom_target(atf_${PROJECT_NAME}
@@ -89,7 +82,6 @@ function(atf_test TEST_GENERATION_CONFIG_FILE)
                 atf_${PROJECT_NAME}_cleaning
                 atf_${PROJECT_NAME}_recording
                 atf_${PROJECT_NAME}_analysing
-                atf_${PROJECT_NAME}_merging
                 atf_${PROJECT_NAME}_uploading
         )
         add_dependencies(run_tests atf_${PROJECT_NAME})
