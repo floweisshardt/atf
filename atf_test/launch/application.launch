@@ -1,5 +1,9 @@
 <?xml version="1.0"?>
 <launch>
+    <!-- atf enforced args -->
+    <arg name="pkg" default="atf_test_app_navigation"/>
+    <arg name="pkg_full_path" default="$(eval find(pkg))"/>
+
     <!-- Add all launch files that you want to run additionally to your robot bringup like moveit, etc... -->
     <node name="publisher1" pkg="rostopic" type="rostopic" args="pub topic1 std_msgs/String 'data: 'hello'' -r11" output="screen"/> 
     <node name="publisher2" pkg="rostopic" type="rostopic" args="pub topic2 std_msgs/String 'data: 'hello'' -r22" output="screen"/>

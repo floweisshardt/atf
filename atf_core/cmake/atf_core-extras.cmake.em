@@ -7,7 +7,7 @@ set(generate_tests_script ${atf_core_DIR}/../scripts/generate_tests.py)
 @[end if]@
 
 
-function(atf_test)
+function(atf_test TEST_GENERATION_CONFIG_FILE)
     if(CATKIN_ENABLE_TESTING)
         message(STATUS "ATF: executing test generation macro")
         find_package(catkin REQUIRED COMPONENTS
@@ -15,7 +15,7 @@ function(atf_test)
             roslaunch)
 
         execute_process(
-            COMMAND python ${generate_tests_script} ${PROJECT_NAME} ${PROJECT_SOURCE_DIR} ${PROJECT_BINARY_DIR}
+            COMMAND python ${generate_tests_script} ${PROJECT_NAME} ${TEST_GENERATION_CONFIG_FILE} ${PROJECT_SOURCE_DIR} ${PROJECT_BINARY_DIR}
             RESULT_VARIABLE generation_result
         )
         if(NOT "${generation_result}" STREQUAL "0")
