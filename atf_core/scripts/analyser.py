@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 import json
-import yaml
 import os
 import progressbar
 import rosbag
@@ -8,9 +7,10 @@ import rostest
 import sys
 import time
 import unittest
+import yaml
 
 from atf_core import ATFConfigurationParser
-from atf_msgs.msg import AtfResult, TestblockStatus, TestResult
+from atf_msgs.msg import AtfResult, TestblockStatus
 
 
 class Analyser:
@@ -28,7 +28,7 @@ class Analyser:
         i = 1
         for test in self.tests:
             inputfile = os.path.join(test.generation_config["bagfile_output"] + test.name + ".bag")
-            print "Processing test %i/%i: %s"%(i,len(self.tests),test.name)
+            print "Processing test %i/%i: %s"%(i, len(self.tests), test.name)
             try:
                 bag = rosbag.Bag(inputfile)
             except rosbag.bag.ROSBagException as e:
@@ -46,8 +46,8 @@ class Analyser:
             bar = progressbar.ProgressBar(maxval=bag.get_message_count(), \
                     widgets=[progressbar.Bar('=', '[', ']'), ' ', progressbar.Percentage()])
             bar.start()
-            j=0
-            count_error=0
+            j = 0
+            count_error = 0
 
             try:
                 for topic, raw_msg, t in bag.read_messages(raw=True):
@@ -55,14 +55,12 @@ class Analyser:
                         msg_type, serialized_bytes, md5sum, pos, pytype = raw_msg
                         msg = pytype()
                         msg.deserialize(serialized_bytes)
-                        j+=1
+                        j += 1
                         for testblock in test.testblocks:
                             #print "testblock", testblock.name
                             #print "testblock.metric_handles", testblock.metric_handles
                             for metric_handle in testblock.metric_handles:
                                 if topic == "/atf/status" and msg.name == testblock.name:
-                                    #print "topic match for testblock '%s'"%testblock.name
-                                    #print "testblock status for testblock '%s':"%testblock.name, testblock.status
                                     testblock.status = msg.status
                                     if testblock.status == TestblockStatus.ACTIVE:
                                         #print "calling start on metric", metric_handle
@@ -85,31 +83,31 @@ class Analyser:
                 continue
             bar.finish()
 
-            
+
 
             print "%d errors detected during test processing"%count_error
             i += 1
-        
+
         #export test list
         test_list = self.configuration_parser.get_test_list()
-        self.configuration_parser.export_to_file(test_list, os.path.join(test.generation_config["txt_output"], "test_list.txt"))
-        #self.configuration_parser.export_to_file(test_list, os.path.join(test.generation_config["json_output"], "test_list.json"))
-        #self.configuration_parser.export_to_file(test_list, os.path.join(test.generation_config["yaml_output"], "test_list.yaml"))
+        self.configuration_parser.export_to_file(test_list, os.path.join(self.configuration_parser.generation_config["txt_output"], "test_list.txt"))
+        #self.configuration_parser.export_to_file(test_list, os.path.join(self.configuration_parser.generation_config["json_output"], "test_list.json"))
+        #self.configuration_parser.export_to_file(test_list, os.path.join(self.configuration_parser.generation_config["yaml_output"], "test_list.yaml"))
 
         try:
-            print "Processing tests took %s sec"%str( round((time.time() - start_time),4 ))
+            print "Processing tests took %s sec"%str(round((time.time() - start_time), 4))
         except:
             pass
 
         print "ATF analyser: done!"
 
-    def get_file_paths(self, dir, prefix):
+    def get_file_paths(self, directory, prefix):
         result = []
-        for subdir, dirs, files in os.walk(dir):
-            for file in files:
-                full_path = os.path.join(subdir, file)
-                if file.startswith(prefix):
-                    result.append((file,full_path))
+        for subdir, dirs, files in os.walk(directory):
+            for filename in files:
+                full_path = os.path.join(subdir, filename)
+                if filename.startswith(prefix):
+                    result.append((filename, full_path))
         result.sort()
         return result
 
@@ -121,7 +119,7 @@ class Analyser:
         for test in self.tests:
             # get result
             test_result = test.get_result()
-            
+
             # export overall test result to file
             self.configuration_parser.export_to_file(test_result, os.path.join(test.generation_config["txt_output"], test.name + ".txt"))
             #self.configuration_parser.export_to_file(test_result, os.path.join(test.generation_config["json_output"], test.name + ".json")) # ROS message object is not JSON serialisable
@@ -129,7 +127,7 @@ class Analyser:
 
             # append result
             atf_result.results.append(test_result)
-            
+
             # aggregate result
             if test_result.groundtruth_result != None and not test_result.groundtruth_result:
                 atf_result.groundtruth_result = False
@@ -142,7 +140,7 @@ class Analyser:
 
         #print "\natf_result:\n", atf_result
         return atf_result
-    
+
     def print_result(self, atf_result):
         if atf_result.groundtruth_result != None and not atf_result.groundtruth_result:
             print "\n"
@@ -169,7 +167,7 @@ class ATFAnalyserError(Exception):
 
 
 class TestAnalysing(unittest.TestCase):
-    def test_Analysing(self):
+    def test_analysing(self):
         analyser = Analyser(sys.argv[1])
         atf_result = analyser.get_result()
         analyser.print_result_details(atf_result)
