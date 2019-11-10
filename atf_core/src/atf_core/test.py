@@ -6,15 +6,17 @@ class Test:
     def __init__(self):
         self.package_name = None
         self.name = None
+        self.generation_config = None
         self.testsuite = None
         self.testsuite_name = None
         self.test_config = None
         self.test_config_name = None
         self.robot_config = None
         self.robot_name = None
-        self.robot_env_config = None
-        self.robot_env_name = None
-        self.generation_config = None
+        self.env_config = None
+        self.env_name = None
+        self.testblockset_config = None
+        self.testblockset_name = None
 
         # testblocks with metrics
         metrics_handle = None
@@ -24,8 +26,9 @@ class Test:
         test_result = TestResult()
         test_result.name = self.name
         test_result.robot = self.robot_name
-        test_result.robot_env = self.robot_env_name
+        test_result.env = self.env_name
         test_result.test_config = self.test_config_name
+        test_result.testblockset = self.testblockset_name
         test_result.groundtruth_result = None
         for testblock in self.testblocks:
             # get result

@@ -117,7 +117,7 @@ class ATFRecorder:
 
     def start_recording(self, testblock_name):
         self.lock.acquire()
-        if testblock_name not in self.test.test_config:
+        if testblock_name not in self.test.testblockset_config:
             raise ATFRecorderError("Testblock '%s' not in test config" % testblock_name)
 
         for topic in self.get_topics_of_testblock(testblock_name):
@@ -133,13 +133,13 @@ class ATFRecorder:
         #print "self.recorder_plugin_list=", self.recorder_plugin_list
         for recorder_plugin in self.recorder_plugin_list:
             # filter the recorder plugins not needed for current trigger/testblock
-            if recorder_plugin.name in self.test.test_config[testblock_name].keys():
+            if recorder_plugin.name in self.test.testblockset_config[testblock_name].keys():
                 #rospy.loginfo("recorder plugin callback for testblock: '%s'", testblock_name)
                 recorder_plugin.trigger_callback(testblock_name)
 
     def stop_recording(self, testblock_name):
         self.lock.acquire()
-        if testblock_name not in self.test.test_config:
+        if testblock_name not in self.test.testblockset_config:
             raise ATFRecorderError("Testblock '%s' not in test config" % testblock_name)
 
         for topic in self.get_topics_of_testblock(testblock_name):
@@ -156,8 +156,8 @@ class ATFRecorder:
     def get_topics_of_testblock(self, testblock_name):
         topics = []
         
-        # topics from test_config
-        testblock_data = self.test.test_config[testblock_name]
+        # topics from testblockset_config
+        testblock_data = self.test.testblockset_config[testblock_name]
         #print "testblock_data=", testblock_data
 #        for metric, metric_data in testblock_data.items():
 #            #print "metric=", metric

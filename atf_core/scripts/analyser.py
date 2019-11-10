@@ -133,7 +133,7 @@ class Analyser:
             # aggregate result
             if test_result.groundtruth_result != None and not test_result.groundtruth_result:
                 atf_result.groundtruth_result = False
-                atf_result.groundtruth_error_message += "\n - test '%s' (%s, %s, %s): %s"%(test_result.name, test_result.robot, test_result.robot_env, test_result.test_config, test_result.groundtruth_error_message)
+                atf_result.groundtruth_error_message += "\n - test '%s' (%s, %s, %s, %s): %s"%(test_result.name, test_result.robot, test_result.env, test_result.test_config, test_result.testblockset, test_result.groundtruth_error_message)
             if atf_result.groundtruth_result == None and test_result.groundtruth_result:
                 atf_result.groundtruth_result = True
 
@@ -185,6 +185,5 @@ if __name__ == '__main__':
         if "verbose" in sys.argv:
             analyser.print_result_details(atf_result)
         analyser.print_result(atf_result)
-
     else:
         rostest.rosrun("atf_core", 'analysing', TestAnalysing, sysargs=sys.argv)
