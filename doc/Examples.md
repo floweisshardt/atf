@@ -13,8 +13,7 @@ For each [implemented metric](../README.md#implemented-metrics) there is a test 
 ```
 cd ~/catkin_ws/src
 git clone https://github.com/floweisshardt/atf
-wstool merge -y https://raw.githubusercontent.com/floweisshardt/atf_test_apps/master/.travis.rosinstall
-wstool update
+git clone https://github.com/floweisshardt/atf_test_apps
 ```
 
 #### Get dependendies
