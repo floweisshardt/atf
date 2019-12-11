@@ -110,9 +110,11 @@ class Active(smach.State):
         # start to record metric topics into bag file
         self.recorder_handle.start_recording(userdata.name)
 
-        # wait for next transition trigger
-        with self._trigger_cond:
-            self._trigger_cond.wait()
+        # either trigger is already set or we wait for the next transition trigger
+        if self.trigger == None:
+            # wait for next transition trigger
+            with self._trigger_cond:
+                self._trigger_cond.wait()
 
         if self.trigger.trigger == TestblockTrigger.START:
             rospy.logerr("calling start, but testblock is already in active state")
