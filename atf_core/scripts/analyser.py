@@ -3,6 +3,7 @@ import json
 import os
 import progressbar
 import rosbag
+import rospy
 import rostest
 import sys
 import time
@@ -113,7 +114,7 @@ class Analyser:
 
     def get_result(self):
         atf_result = AtfResult()
-        atf_result.header.stamp = time.time()
+        atf_result.header.stamp = rospy.Time(time.time())
         atf_result.groundtruth_result = None
         atf_result.groundtruth_error_message = "Failed ATF tests:"
         for test in self.tests:
@@ -139,6 +140,7 @@ class Analyser:
             raise ATFAnalyserError("Analysing failed, no atf result available.")
 
         #print "\natf_result:\n", atf_result
+        self.configuration_parser.export_to_file(atf_result, os.path.join(test.generation_config["txt_output"], "atf_result.txt"))
         return atf_result
 
     def print_result(self, atf_result):
