@@ -10,7 +10,7 @@ env:
   global:
     - CATKIN_LINT=pedantic
     - NOT_TEST_DOWNSTREAM=true
-    - PARALLEL_TESTS=false
+    - PARALLEL_TESTS=true
     - ROS_REPO=ros
     - VERBOSE_OUTPUT=false
     - VERBOSE_TESTS=true
