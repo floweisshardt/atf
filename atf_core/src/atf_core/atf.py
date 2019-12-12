@@ -85,20 +85,20 @@ class ATF():
         self.publisher_trigger.publish(trigger)
 
     def shutdown(self):
-        rospy.logdebug("shutting down atf application")
+        rospy.loginfo("shutting down atf application")
 
         # check if any testblock is still running
-        rospy.logdebug("waiting for all states to be in a terminal state")
+        rospy.loginfo("waiting for all states to be in a terminal state")
         r = rospy.Rate(10)
         while not rospy.is_shutdown():
             if self.sm_container_status.path == "SM_ATF/CON":
                 if len(self.sm_container_status.active_states) == 0:
-                    rospy.logdebug("all testblocks finished in SM_ATF/CON")
+                    rospy.loginfo("all testblocks finished in SM_ATF/CON")
                     break
-                rospy.logdebug("still waiting for active states in path 'SM_ATF/CON' to be prepempted. active_states: %s", str(self.sm_container_status.active_states))
+                rospy.loginfo("still waiting for active states in path 'SM_ATF/CON' to be prepempted. active_states: %s", str(self.sm_container_status.active_states))
                 r.sleep()
                 continue
-        rospy.logdebug("atf application is shutdown.")
+        rospy.loginfo("atf application is shutdown.")
 
     def _send_error(self, error_msg):
         trigger = TestblockTrigger()

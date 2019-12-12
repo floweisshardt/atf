@@ -115,6 +115,8 @@ class Active(smach.State):
             # wait for next transition trigger
             with self._trigger_cond:
                 self._trigger_cond.wait()
+        else:
+            rospy.logerr("trigger is not None: %s", str(self.trigger))
 
         if self.trigger.trigger == TestblockTrigger.START:
             rospy.logerr("calling start, but testblock is already in active state")
