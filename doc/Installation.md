@@ -1,8 +1,20 @@
-# Installation
+# ATF installation
+Auto-generated TOC with https://imthenachoman.github.io/nGitHubTOC/.
+- [Installation from release](#installation-from-release)
+- [Installation from source](#installing-from-source)
+  - [Prerequisites:](#prerequisites)
+  - [Create empty catkin workspace](#create-empty-catkin-workspace)
+  - [Get atf sources](#get-atf-sources)
+  - [Get atf_test_apps sources (optional)](#get-atf_test_apps-sources-optional)
+  - [Get dependendies](#get-dependendies)
+  - [Compile sources](#compile-sources)
+  - [Source setup.bash](#source-setupbash)
+- [Running ATF tests](#running-atf-tests)
+
 ## Installation from release
 not yet available
 
-## Installing from source
+## Installation from source
 ### Prerequisites:
 
 * Install Ubuntut 16.04 LTS "xenial" (either fresh from an image or using dist-ugrade)
@@ -11,6 +23,7 @@ not yet available
 
 ### Create empty catkin workspace
 Note: adjust workspace directory if needed
+
 ```
 source /opt/ros/kinetic/setup.bash
 mkdir -p ~/catkin_ws/src
@@ -19,12 +32,18 @@ catkin init
 catkin build
 ```
 
-### Get ATF sources from github
+### Get atf sources
 ```
 cd ~/catkin_ws/src
 git clone https://github.com/floweisshardt/atf
-wstool merge -y https://raw.githubusercontent.com/floweisshardt/atf/master/.travis.rosinstall
-wstool update
+```
+
+### Get atf_test_apps sources (optional)
+For each [implemented metric](../README.md#implemented-metrics) there is a test app package that uses the metric in a simple application. You can find all the test apps in the [atf_test_apps](https://github.com/floweisshardt/atf_test_apps) repository.
+
+```
+cd ~/catkin_ws/src
+git clone https://github.com/floweisshardt/atf_test_apps
 ```
 
 ### Get dependendies
@@ -40,7 +59,7 @@ rosdep install --from-path src -i -y
 ### Compile sources
 ```
 cd ~/catkin_ws
-catkin build
+catkin build --force-cmake
 ```
 
 ### Source setup.bash
@@ -49,7 +68,7 @@ Note: You might want to add that to your `~/.bashrc`
 source ~/catkin_ws/devel/setup.bash
 ```
 
-## Testing ATF
-[Test on local computer](Examples.md)
+## Running ATF tests
+see [ATF examples](Examples.md).
 
 

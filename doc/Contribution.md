@@ -1,4 +1,9 @@
 # Contributing to the ATF
+Auto-generated TOC with https://imthenachoman.github.io/nGitHubTOC/.
+- [Extend the ATF with your own metric](#extend-the-atf-with-your-own-metric)
+  - [Python File](#python-file)
+  - [ATF Presenter](#atf-presenter)
+
 ## Extend the ATF with your own metric
 The following steps are needed to implement a new metrics in ATF:
 ### Python File
