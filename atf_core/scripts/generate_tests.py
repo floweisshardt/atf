@@ -102,12 +102,12 @@ class GenerateTests:
             if "additional_parameters" in test.robot_config:
                 if len(test.robot_config["additional_parameters"]) > 0:
                     for robot_param_name, robot_param_value in test.robot_config["additional_parameters"].items():
-                        test_record.append(xml_param(name=str(robot_param_name), value=str(robot_param_value)))
+                        test_record.append(xml_rosparam(str(robot_param_value), param=str(robot_param_name), subst_value="True"))
             # robot_env params
             if "additional_parameters" in test.env_config:
                 if len(test.env_config["additional_parameters"]) > 0:
                     for robot_env_param_name, robot_env_param_value in test.env_config["additional_parameters"].items():
-                        test_record.append(xml_param(name=str(robot_env_param_name), value=str(robot_env_param_value)))
+                        test_record.append(xml_rosparam(str(robot_env_param_value), param=str(robot_env_param_name), subst_value="True"))
 
             if "app_launch_file" in test.generation_config:
                 incl = xml_include(file="$(find " + self.package_name + ")/" + test.generation_config["app_launch_file"])
