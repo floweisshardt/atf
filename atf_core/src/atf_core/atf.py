@@ -40,10 +40,10 @@ class ATF():
     
     def start(self, testblock):
         if testblock not in self.test.testblockset_config.keys():
-            error_msg = "testblock %s not in list of testblocks"%testblock
+            error_msg = "testblock \'%s\' not in list of testblocks"%testblock
             self._send_error(error_msg)
             raise atf_core.ATFError(error_msg)
-        rospy.loginfo("starting testblock %s"%testblock)
+        rospy.loginfo("starting testblock \'%s\'"%testblock)
         trigger = TestblockTrigger()
         trigger.stamp = rospy.Time.now()
         trigger.name = testblock
@@ -52,7 +52,7 @@ class ATF():
 
     def stop(self, testblock, metric_result = None):
         if testblock not in self.test.testblockset_config.keys():
-            error_msg = "testblock %s not in list of testblocks"%testblock
+            error_msg = "testblock \'%s\' not in list of testblocks"%testblock
             self._send_error(error_msg)
             raise atf_core.ATFError(error_msg)
         
@@ -63,20 +63,20 @@ class ATF():
             metric_result = copy.deepcopy(metric_result) # deepcopy is needed to be able to overwrite metric_result.name
             metric_result.name = "user_result"
             
-            rospy.loginfo("setting user result for testblock %s"%testblock)
+            rospy.loginfo("setting user result for testblock \'%s\'"%testblock)
             if not isinstance(metric_result.data, float) and not isinstance(metric_result.data, int):
-                error_msg = "metric_result.data of testblock %s for metric %s is not a float or int. data=%s, type=%s"%(testblock, metric_result.name, str(metric_result.data), type(metric_result.data))
+                error_msg = "metric_result.data of testblock \'%s\' for metric %s is not a float or int. data=%s, type=%s"%(testblock, metric_result.name, str(metric_result.data), type(metric_result.data))
                 self._send_error(error_msg)
                 raise atf_core.ATFError(error_msg)
             if type(metric_result.details) is not list:
-                error_msg = "metric_result.details of testblock %s for metric %s is not a list. detail=%s"%str(testblock, metric_result.name, metric_result.details)
+                error_msg = "metric_result.details of testblock \'%s\' for metric %s is not a list. detail=%s"%str(testblock, metric_result.name, metric_result.details)
                 self._send_error(error_msg)
                 raise atf_core.ATFError(error_msg)
 
         else:
-            rospy.loginfo("no user result set")
+            rospy.loginfo("no user result set for testblock \'%s\'"%testblock)
 
-        rospy.loginfo("stopping testblock %s"%testblock)
+        rospy.loginfo("stopping testblock \'%s\'"%testblock)
         trigger = TestblockTrigger()
         trigger.stamp = rospy.Time.now()
         trigger.name = testblock
