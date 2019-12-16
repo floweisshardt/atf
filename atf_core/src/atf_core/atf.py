@@ -30,6 +30,7 @@ class ATF():
 
         self.publisher_trigger = rospy.Publisher("atf/trigger", TestblockTrigger, queue_size=10)
         rospy.Subscriber("/state_machine/machine/smach/container_status", SmachContainerStatus, self._sm_status_cb)
+        self.sm_container_status = None
 
         # make sure to wait with the application for the statemachine in sm_test.py to be initialized
         rospy.loginfo("waiting for smach container in test_sm to be ready...")
@@ -85,20 +86,19 @@ class ATF():
         self.publisher_trigger.publish(trigger)
 
     def shutdown(self):
-        rospy.logdebug("shutting down atf application")
+        rospy.loginfo("shutting down atf application")
 
         # check if any testblock is still running
-        rospy.logdebug("waiting for all states to be in a terminal state")
+        rospy.loginfo("waiting for all states to be in a terminal state")
         r = rospy.Rate(10)
         while not rospy.is_shutdown():
-            if self.sm_container_status.path == "SM_ATF/CON":
-                if len(self.sm_container_status.active_states) == 0:
-                    rospy.logdebug("all testblocks finished in SM_ATF/CON")
-                    break
-                rospy.logdebug("still waiting for active states in path 'SM_ATF/CON' to be prepempted. active_states: %s", str(self.sm_container_status.active_states))
-                r.sleep()
-                continue
-        rospy.logdebug("atf application is shutdown.")
+            if self.sm_container_status != None and len(self.sm_container_status.active_states) == 0:
+                rospy.logdebug("all testblocks finished in SM_ATF/CON")
+                break
+            rospy.logdebug("still waiting for active states in path 'SM_ATF/CON' to be prepempted. active_states: %s", str(self.sm_container_status.active_states))
+            r.sleep()
+            continue
+        rospy.loginfo("atf application is shutdown.")
 
     def _send_error(self, error_msg):
         trigger = TestblockTrigger()
@@ -108,4 +108,5 @@ class ATF():
         self.publisher_trigger.publish(trigger)
 
     def _sm_status_cb(self, msg):
-        self.sm_container_status = msg
+        if msg.path == "SM_ATF/CON":
+            self.sm_container_status = msg
