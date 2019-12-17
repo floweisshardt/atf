@@ -25,6 +25,7 @@ class Testblock:
             testblock_result.groundtruth_error_message = "An error occured during analysis of testblock '%s', no useful results available."%self.name
             print testblock_result.groundtruth_error_message
         else:
+            print '>>', testblock_result.name
             #print "testblock.metrics=", self.metric_handles
             for metric_handle in self.metric_handles:
                 # get result

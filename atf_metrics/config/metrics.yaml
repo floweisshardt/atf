@@ -14,3 +14,9 @@ time:
   handler: CalculateTimeParamHandler
 user_result:
   handler: CalculateUserResultParamHandler
+tf_angle_displacement:
+  handler: CalculateTfAngleDisplacementParamHandler
+tf_linear_displacement:
+  handler: CalculateTfLinearDisplacementParamHandler
+tf_integrated_rotation:
+  handler: CalculateTfIntegratedRotationParamHandler
