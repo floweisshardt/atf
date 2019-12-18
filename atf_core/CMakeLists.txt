@@ -50,7 +50,7 @@ install(
         scripts/cleaner.py
         scripts/dropbox_uploader.sh
         scripts/merger.py
-        scripts/record_all.py
+        scripts/record_tests.py
         scripts/sm_test.py
         test/test_dropbox_uploader.py
     DESTINATION

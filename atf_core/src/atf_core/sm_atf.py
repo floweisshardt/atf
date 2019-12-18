@@ -90,7 +90,7 @@ class GetTriggers(smach.State):
             self.trigger_list.append(msg)
 
     def execute(self, userdata):
-        r = rospy.Rate(10)
+        r = rospy.Rate(100)
         while not self.preempt_requested():
             if len(self.trigger_list) > 0:
                 userdata.trigger_list.append(self.trigger_list.pop(0))
