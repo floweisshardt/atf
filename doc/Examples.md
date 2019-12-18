@@ -197,12 +197,19 @@ catkin build --force-cmake atf_test
 ### Recording
 Record a single test
 ```
-rosrun atf_core record_test.sh atf_test ts0_c0_r0_e0_s0_0
+rosrun atf_core record_tests.py atf_test ts0_c0_r0_e0_s0_0
 ```
 
-record all tests
+Record a subset of tests
 ```
-TDB
+record_tests.py atf_test ts0_c0_r0_e0_s0  --> record all iterations of test ts0_c0_r0_e0_s0_*
+record_tests.py atf_test ts0              --> record all tests with ts0: ts0_c*_r*_e*_s*_*
+record_tests.py atf_test c0*r0*           --> record all tests with c0 and r0: ts*_c0_r0_s*_*
+```
+
+Record all tests
+```
+rosrun atf_core record_tests.py atf_test
 ```
 
 While tests are executed:
