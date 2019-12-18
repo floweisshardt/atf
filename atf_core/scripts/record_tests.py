@@ -45,9 +45,7 @@ if __name__ == '__main__':
         print "Could not find package '%s' in current CMAKE_PREFIX_PATH '%s'"%(pkg, cmake_prefix_path)
     
     # get all recording files
-    print "path_to_build_space=", path_to_build_space
-    path_to_test_files = os.path.join(path_to_build_space, "test_generated", "recording")
-    print "path_to_test_files=", path_to_test_files
+    path_to_test_files = os.path.join(path_to_build_space, "test_generated")
     filenames = glob.glob(os.path.join(path_to_test_files, "recording_*" + test + "*.test"))
     print "found %d files for '%s':\n%s"%(len(filenames), pkg, str(filenames))
 
