@@ -82,6 +82,7 @@ class GenerateTests:
                 #arg(name="robot", value=self.test_list[test_name]["robot"]),
                 #include(arg(name="test_status_list", value="$(find " + self.package_name + ")/test_status.yaml"),
                 #        file="$(find atf_status_server)/launch/atf_status_server.launch"),
+                xml_arg(name="execute_as_test", default="true"),
                 xml_param(name=self.ns + "package_name", value=self.package_name),
                 xml_param(name=self.ns + "test_generation_config_file", value=self.test_generation_config_file),
                 xml_param(name=self.ns + "test_name", value=test.name),
@@ -133,9 +134,9 @@ class GenerateTests:
                 
                 test_record.append(incl)
 
-            test_record.append(xml_node(pkg=self.package_name, type=test.generation_config['app_executable'], name="$(anon application)", required="true", output="screen")),
-            test_record.append(xml_test({'pkg':'atf_core', 'type':'sm_test.py', 'test-name': "recording_" + test.name,
-                        'time-limit': str(test.generation_config["time_limit_recording"]), 'required': "true"}))
+            test_record.append(xml_node(pkg=self.package_name, type=test.generation_config['app_executable'], name="$(anon atf_application)", required="true", output="screen")),
+            test_record.append(xml_test({'if':'$(arg execute_as_test)', 'pkg':'atf_core', 'type':'sm_test.py', 'test-name': "atf_recording_" + test.name, 'time-limit': str(test.generation_config["time_limit_recording"]), 'required': "true"}))
+            test_record.append(xml_node({'unless':'$(arg execute_as_test)', 'pkg':'atf_core', 'type':'sm_test.py', 'name': "atf_recording_" + test.name, 'required': "true"}))
 
             xmlstr = minidom.parseString(ElementTree.tostring(test_record)).toprettyxml(indent="    ")
             filepath = os.path.join(self.test_generated_path, "recording_" + test.name) + ".test"
