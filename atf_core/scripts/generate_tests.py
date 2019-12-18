@@ -99,28 +99,39 @@ class GenerateTests:
             )
 
             # robot params
-            if "additional_parameters" in test.robot_config:
+            if (test.robot_config != None) and ("additional_parameters" in test.robot_config):
                 if len(test.robot_config["additional_parameters"]) > 0:
                     for robot_param_name, robot_param_value in test.robot_config["additional_parameters"].items():
                         test_record.append(xml_rosparam(str(robot_param_value), param=str(robot_param_name), subst_value="True"))
             # robot_env params
-            if "additional_parameters" in test.env_config:
+            if (test.env_config != None) and ("additional_parameters" in test.env_config):
                 if len(test.env_config["additional_parameters"]) > 0:
                     for robot_env_param_name, robot_env_param_value in test.env_config["additional_parameters"].items():
                         test_record.append(xml_rosparam(str(robot_env_param_value), param=str(robot_env_param_name), subst_value="True"))
 
-            if "app_launch_file" in test.generation_config:
+            # test params
+            if (test.test_config != None) and ("additional_parameters" in test.test_config):
+                if len(test.test_config["additional_parameters"]) > 0:
+                    for test_param_name, test_param_value in test.test_config["additional_parameters"].items():
+                        test_record.append(xml_rosparam(str(test_param_value), param=str(test_param_name), subst_value="True"))
+
+            if ("app_launch_file" in test.generation_config):
                 incl = xml_include(file="$(find " + self.package_name + ")/" + test.generation_config["app_launch_file"])
                 # robot args
-                if "additional_arguments" in test.robot_config:
+                if (test.robot_config != None) and ("additional_arguments" in test.robot_config):
                     if len(test.robot_config["additional_arguments"]) > 0:
                         for robot_arg_name, robot_arg_value in test.robot_config["additional_arguments"].items():
                             incl.append(xml_arg(name=str(robot_arg_name), value=str(robot_arg_value)))
                 # robot_env args
-                if "additional_arguments" in test.env_config:
+                if (test.env_config != None) and ("additional_arguments" in test.env_config):
                     if len(test.env_config["additional_arguments"]) > 0:
                         for robot_env_arg_name, robot_env_arg_value in test.env_config["additional_arguments"].items():
                             incl.append(xml_arg(name=str(robot_env_arg_name), value=str(robot_env_arg_value)))
+                # tests args
+                if (test.test_config != None) and ("additional_arguments" in test.test_config):
+                    if len(test.test_config["additional_arguments"]) > 0:
+                        for test_arg_name, test_arg_value in test.test_config["additional_arguments"].items():
+                            incl.append(xml_arg(name=str(test_arg_name), value=str(test_arg_value)))
                 
                 test_record.append(incl)
 
