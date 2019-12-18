@@ -48,16 +48,16 @@ function(atf_test TEST_GENERATION_CONFIG_FILE)
 
         ############
         message(STATUS "ATF: recording")
-        file(GLOB TEST_NAMES_RECORDING RELATIVE ${TEST_GENERATED_PATH}/recording ${TEST_GENERATED_PATH}/recording/*.test)
+        file(GLOB TEST_NAMES_RECORDING RELATIVE ${TEST_GENERATED_PATH} ${TEST_GENERATED_PATH}/recording_*.test)
         foreach(TEST_NAME_RECORDING ${TEST_NAMES_RECORDING})
             # recording
-            set(TARGET_NAME_RECORDING run_tests_${PROJECT_NAME}_rostest_test_generated_recording_${TEST_NAME_RECORDING})
-            set(_TARGET_NAME_RECORDING _run_tests_${PROJECT_NAME}_rostest_test_generated_recording_${TEST_NAME_RECORDING})
+            set(TARGET_NAME_RECORDING run_tests_${PROJECT_NAME}_rostest_test_generated_${TEST_NAME_RECORDING})
+            set(_TARGET_NAME_RECORDING _run_tests_${PROJECT_NAME}_rostest_test_generated_${TEST_NAME_RECORDING})
             string(REPLACE "/" "_" TARGET_NAME_RECORDING ${TARGET_NAME_RECORDING})
             string(REPLACE "/" "_" _TARGET_NAME_RECORDING ${_TARGET_NAME_RECORDING})
             list(APPEND TARGET_NAMES_RECORDING ${TARGET_NAME_RECORDING})
             list(APPEND _TARGET_NAMES_RECORDING ${_TARGET_NAME_RECORDING})
-            add_rostest(${TEST_GENERATED_PATH}/recording/${TEST_NAME_RECORDING} DEPENDENCIES _run_tests_${PROJECT_NAME}_rostest_test_generated_cleaning.test)
+            add_rostest(${TEST_GENERATED_PATH}/${TEST_NAME_RECORDING} DEPENDENCIES _run_tests_${PROJECT_NAME}_rostest_test_generated_cleaning.test)
         endforeach()
         add_custom_target(atf_${PROJECT_NAME}_recording
             COMMAND echo "rrrrrrrrrrrrrrrrrrrrrrrrrrrrrrecording"

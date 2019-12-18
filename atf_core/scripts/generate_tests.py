@@ -37,17 +37,15 @@ class GenerateTests:
         self.test_list = {}
 
         self.test_generated_path = os.path.join(self.package_bin_path, "test_generated")
-        self.test_generated_recording_path = os.path.join(self.test_generated_path, "recording")
         #self.test_generated_analysing_path = os.path.join(self.test_generated_path, "analysing")
         self.create_folders()
 
     def create_folders(self):
         # delete of test_generated directory and create new one
-        if os.path.exists(self.test_generated_recording_path):
+        if os.path.exists(self.test_generated_path):
             shutil.rmtree(self.test_generated_path)
         shutil.copyfile(self.package_src_path + "/package.xml", self.package_bin_path + "/package.xml")
         os.makedirs(self.test_generated_path)
-        os.makedirs(self.test_generated_recording_path)
         #os.makedirs(self.test_generated_analysing_path)
 
     def generate_tests(self):
@@ -140,7 +138,7 @@ class GenerateTests:
                         'time-limit': str(test.generation_config["time_limit_recording"]), 'required': "true"}))
 
             xmlstr = minidom.parseString(ElementTree.tostring(test_record)).toprettyxml(indent="    ")
-            filepath = os.path.join(self.test_generated_recording_path, "recording_" + test.name) + ".test"
+            filepath = os.path.join(self.test_generated_path, "recording_" + test.name) + ".test"
             with open(filepath, "w") as f:
                 f.write(xmlstr)
 
