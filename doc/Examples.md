@@ -192,23 +192,35 @@ TBD
 ## Manual test execution (without rostest)
 
 ### Generation
-same as above
+catkin build --force-cmake atf_test
 
 ### Recording
 Record a single test
 ```
-roslaunch atf_core recording.launch pkg:=atf_test
+rosrun atf_core record_test.sh atf_test ts0_c0_r0_e0_s0_0
 ```
+
 record all tests
 ```
 TDB
+```
+
+While tests are executed:
+
+- you can watch the progress with
+```
+rosrun smach_viewer smach_viewer.py
+```
+- you can use RVIZ for visualization
+```
+rosrun rviz rviz
 ```
 
 ### Analysing
 ```
 rosrun atf_core analyser.py atf_test standalone
 ```
-or for rull result print
+or for full result print
 ```
 rosrun atf_core analyser.py atf_test standalone verbose
 ```
