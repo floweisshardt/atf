@@ -1,7 +1,5 @@
 #!/usr/bin/python
 import rospy
-import tf
-import math
 
 import atf_core
 from atf_msgs.msg import MetricResult
@@ -14,7 +12,7 @@ class Application:
 
     def execute(self):
 
-        # small testblock (circle r=0.5, time=3)
+        # small testblock (circle r=1, time=3)
         self.atf.start("testblock_small")
         # FIXME: due to timing problem the first tf message is sometimes omitted
         #        so next line (pub_zero) is used as a workaround
@@ -28,7 +26,7 @@ class Application:
         metric_result.groundtruth_error_message = "all ok in application of atf_test"
         self.atf.stop("testblock_small", metric_result)
 
-        # large testblock (circle r=1, time=5)
+        # large testblock (circle r=2, time=5)
         self.atf.start("testblock_large")
         self.ptf.pub_circ(radius=2, time=5)
 

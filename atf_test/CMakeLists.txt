@@ -3,6 +3,7 @@ project(atf_test)
 
 find_package(catkin REQUIRED COMPONENTS
   atf_core
+  atf_test_tools
   roslaunch
   rospy
   rostopic
