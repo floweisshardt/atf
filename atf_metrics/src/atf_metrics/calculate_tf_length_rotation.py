@@ -8,9 +8,12 @@ import tf2_msgs
 import tf2_py
 import tf2_ros
 
+from tf import transformations
+from tf.transformations import quaternion_multiply, quaternion_conjugate
+
 from atf_msgs.msg import MetricResult, KeyValue
 
-class CalculatePathLengthParamHandler:
+class CalculateTfLengthRotationParamHandler:
     def __init__(self):
         """
         Class for returning the corresponding metric class with the given parameter.
@@ -33,13 +36,13 @@ class CalculatePathLengthParamHandler:
                 groundtruth = metric["groundtruth"]
                 groundtruth_epsilon = metric["groundtruth_epsilon"]
             except (TypeError, KeyError):
-                #rospy.logwarn_throttle(10, "No groundtruth parameters given, skipping groundtruth evaluation for metric 'path_length' in testblock '%s'"%testblock_name)
+                #rospy.logwarn_throttle(10, "No groundtruth parameters given, skipping groundtruth evaluation for metric 'tf_length_rotation' in testblock '%s'"%testblock_name)
                 groundtruth = None
                 groundtruth_epsilon = None
-            metrics.append(CalculatePathLength(metric["topics"], metric["root_frame"], metric["measured_frame"], groundtruth, groundtruth_epsilon))
+            metrics.append(CalculateTfLengthRotation(metric["topics"], metric["root_frame"], metric["measured_frame"], groundtruth, groundtruth_epsilon))
         return metrics
 
-class CalculatePathLength:
+class CalculateTfLengthRotation:
     def __init__(self, topics, root_frame, measured_frame, groundtruth, groundtruth_epsilon):
         """
         Class for calculating the distance covered by the given frame in relation to a given root frame.
@@ -49,6 +52,7 @@ class CalculatePathLength:
         :param measured_frame: name of the second frame. The distance will be measured in relation to the root_frame.
         :type  measured_frame: string
         """
+        self.name = 'tf_length_rotation'
         self.started = False
         self.finished = False
         self.active = False
@@ -57,7 +61,7 @@ class CalculatePathLength:
         self.topics = topics
         self.root_frame = root_frame
         self.measured_frame = measured_frame
-        self.path_length = 0.0
+        self.integrated_rotation = 0.0
         self.first_value = True
         self.trans_old = []
         self.rot_old = []
@@ -97,19 +101,19 @@ class CalculatePathLength:
             (trans, rot) = self.t.lookupTransform(self.root_frame, self.measured_frame, rospy.Time(0))
         except tf2_ros.LookupException as e:
             sys.stdout = sys.__stdout__  # restore stdout
-            #print "Exception in metric 'path_length' %s %s"%(type(e), e)
+            #print "Exception in metric '%s' %s %s"%(self.name, type(e), e)
             return
         except tf2_py.ExtrapolationException as e:
             sys.stdout = sys.__stdout__  # restore stdout
-            #print "Exception in metric 'path_length' %s %s"%(type(e), e)
+            #print "Exception in metric '%s' %s %s"%(self.name, type(e), e)
             return
         except tf2_py.ConnectivityException as e:
             sys.stdout = sys.__stdout__  # restore stdout
-            #print "Exception in metric 'path_length' %s %s"%(type(e), e)
+            #print "Exception in metric '%s' %s %s"%(self.name, type(e), e)
             return
         except Exception as e:
             sys.stdout = sys.__stdout__  # restore stdout
-            print "general exeption in calculate_path_length:", type(e), e
+            print "general exeption in metric '%s':"%self.name, type(e), e
             return
         sys.stdout = sys.__stdout__  # restore stdout
 
@@ -118,17 +122,11 @@ class CalculatePathLength:
             self.rot_old = rot
             self.first_value = False
             return
-        #print "transformations: \n", "trans[0]", trans[0], "self.trans_old[0]",self.trans_old[0], "trans[1]", trans[1], "self.trans_old[1]",self.trans_old[1], "trans[2]",trans[2], "self.trans_old[2]",self.trans_old[2], "\n ------------------------------------------------ "
-        path_increment = math.sqrt((trans[0] - self.trans_old[0]) ** 2 + (trans[1] - self.trans_old[1]) ** 2 +
-                                (trans[2] - self.trans_old[2]) ** 2)
 
-        # filter beamed transformations (more than 1m from one tf message to another)
-        jump_threshold = 10.0
-        if(path_increment < jump_threshold):
-            self.path_length += path_increment
-            #print "path_increment between %s and %s = %f"%(self.root_frame, self.measured_frame, path_increment)
-        else:
-            print "Path increment %f exceeds jump_threshold of %f"%(path_increment, jump_threshold)
+        diff_q = quaternion_multiply(rot, quaternion_conjugate(self.rot_old))
+        diff_e = transformations.euler_from_quaternion(diff_q)
+        eucl_dist = sum([en**2 for en in diff_e])**0.5
+        self.integrated_rotation += eucl_dist
 
         self.trans_old = trans
         self.rot_old = rot
@@ -138,7 +136,7 @@ class CalculatePathLength:
 
     def get_result(self):
         metric_result = MetricResult()
-        metric_result.name = "path_length"
+        metric_result.name = self.name
         metric_result.started = self.started # FIXME remove
         metric_result.finished = self.finished # FIXME remove
         metric_result.data = None
@@ -151,7 +149,7 @@ class CalculatePathLength:
 
         if metric_result.started and metric_result.finished: #  we check if the testblock was ever started and stopped
             # calculate metric data
-            metric_result.data = round(self.path_length, 3)
+            metric_result.data = round(self.integrated_rotation, 4)
 
             # fill details as KeyValue messages
             details = []

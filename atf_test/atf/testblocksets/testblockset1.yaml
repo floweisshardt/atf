@@ -3,17 +3,50 @@ testblock_small:
   time:
     - groundtruth: 3
       groundtruth_epsilon: 0.5
-  path_length:
+  tf_length_translation:
     - topics: [/tf]
-      root_frame: link1
-      measured_frame: link2
-      groundtruth: 6.28
-      groundtruth_epsilon: 1.5
+      root_frame: world
+      measured_frame: reference1
+      groundtruth: 6.283
+      groundtruth_epsilon: 0.001
     - topics: [/tf, /tf_static]
-      root_frame: link1
-      measured_frame: link2_static
-      groundtruth: 6.28
-      groundtruth_epsilon: 1.5
+      root_frame: world
+      measured_frame: reference1_static
+      groundtruth: 6.283
+      groundtruth_epsilon: 0.1
+  tf_length_rotation:
+    - topics: [/tf]
+      root_frame: world
+      measured_frame: reference1
+      groundtruth: 6.283
+      groundtruth_epsilon: 0.001
+    - topics: [/tf, /tf_static]
+      root_frame: world
+      measured_frame: reference1_static
+      groundtruth: 6.283
+      groundtruth_epsilon: 0.1
+  tf_distance_translation:
+    - topics: [/tf]
+      root_frame: world
+      measured_frame: reference1
+      groundtruth: 0
+      groundtruth_epsilon: 0.001
+    - topics: [/tf, /tf_static]
+      root_frame: world
+      measured_frame: reference1_static
+      groundtruth: 0
+      groundtruth_epsilon: 0.1
+  tf_distance_rotation:
+    - topics: [/tf]
+      root_frame: world
+      measured_frame: reference1
+      groundtruth: 0
+      groundtruth_epsilon: 0
+    - topics: [/tf, /tf_static]
+      root_frame: world
+      measured_frame: reference1_static
+      groundtruth: 0
+      groundtruth_epsilon: 0.1
   publish_rate:
     - topic: topic1
       groundtruth: 11
@@ -49,17 +82,50 @@ testblock_large:
   time:
     - groundtruth: 5
       groundtruth_epsilon: 0.5
-  path_length:
+  tf_length_translation:
     - topics: [/tf]
-      root_frame: link1
-      measured_frame: link2
-      groundtruth: 12.56
-      groundtruth_epsilon: 1.5
+      root_frame: world
+      measured_frame: reference1
+      groundtruth: 12.566
+      groundtruth_epsilon: 0.001
     - topics: [/tf, /tf_static]
-      root_frame: link1
-      measured_frame: link2_static
-      groundtruth: 12.56
-      groundtruth_epsilon: 1.5
+      root_frame: world
+      measured_frame: reference1_static
+      groundtruth: 12.566
+      groundtruth_epsilon: 0.1
+  tf_length_rotation:
+    - topics: [/tf]
+      root_frame: world
+      measured_frame: reference1
+      groundtruth: 6.283
+      groundtruth_epsilon: 0.001
+    - topics: [/tf, /tf_static]
+      root_frame: world
+      measured_frame: reference1_static
+      groundtruth: 6.283
+      groundtruth_epsilon: 0.1
+  tf_distance_translation:
+    - topics: [/tf]
+      root_frame: world
+      measured_frame: reference1
+      groundtruth: 0
+      groundtruth_epsilon: 0.001
+    - topics: [/tf, /tf_static]
+      root_frame: world
+      measured_frame: reference1_static
+      groundtruth: 0
+      groundtruth_epsilon: 0.1
+  tf_distance_rotation:
+    - topics: [/tf]
+      root_frame: world
+      measured_frame: reference1
+      groundtruth: 0
+      groundtruth_epsilon: 0
+    - topics: [/tf, /tf_static]
+      root_frame: world
+      measured_frame: reference1_static
+      groundtruth: 0
+      groundtruth_epsilon: 0.1
   publish_rate:
     - topic: /topic1
       groundtruth: 11
