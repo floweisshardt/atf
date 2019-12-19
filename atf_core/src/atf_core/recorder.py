@@ -53,15 +53,17 @@ class ATFRecorder:
         rospy.on_shutdown(self.shutdown)
         
         # wait for topics and services to become active
-        for topic in test.robot_config["wait_for_topics"]:
-            rospy.loginfo("Waiting for topic '%s'...", topic)
-            rospy.wait_for_message(topic, rospy.AnyMsg)
-            rospy.loginfo("... got message on topic '%s'.", topic)
+        if test.robot_config != None and 'wait_for_topics' in test.robot_config:
+            for topic in test.robot_config["wait_for_topics"]:
+                rospy.loginfo("Waiting for topic '%s'...", topic)
+                rospy.wait_for_message(topic, rospy.AnyMsg)
+                rospy.loginfo("... got message on topic '%s'.", topic)
 
-        for service in test.robot_config["wait_for_services"]:
-            rospy.loginfo("Waiting for service '%s'...", service)
-            rospy.wait_for_service(service)
-            rospy.loginfo("... service '%s' available.", service)
+        if test.robot_config != None and 'wait_for_services' in test.robot_config:
+            for service in test.robot_config["wait_for_services"]:
+                rospy.loginfo("Waiting for service '%s'...", service)
+                rospy.wait_for_service(service)
+                rospy.loginfo("... service '%s' available.", service)
 
         self.active_topics = {}
         self.subscribers = {}
