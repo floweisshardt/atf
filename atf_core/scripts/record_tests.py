@@ -48,6 +48,7 @@ if __name__ == '__main__':
     # get all recording files
     path_to_test_files = os.path.join(path_to_build_space, "test_generated")
     filenames = glob.glob(os.path.join(path_to_test_files, "recording_*" + test + "*.test"))
+    filenames.sort() # sort tests alphabetically
     print "found %d files for '%s':\n%s"%(len(filenames), pkg, str(filenames))
 
     # record all
