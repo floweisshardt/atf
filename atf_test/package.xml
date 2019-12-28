@@ -13,6 +13,7 @@
     <buildtool_depend>catkin</buildtool_depend>
 
     <depend>atf_core</depend>
+    <depend>atf_test_tools</depend>
     <depend>roslaunch</depend>
     <depend>rospy</depend>
     <depend>rostopic</depend>

@@ -4,8 +4,14 @@ interface:
     handler: CalculateInterfaceParamHandler
 obstacle_distance:
   handler: CalculateDistanceToObstaclesParamHandler
-path_length:
-  handler: CalculatePathLengthParamHandler
+tf_length_translation:
+  handler: CalculateTfLengthTranslationParamHandler
+tf_length_rotation:
+  handler: CalculateTfLengthRotationParamHandler
+tf_distance_translation:
+  handler: CalculateTfDistanceTranslationParamHandler
+tf_distance_rotation:
+  handler: CalculateTfDistanceRotationParamHandler
 publish_rate:
   handler: CalculatePublishRateParamHandler
 resources:

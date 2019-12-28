@@ -1,0 +1,17 @@
+<?xml version="1.0"?>
+<package format="2">
+    <name>atf_test_tools</name>
+    <version>0.1.0</version>
+    <description>Support package for the ATF test app packages.</description>
+
+    <maintainer email="florian.weisshardt@mojin-robotics.de">Florian Weisshardt</maintainer>
+
+    <author email="florian.weisshardt@mojin-robotics.de">Florian Weisshardt</author>
+
+    <license>Apache 2.0</license>
+
+    <buildtool_depend>catkin</buildtool_depend>
+
+    <depend>tf</depend>
+
+</package>

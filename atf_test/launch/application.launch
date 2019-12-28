@@ -1,9 +1,5 @@
 <?xml version="1.0"?>
 <launch>
-    <!-- atf enforced args -->
-    <arg name="pkg" default="atf_test"/>
-    <arg name="pkg_full_path" default="$(eval find(pkg))"/>
-
     <!-- Add all launch files that you want to run additionally to your robot bringup like moveit, etc... -->
     <node name="publisher1" pkg="rostopic" type="rostopic" args="pub topic1 std_msgs/String 'data: 'hello'' -r11" output="screen"/> 
     <node name="publisher2" pkg="rostopic" type="rostopic" args="pub topic2 std_msgs/String 'data: 'hello'' -r22" output="screen"/>
@@ -14,5 +10,5 @@
     <node name="publisher7" pkg="rostopic" type="rostopic" args="pub topic7 std_msgs/String 'data: 'hello'' -r77" output="screen"/>
     <node name="publisher8" pkg="rostopic" type="rostopic" args="pub topic8 std_msgs/String 'data: 'hello'' -r88" output="screen"/>
     <node name="publisher9" pkg="rostopic" type="rostopic" args="pub topic9 std_msgs/String 'data: 'hello'' -r99" output="screen"/>
-    <node pkg="tf2_ros" type="static_transform_publisher" name="link2_static_transform_publisher" args="1 0 0 0 0 0 link2 link2_static" />
+    <node pkg="tf2_ros" type="static_transform_publisher" name="reference1_static_transform_publisher" args="0 0 0 0 0 0 reference1 reference1_static" />
 </launch>

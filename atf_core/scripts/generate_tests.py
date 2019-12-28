@@ -136,7 +136,7 @@ class GenerateTests:
 
             test_record.append(xml_node(pkg=self.package_name, type=test.generation_config['app_executable'], name="$(anon atf_application)", required="true", output="screen")),
             test_record.append(xml_test({'if':'$(arg execute_as_test)', 'pkg':'atf_core', 'type':'sm_test.py', 'test-name': "atf_recording_" + test.name, 'time-limit': str(test.generation_config["time_limit_recording"]), 'required': "true"}))
-            test_record.append(xml_node({'unless':'$(arg execute_as_test)', 'pkg':'atf_core', 'type':'sm_test.py', 'name': "atf_recording_" + test.name, 'required': "true"}))
+            test_record.append(xml_node({'unless':'$(arg execute_as_test)', 'pkg':'atf_core', 'type':'sm_test.py', 'name': "atf_recording_" + test.name, 'args':'standalone', 'required': "true", 'output':'screen'}))
 
             xmlstr = minidom.parseString(ElementTree.tostring(test_record)).toprettyxml(indent="    ")
             filepath = os.path.join(self.test_generated_path, "recording_" + test.name) + ".test"

@@ -43,10 +43,12 @@ if __name__ == '__main__':
         print "found package '%s' in '%s'"%(pkg, path_to_build_space)
     else:
         print "Could not find package '%s' in current CMAKE_PREFIX_PATH '%s'"%(pkg, cmake_prefix_path)
+        sys.exit(1)
     
     # get all recording files
     path_to_test_files = os.path.join(path_to_build_space, "test_generated")
     filenames = glob.glob(os.path.join(path_to_test_files, "recording_*" + test + "*.test"))
+    filenames.sort() # sort tests alphabetically
     print "found %d files for '%s':\n%s"%(len(filenames), pkg, str(filenames))
 
     # record all
