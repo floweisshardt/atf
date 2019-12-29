@@ -86,13 +86,19 @@ class ATFConfigurationParser:
                                 test.testsuite = None
                                 test.test_config_name = test_config_name
                                 test.test_config = self.load_data(os.path.join(full_path_to_test_package, self.generation_config["tests_config_path"], test_config_name + ".yaml"))
+                                self.parse_key_as_list(test.test_config, "additional_parameters")
+                                self.parse_key_as_list(test.test_config, "additional_arguments")
                                 test.robot_name = robot_name
                                 test.robot_config = self.load_data(os.path.join(full_path_to_test_package, self.generation_config["robots_config_path"], robot_name + ".yaml"))
+                                self.parse_key_as_list(test.robot_config, "additional_parameters")
+                                self.parse_key_as_list(test.robot_config, "additional_arguments")
                                 test.env_name = env_name
                                 test.env_config = self.load_data(os.path.join(full_path_to_test_package, self.generation_config["envs_config_path"], env_name + ".yaml"))
+                                self.parse_key_as_list(test.env_config, "additional_parameters")
+                                self.parse_key_as_list(test.env_config, "additional_arguments")
                                 test.testblockset_name = testblockset_name
                                 test.testblockset_config = self.load_data(os.path.join(full_path_to_test_package, self.generation_config["testblocksets_config_path"], testblockset_name + ".yaml"))
-                                
+
                                 #test.print_to_terminal()
                                 #print test.name
                                 
@@ -179,5 +185,24 @@ class ATFConfigurationParser:
             print error_message
             raise ATFConfigurationError(error_message)
 
+    def parse_key_as_list(self, dictionary, key):
+        #print "dict=\n", dictionary
+        if dictionary != None and key in dictionary.keys():
+            value = dictionary[key]
+            value_type = type(dictionary[key])
+            # make sure all additional_parameters and additional_arguments are lists
+            if type(value) == list:
+                for element in value:
+                    if type(element) == dict:
+                        return
+            elif type(value) == dict:
+                dictionary[key] = [dictionary[key]]
+                for element in dictionary[key]:
+                    if type(element) == dict:
+                        return
+        
+            error_message = "ATF configuration Error: key '%s' of type '%s' with value '%s' cannot be parsed as list of dictionaries"%(str(key), value_type, value)
+            print error_message
+            raise ATFConfigurationError(error_message)
 class ATFConfigurationError(Exception):
     pass
