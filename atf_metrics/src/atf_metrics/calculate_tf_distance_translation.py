@@ -133,7 +133,11 @@ class CalculateTfDistanceTranslation:
             lin_first = self.first_transform[0]
             lin_last = self.last_transform[0]
 
-            metric_result.data = round(sum([(fl - ll)**2 for fl, ll in zip(lin_first, lin_last)])**0.5, 9)
+            # This calculates the tf distance from the first transform (root_frame to measured_frame) to the last transform (root_frame to measured_frame)
+            #metric_result.data = round(sum([(fl - ll)**2 for fl, ll in zip(lin_first, lin_last)])**0.5, 9)
+
+            # This calculates the tf distance between root_frame and measured_frame at the end of the testblock
+            metric_result.data = round(sum(axis**2 for axis in lin_last)**0.5,4)
 
             # fill details as KeyValue messages
             details = []
