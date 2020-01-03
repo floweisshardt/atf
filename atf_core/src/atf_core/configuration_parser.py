@@ -62,27 +62,27 @@ class ATFConfigurationParser:
         robot_id = 0
         env_id = 0
         testblockset_id = 0
-        for testsuite_name in self.generation_config["testsuites"].keys():
-            #print "testsuite:", testsuite_name
-            for test_config_name in self.generation_config["testsuites"][testsuite_name]["tests"]:
+        #print self.generation_config["testsuites"]  
+        for testsuite in self.generation_config["testsuites"]:
+            #print "testsuite:", testsuite
+            for test_config_name in testsuite["tests"]:
                 #print "test_config:", test_config_name
-                for robot_name in self.generation_config["testsuites"][testsuite_name]["robots"]:
+                for robot_name in testsuite["robots"]:
                     #print "robot:", robot_name
-                    for env_name in self.generation_config["testsuites"][testsuite_name]["envs"]:
+                    for env_name in testsuite["envs"]:
                         #print "robot_env:", env_name
-                        for testblockset_name in self.generation_config["testsuites"][testsuite_name]["testblocksets"]:
+                        for testblockset_name in testsuite["testblocksets"]:
                             #print "testblocks:", testblocks_name
                             test_group_name = "ts" + str(testsuite_id) + "_c" + str(test_config_id) + "_r" + str(robot_id) + "_e" + str(env_id) + "_s" + str(testblockset_id)
                             test_list_element = {}
                             test_list_element[test_group_name] = {}
                             test_list_element[test_group_name]["subtests"] = []
-                            for repetition in range(0,self.generation_config["testsuites"][testsuite_name]["repetitions"]):
+                            for repetition in range(0,testsuite["repetitions"]):
                                 name = test_group_name + "_" + str(repetition)
                                 test = Test()
                                 test.package_name = package_name
                                 test.name = name
                                 test.generation_config = self.generation_config
-                                test.testsuite_name = testsuite_name
                                 test.testsuite = None
                                 test.test_config_name = test_config_name
                                 test.test_config = self.load_data(os.path.join(full_path_to_test_package, self.generation_config["tests_config_path"], test_config_name + ".yaml"))
