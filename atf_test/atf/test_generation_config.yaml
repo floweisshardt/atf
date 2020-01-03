@@ -20,8 +20,7 @@ upload_result: false
 
 # Definition of various test suites
 testsuites:                # You have to define at least one testsuite
-  testsuite1:
-    tests:                 # You have to define at least one test
+  - tests:                 # You have to define at least one test
       - test1
       - test2
     robots:                # You have to define at least one robot
@@ -34,8 +33,7 @@ testsuites:                # You have to define at least one testsuite
       - testblockset2
     repetitions: 1         # Number of repetitions per test
 
-  testsuite2:
-    tests:
+  - tests:
       - test1
     robots:
       - robot1
