@@ -8,7 +8,6 @@ class Test:
         self.name = None
         self.generation_config = None
         self.testsuite = None
-        self.testsuite_name = None
         self.test_config = None
         self.test_config_name = None
         self.robot_config = None

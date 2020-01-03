@@ -135,7 +135,11 @@ class CalculateTfDistanceRotation:
             rot_first_e = transformations.euler_from_quaternion(rot_first_q)
             rot_last_e = transformations.euler_from_quaternion(rot_last_q)
 
-            metric_result.data = round(sum([(fe-le)**2 for fe, le in zip(rot_first_e, rot_last_e)])**0.5, 9)
+            # This calculates the tf distance from the first transform (root_frame to measured_frame) to the last transform (root_frame to measured_frame)
+            #metric_result.data = round(sum([(fe-le)**2 for fe, le in zip(rot_first_e, rot_last_e)])**0.5, 9)
+
+            # This calculates the tf distance between root_frame and measured_frame at the end of the testblock
+            metric_result.data = round(sum(axis**2 for axis in rot_last_e)**0.5,4)
 
             # fill details as KeyValue messages
             details = []

@@ -62,37 +62,43 @@ class ATFConfigurationParser:
         robot_id = 0
         env_id = 0
         testblockset_id = 0
-        for testsuite_name in self.generation_config["testsuites"].keys():
-            #print "testsuite:", testsuite_name
-            for test_config_name in self.generation_config["testsuites"][testsuite_name]["tests"]:
+        #print self.generation_config["testsuites"]  
+        for testsuite in self.generation_config["testsuites"]:
+            #print "testsuite:", testsuite
+            for test_config_name in testsuite["tests"]:
                 #print "test_config:", test_config_name
-                for robot_name in self.generation_config["testsuites"][testsuite_name]["robots"]:
+                for robot_name in testsuite["robots"]:
                     #print "robot:", robot_name
-                    for env_name in self.generation_config["testsuites"][testsuite_name]["envs"]:
+                    for env_name in testsuite["envs"]:
                         #print "robot_env:", env_name
-                        for testblockset_name in self.generation_config["testsuites"][testsuite_name]["testblocksets"]:
+                        for testblockset_name in testsuite["testblocksets"]:
                             #print "testblocks:", testblocks_name
                             test_group_name = "ts" + str(testsuite_id) + "_c" + str(test_config_id) + "_r" + str(robot_id) + "_e" + str(env_id) + "_s" + str(testblockset_id)
                             test_list_element = {}
                             test_list_element[test_group_name] = {}
                             test_list_element[test_group_name]["subtests"] = []
-                            for repetition in range(0,self.generation_config["testsuites"][testsuite_name]["repetitions"]):
+                            for repetition in range(0,testsuite["repetitions"]):
                                 name = test_group_name + "_" + str(repetition)
                                 test = Test()
                                 test.package_name = package_name
                                 test.name = name
                                 test.generation_config = self.generation_config
-                                test.testsuite_name = testsuite_name
                                 test.testsuite = None
                                 test.test_config_name = test_config_name
                                 test.test_config = self.load_data(os.path.join(full_path_to_test_package, self.generation_config["tests_config_path"], test_config_name + ".yaml"))
+                                self.parse_key_as_list(test.test_config, "additional_parameters")
+                                self.parse_key_as_list(test.test_config, "additional_arguments")
                                 test.robot_name = robot_name
                                 test.robot_config = self.load_data(os.path.join(full_path_to_test_package, self.generation_config["robots_config_path"], robot_name + ".yaml"))
+                                self.parse_key_as_list(test.robot_config, "additional_parameters")
+                                self.parse_key_as_list(test.robot_config, "additional_arguments")
                                 test.env_name = env_name
                                 test.env_config = self.load_data(os.path.join(full_path_to_test_package, self.generation_config["envs_config_path"], env_name + ".yaml"))
+                                self.parse_key_as_list(test.env_config, "additional_parameters")
+                                self.parse_key_as_list(test.env_config, "additional_arguments")
                                 test.testblockset_name = testblockset_name
                                 test.testblockset_config = self.load_data(os.path.join(full_path_to_test_package, self.generation_config["testblocksets_config_path"], testblockset_name + ".yaml"))
-                                
+
                                 #test.print_to_terminal()
                                 #print test.name
                                 
@@ -179,5 +185,24 @@ class ATFConfigurationParser:
             print error_message
             raise ATFConfigurationError(error_message)
 
+    def parse_key_as_list(self, dictionary, key):
+        #print "dict=\n", dictionary
+        if dictionary != None and key in dictionary.keys():
+            value = dictionary[key]
+            value_type = type(dictionary[key])
+            # make sure all additional_parameters and additional_arguments are lists
+            if type(value) == list:
+                for element in value:
+                    if type(element) == dict:
+                        return
+            elif type(value) == dict:
+                dictionary[key] = [dictionary[key]]
+                for element in dictionary[key]:
+                    if type(element) == dict:
+                        return
+        
+            error_message = "ATF configuration Error: key '%s' of type '%s' with value '%s' cannot be parsed as list of dictionaries"%(str(key), value_type, value)
+            print error_message
+            raise ATFConfigurationError(error_message)
 class ATFConfigurationError(Exception):
     pass
