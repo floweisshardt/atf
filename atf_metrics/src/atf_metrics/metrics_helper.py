@@ -12,16 +12,20 @@ def list_from_series(series):
     return flat_list
 
 def get_min(series):
-    result = DataStamped()
+    result = None
     for data in series:
-        if data.data < result.data: # '<' takes first accurance for multiple min elements
+        if result == None:
+            result = data
+        elif data.data < result.data: # '<' takes first accurance for multiple min elements
             result = data
     return result
 
 def get_max(series):
-    result = DataStamped()
+    result = None
     for data in series:
-        if data.data > result.data: # '>' takes first accurance for multiple max elements
+        if result == None:
+            result = data
+        elif data.data > result.data: # '>' takes first accurance for multiple max elements
             result = data
     return result
 

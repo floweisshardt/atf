@@ -1,7 +1,6 @@
 string name
 bool started
 bool finished
-float64 series_time_increment
 DataStamped[] series
 DataStamped data
 DataStamped min

@@ -35,14 +35,16 @@ class CalculateTfLengthRotationParamHandler:
             try:
                 groundtruth = metric["groundtruth"]
                 groundtruth_epsilon = metric["groundtruth_epsilon"]
+                series_mode = metric["series_mode"]
             except (TypeError, KeyError):
                 groundtruth = None
                 groundtruth_epsilon = None
-            metrics.append(CalculateTfLengthRotation(metric["topics"], metric["root_frame"], metric["measured_frame"], groundtruth, groundtruth_epsilon))
+                series_mode = None
+            metrics.append(CalculateTfLengthRotation(metric["topics"], metric["root_frame"], metric["measured_frame"], groundtruth, groundtruth_epsilon, series_mode))
         return metrics
 
 class CalculateTfLengthRotation:
-    def __init__(self, topics, root_frame, measured_frame, groundtruth, groundtruth_epsilon):
+    def __init__(self, topics, root_frame, measured_frame, groundtruth, groundtruth_epsilon, series_mode):
         """
         Class for calculating the distance covered by the given frame in relation to a given root frame.
         The tf data is sent over the tf topics given in the test_config.yaml.
@@ -60,7 +62,7 @@ class CalculateTfLengthRotation:
         self.topics = topics
         self.root_frame = root_frame
         self.measured_frame = measured_frame
-        self.series_time_increment = 0.1 # FIXME Make this configurable through testblockset.yaml
+        self.series_mode = series_mode
         self.series = []
         self.data = DataStamped()
         self.first_value = True
@@ -91,11 +93,11 @@ class CalculateTfLengthRotation:
             for transform in msg.transforms:
                 self.t.setTransform(transform)
 
-        # get data if testblock is active
-        if self.active:
-            self.data.stamp = t
-            self.data.data += round(self.get_path_increment(),6)
-            self.series.append(copy.deepcopy(self.data))
+            # get data if testblock is active
+            if self.active:
+                self.data.stamp = t
+                self.data.data += round(self.get_path_increment(),6)
+                self.series.append(copy.deepcopy(self.data))  # FIXME handle fixed rates
 
     def get_path_increment(self):
         path_increment = 0.0
@@ -143,7 +145,6 @@ class CalculateTfLengthRotation:
         metric_result.name = self.name
         metric_result.started = self.started # FIXME remove
         metric_result.finished = self.finished # FIXME remove
-        metric_result.series_time_increment = None
         metric_result.series = []
         metric_result.data = None
         metric_result.groundtruth = self.groundtruth
@@ -155,7 +156,8 @@ class CalculateTfLengthRotation:
 
         if metric_result.started and metric_result.finished: #  we check if the testblock was ever started and stopped
             # calculate metric data
-            metric_result.series = self.series
+            if self.series_mode != None:
+                metric_result.series = self.series
             metric_result.data = self.series[-1] # take last element from self.series
             metric_result.min = metrics_helper.get_min(self.series)
             metric_result.max = metrics_helper.get_max(self.series)

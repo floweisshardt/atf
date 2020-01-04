@@ -1,8 +1,10 @@
 #!/usr/bin/env python
-import rospy
+import copy
 import math
+import rospy
 
-from atf_msgs.msg import MetricResult, KeyValue
+from atf_msgs.msg import MetricResult, KeyValue, DataStamped
+from atf_metrics import metrics_helper
 
 class CalculatePublishRateParamHandler:
     def __init__(self):
@@ -26,16 +28,17 @@ class CalculatePublishRateParamHandler:
             try:
                 groundtruth = metric["groundtruth"]
                 groundtruth_epsilon = metric["groundtruth_epsilon"]
+                series_mode = metric["series_mode"]
             except (TypeError, KeyError):
-                #rospy.logwarn_throttle(10, "No groundtruth parameters given, skipping groundtruth evaluation for metric 'publish_rate' in testblock '%s'"%testblock_name)
                 groundtruth = None
                 groundtruth_epsilon = None
-            metrics.append(CalculatePublishRate(metric["topic"], groundtruth, groundtruth_epsilon))
+                series_mode = None
+            metrics.append(CalculatePublishRate(metric["topic"], groundtruth, groundtruth_epsilon, series_mode))
         return metrics
 
 class CalculatePublishRate:
-    def __init__(self, topic, groundtruth, groundtruth_epsilon):
-
+    def __init__(self, topic, groundtruth, groundtruth_epsilon, series_mode):
+        self.name = 'publish_rate'
         self.started = False
         self.finished = False
         self.active = False
@@ -45,10 +48,11 @@ class CalculatePublishRate:
             self.topic = topic
         else:
             self.topic = "/" + topic
-
+        self.series_mode = series_mode
+        self.series = []
+        self.data = DataStamped()
         self.counter = 0
         self.start_time = None
-        self.stop_time = None
 
     def start(self, status):
         self.start_time = status.stamp
@@ -56,13 +60,14 @@ class CalculatePublishRate:
         self.started = True
 
     def stop(self, status):
-        self.stop_time = status.stamp
+        # finally trigger update once again to update self.series and self.data
+        self.update(self.topic, rospy.AnyMsg, status.stamp)
         self.active = False
         self.finished = True
 
     def pause(self, status):
         # TODO: Implement pause time and counter calculation
-        #FIXME: check rate calculation in case of pause (counter, start_time and stop_time)
+        #FIXME: check rate calculation in case of pause (counter, start_time)
         pass
 
     def purge(self, status):
@@ -70,18 +75,27 @@ class CalculatePublishRate:
         pass
 
     def update(self, topic, msg, t):
-        if self.active:
-            if topic == self.topic:
+        if topic == self.topic:
+            # get data if testblock is active
+            if self.active:
                 self.counter += 1
+                self.data.stamp = t
+                self.data.data = round(self.get_publish_rate(),6)
+                self.series.append(copy.deepcopy(self.data))  # FIXME handle fixed rates
+
+    def get_publish_rate(self):
+        publish_rate = self.counter / (self.data.stamp - self.start_time).to_sec()
+        return publish_rate
 
     def get_topics(self):
         return [self.topic]
 
     def get_result(self):
         metric_result = MetricResult()
-        metric_result.name = "publish_rate"
+        metric_result.name = self.name
         metric_result.started = self.started # FIXME remove
         metric_result.finished = self.finished # FIXME remove
+        metric_result.series = []
         metric_result.data = None
         metric_result.groundtruth = self.groundtruth
         metric_result.groundtruth_epsilon = self.groundtruth_epsilon
@@ -92,7 +106,13 @@ class CalculatePublishRate:
 
         if metric_result.started and metric_result.finished: #  we check if the testblock was ever started and stopped
             # calculate metric data
-            metric_result.data = round(self.counter / (self.stop_time - self.start_time).to_sec(), 3)
+            if self.series_mode != None:
+                metric_result.series = self.series
+            metric_result.data = self.series[-1] # take last element from self.series
+            metric_result.min = metrics_helper.get_min(self.series)
+            metric_result.max = metrics_helper.get_max(self.series)
+            metric_result.mean = metrics_helper.get_mean(self.series)
+            metric_result.std = metrics_helper.get_std(self.series)
 
             # fill details as KeyValue messages
             details = []
@@ -101,17 +121,15 @@ class CalculatePublishRate:
 
             # evaluate metric data
             if metric_result.data != None and metric_result.groundtruth != None and metric_result.groundtruth_epsilon != None:
-                if math.fabs(metric_result.groundtruth - metric_result.data) <= metric_result.groundtruth_epsilon:
+                if math.fabs(metric_result.groundtruth - metric_result.data.data) <= metric_result.groundtruth_epsilon:
                     metric_result.groundtruth_result = True
                     metric_result.groundtruth_error_message = "all OK"
                 else:
                     metric_result.groundtruth_result = False
-                    metric_result.groundtruth_error_message = "groundtruth missmatch: %f not within %f+-%f"%(metric_result.data, metric_result.groundtruth, metric_result.groundtruth_epsilon)
-                    #print metric_result.groundtruth_error_message
+                    metric_result.groundtruth_error_message = "groundtruth missmatch: %f not within %f+-%f"%(metric_result.data.data, metric_result.groundtruth, metric_result.groundtruth_epsilon)
 
         if metric_result.data == None:
             metric_result.groundtruth_result = False
             metric_result.groundtruth_error_message = "no result"
 
-        #print "\nmetric_result:\n", metric_result
         return metric_result
