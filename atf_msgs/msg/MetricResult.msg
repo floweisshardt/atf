@@ -1,7 +1,9 @@
 string name
 bool started
 bool finished
-float64 data
+float64 series_time_increment
+DataStamped[] series
+DataStamped data
 bool groundtruth_result
 string groundtruth_error_message
 float64 groundtruth

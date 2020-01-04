@@ -121,12 +121,12 @@ class Analyser:
             # get result
             test_result = test.get_result()
 
-            # export overall test result to file
+            # export test result to file
             self.configuration_parser.export_to_file(test_result, os.path.join(test.generation_config["txt_output"], test.name + ".txt"))
             #self.configuration_parser.export_to_file(test_result, os.path.join(test.generation_config["json_output"], test.name + ".json")) # ROS message object is not JSON serialisable
             #self.configuration_parser.export_to_file(test_result, os.path.join(test.generation_config["yaml_output"], test.name + ".yaml")) # ROS message object is not correctly serialized to yaml
 
-            # append result
+            # append testresult to overall atf result
             atf_result.results.append(test_result)
 
             # aggregate result
@@ -139,6 +139,7 @@ class Analyser:
         if len(atf_result.results) == 0:
             raise ATFAnalyserError("Analysing failed, no atf result available.")
 
+        # export overall atf result to file
         #print "\natf_result:\n", atf_result
         self.configuration_parser.export_to_file(atf_result, os.path.join(test.generation_config["txt_output"], "atf_result.txt"))
         return atf_result
