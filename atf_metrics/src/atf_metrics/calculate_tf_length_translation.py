@@ -86,14 +86,13 @@ class CalculateTfLengthTranslation:
         pass
 
     def update(self, topic, msg, t):
-        # make sure we're handling a TFMessage (from /tf or /tf_static)
-        # TODO check type instead of topic names
-        if topic in self.topics:
-            for transform in msg.transforms:
-                self.t.setTransform(transform)
-
-            # get data if testblock is active
-            if self.active:
+        # get data if testblock is active
+        if self.active:
+            # make sure we're handling a TFMessage (from /tf or /tf_static)
+            # TODO check type instead of topic names
+            if topic in self.topics:
+                for transform in msg.transforms:
+                    self.t.setTransform(transform)
                 self.data.stamp = t
                 self.data.data += round(self.get_path_increment(),6)
                 self.series.append(copy.deepcopy(self.data))  # FIXME handle fixed rates

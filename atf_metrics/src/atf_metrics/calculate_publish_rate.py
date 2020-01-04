@@ -75,9 +75,9 @@ class CalculatePublishRate:
         pass
 
     def update(self, topic, msg, t):
-        if topic == self.topic:
-            # get data if testblock is active
-            if self.active:
+        # get data if testblock is active
+        if self.active:
+            if topic == self.topic:
                 self.counter += 1
                 self.data.stamp = t
                 self.data.data = round(self.get_publish_rate(),6)

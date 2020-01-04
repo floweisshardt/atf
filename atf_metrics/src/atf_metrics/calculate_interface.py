@@ -78,8 +78,9 @@ class CalculateInterface:
         pass
 
     def update(self, topic, msg, t):
-        if topic == "/atf/api" and msg.testblock_name == self.testblock_name:
-            if self.active:
+        # get data if testblock is active
+        if self.active:
+            if topic == "/atf/api" and msg.testblock_name == self.testblock_name:
                 self.api_dict = self.msg_to_dict(msg)
                 interface_data, self.interface_details = self.calculate_data_and_details()
                 self.data.stamp = t

@@ -32,7 +32,6 @@ class CalculateUserResultParamHandler:
                 groundtruth = metric["groundtruth"]
                 groundtruth_epsilon = metric["groundtruth_epsilon"]
             except (TypeError, KeyError):
-                #rospy.logwarn_throttle(10, "No groundtruth parameters given, skipping groundtruth evaluation for metric 'user_result' in testblock '%s'"%testblock_name)
                 groundtruth = None
                 groundtruth_epsilon = None
             metrics.append(CalculateUserResult(testblock_name, groundtruth, groundtruth_epsilon))
@@ -43,6 +42,7 @@ class CalculateUserResult:
         """
         Class for collecting the the user result.
         """
+        self.name = 'user_result'
         self.started = False
         self.finished = False
         self.active = False
@@ -80,7 +80,7 @@ class CalculateUserResult:
 
     def get_result(self):
         metric_result = MetricResult()
-        metric_result.name = "user_result"
+        metric_result.name = self.name
         metric_result.started = self.started # FIXME remove
         metric_result.finished = self.finished # FIXME remove
 
@@ -121,11 +121,9 @@ class CalculateUserResult:
                 else:
                     metric_result.groundtruth_result = False
                     metric_result.groundtruth_error_message = "groundtruth missmatch: %f not within %f+-%f"%(metric_result.data.data, metric_result.groundtruth, metric_result.groundtruth_epsilon)
-                    #print metric_result.groundtruth_error_message
 
         if metric_result.data == None:
             metric_result.groundtruth_result = False
             metric_result.groundtruth_error_message = "no result"
 
-        #print "\nmetric_result:\n", metric_result
         return metric_result
