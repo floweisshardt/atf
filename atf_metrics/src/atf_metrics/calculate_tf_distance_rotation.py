@@ -35,10 +35,12 @@ class CalculateTfDistanceRotationParamHandler:
             try:
                 groundtruth = metric["groundtruth"]
                 groundtruth_epsilon = metric["groundtruth_epsilon"]
-                series_mode = metric["series_mode"]
             except (TypeError, KeyError):
                 groundtruth = None
                 groundtruth_epsilon = None
+            try:
+                series_mode = metric["series_mode"]
+            except (TypeError, KeyError):
                 series_mode = None
             metrics.append(CalculateTfDistanceRotation(metric["topics"], metric["root_frame"], metric["measured_frame"], groundtruth, groundtruth_epsilon, series_mode))
         return metrics
