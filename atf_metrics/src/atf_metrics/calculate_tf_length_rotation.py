@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+import copy
 import math
 import os
 import rospy
@@ -9,9 +10,8 @@ import tf2_py
 import tf2_ros
 
 from tf import transformations
-from tf.transformations import quaternion_multiply, quaternion_conjugate
-
-from atf_msgs.msg import MetricResult, KeyValue
+from atf_msgs.msg import MetricResult, KeyValue, DataStamped
+from atf_metrics import metrics_helper
 
 class CalculateTfLengthRotationParamHandler:
     def __init__(self):
@@ -35,15 +35,16 @@ class CalculateTfLengthRotationParamHandler:
             try:
                 groundtruth = metric["groundtruth"]
                 groundtruth_epsilon = metric["groundtruth_epsilon"]
+                series_mode = metric["series_mode"]
             except (TypeError, KeyError):
-                #rospy.logwarn_throttle(10, "No groundtruth parameters given, skipping groundtruth evaluation for metric 'tf_length_rotation' in testblock '%s'"%testblock_name)
                 groundtruth = None
                 groundtruth_epsilon = None
-            metrics.append(CalculateTfLengthRotation(metric["topics"], metric["root_frame"], metric["measured_frame"], groundtruth, groundtruth_epsilon))
+                series_mode = None
+            metrics.append(CalculateTfLengthRotation(metric["topics"], metric["root_frame"], metric["measured_frame"], groundtruth, groundtruth_epsilon, series_mode))
         return metrics
 
 class CalculateTfLengthRotation:
-    def __init__(self, topics, root_frame, measured_frame, groundtruth, groundtruth_epsilon):
+    def __init__(self, topics, root_frame, measured_frame, groundtruth, groundtruth_epsilon, series_mode):
         """
         Class for calculating the distance covered by the given frame in relation to a given root frame.
         The tf data is sent over the tf topics given in the test_config.yaml.
@@ -61,7 +62,9 @@ class CalculateTfLengthRotation:
         self.topics = topics
         self.root_frame = root_frame
         self.measured_frame = measured_frame
-        self.integrated_rotation = 0.0
+        self.series_mode = series_mode
+        self.series = []
+        self.data = DataStamped()
         self.first_value = True
         self.trans_old = []
         self.rot_old = []
@@ -88,48 +91,51 @@ class CalculateTfLengthRotation:
         # TODO check type instead of topic names
         if topic in self.topics:
             for transform in msg.transforms:
-                #print "transform.header.stamp =", transform.header.stamp, "t =", t, "now =", rospy.Time.now(), "frame_id =", transform.header.frame_id, "child_frame_id =", transform.child_frame_id
                 self.t.setTransform(transform)
 
-        # get path increment if testblock is active
-        if self.active:
-            self.get_path_increment()
-                    
+            # get data if testblock is active
+            if self.active:
+                self.data.stamp = t
+                self.data.data += round(self.get_path_increment(),6)
+                self.series.append(copy.deepcopy(self.data))  # FIXME handle fixed rates
+
     def get_path_increment(self):
+        path_increment = 0.0
         try:
             sys.stdout = open(os.devnull, 'w') # supress stdout
             (trans, rot) = self.t.lookupTransform(self.root_frame, self.measured_frame, rospy.Time(0))
         except tf2_ros.LookupException as e:
             sys.stdout = sys.__stdout__  # restore stdout
             #print "Exception in metric '%s' %s %s"%(self.name, type(e), e)
-            return
+            return path_increment
         except tf2_py.ExtrapolationException as e:
             sys.stdout = sys.__stdout__  # restore stdout
             #print "Exception in metric '%s' %s %s"%(self.name, type(e), e)
-            return
+            return path_increment
         except tf2_py.ConnectivityException as e:
             sys.stdout = sys.__stdout__  # restore stdout
             #print "Exception in metric '%s' %s %s"%(self.name, type(e), e)
-            return
+            return path_increment
         except Exception as e:
             sys.stdout = sys.__stdout__  # restore stdout
             print "general exeption in metric '%s':"%self.name, type(e), e
-            return
+            return path_increment
         sys.stdout = sys.__stdout__  # restore stdout
 
         if self.first_value:
             self.trans_old = trans
             self.rot_old = rot
             self.first_value = False
-            return
+            return path_increment
 
-        diff_q = quaternion_multiply(rot, quaternion_conjugate(self.rot_old))
+        diff_q = transformations.quaternion_multiply(rot, transformations.quaternion_conjugate(self.rot_old))
         diff_e = transformations.euler_from_quaternion(diff_q)
-        eucl_dist = sum([en**2 for en in diff_e])**0.5
-        self.integrated_rotation += eucl_dist
+        path_increment = sum([axis**2 for axis in diff_e])**0.5
 
         self.trans_old = trans
         self.rot_old = rot
+
+        return path_increment
 
     def get_topics(self):
         return self.topics
@@ -139,6 +145,7 @@ class CalculateTfLengthRotation:
         metric_result.name = self.name
         metric_result.started = self.started # FIXME remove
         metric_result.finished = self.finished # FIXME remove
+        metric_result.series = []
         metric_result.data = None
         metric_result.groundtruth = self.groundtruth
         metric_result.groundtruth_epsilon = self.groundtruth_epsilon
@@ -149,7 +156,13 @@ class CalculateTfLengthRotation:
 
         if metric_result.started and metric_result.finished: #  we check if the testblock was ever started and stopped
             # calculate metric data
-            metric_result.data = round(self.integrated_rotation, 4)
+            if self.series_mode != None:
+                metric_result.series = self.series
+            metric_result.data = self.series[-1] # take last element from self.series
+            metric_result.min = metrics_helper.get_min(self.series)
+            metric_result.max = metrics_helper.get_max(self.series)
+            metric_result.mean = metrics_helper.get_mean(self.series)
+            metric_result.std = metrics_helper.get_std(self.series)
 
             # fill details as KeyValue messages
             details = []
@@ -159,17 +172,15 @@ class CalculateTfLengthRotation:
 
             # evaluate metric data
             if metric_result.data != None and metric_result.groundtruth != None and metric_result.groundtruth_epsilon != None:
-                if math.fabs(metric_result.groundtruth - metric_result.data) <= metric_result.groundtruth_epsilon:
+                if math.fabs(metric_result.groundtruth - metric_result.data.data) <= metric_result.groundtruth_epsilon:
                     metric_result.groundtruth_result = True
                     metric_result.groundtruth_error_message = "all OK"
                 else:
                     metric_result.groundtruth_result = False
-                    metric_result.groundtruth_error_message = "groundtruth missmatch: %f not within %f+-%f"%(metric_result.data, metric_result.groundtruth, metric_result.groundtruth_epsilon)
-                    #print metric_result.groundtruth_error_message
+                    metric_result.groundtruth_error_message = "groundtruth missmatch: %f not within %f+-%f"%(metric_result.data.data, metric_result.groundtruth, metric_result.groundtruth_epsilon)
 
         if metric_result.data == None:
             metric_result.groundtruth_result = False
             metric_result.groundtruth_error_message = "no result"
 
-        #print "\nmetric_result:\n", metric_result
         return metric_result

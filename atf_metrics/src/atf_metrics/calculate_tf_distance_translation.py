@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+import copy
 import math
 import os
 import rospy
@@ -8,10 +9,8 @@ import tf2_msgs
 import tf2_py
 import tf2_ros
 
-from tf import transformations
-
-from atf_msgs.msg import MetricResult, KeyValue
-
+from atf_msgs.msg import MetricResult, KeyValue, DataStamped
+from atf_metrics import metrics_helper
 
 class CalculateTfDistanceTranslationParamHandler:
     def __init__(self):
@@ -35,17 +34,16 @@ class CalculateTfDistanceTranslationParamHandler:
             try:
                 groundtruth = metric["groundtruth"]
                 groundtruth_epsilon = metric["groundtruth_epsilon"]
+                series_mode = metric["series_mode"]
             except (TypeError, KeyError):
-                #rospy.logwarn_throttle(10, "No groundtruth parameters given, skipping groundtruth evaluation for metric 'path_length' in testblock '%s'"%testblock_name)
                 groundtruth = None
                 groundtruth_epsilon = None
-            metrics.append(CalculateTfDistanceTranslation(metric["topics"], metric["root_frame"], metric["measured_frame"], groundtruth, groundtruth_epsilon))
+                series_mode = None
+            metrics.append(CalculateTfDistanceTranslation(metric["topics"], metric["root_frame"], metric["measured_frame"], groundtruth, groundtruth_epsilon, series_mode))
         return metrics
 
-
-
 class CalculateTfDistanceTranslation:
-    def __init__(self, topics, root_frame, measured_frame, groundtruth, groundtruth_epsilon):
+    def __init__(self, topics, root_frame, measured_frame, groundtruth, groundtruth_epsilon, series_mode):
         """
         Class for calculating the distance covered by the given frame in relation to a given root frame.
         The tf data is sent over the tf topics given in the test_config.yaml.
@@ -63,33 +61,22 @@ class CalculateTfDistanceTranslation:
         self.topics = topics
         self.root_frame = root_frame
         self.measured_frame = measured_frame
-        self.path_length = 0.0
-        self.first_value = True
-        self.trans_old = []
-        self.rot_old = []
-        self.first_transform = None
-        self.last_transform = None
+        self.series_mode = series_mode
+        self.series = []
+        self.data = DataStamped()
 
         self.t = tf.Transformer(True, rospy.Duration(10.0))
 
     def start(self, status):
         self.active = True
         self.started = True
-        self.first_transform = None
 
     def stop(self, status):
         self.active = False
         self.finished = True
 
-        try:
-            (trans, rot) = self.t.lookupTransform(self.root_frame, self.measured_frame, rospy.Time(0))
-            self.last_transform = (trans, rot)
-        except Exception:
-            pass
-
     def pause(self, status):
         self.active = False
-        self.first_value = True
 
     def purge(self, status):
         pass
@@ -100,17 +87,43 @@ class CalculateTfDistanceTranslation:
         if topic in self.topics:
             for transform in msg.transforms:
                 self.t.setTransform(transform)
-                #print "transform.header.stamp =", transform.header.stamp, "t =", t,
-                #print "now =", rospy.Time.now(), "frame_id =", transform.header.frame_id,
-                #print "child_frame_id =", transform.child_frame_id
 
-        if self.active and self.first_transform is None:
-            try:
-                (trans, rot) = self.t.lookupTransform(self.root_frame, self.measured_frame, rospy.Time(0))
-                self.first_transform = (trans, rot)
-            except Exception:
-                pass
+            # get data if testblock is active
+            if self.active:
+                self.data.stamp = t
+                self.data.data = round(self.get_distance(),6)
+                self.series.append(copy.deepcopy(self.data))  # FIXME handle fixed rates
 
+    def get_distance(self):
+        distance = 0.0
+        try:
+            sys.stdout = open(os.devnull, 'w') # supress stdout
+            (trans, rot) = self.t.lookupTransform(self.root_frame, self.measured_frame, rospy.Time(0))
+        except tf2_ros.LookupException as e:
+            sys.stdout = sys.__stdout__  # restore stdout
+            #print "Exception in metric '%s' %s %s"%(self.name, type(e), e)
+            return distance
+        except tf2_py.ExtrapolationException as e:
+            sys.stdout = sys.__stdout__  # restore stdout
+            #print "Exception in metric '%s' %s %s"%(self.name, type(e), e)
+            return distance
+        except tf2_py.ConnectivityException as e:
+            sys.stdout = sys.__stdout__  # restore stdout
+            #print "Exception in metric '%s' %s %s"%(self.name, type(e), e)
+            return distance
+        except Exception as e:
+            sys.stdout = sys.__stdout__  # restore stdout
+            print "general exeption in metric '%s':"%self.name, type(e), e
+            return distance
+        sys.stdout = sys.__stdout__  # restore stdout
+
+        # This calculates the tf distance from the first transform (root_frame to measured_frame) to the last transform (root_frame to measured_frame)
+        #self.data.data = round(sum([(fl - ll)**2 for fl, ll in zip(lin_first, lin_last)])**0.5, 9)
+
+        # This calculates the tf distance between root_frame and measured_frame at the end of the testblock
+        distance = sum(axis**2 for axis in trans)**0.5
+
+        return distance
 
     def get_topics(self):
         return self.topics
@@ -120,6 +133,7 @@ class CalculateTfDistanceTranslation:
         metric_result.name = self.name
         metric_result.started = self.started # FIXME remove
         metric_result.finished = self.finished # FIXME remove
+        metric_result.series = []
         metric_result.data = None
         metric_result.groundtruth = self.groundtruth
         metric_result.groundtruth_epsilon = self.groundtruth_epsilon
@@ -130,36 +144,31 @@ class CalculateTfDistanceTranslation:
 
         if metric_result.started and metric_result.finished: #  we check if the testblock was ever started and stopped
             # calculate metric data
-            lin_first = self.first_transform[0]
-            lin_last = self.last_transform[0]
-
-            # This calculates the tf distance from the first transform (root_frame to measured_frame) to the last transform (root_frame to measured_frame)
-            #metric_result.data = round(sum([(fl - ll)**2 for fl, ll in zip(lin_first, lin_last)])**0.5, 9)
-
-            # This calculates the tf distance between root_frame and measured_frame at the end of the testblock
-            metric_result.data = round(sum(axis**2 for axis in lin_last)**0.5,4)
+            if self.series_mode != None:
+                metric_result.series = self.series
+            metric_result.data = self.series[-1] # take last element from self.series
+            metric_result.min = metrics_helper.get_min(self.series)
+            metric_result.max = metrics_helper.get_max(self.series)
+            metric_result.mean = metrics_helper.get_mean(self.series)
+            metric_result.std = metrics_helper.get_std(self.series)
 
             # fill details as KeyValue messages
             details = []
             details.append(KeyValue("root_frame", self.root_frame))
             details.append(KeyValue("measured_frame", self.measured_frame))
-            details.append(KeyValue("lin_first", lin_first))
-            details.append(KeyValue("lin_last", lin_last))
             metric_result.details = details
 
             # evaluate metric data
             if metric_result.data != None and metric_result.groundtruth != None and metric_result.groundtruth_epsilon != None:
-                if math.fabs(metric_result.groundtruth - metric_result.data) <= metric_result.groundtruth_epsilon:
+                if math.fabs(metric_result.groundtruth - metric_result.data.data) <= metric_result.groundtruth_epsilon:
                     metric_result.groundtruth_result = True
                     metric_result.groundtruth_error_message = "all OK"
                 else:
                     metric_result.groundtruth_result = False
-                    metric_result.groundtruth_error_message = "groundtruth missmatch: %f not within %f+-%f"%(metric_result.data, metric_result.groundtruth, metric_result.groundtruth_epsilon)
-                    #print metric_result.groundtruth_error_message
+                    metric_result.groundtruth_error_message = "groundtruth missmatch: %f not within %f+-%f"%(metric_result.data.data, metric_result.groundtruth, metric_result.groundtruth_epsilon)
 
         if metric_result.data == None:
             metric_result.groundtruth_result = False
             metric_result.groundtruth_error_message = "no result"
 
-        #print "\nmetric_result:\n", metric_result
         return metric_result

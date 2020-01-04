@@ -3,7 +3,7 @@ import rospy
 import atf_core
 import copy
 
-from atf_msgs.msg import MetricResult, TestblockTrigger
+from atf_msgs.msg import MetricResult, TestblockTrigger, DataStamped
 from smach_msgs.msg import SmachContainerStatus
 
 ###########
@@ -64,10 +64,22 @@ class ATF():
             metric_result.name = "user_result"
             
             rospy.loginfo("setting user result for testblock \'%s\'"%testblock)
-            if not isinstance(metric_result.data, float) and not isinstance(metric_result.data, int):
+            if not isinstance(metric_result, MetricResult):
+                error_msg = "metric_result of testblock %s for " \
+                            "metric %s is not a MetricResult. data=%s, type=%s" % (
+                            testblock, metric_result.name, str(metric_result), type(metric_result))
+                self._send_error(error_msg)
+                raise atf_core.ATFError(error_msg)
+            if not isinstance(metric_result.data, DataStamped):
                 error_msg = "metric_result.data of testblock %s for " \
+                            "metric %s is not a DataStamped. data=%s, type=%s" % (
+                            testblock, metric_result.name, str(metric_result.data), type(metric_result.data))
+                self._send_error(error_msg)
+                raise atf_core.ATFError(error_msg)
+            if not isinstance(metric_result.data.data, float) and not isinstance(metric_result.data.data, int):
+                error_msg = "metric_result.data.data of testblock %s for " \
                             "metric %s is not a float or int. data=%s, type=%s" % (
-                    testblock, metric_result.name, str(metric_result.data), type(metric_result.data))
+                    testblock, metric_result.name, str(metric_result.data.data), type(metric_result.data.data))
                 self._send_error(error_msg)
                 raise atf_core.ATFError(error_msg)
             if type(metric_result.details) is not list:

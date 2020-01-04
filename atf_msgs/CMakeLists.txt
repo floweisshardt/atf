@@ -16,6 +16,7 @@ add_message_files(
     FILES
         Api.msg
         AtfResult.msg
+        DataStamped.msg
         IO.msg
         Interface.msg
         InterfaceItem.msg
