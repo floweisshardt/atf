@@ -2,28 +2,28 @@
 testblock_small:
   time: []
   tf_length_translation:
-    - topics: [/tf]
+    - topics: [/tf, /tf_static]
       root_frame: world
       measured_frame: reference1
     - topics: [/tf, /tf_static]
       root_frame: world
       measured_frame: reference1_static
   tf_length_rotation:
-    - topics: [/tf]
+    - topics: [/tf, /tf_static]
       root_frame: world
       measured_frame: reference1
     - topics: [/tf, /tf_static]
       root_frame: world
       measured_frame: reference1_static
   tf_distance_translation:
-    - topics: [/tf]
+    - topics: [/tf, /tf_static]
       root_frame: world
       measured_frame: reference1
     - topics: [/tf, /tf_static]
       root_frame: world
       measured_frame: reference1_static
   tf_distance_rotation:
-    - topics: [/tf]
+    - topics: [/tf, /tf_static]
       root_frame: world
       measured_frame: reference1
     - topics: [/tf, /tf_static]
@@ -43,28 +43,28 @@ testblock_small:
 testblock_large:
   time: []
   tf_length_translation:
-    - topics: [/tf]
+    - topics: [/tf, /tf_static]
       root_frame: world
       measured_frame: reference1
     - topics: [/tf, /tf_static]
       root_frame: world
       measured_frame: reference1_static
   tf_length_rotation:
-    - topics: [/tf]
+    - topics: [/tf, /tf_static]
       root_frame: world
       measured_frame: reference1
     - topics: [/tf, /tf_static]
       root_frame: world
       measured_frame: reference1_static
   tf_distance_translation:
-    - topics: [/tf]
+    - topics: [/tf, /tf_static]
       root_frame: world
       measured_frame: reference1
     - topics: [/tf, /tf_static]
       root_frame: world
       measured_frame: reference1_static
   tf_distance_rotation:
-    - topics: [/tf]
+    - topics: [/tf, /tf_static]
       root_frame: world
       measured_frame: reference1
     - topics: [/tf, /tf_static]

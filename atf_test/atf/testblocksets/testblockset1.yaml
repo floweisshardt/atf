@@ -4,7 +4,7 @@ testblock_small:
     - groundtruth: 3
       groundtruth_epsilon: 0.5
   tf_length_translation:
-    - topics: [/tf]
+    - topics: [/tf, /tf_static]
       root_frame: world
       measured_frame: reference1
       groundtruth: 6.283 # 2*pi
@@ -15,7 +15,7 @@ testblock_small:
       groundtruth: 6.283 # 2*pi
       groundtruth_epsilon: 0.3
   tf_length_rotation:
-    - topics: [/tf]
+    - topics: [/tf, /tf_static]
       root_frame: world
       measured_frame: reference1
       groundtruth: 6.283 # 2*pi
@@ -26,7 +26,7 @@ testblock_small:
       groundtruth: 6.283 # 2*pi
       groundtruth_epsilon: 0.3
   tf_distance_translation:
-    - topics: [/tf]
+    - topics: [/tf, /tf_static]
       root_frame: world
       measured_frame: reference1
       groundtruth: 0
@@ -37,7 +37,7 @@ testblock_small:
       groundtruth: 0
       groundtruth_epsilon: 0.3
   tf_distance_rotation:
-    - topics: [/tf]
+    - topics: [/tf, /tf_static]
       root_frame: world
       measured_frame: reference1
       groundtruth: 0
@@ -83,7 +83,7 @@ testblock_large:
     - groundtruth: 5
       groundtruth_epsilon: 0.5
   tf_length_translation:
-    - topics: [/tf]
+    - topics: [/tf, /tf_static]
       root_frame: world
       measured_frame: reference1
       groundtruth: 12.566 # 2*2*pi
@@ -94,7 +94,7 @@ testblock_large:
       groundtruth: 12.566 # 2*2*pi
       groundtruth_epsilon: 0.3
   tf_length_rotation:
-    - topics: [/tf]
+    - topics: [/tf, /tf_static]
       root_frame: world
       measured_frame: reference1
       groundtruth: 6.283 # 2*pi
@@ -105,7 +105,7 @@ testblock_large:
       groundtruth: 6.283 # 2*pi
       groundtruth_epsilon: 0.3
   tf_distance_translation:
-    - topics: [/tf]
+    - topics: [/tf, /tf_static]
       root_frame: world
       measured_frame: reference1
       groundtruth: 0
@@ -116,7 +116,7 @@ testblock_large:
       groundtruth: 0
       groundtruth_epsilon: 0.3
   tf_distance_rotation:
-    - topics: [/tf]
+    - topics: [/tf, /tf_static]
       root_frame: world
       measured_frame: reference1
       groundtruth: 0
