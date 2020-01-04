@@ -28,10 +28,12 @@ class CalculatePublishRateParamHandler:
             try:
                 groundtruth = metric["groundtruth"]
                 groundtruth_epsilon = metric["groundtruth_epsilon"]
-                series_mode = metric["series_mode"]
             except (TypeError, KeyError):
                 groundtruth = None
                 groundtruth_epsilon = None
+            try:
+                series_mode = metric["series_mode"]
+            except (TypeError, KeyError):
                 series_mode = None
             metrics.append(CalculatePublishRate(metric["topic"], groundtruth, groundtruth_epsilon, series_mode))
         return metrics

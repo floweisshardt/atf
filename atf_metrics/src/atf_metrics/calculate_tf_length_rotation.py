@@ -35,10 +35,12 @@ class CalculateTfLengthRotationParamHandler:
             try:
                 groundtruth = metric["groundtruth"]
                 groundtruth_epsilon = metric["groundtruth_epsilon"]
-                series_mode = metric["series_mode"]
             except (TypeError, KeyError):
                 groundtruth = None
                 groundtruth_epsilon = None
+            try:
+                series_mode = metric["series_mode"]
+            except (TypeError, KeyError):
                 series_mode = None
             metrics.append(CalculateTfLengthRotation(metric["topics"], metric["root_frame"], metric["measured_frame"], groundtruth, groundtruth_epsilon, series_mode))
         return metrics
@@ -87,16 +89,17 @@ class CalculateTfLengthRotation:
         pass
 
     def update(self, topic, msg, t):
+        # make sure we're handling a TFMessage (from /tf or /tf_static)
+        # TODO check type instead of topic names
+        if topic in self.topics:
+            for transform in msg.transforms:
+                self.t.setTransform(transform)
+
         # get data if testblock is active
         if self.active:
-            # make sure we're handling a TFMessage (from /tf or /tf_static)
-            # TODO check type instead of topic names
-            if topic in self.topics:
-                for transform in msg.transforms:
-                    self.t.setTransform(transform)
-                self.data.stamp = t
-                self.data.data += round(self.get_path_increment(),6)
-                self.series.append(copy.deepcopy(self.data))  # FIXME handle fixed rates
+            self.data.stamp = t
+            self.data.data += round(self.get_path_increment(),6)
+            self.series.append(copy.deepcopy(self.data))  # FIXME handle fixed rates
 
     def get_path_increment(self):
         path_increment = 0.0
