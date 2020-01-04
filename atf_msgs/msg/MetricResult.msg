@@ -4,6 +4,10 @@ bool finished
 float64 series_time_increment
 DataStamped[] series
 DataStamped data
+DataStamped min
+DataStamped max
+float64 mean
+float64 std
 bool groundtruth_result
 string groundtruth_error_message
 float64 groundtruth

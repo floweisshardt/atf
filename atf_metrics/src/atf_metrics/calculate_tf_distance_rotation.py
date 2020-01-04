@@ -10,8 +10,8 @@ import tf2_py
 import tf2_ros
 
 from tf import transformations
-
 from atf_msgs.msg import MetricResult, KeyValue, DataStamped
+from atf_metrics import metrics_helper
 
 class CalculateTfDistanceRotationParamHandler:
     def __init__(self):
@@ -148,7 +148,11 @@ class CalculateTfDistanceRotation:
         if metric_result.started and metric_result.finished: #  we check if the testblock was ever started and stopped
             # calculate metric data
             metric_result.series = self.series
-            metric_result.data = self.data
+            metric_result.data = self.series[-1] # take last element from self.series
+            metric_result.min = metrics_helper.get_min(self.series)
+            metric_result.max = metrics_helper.get_max(self.series)
+            metric_result.mean = metrics_helper.get_mean(self.series)
+            metric_result.std = metrics_helper.get_std(self.series)
 
             # fill details as KeyValue messages
             details = []
