@@ -13,6 +13,7 @@ env:
     - VERBOSE_TESTS=true
     - NOT_TEST_DOWNSTREAM=true
     - PARALLEL_TESTS=false
+    - CATKIN_LINT=pedantic
   matrix:
     - ROS_DISTRO=kinetic
     - ROS_DISTRO=melodic
