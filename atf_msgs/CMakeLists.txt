@@ -28,11 +28,11 @@ add_message_files(
         ObstacleDistance.msg
         ObstacleDistanceLink.msg
         Resources.msg
+        TestResult.msg
+        TestStatus.msg
         TestblockResult.msg
         TestblockStatus.msg
         TestblockTrigger.msg
-        TestResult.msg
-        TestStatus.msg
 )
 
 add_action_files(

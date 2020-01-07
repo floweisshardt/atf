@@ -1,16 +1,9 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(atf_test)
 
-find_package(catkin REQUIRED COMPONENTS
-  atf_core
-  atf_test_tools
-  roslaunch
-  rospy
-  rostopic
-)
-catkin_package(
-   CATKIN_DEPENDS rospy
-)
+find_package(catkin REQUIRED)
+
+catkin_package()
 
 ###########
 ## Build ##
@@ -20,7 +13,7 @@ catkin_package(
 ## Install ##
 #############
 
-install(PROGRAMS scripts/application.py
+catkin_install_python(PROGRAMS scripts/application.py
     DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
 
 #############

@@ -12,6 +12,6 @@
 
     <buildtool_depend>catkin</buildtool_depend>
 
-    <depend>tf</depend>
+    <exec_depend>tf</exec_depend>
 
 </package>
