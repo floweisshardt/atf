@@ -1,11 +1,4 @@
-@[if DEVELSPACE]@
-# set path to generate_tests script in develspace
-set(generate_tests_script @(CMAKE_CURRENT_SOURCE_DIR)/scripts/generate_tests.py)
-@[else]@
-# set path to generate_tests script in installspace
-set(generate_tests_script ${atf_core_DIR}/../scripts/generate_tests.py)
-@[end if]@
-
+set(generate_tests_script @(CMAKE_SOURCE_DIR)/scripts/generate_tests.py)
 
 function(atf_test TEST_GENERATION_CONFIG_FILE)
     if(CATKIN_ENABLE_TESTING)
