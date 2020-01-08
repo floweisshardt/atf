@@ -19,5 +19,10 @@ catkin_install_python(PROGRAMS scripts/application.py
 #############
 ## Testing ##
 #############
-roslaunch_add_file_check(launch)
-atf_test(atf/test_generation_config.yaml)
+if(CATKIN_ENABLE_TESTING)
+  find_package(atf_core REQUIRED)
+  find_package(roslaunch REQUIRED)
+  find_package(rostest REQUIRED)
+  roslaunch_add_file_check(launch)
+  atf_test(atf/test_generation_config.yaml)
+endif()

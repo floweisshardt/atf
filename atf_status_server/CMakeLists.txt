@@ -4,10 +4,6 @@ project(atf_status_server)
 find_package(catkin REQUIRED COMPONENTS
     atf_msgs
     message_generation
-    rosbridge_server
-    roslaunch
-    rospy
-    std_msgs
 )
 
 ################################################
@@ -22,7 +18,6 @@ add_service_files(
 generate_messages(
     DEPENDENCIES
         atf_msgs
-        std_msgs
 )
 
 ###################################
@@ -32,9 +27,6 @@ generate_messages(
 catkin_package(CATKIN_DEPENDS
     atf_msgs
     message_runtime
-    rosbridge_server
-    rospy
-    std_msgs
 )
 
 ###########
@@ -63,4 +55,7 @@ install(DIRECTORY launch
 #############
 ## Testing ##
 #############
-roslaunch_add_file_check(launch)
+if(CATKIN_ENABLE_TESTING)
+  find_package(roslaunch REQUIRED)
+  roslaunch_add_file_check(launch)
+endif()
