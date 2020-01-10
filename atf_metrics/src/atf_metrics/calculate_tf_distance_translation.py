@@ -5,7 +5,6 @@ import os
 import rospy
 import sys
 import tf
-import tf2_msgs
 import tf2_py
 import tf2_ros
 

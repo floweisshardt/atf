@@ -3,7 +3,6 @@ project(atf_msgs)
 
 find_package(catkin REQUIRED COMPONENTS
     actionlib_msgs
-    geometry_msgs
     message_generation
     std_msgs
 )
@@ -28,11 +27,11 @@ add_message_files(
         ObstacleDistance.msg
         ObstacleDistanceLink.msg
         Resources.msg
+        TestResult.msg
+        TestStatus.msg
         TestblockResult.msg
         TestblockStatus.msg
         TestblockTrigger.msg
-        TestResult.msg
-        TestStatus.msg
 )
 
 add_action_files(
@@ -43,7 +42,6 @@ add_action_files(
 generate_messages(
     DEPENDENCIES
         actionlib_msgs
-        geometry_msgs
         std_msgs
 )
 
@@ -54,7 +52,6 @@ generate_messages(
 catkin_package(
     CATKIN_DEPENDS
         actionlib_msgs
-        geometry_msgs
         message_runtime
         std_msgs
 )
