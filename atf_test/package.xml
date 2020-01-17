@@ -18,7 +18,5 @@
     <exec_depend>tf2_ros</exec_depend>
 
     <test_depend>atf_core</test_depend>
-    <test_depend>roslaunch</test_depend>
-    <test_depend>rostest</test_depend>
 
 </package>
