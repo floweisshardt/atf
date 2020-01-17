@@ -27,14 +27,14 @@ Run all tests
 cd ~/catkin_ws
 catkin run_tests -j1
 ```
-or run tests from a specific package (e.g. for ```atf_test_app_time```):
+or run tests from a specific package (e.g. for ```atf_test```):
 ```
 cd ~/catkin_ws
-catkin run_tests atf_test_app_time -j1
+catkin run_tests atf_test -j1
 ```
 or
 ```
-roscd atf_test_app_time
+roscd atf_test
 catkin run_tests --this -j1
 ```
 
@@ -45,15 +45,16 @@ cd ~/catkin_ws
 catkin_test_results
 ```
 
-If all goes well, you should see the recorded bag files in ```/tmp/atf_test_app_time```:
+If all goes well, you should see the recorded bag files in ```/tmp/atf_test```:
 ```
-ls /tmp/atf_test_app_time/data
-rosbag info /tmp/atf_test_app_time/data/ts0_c0_r0_e0_s0_1.bag
-rqt_bag /tmp/atf_test_app_time/data/ts0_c0_r0_e0_s0_1.bag
+ls /tmp/atf_test/data
+rosbag info /tmp/atf_test/data/ts0_c0_r0_e0_s0_0.bag
+rqt_bag /tmp/atf_test/data/ts0_c0_r0_e0_s0_0.bag
 ```
-and the (merged) results in ```/tmp/atf_test_app_time/results_yaml```:
+and the results in ```/tmp/atf_test/results_txt```:
 ```
-cat /tmp/atf_test_app_time/results_yaml/merged_ts0_c0_r0_e0.yaml
+cat /tmp/atf_test/results_txt/atf_result.txt
+cat /tmp/atf_test/results_txt/ts0_c0_r0_e0_s0_0.txt
 ```
 
 ### Visualize the results
@@ -114,7 +115,7 @@ if __name__ == '__main__':
     app.execute()
 ```
 
-Alongside with the modifications in the app code, you need to create some configuration files. Please have a look at the [atf test apps repository](https://github.com/floweisshardt/atf_test_apps) for configuration references. Typically you will have the following files:
+Alongside with the modifications in the app code, you need to create some configuration files. Please have a look at the `atf_test` package within this repository or at the [atf test apps repository](https://github.com/floweisshardt/atf_test_apps) for configuration references. Typically you will have the following files:
 
 ```
 atf/
@@ -133,27 +134,25 @@ atf/
 └── test_generation_config.yaml  # specifies how to generate test files and defines testsuites (combination of configurations for envs, robots, testblocksets and tests.
 ```
 
-The last thing to modify is your ```package.xml``` and ```CMakeLists.txt```. Please add a dependency to ```atf_core``` and the following line which triggers the test file generation:
+The last thing to modify is your ```package.xml``` and ```CMakeLists.txt```. Add a test dependency to ```atf_core``` to your ```package.xml```
 
 ```
-atf_test(atf/test_generation_config.yaml)
+<test_depend>atf_core</test_depend>
 ```
 
-After a ```catkin build --force-cmake``` you will find all the generated test files in ```<YOUR_PACKAGE>/test_generated```.
-You can run them individually, e.g. the first recording test with
+and the following line to your ```CMakeLists.txt``` which triggers the test generation and execution:
 
 ```
-FIXME: rostest <YOUR_PACKAGE> recording_ts0_c0_r0_e0_0.test
-... further recording tests ...
+if(CATKIN_ENABLE_TESTING)
+  find_package(atf_core REQUIRED)
+  atf_test(atf/test_generation_config.yaml)
+endif()
+
 ```
 
-followed by the first analysing test
+After a ```catkin build --force-cmake``` you will find all the generated test files in the `build` directory of your workspace, e.g. ```build/atf_test/test_generated```.
 
-```
-FIXME: rostest <YOUR_PACKAGE> analysing.test
-```
-
-and finally [check the test results](#check-test-results).
+You can [run the tests automatically](#run-the-test-apps) or [run the tests manually](#manual-test-execution-without-rostest) and finally [check the test results](#check-test-results).
 
 ### C++
 not yet available
@@ -168,22 +167,22 @@ If you have your test app written and configuration setup as shown in the [examp
 * ```catkin atf_<YOUR_PACKAGE>          ```: triggers all tests in your package
 * ```catkin run_tests                   ```: triggers all tests in your catkin workspace
 
-You can use the above targets to setup you continuous integration scripts.
+You can use the above targets to setup your continuous integration scripts.
 
 ### How to use the ATF with Travis CI
-An example using [industrial_ci](https://github.com/ros-industrial/industrial_ci) to integrate ATF into [Travis CI](https://travis-ci.com/) can be found in the [atf test apps repository](https://github.com/floweisshardt/atf_test_apps). Have a look at the ```.travis.yml``` file.
+An example using [industrial_ci](https://github.com/ros-industrial/industrial_ci) to integrate ATF into [Travis CI](https://travis-ci.com/) can be found in this repository or the [atf test apps repository](https://github.com/floweisshardt/atf_test_apps). Have a look at the ```.travis.yml``` file.
 
 ## How to use the ATF in a "simulation-in-the-loop" setup using [gazebo](http://gazebosim.org/)
-If you'd like to run tests using gazebo, you just setup a launch file which starts all nodes and include that to your ```application.launch```. As catkin normaly uses multiple threads for executing the tests, we'll need to limit that to only one concurrent job as running multiple gazebo instances at a time causes troubles. Thus run your tests with
+If you'd like to run tests using gazebo, you just setup a launch file which starts all nodes and include that to your ```application.launch```. As catkin normally uses multiple threads for executing the tests, we'll need to limit that to only one concurrent job as running multiple gazebo instances at a time causes troubles. Thus run your tests with
 ```
 catkin run_tests -j1
 ```
 
-For travis scripts using [industrial_ci](https://github.com/ros-industrial/industrial_ci) you can set the ```ROS_PARALLEL_TEST_JOBS``` environment variable:
+For travis scripts using [industrial_ci](https://github.com/ros-industrial/industrial_ci) you can set the ```PARALLEL_TESTS``` environment variable:
 ```
 env:
   global:
-    - ROS_PARALLEL_TEST_JOBS="-j1"
+    - PARALLEL_TESTS=false
 ```
 
 ## How to use the ATF for benchmarking
