@@ -77,6 +77,9 @@ class ATFConfigurationParser:
                             test_list_element = {}
                             test_list_element[test_group_name] = {}
                             test_list_element[test_group_name]["subtests"] = []
+                            # repetitions is an optional parameter, default = 1
+                            if "repetitions" not in testsuite:
+                                testsuite["repetitions"] = 1
                             for repetition in range(0,testsuite["repetitions"]):
                                 name = test_group_name + "_" + str(repetition)
                                 test = Test()
