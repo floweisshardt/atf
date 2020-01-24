@@ -36,7 +36,6 @@ The following metrics have been implemented so far:
 | ```tf_distance_rotation```      | The ```tf_distance_rotation``` metric measures the cartesian angular distance of a TF frame with respect to another frame at the end of a testblock.    |  [m] | snap |
 | ```tf_length_translation```     | The ```tf_length_translation``` metric measures the cartesian path (distance integrated over time) of a TF frame with respect to another frame.    |  [m] | span |
 | ```tf_length_rotation```        | The ```tf_length_rotation``` metric measures the cartesian angular path (angular distance integrated over time) of a TF frame with respect to another frame.    |  [m] | span |
-
 | ```user_result```      | The result for the ```user_result``` metric can be set from the user within the `application.py`.    |  [any] | span, snap |
 
 Further metrics (in development):
