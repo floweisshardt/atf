@@ -151,12 +151,13 @@ class Analyser:
             print "*** SOME TESTS FAILED ***"
             print "*************************"
             print atf_result.groundtruth_error_message
+            self.print_result_summary(atf_result)
         else:
             print "\n"
             print "********************"
             print "*** ALL TESTS OK ***"
             print "********************"
-            print "\n"
+            self.print_result_summary(atf_result)
 
     def print_result_details(self, atf_result):
         print "\n"
@@ -164,6 +165,17 @@ class Analyser:
         print "*** result details ***"
         print "**********************"
         print atf_result
+
+    def print_result_summary(self, atf_result):
+        print "\n"
+        print "**********************"
+        print "*** result summary ***"
+        print "**********************"
+        for result in atf_result.results:
+            if result.groundtruth_result:
+                print "test '%s' (%s, %s, %s, %s): succeeded"%(result.name, result.robot, result.env, result.test_config, result.testblockset)
+            else:
+                print "test '%s' (%s, %s, %s, %s): failed"%(result.name, result.robot, result.env, result.test_config, result.testblockset)
 
 class ATFAnalyserError(Exception):
     pass
