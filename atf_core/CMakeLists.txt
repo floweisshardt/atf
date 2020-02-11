@@ -1,16 +1,7 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(atf_core)
 
-find_package(catkin REQUIRED COMPONENTS
-    atf_metrics
-    atf_msgs
-    atf_recorder_plugins
-    atf_status_server
-#    obstacle_distance
-    smach
-    smach_ros
-    rospy
-)
+find_package(catkin REQUIRED)
 
 catkin_python_setup()
 
@@ -19,15 +10,6 @@ catkin_python_setup()
 ###################################
 
 catkin_package(
-    CATKIN_DEPENDS
-        atf_metrics
-        atf_msgs
-        atf_recorder_plugins
-        atf_status_server
-    #    obstacle_distance
-        smach
-        smach_ros
-        rospy
     CFG_EXTRAS
         ${PROJECT_NAME}-extras.cmake
 )
@@ -44,11 +26,11 @@ include_directories(
 ## Install ##
 #############
 
-install(
+catkin_install_python(
     PROGRAMS
         scripts/analyser.py
         scripts/cleaner.py
-        scripts/dropbox_uploader.sh
+        scripts/generate_tests.py
         scripts/merger.py
         scripts/record_tests.py
         scripts/sm_test.py
@@ -58,8 +40,8 @@ install(
 )
 
 install(
-    FILES
-        scripts/generate_tests.py
+    PROGRAMS
+        scripts/dropbox_uploader.sh
     DESTINATION
-        ${CATKIN_PACKAGE_SHARE_DESTINATION}/scripts
+        ${CATKIN_PACKAGE_BIN_DESTINATION}
 )

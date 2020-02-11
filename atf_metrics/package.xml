@@ -13,8 +13,10 @@
 
     <buildtool_depend>catkin</buildtool_depend>
 
-    <depend>atf_msgs</depend>
-    <depend>rospy</depend>
-    <depend>tf</depend>
+    <exec_depend>atf_msgs</exec_depend>
+    <exec_depend>rospy</exec_depend>
+    <exec_depend>tf</exec_depend>
+    <exec_depend>tf2_ros</exec_depend>
+    <exec_depend>tf2_py</exec_depend>
 
 </package>

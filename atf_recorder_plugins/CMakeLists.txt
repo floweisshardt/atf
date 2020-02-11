@@ -1,10 +1,7 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(atf_recorder_plugins)
 
-find_package(catkin REQUIRED COMPONENTS
-    atf_msgs
-    rospy
-)
+find_package(catkin REQUIRED)
 
 catkin_python_setup()
 
@@ -12,10 +9,7 @@ catkin_python_setup()
 ## catkin specific configuration ##
 ###################################
 
-catkin_package(CATKIN_DEPENDS
-    atf_msgs
-    rospy
-)
+catkin_package()
 
 ###########
 ## Build ##
