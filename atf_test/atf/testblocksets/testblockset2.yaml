@@ -5,6 +5,7 @@ testblock_small:
     - topics: [/tf, /tf_static]
       root_frame: world
       measured_frame: reference1
+      series_mode: True
     - topics: [/tf, /tf_static]
       root_frame: world
       measured_frame: reference1_static
@@ -12,6 +13,7 @@ testblock_small:
     - topics: [/tf, /tf_static]
       root_frame: world
       measured_frame: reference1
+      series_mode: True
     - topics: [/tf, /tf_static]
       root_frame: world
       measured_frame: reference1_static
@@ -19,6 +21,7 @@ testblock_small:
     - topics: [/tf, /tf_static]
       root_frame: world
       measured_frame: reference1
+      series_mode: True
     - topics: [/tf, /tf_static]
       root_frame: world
       measured_frame: reference1_static
@@ -26,6 +29,7 @@ testblock_small:
     - topics: [/tf, /tf_static]
       root_frame: world
       measured_frame: reference1
+      series_mode: True
     - topics: [/tf, /tf_static]
       root_frame: world
       measured_frame: reference1_static
