@@ -36,17 +36,16 @@ class GenerateTests:
 
         self.test_list = {}
 
-        self.test_generated_path = os.path.join(self.package_bin_path, "test_generated")
-        #self.test_generated_analysing_path = os.path.join(self.test_generated_path, "analysing")
+        test_generation_config_file_name = self.test_generation_config_file.replace("/", "_")
+        self.test_generated_path = os.path.join(self.package_bin_path, "test_generated", test_generation_config_file_name)
         self.create_folders()
 
     def create_folders(self):
-        # delete of test_generated directory and create new one
+        # delete old test_generated directory and create new one
         if os.path.exists(self.test_generated_path):
             shutil.rmtree(self.test_generated_path)
         shutil.copyfile(self.package_src_path + "/package.xml", self.package_bin_path + "/package.xml")
         os.makedirs(self.test_generated_path)
-        #os.makedirs(self.test_generated_analysing_path)
 
     def generate_tests(self):
         em = lxml.builder.ElementMaker()
