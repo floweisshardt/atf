@@ -76,7 +76,7 @@ class BaseYamlStructure(object):
 
     def __getitem__(self, key):
         if key not in self:
-            raise KeyError
+            raise KeyError('%s not found in atf result' % key)
 
         if self.sublevel_names.count(key) == 1:
             ridx = self.sublevel_names.index(key)
