@@ -8,23 +8,21 @@ mpl.style.use('classic')
 import matplotlib.pyplot as plt
 from matplotlib.lines import Line2D
 
-
-import yaml
-
-import pprint
-import re
-
+from matplotlib import cm
 import numpy as np
 
-from matplotlib import cm
-
-from collections import namedtuple
+import yaml
 
 import argparse
 
 import sys
-
+import os
 import time
+
+from collections import namedtuple
+import re
+import pprint
+
 
 MetricAggregate = namedtuple('MetricAggregate', 'metric_name testblock_name num min max mean median std data_points')
 
@@ -310,24 +308,23 @@ class DemoPlotter(object):
         metrics = test_block[metric]
         #assert isinstance(metric, Metric)
 
+        if not isinstance(metrics, list):
+            metrics = [metrics]
+
 
         fig, ax = plt.subplots()
 
         width = 0.2
 
         for idx, metric in enumerate(metrics):
-            #print metric.details
-            #label = metric['measured_frame']['value']
-            #label = '%s/%s/%s' % (single_test.name, test_block.name, metric.get_detail('measured_frame'))
-
             label = build_tmp_label(metric)
             rects = ax.bar(idx - width / 2.0, metric.data, width, label=label)
             autolabel_ax_bar(ax, rects)
 
-            print metric.data
-            print metric.groundtruth
-            print metric.groundtruth_epsilon
-            print
+            #print metric.data
+            #print metric.groundtruth
+            #print metric.groundtruth_epsilon
+            #print
 
         ax.legend()
         plt.show()
@@ -458,12 +455,40 @@ class DemoPlotter(object):
 
 
 def build_tmp_label(metric):
+    #print 'mpp', metric.parent
     #label = '%s/%s/%s/%s' % (metric.parent.parent.name, metric.parent.name, metric.name, metric.get_detail('measured_frame'))
-    label = '%s/%s/%s' % (metric.parent.parent.name, metric.parent.name, metric.name)
+
+    lbl_str_list = list()
+
     try:
-        label += '/%s' % metric.get_detail('measured_frame')
+        lbl_str_list.append('%s' % metric.parent.parent.name)
     except KeyError:
         pass
+    except AttributeError:
+        pass
+
+    try:
+        lbl_str_list.append('%s' % metric.parent.name)
+    except KeyError:
+        pass
+    except AttributeError:
+        pass
+
+    try:
+        lbl_str_list.append('%s' % metric.name)
+    except KeyError:
+        pass
+    except AttributeError:
+        pass
+
+    try:
+        lbl_str_list.append('%s' % metric.get_detail('measured_frame'))
+    except KeyError:
+        pass
+    except AttributeError:
+        pass
+
+    label = '/'.join(lbl_str_list)
 
     return label
 
@@ -485,7 +510,7 @@ def autolabel_ax_bar(ax, rects):
 
 if __name__ == '__main__':
     # example call could be:
-    #   rosrun atf_plotter plot.py plot-metric -m tf_length_translation -tb testblock_circle -t ts0_c0_r0_e0_s0_0 ~/atf_result.txt
+    #   rosrun atf_plotter plot.py plot-metric -m tf_length_translation -tb testblock_small -t ts0_c0_r0_e0_s0_0 ~/atf_result.txt
     # to get info about the file, this could be helpful:
     #   rosrun atf_plotter plot.py info-structure ~/atf_result.txt
 
@@ -548,12 +573,15 @@ if __name__ == '__main__':
     #argparse_result = parser.parse_args(['plot foo', '--help'])
 
 
-    #filename = '/tmp/atf_test_app_tf/results_txt/atf_result.txt'
-    #filename = '/home/bge/Projekte/atf_data/atf_test_app_tf/results_txt/atf_result.txt'
-    #filename = '/home/bge/Projekte/atf_data/atf_test/results_txt/atf_result.txt'
+    basepath = '~/Projekte/atf_data/'
+    basepath = os.path.expanduser(basepath)
 
-    #filename = '/home/bge/Projekte/atf_data/atf_test_app_navigation__series__atf_result.txt'
-    filename = '/home/bge/Projekte/atf_data/atf_test__series__atf_result.txt'
+    #filename = basepath + 'atf_test_app_navigation__series__atf_result.txt'
+    filename = basepath + 'atf_test_app_navigation__atf_result.txt'
+    #filename = basepath + 'atf_test__series__atf_result.txt'
+
+    #testblock = 'testblock_small'
+    testblock = 'testblock_all'
 
     test_args = [
         [  # 0
@@ -566,13 +594,13 @@ if __name__ == '__main__':
         [  # 2
             'plot-metric',
             '-m', 'tf_length_translation',
-            '-tb', 'testblock_small',
+            '-tb', testblock,
             '-t', 'ts0_c0_r0_e0_s0_0',
             filename
         ],
         [  # 3
             'plot-b',
-            '-tb', 'testblock_small',
+            '-tb', testblock,
             '-t', 'ts0_c0_r0_e0_s0_0',
             filename
         ],
@@ -591,7 +619,7 @@ if __name__ == '__main__':
         ],
     ]
 
-    #argparse_result = parser.parse_args(test_args[5])
+    #argparse_result = parser.parse_args(test_args[2])
     argparse_result = parser.parse_args()
 
 
