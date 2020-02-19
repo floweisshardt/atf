@@ -1,9 +1,11 @@
 #!/usr/bin/env python
+import copy
 import math
 import rospy
 
 from atf_msgs.msg import Api
-from atf_msgs.msg import MetricResult, KeyValue
+from atf_msgs.msg import MetricResult, KeyValue, DataStamped
+from atf_metrics import metrics_helper
 
 class CalculateInterfaceParamHandler:
     def __init__(self):
@@ -34,19 +36,29 @@ class CalculateInterfaceParamHandler:
                 elif type(data) is str:
                     if data[0] != "/":
                         metric[interface] = "/" + data
-            metrics.append(CalculateInterface(testblock_name, metric))
+            # check for optional parameters
+            try:
+                series_mode = metric["series_mode"]
+            except (TypeError, KeyError):
+                series_mode = None
+            metrics.append(CalculateInterface(testblock_name, metric, series_mode))
         return metrics
 
 class CalculateInterface:
-    def __init__(self, testblock_name, metric):
+    def __init__(self, testblock_name, metric, series_mode):
         """
         Class for calculating the interface type.
         """
+        self.name = 'interface'
         self.started = False
         self.finished = False
         self.active = False
         self.groundtruth = 100         # this is the max score
         self.groundtruth_epsilon = 0   # no deviation from max score allowed
+        self.series_mode = series_mode
+        self.series =[]
+        self.data = DataStamped()
+        self.interface_details = {}
         self.api_dict = {}
         self.testblock_name = testblock_name
         self.metric = metric
@@ -66,11 +78,14 @@ class CalculateInterface:
         pass
 
     def update(self, topic, msg, t):
-        #print "msg=", msg
-        if topic == "/atf/api":
-            if msg.testblock_name == self.testblock_name:
-                #print "new api=", msg
+        # get data if testblock is active
+        if self.active:
+            if topic == "/atf/api" and msg.testblock_name == self.testblock_name:
                 self.api_dict = self.msg_to_dict(msg)
+                interface_data, self.interface_details = self.calculate_data_and_details()
+                self.data.stamp = t
+                self.data.data = interface_data                
+                self.series.append(copy.deepcopy(self.data))  # FIXME handle fixed rates
 
     def msg_to_dict(self, msg):
         api_dict = {}
@@ -140,7 +155,7 @@ class CalculateInterface:
             groundtruth_result = True
             data = 100.0
             for interface, interface_data in self.metric.items():
-                if interface != "node":
+                if interface == "publishers" or interface == "subscribers" or interface == "services":
                     for topic_name, topic_type in interface_data:
                         #print "node_name=", node_name
                         #print "topic_name=", topic_name
@@ -163,15 +178,11 @@ class CalculateInterface:
         return data, details
 
     def get_result(self):
-        interface_data, interface_details = self.calculate_data_and_details()
-        groundtruth_result = None # interface metric not usable without groundtruth
-        groundtruth = 100         # this is the max score
-        groundtruth_epsilon = 0   # no deviation from max score allowed
-
         metric_result = MetricResult()
-        metric_result.name = "interface"
+        metric_result.name = self.name
         metric_result.started = self.started # FIXME remove
         metric_result.finished = self.finished # FIXME remove
+        metric_result.series = []
         metric_result.data = None
         metric_result.groundtruth = self.groundtruth
         metric_result.groundtruth_epsilon = self.groundtruth_epsilon
@@ -182,26 +193,30 @@ class CalculateInterface:
 
         if metric_result.started and metric_result.finished: #  we check if the testblock was ever started and stopped
             # calculate metric data
-            metric_result.data = interface_data
+            if self.series_mode != None:
+                metric_result.series = self.series
+            metric_result.data = self.series[-1] # take last element from self.series
+            metric_result.min = metrics_helper.get_min(self.series)
+            metric_result.max = metrics_helper.get_max(self.series)
+            metric_result.mean = metrics_helper.get_mean(self.series)
+            metric_result.std = metrics_helper.get_std(self.series)
 
             # fill details as KeyValue messages
             details = []
-            details.append(KeyValue("api_status", interface_details))
+            details.append(KeyValue("api_status", self.interface_details))
             metric_result.details = details
 
             # evaluate metric data
             if metric_result.data != None and metric_result.groundtruth != None and metric_result.groundtruth_epsilon != None:
-                if math.fabs(metric_result.groundtruth - metric_result.data) <= metric_result.groundtruth_epsilon:
+                if math.fabs(metric_result.groundtruth - metric_result.data.data) <= metric_result.groundtruth_epsilon:
                     metric_result.groundtruth_result = True
                     metric_result.groundtruth_error_message = "all OK"
                 else:
                     metric_result.groundtruth_result = False
-                    metric_result.groundtruth_error_message = "groundtruth missmatch: %f not within %f+-%f"%(metric_result.data, metric_result.groundtruth, metric_result.groundtruth_epsilon)
-                    #print metric_result.groundtruth_error_message
+                    metric_result.groundtruth_error_message = "groundtruth missmatch: %f not within %f+-%f"%(metric_result.data.data, metric_result.groundtruth, metric_result.groundtruth_epsilon)
 
         if metric_result.data == None:
             metric_result.groundtruth_result = False
             metric_result.groundtruth_error_message = "no result"
 
-        #print "\nmetric_result:\n", metric_result
         return metric_result

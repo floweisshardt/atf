@@ -32,7 +32,6 @@ class CalculateUserResultParamHandler:
                 groundtruth = metric["groundtruth"]
                 groundtruth_epsilon = metric["groundtruth_epsilon"]
             except (TypeError, KeyError):
-                #rospy.logwarn_throttle(10, "No groundtruth parameters given, skipping groundtruth evaluation for metric 'user_result' in testblock '%s'"%testblock_name)
                 groundtruth = None
                 groundtruth_epsilon = None
             metrics.append(CalculateUserResult(testblock_name, groundtruth, groundtruth_epsilon))
@@ -43,6 +42,7 @@ class CalculateUserResult:
         """
         Class for collecting the the user result.
         """
+        self.name = 'user_result'
         self.started = False
         self.finished = False
         self.active = False
@@ -80,7 +80,7 @@ class CalculateUserResult:
 
     def get_result(self):
         metric_result = MetricResult()
-        metric_result.name = "user_result"
+        metric_result.name = self.name
         metric_result.started = self.started # FIXME remove
         metric_result.finished = self.finished # FIXME remove
 
@@ -91,12 +91,7 @@ class CalculateUserResult:
             and self.metric_result.groundtruth_epsilon == 0.0):
             #print "groundtruth data is set from user within atf application for testblock %s. Skipping groundtruth evaluation from test_config"%self.testblock_name
             # use data from user result
-            metric_result.data                      = self.metric_result.data
-            metric_result.groundtruth_result        = self.metric_result.groundtruth_result
-            metric_result.groundtruth_error_message = self.metric_result.groundtruth_error_message
-            metric_result.groundtruth               = self.metric_result.groundtruth
-            metric_result.groundtruth_epsilon       = self.metric_result.groundtruth_epsilon
-            metric_result.details                   = self.metric_result.details
+            metric_result = self.metric_result
             return metric_result
 
         metric_result.data = None
@@ -120,17 +115,15 @@ class CalculateUserResult:
 
             # evaluate metric data
             if metric_result.data != None and metric_result.groundtruth != None and metric_result.groundtruth_epsilon != None:
-                if math.fabs(metric_result.groundtruth - metric_result.data) <= metric_result.groundtruth_epsilon:
+                if math.fabs(metric_result.groundtruth - metric_result.data.data) <= metric_result.groundtruth_epsilon:
                     metric_result.groundtruth_result = True
                     metric_result.groundtruth_error_message = "all OK"
                 else:
                     metric_result.groundtruth_result = False
-                    metric_result.groundtruth_error_message = "groundtruth missmatch: %f not within %f+-%f"%(metric_result.data, metric_result.groundtruth, metric_result.groundtruth_epsilon)
-                    #print metric_result.groundtruth_error_message
+                    metric_result.groundtruth_error_message = "groundtruth missmatch: %f not within %f+-%f"%(metric_result.data.data, metric_result.groundtruth, metric_result.groundtruth_epsilon)
 
         if metric_result.data == None:
             metric_result.groundtruth_result = False
             metric_result.groundtruth_error_message = "no result"
 
-        #print "\nmetric_result:\n", metric_result
         return metric_result

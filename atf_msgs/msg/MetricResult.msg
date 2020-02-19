@@ -1,7 +1,12 @@
 string name
 bool started
 bool finished
-float64 data
+DataStamped[] series
+DataStamped data
+DataStamped min
+DataStamped max
+float64 mean
+float64 std
 bool groundtruth_result
 string groundtruth_error_message
 float64 groundtruth

@@ -13,16 +13,16 @@
 
     <buildtool_depend>catkin</buildtool_depend>
 
-    <depend>rospy</depend>
-    <depend>atf_msgs</depend>
-    <depend>atf_metrics</depend>
-    <depend>atf_recorder_plugins</depend>
-    <depend>atf_status_server</depend>
-    <depend>python-lxml</depend>
-    <depend>python-progressbar</depend>
-    <depend>roslaunch</depend>
-    <depend>rostest</depend>
-    <depend>smach</depend>
-    <depend>smach_ros</depend>
+    <exec_depend>atf_metrics</exec_depend>
+    <exec_depend>atf_msgs</exec_depend>
+    <exec_depend>atf_recorder_plugins</exec_depend>
+    <exec_depend>atf_status_server</exec_depend>
+    <exec_depend>python-lxml</exec_depend>
+    <exec_depend>python-progressbar</exec_depend>
+    <exec_depend>roslaunch</exec_depend>
+    <exec_depend>rospy</exec_depend>
+    <exec_depend>rostest</exec_depend>
+    <exec_depend>smach</exec_depend>
+    <exec_depend>smach_ros</exec_depend>
 
 </package>

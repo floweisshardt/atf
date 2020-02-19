@@ -116,21 +116,24 @@ class Analyser:
         atf_result = AtfResult()
         atf_result.header.stamp = rospy.Time(time.time())
         atf_result.groundtruth_result = None
-        atf_result.groundtruth_error_message = "Failed ATF tests:"
+        atf_result.groundtruth_error_message = "All tests OK"
         for test in self.tests:
             # get result
             test_result = test.get_result()
 
-            # export overall test result to file
+            # export test result to file
             self.configuration_parser.export_to_file(test_result, os.path.join(test.generation_config["txt_output"], test.name + ".txt"))
             #self.configuration_parser.export_to_file(test_result, os.path.join(test.generation_config["json_output"], test.name + ".json")) # ROS message object is not JSON serialisable
             #self.configuration_parser.export_to_file(test_result, os.path.join(test.generation_config["yaml_output"], test.name + ".yaml")) # ROS message object is not correctly serialized to yaml
 
-            # append result
+            # append testresult to overall atf result
             atf_result.results.append(test_result)
 
             # aggregate result
             if test_result.groundtruth_result != None and not test_result.groundtruth_result:
+                # check if there are already failed tests in atf_result
+                if atf_result.groundtruth_result == None:
+                    atf_result.groundtruth_error_message = "Failed ATF tests:"
                 atf_result.groundtruth_result = False
                 atf_result.groundtruth_error_message += "\n - test '%s' (%s, %s, %s, %s): %s"%(test_result.name, test_result.robot, test_result.env, test_result.test_config, test_result.testblockset, test_result.groundtruth_error_message)
             if atf_result.groundtruth_result == None and test_result.groundtruth_result:
@@ -139,6 +142,7 @@ class Analyser:
         if len(atf_result.results) == 0:
             raise ATFAnalyserError("Analysing failed, no atf result available.")
 
+        # export overall atf result to file
         #print "\natf_result:\n", atf_result
         self.configuration_parser.export_to_file(atf_result, os.path.join(test.generation_config["txt_output"], "atf_result.txt"))
         return atf_result
@@ -150,12 +154,13 @@ class Analyser:
             print "*** SOME TESTS FAILED ***"
             print "*************************"
             print atf_result.groundtruth_error_message
+            self.print_result_summary(atf_result)
         else:
             print "\n"
             print "********************"
             print "*** ALL TESTS OK ***"
             print "********************"
-            print "\n"
+            self.print_result_summary(atf_result)
 
     def print_result_details(self, atf_result):
         print "\n"
@@ -163,6 +168,17 @@ class Analyser:
         print "*** result details ***"
         print "**********************"
         print atf_result
+
+    def print_result_summary(self, atf_result):
+        print "\n"
+        print "**********************"
+        print "*** result summary ***"
+        print "**********************"
+        for result in atf_result.results:
+            if result.groundtruth_result:
+                print "test '%s' (%s, %s, %s, %s): succeeded"%(result.name, result.robot, result.env, result.test_config, result.testblockset)
+            else:
+                print "test '%s' (%s, %s, %s, %s): failed"%(result.name, result.robot, result.env, result.test_config, result.testblockset)
 
 class ATFAnalyserError(Exception):
     pass
@@ -172,7 +188,6 @@ class TestAnalysing(unittest.TestCase):
     def test_analysing(self):
         analyser = Analyser(sys.argv[1])
         atf_result = analyser.get_result()
-        analyser.print_result_details(atf_result)
         analyser.print_result(atf_result)
         if atf_result.groundtruth_result != None:
             self.assertTrue(atf_result.groundtruth_result, atf_result.groundtruth_error_message)

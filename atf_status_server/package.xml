@@ -17,9 +17,10 @@
     <exec_depend>message_runtime</exec_depend>
 
     <depend>atf_msgs</depend>
-    <depend>rosbridge_server</depend>
-    <depend>roslaunch</depend>
-    <depend>rospy</depend>
-    <depend>std_msgs</depend>
+
+    <exec_depend>rosbridge_server</exec_depend>
+    <exec_depend>rospy</exec_depend>
+
+    <test_depend>roslaunch</test_depend>
 
 </package>

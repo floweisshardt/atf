@@ -1,8 +1,10 @@
 #!/usr/bin/env python
-import rospy
+import copy
 import math
+import rospy
 
-from atf_msgs.msg import MetricResult, KeyValue
+from atf_msgs.msg import MetricResult, KeyValue, DataStamped
+from atf_metrics import metrics_helper
 
 class CalculateTimeParamHandler:
     def __init__(self):
@@ -32,7 +34,6 @@ class CalculateTimeParamHandler:
                 groundtruth = metric["groundtruth"]
                 groundtruth_epsilon = metric["groundtruth_epsilon"]
             except (TypeError, KeyError):
-                #rospy.logwarn_throttle(10, "No groundtruth parameters given, skipping groundtruth evaluation for metric 'time' in testblock '%s'"%testblock_name)
                 groundtruth = None
                 groundtruth_epsilon = None
             metrics.append(CalculateTime(groundtruth, groundtruth_epsilon))
@@ -44,13 +45,16 @@ class CalculateTime:
         Class for calculating the time between the trigger 'ACTIVATE' and 'FINISH' on the topic assigned to the
         testblock.
         """
+        self.name = 'time'
         self.started = False
         self.finished = False
         self.active = False
         self.groundtruth = groundtruth
         self.groundtruth_epsilon = groundtruth_epsilon
+        self.series_mode = None # Time metrics cannot have a series
+        self.series = []
+        self.data = DataStamped()
         self.start_time = None
-        self.stop_time = None
 
     def start(self, status):
         self.start_time = status.stamp
@@ -58,7 +62,9 @@ class CalculateTime:
         self.started = True
 
     def stop(self, status):
-        self.stop_time = status.stamp
+        self.data.stamp = status.stamp
+        self.data.data = round((self.data.stamp - self.start_time).to_sec(), 6)
+        self.series.append(copy.deepcopy(self.data))  # FIXME handle fixed rates
         self.active = False
         self.finished = True
 
@@ -78,9 +84,10 @@ class CalculateTime:
 
     def get_result(self):
         metric_result = MetricResult()
-        metric_result.name = "time"
+        metric_result.name = self.name
         metric_result.started = self.started # FIXME remove
         metric_result.finished = self.finished # FIXME remove
+        metric_result.series = []
         metric_result.data = None
         metric_result.groundtruth = self.groundtruth
         metric_result.groundtruth_epsilon = self.groundtruth_epsilon
@@ -91,7 +98,13 @@ class CalculateTime:
 
         if metric_result.started and metric_result.finished: #  we check if the testblock was ever started and stopped
             # calculate metric data
-            metric_result.data = round((self.stop_time - self.start_time).to_sec(), 3)
+            if self.series_mode != None:
+                metric_result.series = self.series
+            metric_result.data = self.series[-1] # take last element from self.series
+            metric_result.min = metrics_helper.get_min(self.series)
+            metric_result.max = metrics_helper.get_max(self.series)
+            metric_result.mean = metrics_helper.get_mean(self.series)
+            metric_result.std = metrics_helper.get_std(self.series)
 
             # fill details as KeyValue messages
             details = []
@@ -99,17 +112,15 @@ class CalculateTime:
 
             # evaluate metric data
             if metric_result.data != None and metric_result.groundtruth != None and metric_result.groundtruth_epsilon != None:
-                if math.fabs(metric_result.groundtruth - metric_result.data) <= metric_result.groundtruth_epsilon:
+                if math.fabs(metric_result.groundtruth - metric_result.data.data) <= metric_result.groundtruth_epsilon:
                     metric_result.groundtruth_result = True
                     metric_result.groundtruth_error_message = "all OK"
                 else:
                     metric_result.groundtruth_result = False
-                    metric_result.groundtruth_error_message = "groundtruth missmatch: %f not within %f+-%f"%(metric_result.data, metric_result.groundtruth, metric_result.groundtruth_epsilon)
-                    #print metric_result.groundtruth_error_message
+                    metric_result.groundtruth_error_message = "groundtruth missmatch: %f not within %f+-%f"%(metric_result.data.data, metric_result.groundtruth, metric_result.groundtruth_epsilon)
 
         if metric_result.data == None:
             metric_result.groundtruth_result = False
             metric_result.groundtruth_error_message = "no result"
 
-        #print "\nmetric_result:\n", metric_result
         return metric_result
