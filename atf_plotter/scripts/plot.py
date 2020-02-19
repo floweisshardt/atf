@@ -23,6 +23,7 @@ from collections import namedtuple
 import re
 import pprint
 
+from matplotlib import ticker
 
 MetricAggregate = namedtuple('MetricAggregate', 'metric_name testblock_name num min max mean median std data_points')
 
@@ -116,15 +117,11 @@ class Metric(BaseYamlStructure):
 
     @property
     def series(self):
-        raw = self._data_dict.get('series', None)
+        raw = self._data_dict.get('series', [])
         if raw is None or not len(raw):
             return raw
 
         return map(TimestampBoundData, raw)
-
-        #return [(tbd.timestamp, tbd.data) for tbd in map(TimestampBoundData, raw)]
-
-        #return self._data_dict.get('series', None)
 
     @property
     def series_tuple(self):
@@ -463,6 +460,52 @@ class DemoPlotter(object):
         plt.show()
 
 
+    def plot_compare_data_for_all_test_repetitions_for_given_test_ident(self, test_case_ident):
+        grm = self.group_metric_list_by_repetition_number_for_testcase(test_case_ident)
+
+        fig, ax = plt.subplots()
+
+        N = len(grm)
+        clut = cm._generate_cmap('rainbow', N)
+
+        width = (N+1)**-1
+        xofs = np.linspace(-0.5, 0.5, num=N+2)
+        xofs = xofs[1:-1] - width/2.0
+
+        names = []
+        for idx, (k, v) in enumerate(grm.items()):
+            print idx, k, v
+
+            data = [m.data for m in v]
+            x = np.arange(len(data))
+            ax.bar(x+xofs[idx], data, width, label='Repetition %d' % k, color=clut(idx))
+        else:
+            names = [m.name for m in v]
+
+
+        def foo(x, pos=None):
+            if x < 0 or x % 1:
+                return ''
+
+            try:
+                sname = names[int(x)]
+                return sname #+ ' (%d)' % x
+            except IndexError:
+                return ''
+
+        ax.xaxis.set_major_formatter(ticker.FuncFormatter(foo))
+        ax.xaxis.set_major_locator(ticker.MultipleLocator(1))
+
+
+        for idx, label in enumerate(ax.get_xmajorticklabels()):
+            label.set_rotation(90)
+
+
+        ax.grid(axis='y')
+        ax.legend()
+        plt.tight_layout()
+        plt.show()
+
 
     def print_structure(self):
         for test in self.atf_result:
@@ -589,6 +632,7 @@ if __name__ == '__main__':
 
 
     sub_parser = subparsers.add_parser('compare-b', help='visualize comparision for all repetitions for a given test, e.g. atf_test/ts0_c0_r0_e0_s0_0..10')
+    add_test_case_ident(sub_parser)
 
     sub_parser = subparsers.add_parser('visualize-series', help='visualize time series data for a given metric in a given testblock for a given test, e.g. time in testblock_small from atf_test/ts0_c0_r0_e0_s0_0 from all atf_result.txt files')
 
@@ -610,7 +654,7 @@ if __name__ == '__main__':
 
     #filename = basepath + 'atf_test_app_navigation__series__atf_result.txt'
     #filename = basepath + 'atf_test_app_navigation__atf_result.txt'
-    filename = basepath + 'atf_test__series__atf_result.txt'
+    #filename = basepath + 'atf_test__series__atf_result.txt'
     filename = basepath + 'atf_test__atf_result.txt'
     #filename = basepath + 'atf_test__faketb__atf_result.txt'
 
@@ -655,13 +699,18 @@ if __name__ == '__main__':
             '-t', 'ts0_c0_r0_e0_s0_0',
             filename
         ],
+        [  # 7
+            'compare-b',
+            '-ti', 'ts1_c0_r0_e0_s0',
+            filename
+        ],
         [  # -1
             'info-structure',
             filename
         ],
     ]
 
-    #argparse_result = parser.parse_args(test_args[6])
+    #argparse_result = parser.parse_args(test_args[7])
     argparse_result = parser.parse_args()
 
 
@@ -705,6 +754,8 @@ if __name__ == '__main__':
                 testblock_list=argparse_result.testblock,
                 test=argparse_result.test
             )
+    elif argparse_result.command == 'compare-b':
+        dp.plot_compare_data_for_all_test_repetitions_for_given_test_ident(argparse_result.test_case_ident)
     else:
         raise NotImplementedError('sub-command <%s> not implemented yet' % argparse_result.command)
 
