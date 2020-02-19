@@ -404,8 +404,6 @@ class DemoPlotter(object):
 
         # fill with colors
 
-
-
         #colors = ['blue', 'pink', 'lightblue', 'lightgreen']*5
         for patch, color in zip(hdls1['boxes'], colors):
             patch.set_facecolor(color)
@@ -436,6 +434,35 @@ class DemoPlotter(object):
 
         #ax.legend()
         plt.show()
+
+
+    def plot_compare_metric_over_testblocks_of_given_test(self, metric, testblock_list, test):
+        single_test = self.atf_result[test]
+        assert isinstance(single_test, SingleTest)
+
+        fig, ax = plt.subplots()
+
+
+        N = len(testblock_list)
+        clut = cm._generate_cmap('rainbow', N)
+
+        width = (N+1)**-1
+        xofs = np.linspace(-0.5, 0.5, num=N+2)
+        xofs = xofs[1:-1] - width/2.0
+
+        testblocks = [tb for tb in single_test if tb.name in testblock_list]
+        for tbidx, tb in enumerate(testblocks):
+            data = [m.data for m in tb if m.name == metric]
+            x = np.arange(len(data))
+            ax.bar(x+xofs[tbidx], data, width, label=tb.name, color=clut(tbidx))
+
+
+        ax.grid(axis='y')
+        ax.legend()
+        plt.tight_layout()
+        plt.show()
+
+
 
     def print_structure(self):
         for test in self.atf_result:
@@ -516,6 +543,7 @@ if __name__ == '__main__':
 
     add_metric = lambda sp: sp.add_argument('--metric', '-m', type=str, dest='metric', required=True, help='TBD')
     add_testblock = lambda sp: sp.add_argument('--testblock', '-tb', type=str, dest='testblock', required=True, help='TBD')
+    add_testblock_list = lambda sp: sp.add_argument('--testblock', '-tb', type=str, nargs='+', dest='testblock', required=True, help='TBD')
     add_test = lambda sp: sp.add_argument('--test', '-t', type=str, dest='test', required=True, help='TBD')
     add_test_case_ident = lambda sp: sp.add_argument('--testident', '-ti', type=str, dest='test_case_ident', required=True, help='like test name without repetition, e.g. ts0_c0_r0_e0_s0')
 
@@ -555,6 +583,10 @@ if __name__ == '__main__':
 
 
     sub_parser = subparsers.add_parser('compare-a', help='visualize comparison for a given metric in various testblocks of a given test, e.g. path_length in testblock testblock_small and testblock testblock_large from atf_test/ts0_c0_r0_e0_s0_0')
+    add_metric(sub_parser)
+    add_testblock_list(sub_parser)
+    add_test(sub_parser)
+
 
     sub_parser = subparsers.add_parser('compare-b', help='visualize comparision for all repetitions for a given test, e.g. atf_test/ts0_c0_r0_e0_s0_0..10')
 
@@ -577,8 +609,10 @@ if __name__ == '__main__':
     basepath = os.path.expanduser(basepath)
 
     #filename = basepath + 'atf_test_app_navigation__series__atf_result.txt'
-    filename = basepath + 'atf_test_app_navigation__atf_result.txt'
-    #filename = basepath + 'atf_test__series__atf_result.txt'
+    #filename = basepath + 'atf_test_app_navigation__atf_result.txt'
+    filename = basepath + 'atf_test__series__atf_result.txt'
+    filename = basepath + 'atf_test__atf_result.txt'
+    #filename = basepath + 'atf_test__faketb__atf_result.txt'
 
     #testblock = 'testblock_small'
     testblock = 'testblock_all'
@@ -613,13 +647,21 @@ if __name__ == '__main__':
             '-ti', 'ts0_c0_r0_e0_s0',
             filename
         ],
+        [  # 6
+            'compare-a',
+            '-m', 'publish_rate',
+            '-tb', 'testblock_small', 'testblock_large',
+            #'testblock_fake', 'testblock_fake2',
+            '-t', 'ts0_c0_r0_e0_s0_0',
+            filename
+        ],
         [  # -1
             'info-structure',
             filename
         ],
     ]
 
-    #argparse_result = parser.parse_args(test_args[2])
+    #argparse_result = parser.parse_args(test_args[6])
     argparse_result = parser.parse_args()
 
 
@@ -653,6 +695,16 @@ if __name__ == '__main__':
         dp.plot_aggregated_data_for_all_test_repetitions_for_given_test_ident(argparse_result.test_case_ident)
     elif argparse_result.command == 'info-structure':
         dp.print_structure()
+    elif argparse_result.command == 'compare-a':
+        if len(argparse_result.testblock) < 2:
+            print 'define at minimum two testblocks'
+        else:
+            print argparse_result.testblock
+            dp.plot_compare_metric_over_testblocks_of_given_test(
+                metric=argparse_result.metric,
+                testblock_list=argparse_result.testblock,
+                test=argparse_result.test
+            )
     else:
         raise NotImplementedError('sub-command <%s> not implemented yet' % argparse_result.command)
 
