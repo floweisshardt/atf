@@ -104,6 +104,10 @@ class ATF():
     def shutdown(self):
         rospy.loginfo("shutting down atf application")
 
+        # call stop for all testblocks
+        for testblock in self.test.testblocks:
+            self.stop(testblock.name)
+
         # check if any testblock is still running
         rospy.loginfo("waiting for all states to be in a terminal state")
         r = rospy.Rate(10)
