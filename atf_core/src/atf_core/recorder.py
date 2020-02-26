@@ -9,6 +9,7 @@ import yaml
 import os
 import atf_recorder_plugins
 import atf_core
+import tf
 
 from threading import Lock
 from atf_msgs.msg import TestblockTrigger
@@ -54,7 +55,7 @@ class ATFRecorder:
         #rospy.Service(self.topic + "recorder_command", RecorderCommand, self.command_callback)
         rospy.on_shutdown(self.shutdown)
         
-        # wait for topics, services and actions to become active
+        # wait for topics, services, actions and tfs to become active
         if test.robot_config != None and 'wait_for_topics' in test.robot_config:
             for topic in test.robot_config["wait_for_topics"]:
                 rospy.loginfo("Waiting for topic '%s'...", topic)
@@ -88,6 +89,13 @@ class ATFRecorder:
                 # wait for action server
                 client.wait_for_server()
                 rospy.loginfo("... action '%s' available.", action)
+
+        if test.robot_config != None and 'wait_for_tfs' in test.robot_config:
+            listener = tf.TransformListener()
+            for root_frame, measured_frame in test.robot_config["wait_for_tfs"]:
+                rospy.loginfo("Waiting for transformation from '%s' to '%s' ...", root_frame, measured_frame)
+                listener.waitForTransform(root_frame, measured_frame, rospy.Time(), rospy.Duration(1))
+                rospy.loginfo("... transformation from '%s' to '%s' available.", root_frame, measured_frame)
 
         self.active_topics = {}
         self.subscribers = {}
