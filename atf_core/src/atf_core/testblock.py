@@ -22,7 +22,7 @@ class Testblock:
 
         if self.status == TestblockStatus.ERROR:
             testblock_result.groundtruth_result = False
-            testblock_result.groundtruth_error_message = "An error occured during analysis of testblock '%s', no useful results available."%self.name
+            testblock_result.groundtruth_error_message = "An error occured during analysis of testblock '%s', no results available."%self.name
             print testblock_result.groundtruth_error_message
         else:
             #print "testblock.metrics=", self.metric_handles
@@ -41,11 +41,5 @@ class Testblock:
                 if testblock_result.groundtruth_result == None and metric_result.groundtruth_result:
                     testblock_result.groundtruth_result = True
 
-        if len(testblock_result.results) == 0:
-            raise ATFAnalyserError("Analysing failed, no testblock result available for testblock '%s'."%testblock_result.name)
-
         #print "\ntestblock_result:\n", testblock_result
         return testblock_result
-
-class ATFTestblockError(Exception):
-    pass

@@ -1,0 +1,23 @@
+wait_for_topics:
+  - topic1
+  - topic2
+  - topic3
+  - topic4
+  - topic5
+  - topic6
+  - topic7
+  - topic8
+  - topic9
+wait_for_services:
+  - /publisher1/get_loggers
+  - /publisher2/get_loggers
+  - /publisher3/get_loggers
+  - /publisher4/get_loggers
+  - /publisher5/get_loggers
+  - /publisher6/get_loggers
+  - /publisher7/get_loggers
+  - /publisher8/get_loggers
+  - /publisher9/get_loggers
+wait_for_tfs:
+  - [reference1_static, reference1] # [parent, child]
+  - [reference1, reference1_static] # [parent, child]
