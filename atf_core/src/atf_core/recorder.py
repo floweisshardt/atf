@@ -13,6 +13,7 @@ import tf
 
 from threading import Lock
 from atf_msgs.msg import TestblockTrigger
+from diagnostic_msgs.msg import DiagnosticStatus
 from tf2_msgs.msg import TFMessage
 
 
@@ -53,6 +54,8 @@ class ATFRecorder:
         #print "self.recorder_plugin_list", self.recorder_plugin_list
 
         #rospy.Service(self.topic + "recorder_command", RecorderCommand, self.command_callback)
+        self.diagnostics = None
+        rospy.Subscriber("/diagnostics_toplevel_state", DiagnosticStatus, self.diagnostics_callback)
         rospy.on_shutdown(self.shutdown)
         
         # wait for topics, services, actions and tfs to become active
@@ -97,6 +100,14 @@ class ATFRecorder:
                 listener.waitForTransform(root_frame, measured_frame, rospy.Time(), rospy.Duration(1))
                 rospy.loginfo("... transformation from '%s' to '%s' available.", root_frame, measured_frame)
 
+        if test.robot_config != None and 'wait_for_diagnostics' in test.robot_config and test.robot_config["wait_for_diagnostics"]:
+            rospy.loginfo("Waiting for diagnostics to become OK ...")
+            r = rospy.Rate(100)
+            while not rospy.is_shutdown() and self.diagnostics != None and self.diagnostics.level != 0:
+                rospy.logdebug("... waiting for diagnostics to become OK ...")
+                r.sleep()
+            rospy.loginfo("... diagnostics are OK.")
+
         self.active_topics = {}
         self.subscribers = {}
         self.tf_static_message = TFMessage()
@@ -119,6 +130,9 @@ class ATFRecorder:
                     self.subscribers[topic]["subscriber"] = subscriber
                 else:
                     self.subscribers[topic]["testblocks"].append(testblock.name)
+
+    def diagnostics_callback(self, msg):
+        self.diagnostics = msg
 
     def shutdown(self):
         rospy.loginfo("Shutdown ATF recorder and close bag file.")
