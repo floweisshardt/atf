@@ -1,4 +1,6 @@
 #!/usr/bin/env python
+import actionlib
+import roslib
 import rospy
 import rospkg
 import rostopic
@@ -52,7 +54,7 @@ class ATFRecorder:
         #rospy.Service(self.topic + "recorder_command", RecorderCommand, self.command_callback)
         rospy.on_shutdown(self.shutdown)
         
-        # wait for topics and services to become active
+        # wait for topics, services and actions to become active
         if test.robot_config != None and 'wait_for_topics' in test.robot_config:
             for topic in test.robot_config["wait_for_topics"]:
                 rospy.loginfo("Waiting for topic '%s'...", topic)
@@ -64,6 +66,28 @@ class ATFRecorder:
                 rospy.loginfo("Waiting for service '%s'...", service)
                 rospy.wait_for_service(service)
                 rospy.loginfo("... service '%s' available.", service)
+
+        if test.robot_config != None and 'wait_for_actions' in test.robot_config:
+            for action in test.robot_config["wait_for_actions"]:
+                rospy.loginfo("Waiting for action '%s'...", action)
+
+                # wait for action status topic
+                rospy.wait_for_message(action + "/status", rospy.AnyMsg)
+
+                # get action type of goal topic
+                topic_type = rostopic._get_topic_type(action + "/goal")[0]
+
+                # remove "Goal" string from action type
+                if topic_type == None or not "Goal" in topic_type:
+                    msg = "Could not get type for action %s. type is %s"%(action, topic_type)
+                    rospy.logerr(msg)
+                    raise ATFRecorderError(msg)
+                topic_type = topic_type[0:len(topic_type)-4] # remove "Goal" from type
+                client = actionlib.SimpleActionClient(action, roslib.message.get_message_class(topic_type))
+
+                # wait for action server
+                client.wait_for_server()
+                rospy.loginfo("... action '%s' available.", action)
 
         self.active_topics = {}
         self.subscribers = {}
