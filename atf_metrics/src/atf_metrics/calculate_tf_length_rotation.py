@@ -9,6 +9,8 @@ import tf2_py
 import tf2_ros
 
 from tf import transformations
+
+from atf_core import ATFAnalyserError
 from atf_msgs.msg import MetricResult, KeyValue, DataStamped
 from atf_metrics import metrics_helper
 
@@ -172,16 +174,25 @@ class CalculateTfLengthRotation:
             metric_result.details = details
 
             # evaluate metric data
-            if metric_result.data != None and metric_result.groundtruth != None and metric_result.groundtruth_epsilon != None:
+            if metric_result.groundtruth == None and metric_result.groundtruth_epsilon == None: # no groundtruth given
+                metric_result.groundtruth_result = True
+                metric_result.groundtruth_error_message = "all OK (no groundtruth available)"
+            elif metric_result.data != None and metric_result.groundtruth != None and metric_result.groundtruth_epsilon != None:
                 if math.fabs(metric_result.groundtruth - metric_result.data.data) <= metric_result.groundtruth_epsilon:
                     metric_result.groundtruth_result = True
                     metric_result.groundtruth_error_message = "all OK"
                 else:
                     metric_result.groundtruth_result = False
                     metric_result.groundtruth_error_message = "groundtruth missmatch: %f not within %f+-%f"%(metric_result.data.data, metric_result.groundtruth, metric_result.groundtruth_epsilon)
+            else:
+                metric_result.groundtruth_result = False
+                metric_result.groundtruth_error_message = "metric evaluation failed"
 
         if metric_result.data == None:
             metric_result.groundtruth_result = False
             metric_result.groundtruth_error_message = "no result"
+
+        if metric_result.groundtruth_result == None:
+            raise ATFAnalyserError("Analysing failed, metric result is None for metric '%s'."%metric_result.name)
 
         return metric_result

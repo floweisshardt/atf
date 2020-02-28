@@ -180,10 +180,6 @@ class Analyser:
             else:
                 print "test '%s' (%s, %s, %s, %s): failed"%(result.name, result.robot, result.env, result.test_config, result.testblockset)
 
-class ATFAnalyserError(Exception):
-    pass
-
-
 class TestAnalysing(unittest.TestCase):
     def test_analysing(self):
         analyser = Analyser(sys.argv[1])
@@ -193,6 +189,10 @@ class TestAnalysing(unittest.TestCase):
             self.assertTrue(atf_result.groundtruth_result, atf_result.groundtruth_error_message)
 
 if __name__ == '__main__':
+    if len(sys.argv) < 2:
+        print "ERROR: please specify a test package"
+        print "usage: rosrun atf_core analyser.py <<ATF TEST PACKAGE>>"
+        sys.exit(1)
     print "analysing for package", sys.argv[1]
     if "standalone" in sys.argv:
         analyser = Analyser(sys.argv[1])

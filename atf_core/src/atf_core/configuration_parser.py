@@ -8,6 +8,7 @@ import os
 import itertools as it
 import json
 
+from atf_core import ATFConfigurationError
 from atf_core import Test, Testblock
 
 class ATFConfigurationParser:
@@ -166,6 +167,8 @@ class ATFConfigurationParser:
             if  metric_handlers_config and metrics:
                 for metric_name in metrics:
                     #print "metric_name=", metric_name
+                    if not self.validate_metric_parameters(metrics[metric_name]):
+                        raise ATFConfigurationError("invalid configuration for metric '%s' in testblock '%s': %s"%(metric_name, testblock_name, str(metrics[metric_name])))
                     metrics_return_list = getattr(atf_metrics, metric_handlers_config[metric_name]["handler"])().parse_parameter(testblock_name, metrics[metric_name])
                     #print "metrics_return_list=", metrics_return_list
                     if metrics_return_list and (type(metrics_return_list) == list):
@@ -176,6 +179,22 @@ class ATFConfigurationParser:
                         raise ATFConfigurationError("no valid metric configuration for metric '%s' in testblock '%s'" %(metric_name, testblock_name))
         #print "metric_handles=", metric_handles
         return metric_handles
+
+    def validate_metric_parameters(self, metrics):
+        if len(metrics) == 0: # no parameters specified
+            return True
+
+        for params in metrics:
+            if "groundtruth" in params and "groundtruth_epsilon" in params: # groundtruth specified
+                return True
+            elif "groundtruth" not in params and "groundtruth_epsilon" not in params: # no groundtruth specified
+                return True
+            else: # invalid configuration
+                # e.g. (params["groundtruth"] == None and params["groundtruth_epsilon"] != None) or (params["groundtruth"] != None and params["groundtruth_epsilon"] == None)
+                print "invalid groundtruth specified:"
+                print params
+                return False
+        return False # this should never happen
 
     def load_data(self, filename):
         #print "config parser filename:", filename
@@ -207,5 +226,3 @@ class ATFConfigurationParser:
             error_message = "ATF configuration Error: key '%s' of type '%s' with value '%s' cannot be parsed as list of dictionaries"%(str(key), value_type, value)
             print error_message
             raise ATFConfigurationError(error_message)
-class ATFConfigurationError(Exception):
-    pass

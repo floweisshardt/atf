@@ -282,6 +282,3 @@ class ATFRecorder:
                 for transform in self.tf_static_message.transforms:
                     transform.header.stamp = rospy.Time.now()
                 self.bag_file_writer.write_to_bagfile("/tf_static", self.tf_static_message, rospy.Time.now())
-
-class ATFRecorderError(Exception):
-    pass
