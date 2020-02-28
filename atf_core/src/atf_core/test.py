@@ -43,6 +43,9 @@ class Test:
                 #print test_result.groundtruth_error_message
             if test_result.groundtruth_result == None and testblock_result.groundtruth_result:
                 test_result.groundtruth_result = True
+            
+        if test_result.groundtruth_result == None:
+            raise ATFAnalyserError("Analysing failed, test result is None for test '%s'."%test_result.name)
 
         if len(test_result.results) == 0:
             raise ATFAnalyserError("Analysing failed, no test result available for test '%s'."%test_result.name)

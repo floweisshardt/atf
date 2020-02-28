@@ -41,5 +41,8 @@ class Testblock:
                 if testblock_result.groundtruth_result == None and metric_result.groundtruth_result:
                     testblock_result.groundtruth_result = True
 
+        if testblock_result.groundtruth_result == None:
+            raise ATFAnalyserError("Analysing failed, testblock result is None for testblock '%s'."%testblock_result.name)
+
         #print "\ntestblock_result:\n", testblock_result
         return testblock_result
