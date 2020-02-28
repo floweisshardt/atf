@@ -107,6 +107,10 @@ function(atf_test TEST_GENERATION_CONFIG_FILE)
                     atf_${TARGET_NAME}_analysing
                     atf_${TARGET_NAME}_uploading
             )
+
+        add_dependencies(run_tests                 atf_${TARGET_NAME})
+        add_dependencies(run_tests_${PROJECT_NAME} atf_${TARGET_NAME})
+
         endif()
 
         message(STATUS "ATF: executing test generation macro done!")
