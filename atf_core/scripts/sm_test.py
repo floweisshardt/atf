@@ -86,7 +86,7 @@ class Test(unittest.TestCase):
 if __name__ == '__main__':
     rospy.init_node('test_name')
     if "execute_as_test" in sys.argv:
-        rostest.rosrun('application', 'recording', Test, sysargs=None)
+        rostest.rosrun('application', 'recording', Test)
     else:
         rec = Recorder()
         # Execute SMACH plan

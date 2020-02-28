@@ -182,7 +182,7 @@ class Analyser:
 
 class TestAnalysing(unittest.TestCase):
     def test_analysing(self):
-        analyser = Analyser(sys.argv[1], sys.argv[2])
+        analyser = Analyser(package_name, test_generation_config_file)
         atf_result = analyser.get_result()
         analyser.print_result(atf_result)
         if atf_result.groundtruth_result != None:
@@ -202,7 +202,7 @@ if __name__ == '__main__':
     print "analysing for package '%s' and test generation config file '%s'" %(package_name, test_generation_config_file)
 
     if "execute_as_test" in sys.argv:
-        rostest.rosrun("atf_core", 'analysing', TestAnalysing, sysargs=package_name + " " + test_generation_config_file)
+        rostest.rosrun("atf_core", 'analysing', TestAnalysing)
     else:
         analyser = Analyser(package_name, test_generation_config_file)
         atf_result = analyser.get_result()
