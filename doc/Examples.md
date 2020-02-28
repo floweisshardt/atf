@@ -227,11 +227,11 @@ rosrun rviz rviz
 
 ### Analysing
 ```
-rosrun atf_core analyser.py atf_test standalone
+rosrun atf_core analyser.py atf_test
 ```
 or for full result print
 ```
-rosrun atf_core analyser.py atf_test standalone verbose
+rosrun atf_core analyser.py atf_test verbose
 ```
 
 check results

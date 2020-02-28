@@ -15,14 +15,14 @@ from atf_msgs.msg import AtfResult, TestblockStatus
 
 
 class Analyser:
-    def __init__(self, package_name):
+    def __init__(self, package_name, test_generation_config_file = "atf/test_generation_config.yaml"):
         print "ATF analyser: started!"
         start_time = time.time()
         self.ns = "/atf/"
         self.error = False
 
         # parse configuration
-        self.configuration_parser = ATFConfigurationParser(package_name)
+        self.configuration_parser = ATFConfigurationParser(package_name, test_generation_config_file)
         self.tests = self.configuration_parser.get_tests()
 
         # generate results
@@ -182,23 +182,30 @@ class Analyser:
 
 class TestAnalysing(unittest.TestCase):
     def test_analysing(self):
-        analyser = Analyser(sys.argv[1])
+        analyser = Analyser(sys.argv[1], sys.argv[2])
         atf_result = analyser.get_result()
         analyser.print_result(atf_result)
         if atf_result.groundtruth_result != None:
             self.assertTrue(atf_result.groundtruth_result, atf_result.groundtruth_error_message)
 
 if __name__ == '__main__':
-    if len(sys.argv) < 2:
+    if len(sys.argv) == 2:
+        package_name = sys.argv[1]
+        test_generation_config_file = "atf/test_generation_config.yaml"
+    elif len(sys.argv) > 2:
+        package_name = sys.argv[1]
+        test_generation_config_file = sys.argv[2]
+    else:
         print "ERROR: please specify a test package"
-        print "usage: rosrun atf_core analyser.py <<ATF TEST PACKAGE>>"
+        print "usage: rosrun atf_core analyser.py <<ATF TEST PACKAGE>> [<<TEST_GENERATION_CONFIG_FILE>>]"
         sys.exit(1)
-    print "analysing for package", sys.argv[1]
-    if "standalone" in sys.argv:
-        analyser = Analyser(sys.argv[1])
+    print "analysing for package '%s' and test generation config file '%s'" %(package_name, test_generation_config_file)
+
+    if "execute_as_test" in sys.argv:
+        rostest.rosrun("atf_core", 'analysing', TestAnalysing, sysargs=package_name + " " + test_generation_config_file)
+    else:
+        analyser = Analyser(package_name, test_generation_config_file)
         atf_result = analyser.get_result()
         if "verbose" in sys.argv:
             analyser.print_result_details(atf_result)
         analyser.print_result(atf_result)
-    else:
-        rostest.rosrun("atf_core", 'analysing', TestAnalysing, sysargs=sys.argv)

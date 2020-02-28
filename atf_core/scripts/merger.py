@@ -133,9 +133,10 @@ class TestMerging(unittest.TestCase):
 
 if __name__ == '__main__':
     print "merging for package", sys.argv[1]
-    if "standalone" in sys.argv:
+    if "execute_as_test" in sys.argv:
+        rostest.rosrun("atf_core", 'merging', TestMerging, sysargs=sys.argv)
+    else:
         merger = Merger(sys.argv[1])
         merger.merge()
         print "merging done for package", sys.argv[1]
-    else:
-        rostest.rosrun("atf_core", 'merging', TestMerging, sysargs=sys.argv)
+        
