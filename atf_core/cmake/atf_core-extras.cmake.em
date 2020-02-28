@@ -109,7 +109,7 @@ function(atf_test TEST_GENERATION_CONFIG_FILE)
             )
 
         add_dependencies(run_tests                 atf_${TARGET_NAME})
-        add_dependencies(run_tests_${TARGET_NAME} atf_${TARGET_NAME})
+        add_dependencies(run_tests_${PROJECT_NAME} atf_${TARGET_NAME})
 
         endif()
 
