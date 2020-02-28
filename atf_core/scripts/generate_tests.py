@@ -63,7 +63,7 @@ class GenerateTests:
             #param(name=self.ns + "json_output", value=self.generation_config["json_output"]),
             #param(name=self.ns + "yaml_output", value=self.generation_config["yaml_output"]),
             xml_test({'test-name': "cleaning", 'pkg': "atf_core", 'type': "cleaner.py",
-                'time-limit': "60", 'args': self.package_name})
+                'time-limit': "60", 'args': self.package_name + " " + self.test_generation_config_file})
         )
         xmlstr = minidom.parseString(ElementTree.tostring(test_clean)).toprettyxml(indent="    ")
         filepath = os.path.join(self.test_generated_path, "cleaning.test")

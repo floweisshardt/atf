@@ -7,8 +7,11 @@ function(atf_test TEST_GENERATION_CONFIG_FILE EXECUTE_TESTS)
         find_package(roslaunch REQUIRED)
         find_package(rostest REQUIRED)
 
+        # prints the cmake targets and its dependencies in the terminal (uncomment for debugging)
+        #set_property(GLOBAL PROPERTY GLOBAL_DEPENDS_DEBUG_MODE 1)
+
         ############
-        message(STATUS "ATF: generating test files")        
+        message(STATUS "ATF: generating test files")
         execute_process(
             COMMAND python ${generate_tests_script} ${PROJECT_NAME} ${TEST_GENERATION_CONFIG_FILE} ${PROJECT_SOURCE_DIR} ${PROJECT_BINARY_DIR}
             RESULT_VARIABLE generation_result
@@ -17,10 +20,12 @@ function(atf_test TEST_GENERATION_CONFIG_FILE EXECUTE_TESTS)
           message(FATAL_ERROR "-- ATF: generating test files failed: exit_code='${generation_result}'")
         endif()
 
-        set(TEST_GENERATED_PATH ${PROJECT_BINARY_DIR}/test_generated)
+        string(REPLACE "/" "_" TEST_GENERATION_CONFIG_FILE_REPLACED ${TEST_GENERATION_CONFIG_FILE})
+        set(TARGET_NAME ${PROJECT_NAME}_${TEST_GENERATION_CONFIG_FILE_REPLACED})
+        set(TEST_GENERATED_PATH ${PROJECT_BINARY_DIR}/test_generated/${TEST_GENERATION_CONFIG_FILE_REPLACED})
         
         if(EXECUTE_TESTS)
-            ############
+            ############ roslaunch checks
             message(STATUS "ATF: roslaunch checking test files")
             file(GLOB_RECURSE test_list
                 LIST_DIRECTORIES false
@@ -31,66 +36,59 @@ function(atf_test TEST_GENERATION_CONFIG_FILE EXECUTE_TESTS)
                 roslaunch_add_file_check(${test})
             endforeach()
 
-            ############
+            ############ cleaning
             message(STATUS "ATF: cleaning")
             add_rostest(${TEST_GENERATED_PATH}/cleaning.test)
-            add_custom_target(atf_${PROJECT_NAME}_cleaning
+            add_custom_target(atf_${TARGET_NAME}_cleaning
                 COMMAND echo "cccccccccccccccccccccccccccccccleaning"
                 DEPENDS
-                    _run_tests_${PROJECT_NAME}_rostest_test_generated_cleaning.test
+                    run_tests_${PROJECT_NAME}_rostest_test_generated_${TEST_GENERATION_CONFIG_FILE_REPLACED}_cleaning.test
             )
 
-            ############
+            ############ recording
             message(STATUS "ATF: recording")
             file(GLOB TEST_NAMES_RECORDING RELATIVE ${TEST_GENERATED_PATH} ${TEST_GENERATED_PATH}/recording_*.test)
             foreach(TEST_NAME_RECORDING ${TEST_NAMES_RECORDING})
-                # recording
-                set(TARGET_NAME_RECORDING run_tests_${PROJECT_NAME}_rostest_test_generated_${TEST_NAME_RECORDING})
-                set(_TARGET_NAME_RECORDING _run_tests_${PROJECT_NAME}_rostest_test_generated_${TEST_NAME_RECORDING})
-                string(REPLACE "/" "_" TARGET_NAME_RECORDING ${TARGET_NAME_RECORDING})
-                string(REPLACE "/" "_" _TARGET_NAME_RECORDING ${_TARGET_NAME_RECORDING})
-                list(APPEND TARGET_NAMES_RECORDING ${TARGET_NAME_RECORDING})
-                list(APPEND _TARGET_NAMES_RECORDING ${_TARGET_NAME_RECORDING})
-                add_rostest(${TEST_GENERATED_PATH}/${TEST_NAME_RECORDING} DEPENDENCIES _run_tests_${PROJECT_NAME}_rostest_test_generated_cleaning.test)
+                set( TARGET_NAME_RECORDING  run_tests_${PROJECT_NAME}_rostest_test_generated_${TEST_GENERATION_CONFIG_FILE_REPLACED}_${TEST_NAME_RECORDING})
+                list(APPEND  TARGET_NAMES_RECORDING  ${TARGET_NAME_RECORDING})
+                add_rostest(${TEST_GENERATED_PATH}/${TEST_NAME_RECORDING} DEPENDENCIES atf_${TARGET_NAME}_cleaning)
             endforeach()
-            add_custom_target(atf_${PROJECT_NAME}_recording
+            add_custom_target(atf_${TARGET_NAME}_recording
                 COMMAND echo "rrrrrrrrrrrrrrrrrrrrrrrrrrrrrrecording"
                 DEPENDS 
-                    atf_${PROJECT_NAME}_cleaning
-                    ${_TARGET_NAMES_RECORDING}
+                    atf_${TARGET_NAME}_cleaning
+                    ${TARGET_NAMES_RECORDING}
             )
 
-            ############
+            ############ analysing
             message(STATUS "ATF: analysing")
-            add_rostest(${TEST_GENERATED_PATH}/analysing.test DEPENDENCIES ${_TARGET_NAMES_RECORDING})
-            add_custom_target(atf_${PROJECT_NAME}_analysing
+            add_rostest(${TEST_GENERATED_PATH}/analysing.test DEPENDENCIES atf_${TARGET_NAME}_recording)
+            add_custom_target(atf_${TARGET_NAME}_analysing
                 COMMAND echo "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaanalysing"
                 DEPENDS
-                    atf_${PROJECT_NAME}_recording
-                    _run_tests_${PROJECT_NAME}_rostest_test_generated_analysing.test
+                    atf_${TARGET_NAME}_recording
+                    run_tests_${PROJECT_NAME}_rostest_test_generated_${TEST_GENERATION_CONFIG_FILE_REPLACED}_analysing.test
             )
-            add_rostest(${TEST_GENERATED_PATH}/uploading.test DEPENDENCIES atf_${PROJECT_NAME}_analysing)
+            add_rostest(${TEST_GENERATED_PATH}/uploading.test DEPENDENCIES atf_${TARGET_NAME}_analysing)
 
-            ############
+            ############ uploading
             message(STATUS "ATF: uploading")
-            add_custom_target(atf_${PROJECT_NAME}_uploading
+            add_custom_target(atf_${TARGET_NAME}_uploading
                 COMMAND echo "uuuuuuuuuuuuuuuuuuuuuuuuuuuuuuploading"
                 DEPENDS
-                    atf_${PROJECT_NAME}_analysing
-                    _run_tests_${PROJECT_NAME}_rostest_test_generated_uploading.test
+                    atf_${TARGET_NAME}_analysing
+                    run_tests_${PROJECT_NAME}_rostest_test_generated_${TEST_GENERATION_CONFIG_FILE_REPLACED}_uploading.test
             )
-            ############
+            ############ all
             message(STATUS "ATF: gathering all atf test steps")
-            add_custom_target(atf_${PROJECT_NAME}
+            add_custom_target(atf_${TARGET_NAME}
                 COMMAND echo "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaatf"
                 DEPENDS
-                    atf_${PROJECT_NAME}_cleaning
-                    atf_${PROJECT_NAME}_recording
-                    atf_${PROJECT_NAME}_analysing
-                    atf_${PROJECT_NAME}_uploading
+                    atf_${TARGET_NAME}_cleaning
+                    atf_${TARGET_NAME}_recording
+                    atf_${TARGET_NAME}_analysing
+                    atf_${TARGET_NAME}_uploading
             )
-            add_dependencies(run_tests atf_${PROJECT_NAME})
-            add_dependencies(run_tests_${PROJECT_NAME} atf_${PROJECT_NAME})
         endif()
 
         message(STATUS "ATF: executing test generation macro done!")

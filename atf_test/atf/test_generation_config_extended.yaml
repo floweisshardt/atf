@@ -6,10 +6,10 @@ testblocksets_config_path: atf/testblocksets                        # Folder whi
 app_executable: application.py                                      # Name of the application's executable file
 app_launch_file: launch/application.launch                          # Path of the application's launch file
 
-bagfile_output: /tmp/atf_test/data/                                 # Folder for bagfile output
-txt_output: /tmp/atf_test/results_txt/                              # Folder for the txt files output
-json_output: /tmp/atf_test/results_json/                            # Folder for the json files output
-yaml_output: /tmp/atf_test/results_yaml/                            # Folder for the yaml files output
+bagfile_output: /tmp/atf_test_extended/data/                        # Folder for bagfile output
+txt_output: /tmp/atf_test_extended/results_txt/                     # Folder for the txt files output
+json_output: /tmp/atf_test_extended/results_json/                   # Folder for the json files output
+yaml_output: /tmp/atf_test_extended/results_yaml/                   # Folder for the yaml files output
 
 time_limit_recording: 180.0                                         # Time limit in seconds for recording
 time_limit_analysing: 120.0                                         # Time limit in seconds for analysing
@@ -41,4 +41,4 @@ testsuites:                # You have to define at least one testsuite
       - env1
     testblocksets:
       - testblockset1
-    repetitions: 2
+    repetitions: 10
