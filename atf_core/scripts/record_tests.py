@@ -27,7 +27,7 @@ if __name__ == '__main__':
         print "e.g. 'record_tests.py atf_test ts0_c0_r0_e0_s0_*'                  --> record all iterations of test ts0_c0_r0_e0_s0_*"
         print "e.g. 'record_tests.py atf_test ts0_*'                              --> record all tests with ts0"
         print "e.g. 'record_tests.py atf_test ts0_*_r0_*'                         --> record all tests with ts0 and r0"
-        print "e.g. 'record_tests.py atf_test * atf/test_generation_config.yaml'  --> record all tests with ts0 and r0"
+        print "e.g. 'record_tests.py atf_test ts* atf/test_generation_config.yaml'  --> record all tests with ts0 and r0"
         sys.exit(1)
     print "recording test in package '%s' with test generation file '%s'"%(pkg, test_generation_config_file)
 
