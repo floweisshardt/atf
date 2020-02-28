@@ -1,6 +1,24 @@
 set(generate_tests_script @(CMAKE_SOURCE_DIR)/scripts/generate_tests.py)
 
-function(atf_test TEST_GENERATION_CONFIG_FILE EXECUTE_TESTS)
+function(atf_test TEST_GENERATION_CONFIG_FILE)
+    set(ExtraMacroArgs ${ARGN})
+    # Get the length of the list
+    list(LENGTH ExtraMacroArgs NumExtraMacroArgs)
+
+    # set default
+    set(EXECUTE_TESTS True)
+
+    # Execute the following block only if the length is > 0
+    if(NumExtraMacroArgs GREATER 0)
+        #foreach(ExtraArg ${ExtraMacroArgs})
+        #    message( ">>> Element of list of opt args = ${ExtraArg}")
+        #endforeach()
+        set(EXECUTE_TESTS ${ARGV1})
+    endif()
+
+    #message("TEST_GENERATION_CONFIG_FILE = ${TEST_GENERATION_CONFIG_FILE}")
+    #message( "EXECUTE_TESTS = ${EXECUTE_TESTS}")
+
     if(CATKIN_ENABLE_TESTING)
         message("ATF: executing test generation macro with '${TEST_GENERATION_CONFIG_FILE}' and EXECUTE_TESTS=${EXECUTE_TESTS}")
         
