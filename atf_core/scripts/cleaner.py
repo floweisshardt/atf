@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-import rospy
 import unittest
 import rostest
 import shutil
@@ -28,7 +27,6 @@ class Cleaner():
 class TestCleaning(unittest.TestCase):
 
     def test_cleaning_results(self):
-        rospy.logwarn("enter")
         cleaner = Cleaner(package_name, test_generation_config_file)
         self.assertTrue(cleaner.clean(), "Could not clean results.")
 
