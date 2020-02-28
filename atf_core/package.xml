@@ -17,6 +17,7 @@
     <exec_depend>atf_msgs</exec_depend>
     <exec_depend>atf_recorder_plugins</exec_depend>
     <exec_depend>atf_status_server</exec_depend>
+    <exec_depend>diagnostic_msgs</exec_depend>
     <exec_depend>python-lxml</exec_depend>
     <exec_depend>python-progressbar</exec_depend>
     <exec_depend>roslaunch</exec_depend>

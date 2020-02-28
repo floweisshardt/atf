@@ -25,4 +25,5 @@ install(DIRECTORY atf launch
 if(CATKIN_ENABLE_TESTING)
   find_package(atf_core REQUIRED)
   atf_test(atf/test_generation_config.yaml)
+  atf_test(atf/test_generation_config_extended.yaml False)
 endif()

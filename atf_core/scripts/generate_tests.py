@@ -36,17 +36,16 @@ class GenerateTests:
 
         self.test_list = {}
 
-        self.test_generated_path = os.path.join(self.package_bin_path, "test_generated")
-        #self.test_generated_analysing_path = os.path.join(self.test_generated_path, "analysing")
+        test_generation_config_file_name = self.test_generation_config_file.replace("/", "_")
+        self.test_generated_path = os.path.join(self.package_bin_path, "test_generated", test_generation_config_file_name)
         self.create_folders()
 
     def create_folders(self):
-        # delete of test_generated directory and create new one
+        # delete old test_generated directory and create new one
         if os.path.exists(self.test_generated_path):
             shutil.rmtree(self.test_generated_path)
         shutil.copyfile(self.package_src_path + "/package.xml", self.package_bin_path + "/package.xml")
         os.makedirs(self.test_generated_path)
-        #os.makedirs(self.test_generated_analysing_path)
 
     def generate_tests(self):
         em = lxml.builder.ElementMaker()
@@ -63,8 +62,11 @@ class GenerateTests:
             #param(name=self.ns + "bag_output", value=self.generation_config["bagfile_output"]),
             #param(name=self.ns + "json_output", value=self.generation_config["json_output"]),
             #param(name=self.ns + "yaml_output", value=self.generation_config["yaml_output"]),
-            xml_test({'test-name': "cleaning", 'pkg': "atf_core", 'type': "cleaner.py",
-                'time-limit': "60", 'args': self.package_name})
+            xml_test({'test-name': "cleaning",
+                    'pkg': "atf_core",
+                    'type': "cleaner.py",
+                    'time-limit': "60",
+                    'args': self.package_name + " " + self.test_generation_config_file + " " + "execute_as_test"})
         )
         xmlstr = minidom.parseString(ElementTree.tostring(test_clean)).toprettyxml(indent="    ")
         filepath = os.path.join(self.test_generated_path, "cleaning.test")
@@ -115,9 +117,28 @@ class GenerateTests:
                 
                 test_record.append(incl)
 
-            test_record.append(xml_node(pkg=self.package_name, type=test.generation_config['app_executable'], name="$(anon atf_application)", required="true", output="screen")),
-            test_record.append(xml_test({'if':'$(arg execute_as_test)', 'pkg':'atf_core', 'type':'sm_test.py', 'test-name': "atf_recording_" + test.name, 'time-limit': str(test.generation_config["time_limit_recording"]), 'required': "true"}))
-            test_record.append(xml_node({'unless':'$(arg execute_as_test)', 'pkg':'atf_core', 'type':'sm_test.py', 'name': "atf_recording_" + test.name, 'args':'standalone', 'required': "true", 'output':'screen'}))
+            test_record.append(
+                xml_node(
+                    pkg=self.package_name,
+                    type=test.generation_config['app_executable'],
+                    name="$(anon atf_application)",
+                    required="true",
+                    output="screen")),
+            test_record.append(
+                xml_test({'if':'$(arg execute_as_test)',
+                        'pkg':'atf_core',
+                        'type':'sm_test.py',
+                        'test-name': "atf_recording_" + test.name,
+                        'time-limit': str(test.generation_config["time_limit_recording"]),
+                        'required': "true",
+                        'args':'execute_as_test'}))
+            test_record.append(
+                xml_node({'unless':'$(arg execute_as_test)',
+                        'pkg':'atf_core',
+                        'type':'sm_test.py',
+                        'name': "atf_recording_" + test.name,
+                        'required': "true",
+                        'output':'screen'}))
 
             xmlstr = minidom.parseString(ElementTree.tostring(test_record)).toprettyxml(indent="    ")
             filepath = os.path.join(self.test_generated_path, "recording_" + test.name) + ".test"
@@ -126,8 +147,12 @@ class GenerateTests:
 
         # Analysing
         test_analyse = xml_launch(
-            xml_test({'test-name': "analysing", 'pkg': "atf_core", 'type': "analyser.py",
-                    'time-limit': str(self.atf_configuration_parser.generation_config["time_limit_analysing"]), 'required': "true", 'args': self.package_name})
+            xml_test({'test-name': "analysing",
+                    'pkg': "atf_core",
+                    'type': "analyser.py",
+                    'time-limit': str(self.atf_configuration_parser.generation_config["time_limit_analysing"]),
+                    'required': "true",
+                    'args': self.package_name + " " + self.test_generation_config_file + " " + 'execute_as_test'})
         )
 
         xmlstr = minidom.parseString(ElementTree.tostring(test_analyse)).toprettyxml(indent="    ")
@@ -154,13 +179,19 @@ class GenerateTests:
         test_upload = xml_launch()
         if test.generation_config["upload_data"]:
             test_upload.append(
-                xml_test({'test-name': "uploading_data", 'pkg': "atf_core", 'type': "test_dropbox_uploader.py",
-                        'time-limit': str(self.time_limit_uploading), 'args': "-f " + os.path.join(self.package_src_path, "atf/.dropbox_uploader_config") + " upload " + self.bagfile_output + " " + os.path.join(self.package_name, "data")}))
+                xml_test({'test-name': "uploading_data",
+                        'pkg': "atf_core",
+                        'type': "test_dropbox_uploader.py",
+                        'time-limit': str(self.time_limit_uploading),
+                        'args': "-f " + os.path.join(self.package_src_path, "atf/.dropbox_uploader_config") + " upload " + self.atf_configuration_parser.generation_config["bagfile_output"] + " " + os.path.join(self.package_name, "data")}))
 
         if test.generation_config["upload_result"]:
             test_upload.append(
-                xml_test({'test-name': "uploading_results", 'pkg': "atf_core", 'type': "test_dropbox_uploader.py",
-                        'time-limit': str(self.atf_configuration_parser.generation_config["time_limit_uploading"]), 'args': "-f " + os.path.join(self.package_src_path, "atf/.dropbox_uploader_config") + " upload " + self.atf_configuration_parser.generation_config["txt_output"] + " " + os.path.join(self.package_name, "results")}))
+                xml_test({'test-name': "uploading_results",
+                        'pkg': "atf_core",
+                        'type': "test_dropbox_uploader.py",
+                        'time-limit': str(self.atf_configuration_parser.generation_config["time_limit_uploading"]),
+                        'args': "-f " + os.path.join(self.package_src_path, "atf/.dropbox_uploader_config") + " upload " + self.atf_configuration_parser.generation_config["txt_output"] + " " + os.path.join(self.package_name, "results")}))
 
         xmlstr = minidom.parseString(ElementTree.tostring(test_upload)).toprettyxml(indent="    ")
         filepath = os.path.join(self.test_generated_path, "uploading.test")
