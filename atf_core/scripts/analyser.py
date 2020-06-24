@@ -133,7 +133,7 @@ class Analyser:
             if test_result.groundtruth_result != None and not test_result.groundtruth_result:
                 # check if there are already failed tests in atf_result
                 if atf_result.groundtruth_result == None:
-                    atf_result.groundtruth_error_message = "Failed ATF tests:"
+                    atf_result.groundtruth_error_message = "\nFailed ATF tests:"
                 atf_result.groundtruth_result = False
                 atf_result.groundtruth_error_message += "\n - test '%s' (%s, %s, %s, %s): %s"%(test_result.name, test_result.robot, test_result.env, test_result.test_config, test_result.testblockset, test_result.groundtruth_error_message)
             if atf_result.groundtruth_result == None and test_result.groundtruth_result:
