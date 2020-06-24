@@ -153,7 +153,7 @@ class Analyser:
             print "*************************"
             print "*** SOME TESTS FAILED ***"
             print "*************************"
-            print atf_result.groundtruth_error_message
+            #print atf_result.groundtruth_error_message
             self.print_result_summary(atf_result)
         else:
             print "\n"
