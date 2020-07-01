@@ -167,6 +167,8 @@ class ATFConfigurationParser:
             if  metric_handlers_config and metrics:
                 for metric_name in metrics:
                     #print "metric_name=", metric_name
+                    if metric_name not in metric_handlers_config:
+                        raise ATFConfigurationError("metric '%s' is not implemented"%metric_name)
                     if not self.validate_metric_parameters(metrics[metric_name]):
                         raise ATFConfigurationError("invalid configuration for metric '%s' in testblock '%s': %s"%(metric_name, testblock_name, str(metrics[metric_name])))
                     metrics_return_list = getattr(atf_metrics, metric_handlers_config[metric_name]["handler"])().parse_parameter(testblock_name, metrics[metric_name])
