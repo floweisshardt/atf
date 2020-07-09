@@ -5,6 +5,8 @@ import matplotlib.style
 import matplotlib as mpl
 mpl.style.use('classic')
 
+from atf_msgs.msg import AtfResult
+
 import matplotlib.pyplot as plt
 from matplotlib.lines import Line2D
 
@@ -207,6 +209,7 @@ class DemoPlotter(object):
 
         with open(filename, 'r') as f:
             yaml_data = yaml.load(f, Loader=yaml.CLoader)
+            print "yaml_data=", yaml_data
 
         self.atf_result = AtfResult(yaml_data)
 
@@ -233,6 +236,7 @@ class DemoPlotter(object):
         grouped = dict()
 
         combined_metrics = self.get_flat_list_of_metrics()
+        print "combined_metrics=", combined_metrics
 
         for metric in combined_metrics:
             if test_case_ident != metric.parent.parent.test_case_ident:
@@ -304,22 +308,38 @@ class DemoPlotter(object):
 
         print 'single_test.repetition_number', single_test.repetition_number
 
+
+
         test_block = single_test[testblock]
         assert isinstance(test_block, TestBlock)
 
+        print "metric11111111111111=", metric
+
+        print "type(test_block)=", type(test_block)
+        print "test_block=", test_block
+        print "test_block[metric]=", test_block[metric]
+
         metrics = test_block[metric]
-        #assert isinstance(metric, Metric)
+        print "type(metrics2323232323)=", type(metrics)
+        print "metrics23232323=", metrics
+        if type(metrics) != list: # make sure we handle a list (e.g. if only one tf_length_translation is configured, or if time metric is used)
+            metrics = [metrics]
+        #assert isinstance(metric, list)
 
 
         fig, ax = plt.subplots()
 
         width = 0.2
 
+
+
+
         for idx, metric in enumerate(metrics):
             #print metric.details
             #label = metric['measured_frame']['value']
             #label = '%s/%s/%s' % (single_test.name, test_block.name, metric.get_detail('measured_frame'))
 
+            print "metric2222=", metric
             label = build_tmp_label(metric)
             rects = ax.bar(idx - width / 2.0, metric.data, width, label=label)
             autolabel_ax_bar(ax, rects)
@@ -382,16 +402,18 @@ class DemoPlotter(object):
 
     def plot_aggregated_data_for_all_test_repetitions_for_given_test_ident(self, test_case_ident):
         grm = self.group_metric_list_by_repetition_number_for_testcase(test_case_ident)
+        print "grm=", grm
         amr = self.aggregate_grouped_metrics(grm)
+        print "amr=", amr
 
         data = [am.data_points for am in amr]
         labels = [am.metric_name for am in amr]
         category = [am.testblock_name for am in amr]
 
-        fig, ax = plt.subplots()
+        fig, (ax1, ax2) = plt.subplots(nrows=1, ncols=2)
 
         meanlineprops = dict(linestyle='--', color='purple')
-        hdls1 = ax.boxplot(data, showmeans=True, meanline=True, meanprops=meanlineprops, labels=labels, patch_artist=True)
+        hdls1 = ax1.boxplot(data, showmeans=True, meanline=True, meanprops=meanlineprops, labels=labels, patch_artist=True)
 
         uniqe_category_list = list(set(category))
         clut = cm._generate_cmap('Dark2', len(uniqe_category_list))
@@ -399,7 +421,7 @@ class DemoPlotter(object):
 
         #colors = [clut(i) for i in range(50)]
 
-        for idx, label in enumerate(ax.get_xmajorticklabels()):
+        for idx, label in enumerate(ax1.get_xmajorticklabels()):
             label.set_rotation(90)
             label.set_color(colors[idx])
             print idx, label#, colors[idx]
@@ -414,10 +436,10 @@ class DemoPlotter(object):
             patch.set_facecolor(color)
 
         custom_lines = [Line2D([0], [0], color=c, lw=4) for c in set(colors)]
-        ax.legend(custom_lines, uniqe_category_list, ncol=2)
+        ax1.legend(custom_lines, uniqe_category_list, ncol=2)
 
 
-        ax.grid(True)
+        ax1.grid(True)
 
 
         plt.tight_layout()
@@ -426,8 +448,8 @@ class DemoPlotter(object):
         #plt.subplots_adjust(bottom=0.15)
 
 
-        #ax.boxplot(amr[7].data_points, showmeans=True, meanline=True)
-        #ax.violinplot(amr[7].data_points, [2], points=60, widths=0.7, showmeans=True, showextrema=True, showmedians=True, bw_method='silverman')
+        #ax.boxplot(amr[0].data_points, showmeans=True, meanline=True)
+        #ax.violinplot(amr[0].data_points, [2], points=60, widths=0.7, showmeans=True, showextrema=True, showmedians=True, bw_method='silverman')
 
         #for idx, ma in enumerate(amr):
         #    try:
@@ -439,6 +461,75 @@ class DemoPlotter(object):
 
         #ax.legend()
         plt.show()
+
+    def plot_fmw(self):
+        print "self.atf_result=", self.atf_result.groundtruth_error_message
+        return
+
+        ###
+        test_case_ident = "ts0_c0_r0_e0_s0"
+        ###
+        grm = self.group_metric_list_by_repetition_number_for_testcase(test_case_ident)
+        print "grm=", grm
+        amr = self.aggregate_grouped_metrics(grm)
+        print "amr=", amr
+
+        data = [am.data_points for am in amr]
+        labels = [am.metric_name for am in amr]
+        category = [am.testblock_name for am in amr]
+
+        fig, (ax1, ax2, ax3, ax4) = plt.subplots(nrows=1, ncols=4)
+
+        meanlineprops = dict(linestyle='--', color='purple')
+        hdls1 = ax1.boxplot(data, showmeans=True, meanline=True, meanprops=meanlineprops, labels=labels, patch_artist=True)
+
+        uniqe_category_list = list(set(category))
+        clut = cm._generate_cmap('Dark2', len(uniqe_category_list))
+        colors = [clut(uniqe_category_list.index(cat)) for cat in category]
+
+        #colors = [clut(i) for i in range(50)]
+
+        for idx, label in enumerate(ax1.get_xmajorticklabels()):
+            label.set_rotation(90)
+            label.set_color(colors[idx])
+            print idx, label#, colors[idx]
+            #label.set_horizontalalignment("right")
+
+        # fill with colors
+
+
+
+        #colors = ['blue', 'pink', 'lightblue', 'lightgreen']*5
+        for patch, color in zip(hdls1['boxes'], colors):
+            patch.set_facecolor(color)
+
+        custom_lines = [Line2D([0], [0], color=c, lw=4) for c in set(colors)]
+        ax1.legend(custom_lines, uniqe_category_list, ncol=2)
+
+
+        ax1.grid(True)
+
+
+        plt.tight_layout()
+
+        #plt.xticks(range(len(labels)+1), labels, rotation='vertical')
+        #plt.subplots_adjust(bottom=0.15)
+
+
+        #ax.boxplot(amr[0].data_points, showmeans=True, meanline=True)
+        #ax.violinplot(amr[0].data_points, [2], points=60, widths=0.7, showmeans=True, showextrema=True, showmedians=True, bw_method='silverman')
+
+        #for idx, ma in enumerate(amr):
+        #    try:
+        #        ax.violinplot(ma.data_points, [idx], points=60, widths=0.7, showmeans=False, showextrema=True, showmedians=True, bw_method=0.5)
+        #    except:
+        #        pass
+            #break
+
+
+        #ax.legend()
+        plt.show()
+
 
     def print_structure(self):
         for test in self.atf_result:
@@ -459,7 +550,10 @@ class DemoPlotter(object):
 
 def build_tmp_label(metric):
     #label = '%s/%s/%s/%s' % (metric.parent.parent.name, metric.parent.name, metric.name, metric.get_detail('measured_frame'))
+    print "here-----------------------"
+    print "metric=", metric
     label = '%s/%s/%s' % (metric.parent.parent.name, metric.parent.name, metric.name)
+    print "label=", label
     try:
         label += '/%s' % metric.get_detail('measured_frame')
     except KeyError:
@@ -528,6 +622,7 @@ if __name__ == '__main__':
     sub_parser = subparsers.add_parser('plot-d', help='visualize aggregated data for all test repetitions for a given test, e.g. atf_test/ts0_c0_r0_e0_s0_0..10')
     add_test_case_ident(sub_parser)
 
+    sub_parser = subparsers.add_parser('plot-fmw', help='fmw test plot')
 
     sub_parser = subparsers.add_parser('compare-a', help='visualize comparison for a given metric in various testblocks of a given test, e.g. path_length in testblock testblock_small and testblock testblock_large from atf_test/ts0_c0_r0_e0_s0_0')
 
@@ -585,6 +680,10 @@ if __name__ == '__main__':
             '-ti', 'ts0_c0_r0_e0_s0',
             filename
         ],
+        [  # 6
+            'plot-fmw',
+            filename
+        ],
         [  # -1
             'info-structure',
             filename
@@ -623,6 +722,8 @@ if __name__ == '__main__':
         dp.plot_all_metrics_testblocks_tests()
     elif argparse_result.command == 'plot-d':
         dp.plot_aggregated_data_for_all_test_repetitions_for_given_test_ident(argparse_result.test_case_ident)
+    elif argparse_result.command == 'plot-fmw':
+        dp.plot_fmw()
     elif argparse_result.command == 'info-structure':
         dp.print_structure()
     else:
