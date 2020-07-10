@@ -7,6 +7,7 @@ DataStamped min
 DataStamped max
 float64 mean
 float64 std
+bool groundtruth_available
 bool groundtruth_result
 string groundtruth_error_message
 float64 groundtruth
