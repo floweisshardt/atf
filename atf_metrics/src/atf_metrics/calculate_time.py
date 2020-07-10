@@ -21,9 +21,9 @@ class CalculateTimeParamHandler:
         """
         metrics = []
 
-        # special case for time (can have empty list of parameters, thus adding dummy groundtruth information)
+        # special case for time (can have empty list of parameters, thus adding dummy)
         if params == []:
-            params.append({"groundtruth":None, "groundtruth_epsilon":None})
+            params.append({"dummy":None})
 
         if type(params) is not list:
             rospy.logerr("metric config not a list")
@@ -34,14 +34,24 @@ class CalculateTimeParamHandler:
             try:
                 groundtruth = metric["groundtruth"]
                 groundtruth_epsilon = metric["groundtruth_epsilon"]
+                groundtruth_available = True
             except (TypeError, KeyError):
-                groundtruth = None
-                groundtruth_epsilon = None
-            metrics.append(CalculateTime(groundtruth, groundtruth_epsilon))
+                groundtruth = 0
+                groundtruth_epsilon = 0
+                groundtruth_available = False
+            try:
+                mode = metric["mode"]
+            except (TypeError, KeyError):
+                mode = 'snap' # FIXME make this a ROS message enum
+            try:
+                series_mode = metric["series_mode"]
+            except (TypeError, KeyError):
+                series_mode = None
+            metrics.append(CalculateTime(groundtruth_available, groundtruth, groundtruth_epsilon, mode, series_mode))
         return metrics
 
 class CalculateTime:
-    def __init__(self, groundtruth, groundtruth_epsilon):
+    def __init__(self, groundtruth_available, groundtruth, groundtruth_epsilon, mode, series_mode):
         """
         Class for calculating the time between the trigger 'ACTIVATE' and 'FINISH' on the topic assigned to the
         testblock.
@@ -50,9 +60,11 @@ class CalculateTime:
         self.started = False
         self.finished = False
         self.active = False
+        self.groundtruth_available = groundtruth_available
         self.groundtruth = groundtruth
         self.groundtruth_epsilon = groundtruth_epsilon
-        self.series_mode = None # Time metrics cannot have a series
+        self.mode = mode
+        self.series_mode = series_mode
         self.series = []
         self.data = DataStamped()
         self.start_time = None
@@ -90,6 +102,7 @@ class CalculateTime:
         metric_result.finished = self.finished # FIXME remove
         metric_result.series = []
         metric_result.data = None
+        metric_result.groundtruth_available = self.groundtruth_available
         metric_result.groundtruth = self.groundtruth
         metric_result.groundtruth_epsilon = self.groundtruth_epsilon
         
@@ -102,20 +115,28 @@ class CalculateTime:
             if self.series_mode != None:
                 metric_result.series = self.series
             metric_result.data = self.series[-1] # take last element from self.series
-            metric_result.min = metrics_helper.get_min(self.series)
-            metric_result.max = metrics_helper.get_max(self.series)
-            metric_result.mean = metrics_helper.get_mean(self.series)
-            metric_result.std = metrics_helper.get_std(self.series)
+            if self.mode == 'snap': # FIXME use ROS message enum
+                metric_result.min = metric_result.data
+                metric_result.max = metric_result.data
+                metric_result.mean = metric_result.data.data
+                metric_result.std = 0.0
+            elif self.mode == 'span':
+                metric_result.min = metrics_helper.get_min(self.series)
+                metric_result.max = metrics_helper.get_max(self.series)
+                metric_result.mean = metrics_helper.get_mean(self.series)
+                metric_result.std = metrics_helper.get_std(self.series)
+            else: # invalid mode
+                raise ATFAnalyserError("Analysing failed, invalid mode '%s' for metric '%s'."%(self.mode, metric_result.name))
 
             # fill details as KeyValue messages
             details = []
             metric_result.details = details
 
             # evaluate metric data
-            if metric_result.groundtruth == None and metric_result.groundtruth_epsilon == None: # no groundtruth given
+            if not metric_result.groundtruth_available: # no groundtruth given
                 metric_result.groundtruth_result = True
                 metric_result.groundtruth_error_message = "all OK (no groundtruth available)"
-            elif metric_result.data != None and metric_result.groundtruth != None and metric_result.groundtruth_epsilon != None:
+            elif metric_result.data != None and metric_result.groundtruth_available:
                 if math.fabs(metric_result.groundtruth - metric_result.data.data) <= metric_result.groundtruth_epsilon:
                     metric_result.groundtruth_result = True
                     metric_result.groundtruth_error_message = "all OK"

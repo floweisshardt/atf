@@ -198,15 +198,18 @@ class DemoPlotter(object):
                     y_min = min(-0.1, data, lower, upper)
                     y_max = max(data, lower, upper)
 
-                    #ax.plot(plots.index(plot), metric_result.data.data, 'ro')
-                    ax.errorbar(plots.index(plot), data, yerr=[[data - lower], [upper - data]], fmt='s', markersize=12)
+                    yerr = [[0], [0]]
+                    if metric_result.groundtruth_available:
+                        yerr = [[data - lower], [upper - data]]
+                    ax.errorbar(plots.index(plot), data, yerr=yerr, fmt='D', markersize=12)
+                    ax.plot(plots.index(plot), metric_result.min.data, '^', markersize=8)
+                    ax.plot(plots.index(plot), metric_result.max.data, 'v', markersize=8)
 
                 # format y axis
                 (y_min_auto, y_max_auto) = ax.get_ylim()
                 y_min = min (y_min_auto, y_min)
                 y_max = max (y_max_auto, y_max)
-
-                ax.set_ylim(y_min - 0.2*abs(y_min), y_max + 0.2*abs(y_max))
+                ax.set_ylim(y_min - 0.2*abs(y_min), y_max + 0.2*abs(y_max)) # make it a little bigger than the min/max values
 
         fig.autofmt_xdate(rotation=45)
         plt.tight_layout()

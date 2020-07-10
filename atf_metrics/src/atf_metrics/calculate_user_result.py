@@ -19,9 +19,9 @@ class CalculateUserResultParamHandler:
         """
         metrics = []
 
-        # special case for user_result (can have empty list of parameters, thus adding dummy groundtruth information)
+        # special case for user_result (can have empty list of parameters, thus adding dummy)
         if params == []:
-            params.append({"groundtruth":None, "groundtruth_epsilon":None})
+            params.append({"dummy":None})
 
         if type(params) is not list:
             rospy.logerr("metric config not a list")
@@ -32,14 +32,16 @@ class CalculateUserResultParamHandler:
             try:
                 groundtruth = metric["groundtruth"]
                 groundtruth_epsilon = metric["groundtruth_epsilon"]
+                groundtruth_available = True
             except (TypeError, KeyError):
-                groundtruth = None
-                groundtruth_epsilon = None
-            metrics.append(CalculateUserResult(testblock_name, groundtruth, groundtruth_epsilon))
+                groundtruth = 0
+                groundtruth_epsilon = 0
+                groundtruth_available = False
+            metrics.append(CalculateUserResult(testblock_name, groundtruth_available, groundtruth, groundtruth_epsilon))
         return metrics
 
 class CalculateUserResult:
-    def __init__(self, testblock_name, groundtruth, groundtruth_epsilon):
+    def __init__(self, testblock_name, groundtruth_available, groundtruth, groundtruth_epsilon):
         """
         Class for collecting the the user result.
         """
@@ -47,6 +49,7 @@ class CalculateUserResult:
         self.started = False
         self.finished = False
         self.active = False
+        self.groundtruth_available = groundtruth_available
         self.groundtruth = groundtruth
         self.groundtruth_epsilon = groundtruth_epsilon
         self.testblock_name = testblock_name
@@ -96,6 +99,7 @@ class CalculateUserResult:
             return metric_result
 
         metric_result.data = None
+        metric_result.groundtruth_available = self.groundtruth_available
         metric_result.groundtruth = self.groundtruth
         metric_result.groundtruth_epsilon = self.groundtruth_epsilon
         
@@ -115,10 +119,10 @@ class CalculateUserResult:
             metric_result.details = self.metric_result.details
 
             # evaluate metric data
-            if metric_result.groundtruth == None and metric_result.groundtruth_epsilon == None: # no groundtruth given
+            if not metric_result.groundtruth_available: # no groundtruth given
                 metric_result.groundtruth_result = True
                 metric_result.groundtruth_error_message = "all OK (no groundtruth available)"
-            elif metric_result.data != None and metric_result.groundtruth != None and metric_result.groundtruth_epsilon != None:
+            elif metric_result.data != None and metric_result.groundtruth_available:
                 if math.fabs(metric_result.groundtruth - metric_result.data.data) <= metric_result.groundtruth_epsilon:
                     metric_result.groundtruth_result = True
                     metric_result.groundtruth_error_message = "all OK"

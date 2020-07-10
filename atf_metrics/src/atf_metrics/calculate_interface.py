@@ -39,14 +39,18 @@ class CalculateInterfaceParamHandler:
                         metric[interface] = "/" + data
             # check for optional parameters
             try:
+                mode = metric["mode"]
+            except (TypeError, KeyError):
+                mode = 'snap' # FIXME make this a ROS message enum
+            try:
                 series_mode = metric["series_mode"]
             except (TypeError, KeyError):
                 series_mode = None
-            metrics.append(CalculateInterface(testblock_name, metric, series_mode))
+            metrics.append(CalculateInterface(testblock_name, metric, mode, series_mode))
         return metrics
 
 class CalculateInterface:
-    def __init__(self, testblock_name, metric, series_mode):
+    def __init__(self, testblock_name, metric, mode, series_mode):
         """
         Class for calculating the interface type.
         """
@@ -54,8 +58,10 @@ class CalculateInterface:
         self.started = False
         self.finished = False
         self.active = False
+        self.groundtruth_available = True
         self.groundtruth = 100         # this is the max score
         self.groundtruth_epsilon = 0   # no deviation from max score allowed
+        self.mode = mode
         self.series_mode = series_mode
         self.series =[]
         self.data = DataStamped()
@@ -85,7 +91,7 @@ class CalculateInterface:
                 self.api_dict = self.msg_to_dict(msg)
                 interface_data, self.interface_details = self.calculate_data_and_details()
                 self.data.stamp = t
-                self.data.data = interface_data                
+                self.data.data = interface_data
                 self.series.append(copy.deepcopy(self.data))  # FIXME handle fixed rates
 
     def msg_to_dict(self, msg):
@@ -185,6 +191,7 @@ class CalculateInterface:
         metric_result.finished = self.finished # FIXME remove
         metric_result.series = []
         metric_result.data = None
+        metric_result.groundtruth_available = self.groundtruth_available
         metric_result.groundtruth = self.groundtruth
         metric_result.groundtruth_epsilon = self.groundtruth_epsilon
         
@@ -197,10 +204,18 @@ class CalculateInterface:
             if self.series_mode != None:
                 metric_result.series = self.series
             metric_result.data = self.series[-1] # take last element from self.series
-            metric_result.min = metrics_helper.get_min(self.series)
-            metric_result.max = metrics_helper.get_max(self.series)
-            metric_result.mean = metrics_helper.get_mean(self.series)
-            metric_result.std = metrics_helper.get_std(self.series)
+            if self.mode == 'snap': # FIXME use ROS message enum
+                metric_result.min = metric_result.data
+                metric_result.max = metric_result.data
+                metric_result.mean = metric_result.data.data
+                metric_result.std = 0.0
+            elif self.mode == 'span':
+                metric_result.min = metrics_helper.get_min(self.series)
+                metric_result.max = metrics_helper.get_max(self.series)
+                metric_result.mean = metrics_helper.get_mean(self.series)
+                metric_result.std = metrics_helper.get_std(self.series)
+            else: # invalid mode
+                raise ATFAnalyserError("Analysing failed, invalid mode '%s' for metric '%s'."%(self.mode, metric_result.name))
 
             # fill details as KeyValue messages
             details = []
@@ -208,10 +223,10 @@ class CalculateInterface:
             metric_result.details = details
 
             # evaluate metric data
-            if metric_result.groundtruth == None and metric_result.groundtruth_epsilon == None: # no groundtruth given
+            if not metric_result.groundtruth_available: # no groundtruth given
                 metric_result.groundtruth_result = True
                 metric_result.groundtruth_error_message = "all OK (no groundtruth available)"
-            elif metric_result.data != None and metric_result.groundtruth != None and metric_result.groundtruth_epsilon != None:
+            elif metric_result.data != None and metric_result.groundtruth_available:
                 if math.fabs(metric_result.groundtruth - metric_result.data.data) <= metric_result.groundtruth_epsilon:
                     metric_result.groundtruth_result = True
                     metric_result.groundtruth_error_message = "all OK"
