@@ -58,6 +58,7 @@ class DemoPlotter(object):
         tbm = {}
         tmb = {}
         bmt = {}
+        mbt = {}
 
         for test in atf_result.results:
             #print test.name
@@ -92,12 +93,20 @@ class DemoPlotter(object):
                         bmt[testblock.name] = {}
                     if metric.name               not in bmt[testblock.name].keys():
                         bmt[testblock.name][metric.name] = {}
-                    bmt[testblock.name][metric.name][test.name] = metric
+                    bmt[testblock.name][metric.name][test.name] =  metric
+
+                    # mbt
+                    if metric.name            not in mbt.keys():
+                        mbt[metric.name] = {}
+                    if testblock.name         not in mbt[metric.name].keys():
+                        mbt[metric.name][testblock.name] = {}
+                    mbt[metric.name][testblock.name][test.name] =  metric
 
         ret = {}
         ret['tbm'] = tbm
         ret['tmb'] = tmb
         ret['bmt'] = bmt
+        ret['mbt'] = mbt
         return ret
 
     def merge(self):
@@ -117,33 +126,85 @@ class DemoPlotter(object):
 
         if style not in sorted_atf_results.keys():
             print "ERROR: style '%s' not implemented"%style
+            return
         plot_dict = sorted_atf_results[style]
 
-        nr_rows = len(plot_dict.keys())
-        nr_cols = 0
-        for col_name, col_data in plot_dict.items():
-            nr_cols = max(len(col_data), nr_cols)
+        rows = plot_dict.keys()
+        cols = []
+        plots = []
+        for row in rows:
+            cols_tmp = plot_dict[row].keys()
+            for col in cols_tmp:
+                if col not in cols:
+                    cols.append(col)
+                    for plot in plot_dict[row][col].keys():
+                        if plot not in plots:
+                            plots.append(plot)
         
-        print "\nplotting in style '%s' (rows: %d, cols: %d)"%(style, nr_rows, nr_cols)
+        # sort alphabetically
+        rows.sort()
+        cols.sort()
+        plots.sort()
+
+        print "\nplotting in style '%s' (rows: %d, cols: %d, plots: %d)"%(style, len(rows), len(cols), len(plots))
         meanlineprops = dict(linestyle='--', color='purple')
-        fig, axs = plt.subplots(nr_rows, nr_cols, sharex=True, figsize=(20, 15)) # FIXME calculate width with nr_testblocks
+        fig, axs = plt.subplots(len(rows), len(cols), sharex=True, figsize=(20, 15)) # FIXME calculate width with nr_testblocks
 
-        # always make this a numpy 2D matrix to access rows and cols correclty if nr_row=1 or nr_col=1
+        # always make this a numpy 2D matrix to access rows and cols correclty if len(rows)=1 or len(cols)=1
         axs = np.atleast_2d(axs) 
-        axs = axs.reshape(nr_rows, nr_cols) 
+        axs = axs.reshape(len(rows), len(cols)) 
 
-        for col, col_name in enumerate(plot_dict):
-            axs[col][0].set_ylabel(col_name, rotation=45)
-            for row, row_name in enumerate(plot_dict[col_name]):
-                labels = []
-                data = []
-                for boxplot_name in plot_dict[col_name][row_name]:
-                    labels.append(boxplot_name)
-                    data.append([plot_dict[col_name][row_name][boxplot_name].data.data])
-                title = row_name
-                axs[0][row].set_title(title)
-                axs[col][row].boxplot(data, showmeans=True, meanline=True, labels=labels, meanprops=meanlineprops, patch_artist=True)
-                axs[col][row].grid(True)
+        for row in rows:
+            #print "\nrow=", row
+            
+            
+            for col in cols:
+                #print "  col=", col
+
+                x = np.arange(len(plots))
+                ax = axs[rows.index(row)][cols.index(col)]
+
+                # format x axis
+                ax.set_xticks(x)
+                ax.set_xticklabels(plots)
+                (x_min, x_max) = ax.get_xlim()
+                ax.set_xlim(x_min - 0.1, x_max + 0.1)
+
+                y_min = 0
+                y_max = 0
+
+                # only set title for upper row and ylabel for left col
+                if rows.index(row) == 0:
+                    ax.set_title(col)
+                if cols.index(col) == 0:
+                    ax.set_ylabel(row, rotation=90)
+
+                for plot in plots:
+                    #print "    plot=", plot
+                    try:
+                        metric_result = plot_dict[row][col][plot]
+                        #print "found", row, col, plot
+                    except KeyError:
+                        #print "skip", row, col, plot
+                        continue
+                    
+                    ax.grid(True)
+
+                    data = metric_result.data.data
+                    lower = metric_result.groundtruth - metric_result.groundtruth_epsilon
+                    upper = metric_result.groundtruth + metric_result.groundtruth_epsilon
+                    y_min = min(-0.1, data, lower, upper)
+                    y_max = max(data, lower, upper)
+
+                    #ax.plot(plots.index(plot), metric_result.data.data, 'ro')
+                    ax.errorbar(plots.index(plot), data, yerr=[[data - lower], [upper - data]], fmt='s', markersize=12)
+
+                # format y axis
+                (y_min_auto, y_max_auto) = ax.get_ylim()
+                y_min = min (y_min_auto, y_min)
+                y_max = max (y_max_auto, y_max)
+
+                ax.set_ylim(y_min - 0.2*abs(y_min), y_max + 0.2*abs(y_max))
 
         fig.autofmt_xdate(rotation=45)
         plt.tight_layout()
@@ -162,7 +223,7 @@ if __name__ == '__main__':
     add_test_case_ident = lambda sp: sp.add_argument('--testident', '-ti', type=str, dest='test_case_ident', required=True, help='like test name without repetition, e.g. ts0_c0_r0_e0_s0')
     add_testblock = lambda sp: sp.add_argument('--testblock', '-tb', type=str, dest='testblock', default="", help='TBD')
     add_metric = lambda sp: sp.add_argument('--metric', '-m', type=str, dest='metric', default="", help='TBD')
-    add_style = lambda sp: sp.add_argument('--style', '-s', type=str, dest='style', default='tbm', help='style, e.g. tbm (default) tmb, bmt, ...')
+    add_style = lambda sp: sp.add_argument('--style', '-s', type=str, dest='style', default='bmt', help='style, e.g. tbm (default) tmb, bmt, ...')
 
 
     parser = argparse.ArgumentParser(
