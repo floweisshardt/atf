@@ -145,6 +145,7 @@ class Analyser:
         # export overall atf result to file
         #print "\natf_result:\n", atf_result
         self.configuration_parser.export_to_file(atf_result, os.path.join(test.generation_config["txt_output"], "atf_result.txt"))
+        self.configuration_parser.export_to_file(atf_result, os.path.join(test.generation_config["txt_output"], "atf_result.bag"))
         return atf_result
 
     def print_result(self, atf_result):

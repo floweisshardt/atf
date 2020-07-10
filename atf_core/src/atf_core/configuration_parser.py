@@ -7,6 +7,7 @@ import atf_metrics
 import os
 import itertools as it
 import json
+import rosbag
 
 from atf_core import ATFConfigurationError
 from atf_core import Test, Testblock
@@ -154,6 +155,10 @@ class ATFConfigurationParser:
             yaml.dump(data, stream, default_flow_style=False)
         elif file_extension == ".txt":
             stream.write(str(data))
+        elif file_extension == ".bag":
+            bag = rosbag.Bag(target, 'w')
+            bag.write("atf_result", data)
+            bag.close()
         else:
             raise ATFConfigurationError("ATF cannot export file extension %s"%(file_extension))
 
