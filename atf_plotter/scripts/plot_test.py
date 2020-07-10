@@ -132,6 +132,7 @@ class DemoPlotter(object):
         rows = plot_dict.keys()
         cols = []
         plots = []
+        nr_unique_plots = 0
         for row in rows:
             cols_tmp = plot_dict[row].keys()
             for col in cols_tmp:
@@ -189,6 +190,7 @@ class DemoPlotter(object):
                         continue
                     
                     ax.grid(True)
+                    nr_unique_plots += 1
 
                     data = metric_result.data.data
                     lower = metric_result.groundtruth - metric_result.groundtruth_epsilon
@@ -208,6 +210,14 @@ class DemoPlotter(object):
 
         fig.autofmt_xdate(rotation=45)
         plt.tight_layout()
+
+        title = "ATF Result for %s\ntotal # of tests: %d\ntotal # of plots: %d"%("PACKAGE", len(self.atf_result.results), nr_unique_plots)   # replace PACKAGE with self.atf_result.package (needs to be added to message first)
+        st = fig.suptitle(title, fontsize="x-large")
+        # shift subplots down:
+        st.set_y(0.95)
+        fig.subplots_adjust(top=0.85)
+
+        fig.savefig("/tmp/test.png")
         plt.show()
 
         print "DONE plot_fmw"
