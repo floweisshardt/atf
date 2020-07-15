@@ -71,7 +71,8 @@ class DemoPlotter(object):
 
                 for metric in testblock.results:
                     #print "    -", metric.name
-                    if len(filter_metrics) != 0 and metric.name not in filter_metrics:
+                    split_name = metric.name.split("::")
+                    if len(filter_metrics) != 0 and metric.name not in filter_metrics and split_name[0] not in filter_metrics:
                         continue
 
                     # tbm
@@ -93,14 +94,14 @@ class DemoPlotter(object):
                         bmt[testblock.name] = {}
                     if metric.name               not in bmt[testblock.name].keys():
                         bmt[testblock.name][metric.name] = {}
-                    bmt[testblock.name][metric.name][test.name] =  metric
+                    bmt[testblock.name][metric.name][test.name] = metric
 
                     # mbt
                     if metric.name            not in mbt.keys():
                         mbt[metric.name] = {}
                     if testblock.name         not in mbt[metric.name].keys():
                         mbt[metric.name][testblock.name] = {}
-                    mbt[metric.name][testblock.name][test.name] =  metric
+                    mbt[metric.name][testblock.name][test.name] = metric
 
         ret = {}
         ret['tbm'] = tbm
@@ -141,7 +142,7 @@ class DemoPlotter(object):
                     for plot in plot_dict[row][col].keys():
                         if plot not in plots:
                             plots.append(plot)
-        
+
         # sort alphabetically
         rows.sort()
         cols.sort()
@@ -168,8 +169,7 @@ class DemoPlotter(object):
                 # format x axis
                 ax.set_xticks(x)
                 ax.set_xticklabels(plots)
-                (x_min, x_max) = ax.get_xlim()
-                ax.set_xlim(x_min - 0.1, x_max + 0.1)
+                ax.set_xlim(-1, len(plots))
 
                 y_min = 0
                 y_max = 0
@@ -184,24 +184,25 @@ class DemoPlotter(object):
                     #print "    plot=", plot
                     try:
                         metric_result = plot_dict[row][col][plot]
-                        #print "found", row, col, plot
                     except KeyError:
                         #print "skip", row, col, plot
                         continue
-                    
+
                     ax.grid(True)
                     nr_unique_plots += 1
 
                     data = metric_result.data.data
-                    lower = metric_result.groundtruth - metric_result.groundtruth_epsilon
-                    upper = metric_result.groundtruth + metric_result.groundtruth_epsilon
+                    lower = metric_result.groundtruth.data - metric_result.groundtruth.epsilon
+                    upper = metric_result.groundtruth.data + metric_result.groundtruth.epsilon
                     y_min = min(-0.1, data, lower, upper)
                     y_max = max(data, lower, upper)
 
                     yerr = [[0], [0]]
-                    if metric_result.groundtruth_available:
+                    if metric_result.groundtruth.available:
                         yerr = [[data - lower], [upper - data]]
                     ax.errorbar(plots.index(plot), data, yerr=yerr, fmt='D', markersize=12)
+
+                    # plot min and max
                     ax.plot(plots.index(plot), metric_result.min.data, '^', markersize=8)
                     ax.plot(plots.index(plot), metric_result.max.data, 'v', markersize=8)
 
