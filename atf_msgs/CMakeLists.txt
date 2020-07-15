@@ -19,6 +19,7 @@ add_message_files(
         IO.msg
         Interface.msg
         InterfaceItem.msg
+        Groundtruth.msg
         KeyValue.msg
         MetricResult.msg
         Network.msg

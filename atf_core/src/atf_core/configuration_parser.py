@@ -169,39 +169,51 @@ class ATFConfigurationParser:
             #print "metrics=", metrics
             metric_handlers_config = self.load_data(rospkg.RosPack().get_path("atf_metrics") + "/config/metrics.yaml")
             #print "metric_handlers_config=", metric_handlers_config
-            if  metric_handlers_config and metrics:
-                for metric_name in metrics:
-                    #print "metric_name=", metric_name
-                    if metric_name not in metric_handlers_config:
-                        raise ATFConfigurationError("metric '%s' is not implemented"%metric_name)
-                    if not self.validate_metric_parameters(metrics[metric_name]):
-                        raise ATFConfigurationError("invalid configuration for metric '%s' in testblock '%s': %s"%(metric_name, testblock_name, str(metrics[metric_name])))
-                    metrics_return_list = getattr(atf_metrics, metric_handlers_config[metric_name]["handler"])().parse_parameter(testblock_name, metrics[metric_name])
-                    #print "metrics_return_list=", metrics_return_list
-                    if metrics_return_list and (type(metrics_return_list) == list):
-                        for metric_return in metrics_return_list:
-                            #print "metric_return=", metric_return
-                            metric_handles.append(metric_return)
-                    else:
-                        raise ATFConfigurationError("no valid metric configuration for metric '%s' in testblock '%s'" %(metric_name, testblock_name))
+            if metric_handlers_config and metrics:
+                for metric_type in metrics.keys():
+                    if len(metrics[metric_type]) == 0:
+                        raise ATFConfigurationError("empty configuration for metric '%s' in testblock '%s' (should be a list of dicts, e.g. '[{}]' for no parameters)"%(metric_type, testblock_name))
+
+                    for id, params in enumerate(metrics[metric_type]):
+                        if not self.validate_metric_parameters(metric_type, params):
+                            raise ATFConfigurationError("invalid configuration for metric '%s' in testblock '%s': %s"%(metric_type, testblock_name, str(params)))
+
+                        try:
+                            suffix = params["suffix"]
+                        except (TypeError, KeyError):
+                            suffix = id
+                        metric_name = metric_type + "::" + str(suffix)
+
+                        # check if metric_handle.names are unique #FIXME is there a more performant way to implement this without the additional for loop?
+                        for metric_handle in metric_handles:
+                            if metric_name == metric_handle.name:
+                                raise ATFConfigurationError("metric_name '%s' is not unique in testblock '%s'"%(metric_name, testblock_name))
+
+                        metric_handle = getattr(atf_metrics, metric_handlers_config[metric_type]["handler"])().parse_parameter(testblock_name, metric_name, params)
+                        metric_handles.append(metric_handle)
+
         #print "metric_handles=", metric_handles
         return metric_handles
 
-    def validate_metric_parameters(self, metrics):
-        if len(metrics) == 0: # no parameters specified
-            return True
+    def validate_metric_parameters(self, metric_type, params):
+        if params == None:
+            print "params None"
+            return False
 
-        for params in metrics:
-            if "groundtruth" in params and "groundtruth_epsilon" in params: # groundtruth specified
-                return True
-            elif "groundtruth" not in params and "groundtruth_epsilon" not in params: # no groundtruth specified
-                return True
-            else: # invalid configuration
-                # e.g. (params["groundtruth"] == None and params["groundtruth_epsilon"] != None) or (params["groundtruth"] != None and params["groundtruth_epsilon"] == None)
-                print "invalid groundtruth specified:"
-                print params
-                return False
-        return False # this should never happen
+        if type(params) is not dict:
+            print "params not a dict"
+            return False        
+
+        if "groundtruth" in params and "groundtruth_epsilon" in params: # groundtruth specified
+            pass
+        elif "groundtruth" not in params and "groundtruth_epsilon" not in params: # no groundtruth specified
+            pass
+        else: # invalid configuration
+            # e.g. (params["groundtruth"] == None and params["groundtruth_epsilon"] != None) or (params["groundtruth"] != None and params["groundtruth_epsilon"] == None)
+            print "invalid groundtruth specified:", params
+            return False
+        
+        return True # all checks successfull
 
     def load_data(self, filename):
         #print "config parser filename:", filename

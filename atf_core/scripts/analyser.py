@@ -115,8 +115,8 @@ class Analyser:
     def get_result(self):
         atf_result = AtfResult()
         atf_result.header.stamp = rospy.Time(time.time())
-        atf_result.groundtruth_result = None
-        atf_result.groundtruth_error_message = "All tests OK"
+        atf_result.result = None
+        atf_result.error_message = "All tests OK"
         for test in self.tests:
             # get result
             test_result = test.get_result()
@@ -130,14 +130,14 @@ class Analyser:
             atf_result.results.append(test_result)
 
             # aggregate result
-            if test_result.groundtruth_result != None and not test_result.groundtruth_result:
+            if test_result.result != None and not test_result.result:
                 # check if there are already failed tests in atf_result
-                if atf_result.groundtruth_result == None:
-                    atf_result.groundtruth_error_message = "Failed ATF tests:"
-                atf_result.groundtruth_result = False
-                atf_result.groundtruth_error_message += "\n - test '%s' (%s, %s, %s, %s): %s"%(test_result.name, test_result.robot, test_result.env, test_result.test_config, test_result.testblockset, test_result.groundtruth_error_message)
-            if atf_result.groundtruth_result == None and test_result.groundtruth_result:
-                atf_result.groundtruth_result = True
+                if atf_result.result == None:
+                    atf_result.error_message = "Failed ATF tests:"
+                atf_result.result = False
+                atf_result.error_message += "\n - test '%s' (%s, %s, %s, %s): %s"%(test_result.name, test_result.robot, test_result.env, test_result.test_config, test_result.testblockset, test_result.error_message)
+            if atf_result.result == None and test_result.result:
+                atf_result.result = True
 
         if len(atf_result.results) == 0:
             raise ATFAnalyserError("Analysing failed, no atf result available.")
@@ -149,12 +149,12 @@ class Analyser:
         return atf_result
 
     def print_result(self, atf_result):
-        if atf_result.groundtruth_result != None and not atf_result.groundtruth_result:
+        if atf_result.result != None and not atf_result.result:
             print "\n"
             print "*************************"
             print "*** SOME TESTS FAILED ***"
             print "*************************"
-            print atf_result.groundtruth_error_message
+            print atf_result.error_message
             self.print_result_summary(atf_result)
         else:
             print "\n"
@@ -176,7 +176,7 @@ class Analyser:
         print "*** result summary ***"
         print "**********************"
         for result in atf_result.results:
-            if result.groundtruth_result:
+            if result.result:
                 print "test '%s' (%s, %s, %s, %s): succeeded"%(result.name, result.robot, result.env, result.test_config, result.testblockset)
             else:
                 print "test '%s' (%s, %s, %s, %s): failed"%(result.name, result.robot, result.env, result.test_config, result.testblockset)
@@ -186,8 +186,8 @@ class TestAnalysing(unittest.TestCase):
         analyser = Analyser(package_name, test_generation_config_file)
         atf_result = analyser.get_result()
         analyser.print_result(atf_result)
-        if atf_result.groundtruth_result != None:
-            self.assertTrue(atf_result.groundtruth_result, atf_result.groundtruth_error_message)
+        if atf_result.result != None:
+            self.assertTrue(atf_result.result, atf_result.error_message)
 
 if __name__ == '__main__':
     if len(sys.argv) == 2:
