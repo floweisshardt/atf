@@ -5,7 +5,9 @@ import matplotlib.style
 import matplotlib as mpl
 mpl.style.use('classic')
 
-from atf_msgs.msg import AtfResult
+import fnmatch
+
+from atf_msgs.msg import AtfResult, MetricResult
 
 import matplotlib.pyplot as plt
 from matplotlib.lines import Line2D
@@ -30,9 +32,7 @@ import sys
 
 import time
 
-MetricAggregate = namedtuple('MetricAggregate', 'metric_name testblock_name num min max mean median std data_points')
-
-class DemoPlotter(object):
+class AtfPlotter(object):
 
     def __init__(self):
         self.atf_result = None
@@ -41,7 +41,6 @@ class DemoPlotter(object):
     def load_atf_result(self, filename):
         
         bag = rosbag.Bag(filename)
-        print "number of files in bag:", bag.get_message_count()
         assert bag.get_message_count() == 1 # check if only one message is in the bag file
             
         for topic, msg, t in bag.read_messages():
@@ -62,17 +61,18 @@ class DemoPlotter(object):
 
         for test in atf_result.results:
             #print test.name
-            if len(filter_tests) != 0 and test.name not in filter_tests:
+            if len(filter_tests) != 0 and not fnmatch.fnmatch(test.name, filter_tests):
                 continue
+
             for testblock in test.results:
                 #print "  -", testblock.name
-                if len(filter_testblocks) != 0 and testblock.name not in filter_testblocks:
+                if len(filter_testblocks) != 0 and not fnmatch.fnmatch(testblock.name, filter_testblocks):
                     continue
 
                 for metric in testblock.results:
                     #print "    -", metric.name
                     split_name = metric.name.split("::")
-                    if len(filter_metrics) != 0 and metric.name not in filter_metrics and split_name[0] not in filter_metrics:
+                    if len(filter_metrics) != 0 and not fnmatch.fnmatch(metric.name, filter_metrics) and not fnmatch.fnmatch(split_name[0],filter_metrics):
                         continue
 
                     # tbm
@@ -110,9 +110,6 @@ class DemoPlotter(object):
         ret['mbt'] = mbt
         return ret
 
-    def merge(self):
-        pass
-
     def print_structure(self):
         for test in self.atf_result.results:
             print test.name
@@ -121,7 +118,7 @@ class DemoPlotter(object):
                 for metric in testblock.results:
                     print "    -", metric.name
 
-    def plot_fmw(self, style, filter_tests, filter_testblocks, filter_metrics):
+    def plot_benchmark(self, style, sharey, hide_groundtruth, hide_min_max, filter_tests, filter_testblocks, filter_metrics):
 
         sorted_atf_results = self.get_sorted_plot_dicts(self.atf_result, filter_tests, filter_testblocks, filter_metrics)
 
@@ -150,11 +147,16 @@ class DemoPlotter(object):
 
         print "\nplotting in style '%s' (rows: %d, cols: %d, plots: %d)"%(style, len(rows), len(cols), len(plots))
         meanlineprops = dict(linestyle='--', color='purple')
-        fig, axs = plt.subplots(len(rows), len(cols), sharex=True, figsize=(20, 15)) # FIXME calculate width with nr_testblocks
+
+        fig, axs = plt.subplots(len(rows), len(cols), squeeze=False, sharex=True, sharey=sharey, figsize=(20, 15)) # FIXME calculate width with nr_testblocks
 
         # always make this a numpy 2D matrix to access rows and cols correclty if len(rows)=1 or len(cols)=1
-        axs = np.atleast_2d(axs) 
-        axs = axs.reshape(len(rows), len(cols)) 
+        #axs = np.atleast_2d(axs) 
+        #axs = axs.reshape(len(rows), len(cols))
+        # --> not needed anymore due to squeeze=False
+
+        y_min_overall = 0
+        y_max_overall = 0
 
         for row in rows:
             #print "\nrow=", row
@@ -171,8 +173,9 @@ class DemoPlotter(object):
                 ax.set_xticklabels(plots)
                 ax.set_xlim(-1, len(plots))
 
-                y_min = 0
-                y_max = 0
+                # format y axis
+                ax.autoscale(enable=True, axis='y', tight=False)
+                ax.margins(y=0.2) # make it a little bigger than the min/max values
 
                 # only set title for upper row and ylabel for left col
                 if rows.index(row) == 0:
@@ -198,19 +201,17 @@ class DemoPlotter(object):
                     y_max = max(data, lower, upper)
 
                     yerr = [[0], [0]]
-                    if metric_result.groundtruth.available:
+                    if not hide_groundtruth and metric_result.groundtruth.available:
                         yerr = [[data - lower], [upper - data]]
                     ax.errorbar(plots.index(plot), data, yerr=yerr, fmt='D', markersize=12)
 
                     # plot min and max
-                    ax.plot(plots.index(plot), metric_result.min.data, '^', markersize=8)
-                    ax.plot(plots.index(plot), metric_result.max.data, 'v', markersize=8)
+                    if not hide_min_max and metric_result.mode == MetricResult.SPAN:
+                        ax.plot(plots.index(plot), metric_result.min.data, '^', markersize=8)
+                        ax.plot(plots.index(plot), metric_result.max.data, 'v', markersize=8)
 
-                # format y axis
-                (y_min_auto, y_max_auto) = ax.get_ylim()
-                y_min = min (y_min_auto, y_min)
-                y_max = max (y_max_auto, y_max)
-                ax.set_ylim(y_min - 0.2*abs(y_min), y_max + 0.2*abs(y_max)) # make it a little bigger than the min/max values
+                    # plot a non-visible zero for y-axis scaling
+                    ax.plot(plots.index(plot), 0, '')
 
         fig.autofmt_xdate(rotation=45)
         plt.tight_layout()
@@ -223,22 +224,24 @@ class DemoPlotter(object):
 
         fig.savefig("/tmp/test.png")
         plt.show()
-
-        print "DONE plot_fmw"
         return
 
 if __name__ == '__main__':
     # example call could be:
-    #   rosrun atf_plotter plot.py plot-metric -m tf_length_translation -tb testblock_circle -t ts0_c0_r0_e0_s0_0 ~/atf_result.txt
+    #   rosrun atf_plotter plot.py plot-benchmark /tmp/atf_test/results_txt/atf_result.bag
+    #   rosrun atf_plotter plot.py plot-benchmark -m publish_rate /tmp/atf_test/results_txt/atf_result.bag
+    #   rosrun atf_plotter plot.py plot-benchmark -m publish_rate -tb testblock_small -t ts0_c0_r0_e0_s0_0 /tmp/atf_test/results_txt/atf_result.bag
     # to get info about the file, this could be helpful:
-    #   rosrun atf_plotter plot.py info-structure ~/atf_result.txt
+    #   rosrun atf_plotter plot.py info-structure ~/atf_result.bag
 
     add_test = lambda sp: sp.add_argument('--test', '-t', type=str, dest='test', default="", help='TBD')
     add_test_case_ident = lambda sp: sp.add_argument('--testident', '-ti', type=str, dest='test_case_ident', required=True, help='like test name without repetition, e.g. ts0_c0_r0_e0_s0')
     add_testblock = lambda sp: sp.add_argument('--testblock', '-tb', type=str, dest='testblock', default="", help='TBD')
     add_metric = lambda sp: sp.add_argument('--metric', '-m', type=str, dest='metric', default="", help='TBD')
-    add_style = lambda sp: sp.add_argument('--style', '-s', type=str, dest='style', default='bmt', help='style, e.g. tbm (default) tmb, bmt, ...')
-
+    add_style = lambda sp: sp.add_argument('--style', '-s', type=str, dest='style', default='bmt', help='style, e.g. bmt (default) tmb, tmb, bmt, ...')
+    add_sharey = lambda sp: sp.add_argument('--sharey', type=str, dest='sharey', default='none', help='share y axis for all plots. [none|all|row|col], default = none')
+    add_hide_groundtruth = lambda sp: sp.add_argument('--hide-groundtruth', dest='hide_groundtruth', action='store_true', help='hide groundtruth values even if goundtruth.available=True. default = False')
+    add_hide_min_max = lambda sp: sp.add_argument('--hide-min-max', dest='hide_min_max', action='store_true', help='hide min and max values even if mode=SPAN. default = False')
 
     parser = argparse.ArgumentParser(
         conflict_handler='resolve',
@@ -248,139 +251,53 @@ if __name__ == '__main__':
 
     subparsers = parser.add_subparsers(help='sub-command help TBD', dest='command')
 
-
-    sub_parser = subparsers.add_parser(
-        'plot-metric',
-        help='visualize data and groundtruth for a given metric in a given testblock for a given test, e.g. time in '
-             'testblock_small from atf_test/ts0_c0_r0_e0_s0_0'
-    )
-    add_metric(sub_parser)
-    add_testblock(sub_parser)
-    add_test(sub_parser)
-
-
-    sub_parser = subparsers.add_parser(
-        'plot-b',
-        help='visualize data for a all metrics in a given testblock for a given test'
-    )
-    add_testblock(sub_parser)
-    add_test(sub_parser)
-
-
-    sub_parser = subparsers.add_parser('plot-c', help='visualize data for all metrics in all testblocks in all tests')
-
-
-    sub_parser = subparsers.add_parser('plot-d', help='visualize aggregated data for all test repetitions for a given test, e.g. atf_test/ts0_c0_r0_e0_s0_0..10')
-    add_test_case_ident(sub_parser)
-
-    sub_parser = subparsers.add_parser('plot-fmw', help='fmw test plot')
+    sub_parser = subparsers.add_parser('plot-benchmark', help='Visualize benchmark plots. Can be filtered via tests, testblocks and metrics. Style is a combination (order) of _t_est, test_b_lock and _m_etric')
     add_style(sub_parser)
+    add_sharey(sub_parser)
+    add_hide_groundtruth(sub_parser)
+    add_hide_min_max(sub_parser)
     add_test(sub_parser)
     add_testblock(sub_parser)
     add_metric(sub_parser)
 
-    sub_parser = subparsers.add_parser('compare-a', help='visualize comparison for a given metric in various testblocks of a given test, e.g. path_length in testblock testblock_small and testblock testblock_large from atf_test/ts0_c0_r0_e0_s0_0')
-
-    sub_parser = subparsers.add_parser('compare-b', help='visualize comparision for all repetitions for a given test, e.g. atf_test/ts0_c0_r0_e0_s0_0..10')
-
-    sub_parser = subparsers.add_parser('visualize-series', help='visualize time series data for a given metric in a given testblock for a given test, e.g. time in testblock_small from atf_test/ts0_c0_r0_e0_s0_0 from all atf_result.txt files')
+    sub_parser = subparsers.add_parser('plot-series', help='visualize time series data for a given metric in a given testblock for a given test, e.g. time in testblock_small from atf_test/ts0_c0_r0_e0_s0_0 from all atf_result.txt files')
 
     sub_parser = subparsers.add_parser('info-structure', help='TBD')
 
 
     parser.add_argument('filenames', metavar='filenames', nargs='+',
                         help='merged atf result file (multiple files not yet implemented)')
-
-
-
-    #argparse_result = parser.parse_args(['--help'])
-    #argparse_result = parser.parse_args(['plot metric', '--help'])
-    #argparse_result = parser.parse_args(['plot foo', '--help'])
-
-
-    #filename = '/tmp/atf_test_app_tf/results_txt/atf_result.txt'
-    #filename = '/home/bge/Projekte/atf_data/atf_test_app_tf/results_txt/atf_result.txt'
-    #filename = '/home/bge/Projekte/atf_data/atf_test/results_txt/atf_result.txt'
-
-    #filename = '/home/bge/Projekte/atf_data/atf_test_app_navigation__series__atf_result.txt'
-    filename = '/home/bge/Projekte/atf_data/atf_test__series__atf_result.txt'
-
-    test_args = [
-        [  # 0
-            '--help'
-        ],
-        [  # 1
-            'plot-metric',
-            '--help'
-        ],
-        [  # 2
-            'plot-metric',
-            '-m', 'tf_length_translation',
-            '-tb', 'testblock_small',
-            '-t', 'ts0_c0_r0_e0_s0_0',
-            filename
-        ],
-        [  # 3
-            'plot-b',
-            '-tb', 'testblock_small',
-            '-t', 'ts0_c0_r0_e0_s0_0',
-            filename
-        ],
-        [  # 4
-            'plot-c',
-            filename
-        ],
-        [  # 5
-            'plot-d',
-            '-ti', 'ts0_c0_r0_e0_s0',
-            filename
-        ],
-        [  # 6
-            'plot-fmw',
-            filename
-        ],
-        [  # -1
-            'info-structure',
-            filename
-        ],
-    ]
-
-    #argparse_result = parser.parse_args(test_args[5])
     argparse_result = parser.parse_args()
 
 
-    dp = DemoPlotter()
+    atf_plotter = AtfPlotter()
     print 'loading file...',
     sys.stdout.flush()
     stime = time.time()
-    dp.load_atf_result(filename=argparse_result.filenames[0])
+    atf_plotter.load_atf_result(filename=argparse_result.filenames[0])
     dtime = time.time() - stime
     print 'DONE (took %.3fs)' % (dtime)
     sys.stdout.flush()
-    #dp._quicktest()
 
-    dp.print_structure()
+    #atf_plotter.print_structure()
 
-
-    if argparse_result.command == 'plot-metric':
-        dp.plot_data_and_groundtruth_for_given_metric_testblock_test(
-            metric=argparse_result.metric,
-            testblock=argparse_result.testblock,
-            test=argparse_result.test
+    if argparse_result.command == 'plot-benchmark':
+        atf_plotter.plot_benchmark(
+            style =                 argparse_result.style,
+            sharey =                argparse_result.sharey,
+            hide_groundtruth =      argparse_result.hide_groundtruth,
+            hide_min_max =          argparse_result.hide_min_max,
+            filter_tests =          argparse_result.test,
+            filter_testblocks =     argparse_result.testblock,
+            filter_metrics =        argparse_result.metric)
+    elif argparse_result.command == 'plot-series':
+        atf_plotter.plot_series(
+            filter_tests =          argparse_result.test,
+            filter_testblocks =     argparse_result.testblock,
+            filter_metrics =        argparse_result.metric
         )
-    elif argparse_result.command == 'plot-b':
-        dp.plot_all_metrics_for_given_testblock_test(
-            testblock=argparse_result.testblock,
-            test=argparse_result.test
-        )
-    elif argparse_result.command == 'plot-c':
-        dp.plot_all_metrics_testblocks_tests()
-    elif argparse_result.command == 'plot-d':
-        dp.plot_aggregated_data_for_all_test_repetitions_for_given_test_ident(argparse_result.test_case_ident)
-    elif argparse_result.command == 'plot-fmw':
-        dp.plot_fmw(argparse_result.style, argparse_result.test, argparse_result.testblock, argparse_result.metric)
     elif argparse_result.command == 'info-structure':
-        dp.print_structure()
+        atf_plotter.print_structure()
     else:
         raise NotImplementedError('sub-command <%s> not implemented yet' % argparse_result.command)
 
