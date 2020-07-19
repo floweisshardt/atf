@@ -85,7 +85,6 @@ class CalculateUserResult:
     def get_result(self):
         metric_result = MetricResult()
         metric_result.name = self.name
-        metric_result.mode = self.mode
         metric_result.started = self.started # FIXME remove
         metric_result.finished = self.finished # FIXME remove
 
