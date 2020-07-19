@@ -195,6 +195,7 @@ class CalculateInterface:
     def get_result(self):
         metric_result = MetricResult()
         metric_result.name = self.name
+        metric_result.mode = self.mode
         metric_result.started = self.started # FIXME remove
         metric_result.finished = self.finished # FIXME remove
         metric_result.series = []
@@ -211,18 +212,18 @@ class CalculateInterface:
             if self.series_mode != None:
                 metric_result.series = self.series
             metric_result.data = self.series[-1] # take last element from self.series
-            if self.mode == MetricResult.SNAP:
+            if metric_result.mode == MetricResult.SNAP:
                 metric_result.min = metric_result.data
                 metric_result.max = metric_result.data
                 metric_result.mean = metric_result.data.data
                 metric_result.std = 0.0
-            elif self.mode == MetricResult.SPAN:
+            elif metric_result.mode == MetricResult.SPAN:
                 metric_result.min = metrics_helper.get_min(self.series)
                 metric_result.max = metrics_helper.get_max(self.series)
                 metric_result.mean = metrics_helper.get_mean(self.series)
                 metric_result.std = metrics_helper.get_std(self.series)
             else: # invalid mode
-                raise ATFAnalyserError("Analysing failed, invalid mode '%s' for metric '%s'."%(self.mode, metric_result.name))
+                raise ATFAnalyserError("Analysing failed, invalid mode '%s' for metric '%s'."%(metric_result.mode, metric_result.name))
 
             # fill details as KeyValue messages
             details = []
