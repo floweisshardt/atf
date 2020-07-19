@@ -155,6 +155,10 @@ class AtfPlotter(object):
         #axs = axs.reshape(len(rows), len(cols))
         # --> not needed anymore due to squeeze=False
 
+        # define colormap (one color per plot)
+        clut = cm._generate_cmap('Dark2', len(plots))
+        colors = [clut(plots.index(plot)) for plot in plots]
+
         for row in rows:
             #print "\nrow=", row
             
@@ -208,13 +212,16 @@ class AtfPlotter(object):
                     else:
                         markerfacecolor = 'None'    # plot transparent marker
                     
+                    # set color
+                    color = colors[plots.index(plot)]
+
                     # plot data and groundtruth
-                    ax.errorbar(plots.index(plot), data, yerr=yerr, fmt='D', markersize=12, markerfacecolor=markerfacecolor)
+                    ax.errorbar(plots.index(plot), data, yerr=yerr, fmt='D', markersize=12, markerfacecolor=markerfacecolor, color=color)
 
                     # plot min and max
                     if metric_result.mode == MetricResult.SPAN and not hide_min_max:
-                        ax.plot(plots.index(plot), metric_result.min.data, '^', markersize=8)
-                        ax.plot(plots.index(plot), metric_result.max.data, 'v', markersize=8)
+                        ax.plot(plots.index(plot), metric_result.min.data, '^', markersize=8, color=color)
+                        ax.plot(plots.index(plot), metric_result.max.data, 'v', markersize=8, color=color)
 
                     # plot a non-visible zero for y-axis scaling
                     ax.plot(plots.index(plot), 0, '')
@@ -226,7 +233,7 @@ class AtfPlotter(object):
         st = fig.suptitle(title, fontsize="x-large")
         # shift subplots down:
         st.set_y(0.95)
-        fig.subplots_adjust(top=0.85)
+        fig.subplots_adjust(top=0.85) # move top for title
 
         fig.savefig("/tmp/test.png")
         plt.show()
