@@ -155,9 +155,6 @@ class AtfPlotter(object):
         #axs = axs.reshape(len(rows), len(cols))
         # --> not needed anymore due to squeeze=False
 
-        y_min_overall = 0
-        y_max_overall = 0
-
         for row in rows:
             #print "\nrow=", row
             
@@ -194,19 +191,28 @@ class AtfPlotter(object):
                     ax.grid(True)
                     nr_unique_plots += 1
 
+                    # set data to plot
                     data = metric_result.data.data
                     lower = metric_result.groundtruth.data - metric_result.groundtruth.epsilon
                     upper = metric_result.groundtruth.data + metric_result.groundtruth.epsilon
-                    y_min = min(-0.1, data, lower, upper)
-                    y_max = max(data, lower, upper)
 
-                    yerr = [[0], [0]]
-                    if not hide_groundtruth and metric_result.groundtruth.available:
+                    # set groundtruth marker
+                    if metric_result.groundtruth.available and not hide_groundtruth:
                         yerr = [[data - lower], [upper - data]]
-                    ax.errorbar(plots.index(plot), data, yerr=yerr, fmt='D', markersize=12)
+                    else:
+                        yerr = [[0], [0]]
+
+                    # set marker transparency (filled or transparent)
+                    if metric_result.groundtruth.result or not metric_result.groundtruth.available:
+                        markerfacecolor = None      # plot filled marker
+                    else:
+                        markerfacecolor = 'None'    # plot transparent marker
+                    
+                    # plot data and groundtruth
+                    ax.errorbar(plots.index(plot), data, yerr=yerr, fmt='D', markersize=12, markerfacecolor=markerfacecolor)
 
                     # plot min and max
-                    if not hide_min_max and metric_result.mode == MetricResult.SPAN:
+                    if metric_result.mode == MetricResult.SPAN and not hide_min_max:
                         ax.plot(plots.index(plot), metric_result.min.data, '^', markersize=8)
                         ax.plot(plots.index(plot), metric_result.max.data, 'v', markersize=8)
 
