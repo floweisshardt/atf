@@ -171,6 +171,9 @@ class ATFConfigurationParser:
             #print "metric_handlers_config=", metric_handlers_config
             if metric_handlers_config and metrics:
                 for metric_type in metrics.keys():
+                    if metric_type not in metric_handlers_config:
+    	                raise ATFConfigurationError("metric '%s' is not implemented"%metric_type)
+
                     if len(metrics[metric_type]) == 0:
                         raise ATFConfigurationError("empty configuration for metric '%s' in testblock '%s' (should be a list of dicts, e.g. '[{}]' for no parameters)"%(metric_type, testblock_name))
 
