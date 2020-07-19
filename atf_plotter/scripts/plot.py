@@ -58,6 +58,7 @@ class AtfPlotter(object):
         tmb = {}
         bmt = {}
         mbt = {}
+        mtb = {}
 
         for test in atf_result.results:
             #print test.name
@@ -103,11 +104,19 @@ class AtfPlotter(object):
                         mbt[metric.name][testblock.name] = {}
                     mbt[metric.name][testblock.name][test.name] = metric
 
+                    # mtb
+                    if metric.name            not in mtb.keys():
+                        mtb[metric.name] = {}
+                    if test.name              not in mtb[metric.name].keys():
+                        mtb[metric.name][test.name] = {}
+                    mtb[metric.name][test.name][testblock.name] = metric
+
         ret = {}
         ret['tbm'] = tbm
         ret['tmb'] = tmb
         ret['bmt'] = bmt
         ret['mbt'] = mbt
+        ret['mtb'] = mtb
         return ret
 
     def print_structure(self):
@@ -127,18 +136,19 @@ class AtfPlotter(object):
             return
         plot_dict = sorted_atf_results[style]
 
-        rows = plot_dict.keys()
+        rows = []
         cols = []
         plots = []
         nr_unique_plots = 0
-        for row in rows:
-            cols_tmp = plot_dict[row].keys()
-            for col in cols_tmp:
+        for row in plot_dict.keys():
+            if row not in rows:
+                rows.append(row)
+            for col in plot_dict[row].keys():
                 if col not in cols:
                     cols.append(col)
-                    for plot in plot_dict[row][col].keys():
-                        if plot not in plots:
-                            plots.append(plot)
+                for plot in plot_dict[row][col].keys():
+                    if plot not in plots:
+                        plots.append(plot)
 
         # sort alphabetically
         rows.sort()
@@ -251,7 +261,7 @@ if __name__ == '__main__':
     add_test_case_ident = lambda sp: sp.add_argument('--testident', '-ti', type=str, dest='test_case_ident', required=True, help='like test name without repetition, e.g. ts0_c0_r0_e0_s0')
     add_testblock = lambda sp: sp.add_argument('--testblock', '-tb', type=str, dest='testblock', default="", help='TBD')
     add_metric = lambda sp: sp.add_argument('--metric', '-m', type=str, dest='metric', default="", help='TBD')
-    add_style = lambda sp: sp.add_argument('--style', '-s', type=str, dest='style', default='bmt', help='style, e.g. bmt (default) tmb, tmb, bmt, ...')
+    add_style = lambda sp: sp.add_argument('--style', '-s', type=str, dest='style', default='mbt', help='style, e.g. mbt (default), tmb, bmt, ...')
     add_sharey = lambda sp: sp.add_argument('--sharey', type=str, dest='sharey', default='none', help='share y axis for all plots. [none|all|row|col], default = none')
     add_hide_groundtruth = lambda sp: sp.add_argument('--hide-groundtruth', dest='hide_groundtruth', action='store_true', help='hide groundtruth values even if goundtruth.available=True. default = False')
     add_hide_min_max = lambda sp: sp.add_argument('--hide-min-max', dest='hide_min_max', action='store_true', help='hide min and max values even if mode=SPAN. default = False')
