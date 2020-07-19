@@ -50,11 +50,17 @@ class CalculatePublishRateParamHandler:
         except (TypeError, KeyError):
             series_mode = None
 
-        return CalculatePublishRate(metric_name, params["topic"], groundtruth, mode, series_mode)
+        try:
+            min_observation_time = params["min_observation_time"]
+        except (TypeError, KeyError):
+            min_observation_time = 1.0
+
+        return CalculatePublishRate(metric_name, min_observation_time, params["topic"], groundtruth, mode, series_mode)
 
 class CalculatePublishRate:
-    def __init__(self, name, topic, groundtruth, mode, series_mode):
+    def __init__(self, name, min_observation_time, topic, groundtruth, mode, series_mode):
         self.name = name
+        self.min_observation_time = min_observation_time
         self.started = False
         self.finished = False
         self.active = False
@@ -76,8 +82,8 @@ class CalculatePublishRate:
         self.started = True
 
     def stop(self, status):
-        # finally trigger update once again to update self.series and self.data
-        self.update(self.topic, rospy.AnyMsg, status.stamp)
+        # finally trigger calculation once again to update self.series and self.data
+        self.calculate_publish_rate()
         self.active = False
         self.finished = True
 
@@ -96,12 +102,14 @@ class CalculatePublishRate:
             if topic == self.topic:
                 self.counter += 1
                 self.data.stamp = t
-                self.data.data = round(self.get_publish_rate(),6)
-                self.series.append(copy.deepcopy(self.data))  # FIXME handle fixed rates
 
-    def get_publish_rate(self):
-        publish_rate = self.counter / (self.data.stamp - self.start_time).to_sec()
-        return publish_rate
+                # wait for min_observation_time before calculating publish_rate to avoid tiny observation times and thus high publish rates, e.g. shortly after start
+                if (self.data.stamp - self.start_time).to_sec() > self.min_observation_time:
+                    self.calculate_publish_rate()
+
+    def calculate_publish_rate(self):
+        self.data.data = round(self.counter / (self.data.stamp - self.start_time).to_sec(),6)
+        self.series.append(copy.deepcopy(self.data))  # FIXME handle fixed rates
 
     def get_topics(self):
         return [self.topic]
