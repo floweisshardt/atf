@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+import copy
 import json
 import os
 import progressbar
@@ -11,8 +12,8 @@ import unittest
 import yaml
 
 from atf_core import ATFConfigurationParser
-from atf_msgs.msg import AtfResult, TestblockStatus
-
+from atf_msgs.msg import AtfResult, TestResult, TestblockResult, MetricResult, TestblockStatus
+from atf_metrics import metrics_helper
 
 class Analyser:
     def __init__(self, package_name, test_generation_config_file = "atf/test_generation_config.yaml"):
@@ -146,7 +147,181 @@ class Analyser:
         #print "\natf_result:\n", atf_result
         self.configuration_parser.export_to_file(atf_result, os.path.join(test.generation_config["txt_output"], "atf_result.txt"))
         self.configuration_parser.export_to_file(atf_result, os.path.join(test.generation_config["txt_output"], "atf_result.bag"))
+
+        # merge results
+        atf_result_merged = self.merge_results(atf_result)
+        #print "\natf_result_merged:\n", atf_result_merged
+        self.configuration_parser.export_to_file(atf_result_merged, os.path.join(test.generation_config["txt_output"], "atf_result_merged.txt"))
+        self.configuration_parser.export_to_file(atf_result_merged, os.path.join(test.generation_config["txt_output"], "atf_result_merged.bag"))
+
         return atf_result
+
+    def merge_results(self, atf_result):
+        test_list = self.configuration_parser.get_test_list()
+
+        ret = self.get_sorted_plot_dicts(atf_result, "", "", "")
+
+        mbt = ret['mbt']
+        mbt_merged = {}
+        for metric in mbt.keys():
+            #print "m=", metric
+            if metric not in mbt_merged.keys():
+                mbt_merged[metric] = {}
+            for testblock in mbt[metric].keys():
+                #print "  b=", testblock
+                if testblock not in mbt_merged[metric].keys():
+                    mbt_merged[metric][testblock] = {}
+                for tl_tests in test_list:
+                    #print "tl_tests=", tl_tests
+                    for tl_test in tl_tests.keys():
+                        #print "    tl_test=", tl_test
+                        metric_result = MetricResult()
+                        for test in mbt[metric][testblock].keys():
+                            if test.startswith(tl_test):
+                                #print "      ->", test, mbt[metric][testblock][test].data.data
+                                metric_result.series.append(mbt[metric][testblock][test].data)
+                        metric_result.name          = mbt[metric][testblock][test].name
+                        metric_result.mode          = MetricResult.SPAN # merged metrics are always SPAN
+                        metric_result.started       = mbt[metric][testblock][test].started
+                        metric_result.finished      = mbt[metric][testblock][test].finished
+                        # metric_result.series is set above
+                        metric_result.data.stamp    = atf_result.header.stamp
+                        metric_result.data.data     = metrics_helper.get_mean(metric_result.series)
+                        metric_result.min           = metrics_helper.get_min(metric_result.series)
+                        metric_result.max           = metrics_helper.get_max(metric_result.series)
+                        metric_result.mean          = metric_result.data.data
+                        metric_result.std           = metrics_helper.get_std(metric_result.series)
+                        metric_result.groundtruth   = mbt[metric][testblock][test].groundtruth
+                        metric_result.details       = mbt[metric][testblock][test].details
+                        mbt_merged[metric][testblock][tl_test] = metric_result
+                            #else:
+                            #    break
+
+        # convert mbt to tbm
+        tbm = {}
+        for metric in mbt_merged.keys():
+            #print "m=", metric
+            for testblock in mbt_merged[metric].keys():
+                #print "  b=", testblock
+                for test in mbt_merged[metric][testblock].keys():
+                    #print "    t=", test
+                    if test not in tbm.keys():
+                        tbm[test] = {}
+                    if testblock not in tbm[test].keys():
+                        tbm[test][testblock] = {}
+                    tbm[test][testblock][metric] = mbt_merged[metric][testblock][test]
+
+        # convert tbm to atf_result_merged
+        #atf_result_merged = copy.deepcopy(atf_result)
+        atf_result_merged = AtfResult()
+        atf_result_merged.header = atf_result.header
+        atf_result_merged.result = True
+        for test in sorted(tbm.keys()):
+            test_result = TestResult()
+            test_result.name = test
+            test_result.result = True
+
+            # find test metadata in atf_result
+            for t in atf_result.results:
+                if t.name.startswith(test):
+                    test_result.test_config = t.test_config
+                    test_result.robot = t.robot
+                    test_result.env = t.env
+                    test_result.testblockset = t.testblockset
+                    break
+
+            for testblock in sorted(tbm[test].keys()):
+                testblock_result = TestblockResult()
+                testblock_result.name = testblock
+                testblock_result.result = True
+                for metric in sorted(tbm[test][testblock].keys()):
+                    metric_result = tbm[test][testblock][metric]
+                    testblock_result.results.append(metric_result)
+                    # aggregate metric result
+                    if metric_result.groundtruth.result == False:
+                        testblock_result.result = False
+                        testblock_result.error_message += "\n     - metric '%s': %s"%(metric_result.name, metric_result.groundtruth.error_message)
+                
+                test_result.results.append(testblock_result)
+                # aggregate testblock result
+                if testblock_result.result == False:
+                    test_result.result = False
+                    test_result.error_message += "\n   - testblock '%s': %s"%(testblock_result.name, testblock_result.error_message)
+
+            atf_result_merged.results.append(test_result)
+            # aggregate test result
+            if test_result.result == False:
+                atf_result_merged.result = False
+                atf_result_merged.error_message += "\n - test '%s' (%s, %s, %s, %s): %s"%(test_result.name, test_result.robot, test_result.env, test_result.test_config, test_result.testblockset, test_result.error_message)
+
+        return atf_result_merged
+
+    # FIXME move to configuration parser and remove from here and plot.py
+    def get_sorted_plot_dicts(self, atf_result, filter_tests, filter_testblocks, filter_metrics):
+        tbm = {}
+        tmb = {}
+        bmt = {}
+        mbt = {}
+        mtb = {}
+
+        for test in atf_result.results:
+            #print test.name
+            if len(filter_tests) != 0 and not fnmatch.fnmatch(test.name, filter_tests):
+                continue
+
+            for testblock in test.results:
+                #print "  -", testblock.name
+                if len(filter_testblocks) != 0 and not fnmatch.fnmatch(testblock.name, filter_testblocks):
+                    continue
+
+                for metric in testblock.results:
+                    #print "    -", metric.name
+                    split_name = metric.name.split("::")
+                    if len(filter_metrics) != 0 and not fnmatch.fnmatch(metric.name, filter_metrics) and not fnmatch.fnmatch(split_name[0],filter_metrics):
+                        continue
+
+                    # tbm
+                    if test.name                 not in tbm.keys():
+                        tbm[test.name] = {}
+                    if testblock.name            not in tbm[test.name].keys():
+                        tbm[test.name][testblock.name] = {}
+                    tbm[test.name][testblock.name][metric.name] = metric
+
+                    # tmb
+                    if test.name                 not in tmb.keys():
+                        tmb[test.name] = {}
+                    if metric.name               not in tmb[test.name].keys():
+                        tmb[test.name][metric.name] = {}
+                    tmb[test.name][metric.name][testblock.name] = metric
+
+                    # bmt
+                    if testblock.name            not in bmt.keys():
+                        bmt[testblock.name] = {}
+                    if metric.name               not in bmt[testblock.name].keys():
+                        bmt[testblock.name][metric.name] = {}
+                    bmt[testblock.name][metric.name][test.name] = metric
+
+                    # mbt
+                    if metric.name            not in mbt.keys():
+                        mbt[metric.name] = {}
+                    if testblock.name         not in mbt[metric.name].keys():
+                        mbt[metric.name][testblock.name] = {}
+                    mbt[metric.name][testblock.name][test.name] = metric
+
+                    # mtb
+                    if metric.name            not in mtb.keys():
+                        mtb[metric.name] = {}
+                    if test.name              not in mtb[metric.name].keys():
+                        mtb[metric.name][test.name] = {}
+                    mtb[metric.name][test.name][testblock.name] = metric
+
+        ret = {}
+        ret['tbm'] = tbm
+        ret['tmb'] = tmb
+        ret['bmt'] = bmt
+        ret['mbt'] = mbt
+        ret['mtb'] = mtb
+        return ret
 
     def print_result(self, atf_result):
         if atf_result.result != None and not atf_result.result:

@@ -1,7 +1,7 @@
 string name
+string test_config
 string robot
 string env
-string test_config
 string testblockset
 bool result
 string error_message
