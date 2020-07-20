@@ -159,7 +159,7 @@ class Analyser:
     def merge_results(self, atf_result):
         test_list = self.configuration_parser.get_test_list()
 
-        ret = self.get_sorted_plot_dicts(atf_result, "", "", "")
+        ret = self.configuration_parser.get_sorted_plot_dicts(atf_result, "", "", "")
 
         mbt = ret['mbt']
         mbt_merged = {}
@@ -255,73 +255,6 @@ class Analyser:
                 atf_result_merged.error_message += "\n - test '%s' (%s, %s, %s, %s): %s"%(test_result.name, test_result.robot, test_result.env, test_result.test_config, test_result.testblockset, test_result.error_message)
 
         return atf_result_merged
-
-    # FIXME move to configuration parser and remove from here and plot.py
-    def get_sorted_plot_dicts(self, atf_result, filter_tests, filter_testblocks, filter_metrics):
-        tbm = {}
-        tmb = {}
-        bmt = {}
-        mbt = {}
-        mtb = {}
-
-        for test in atf_result.results:
-            #print test.name
-            if len(filter_tests) != 0 and not fnmatch.fnmatch(test.name, filter_tests):
-                continue
-
-            for testblock in test.results:
-                #print "  -", testblock.name
-                if len(filter_testblocks) != 0 and not fnmatch.fnmatch(testblock.name, filter_testblocks):
-                    continue
-
-                for metric in testblock.results:
-                    #print "    -", metric.name
-                    split_name = metric.name.split("::")
-                    if len(filter_metrics) != 0 and not fnmatch.fnmatch(metric.name, filter_metrics) and not fnmatch.fnmatch(split_name[0],filter_metrics):
-                        continue
-
-                    # tbm
-                    if test.name                 not in tbm.keys():
-                        tbm[test.name] = {}
-                    if testblock.name            not in tbm[test.name].keys():
-                        tbm[test.name][testblock.name] = {}
-                    tbm[test.name][testblock.name][metric.name] = metric
-
-                    # tmb
-                    if test.name                 not in tmb.keys():
-                        tmb[test.name] = {}
-                    if metric.name               not in tmb[test.name].keys():
-                        tmb[test.name][metric.name] = {}
-                    tmb[test.name][metric.name][testblock.name] = metric
-
-                    # bmt
-                    if testblock.name            not in bmt.keys():
-                        bmt[testblock.name] = {}
-                    if metric.name               not in bmt[testblock.name].keys():
-                        bmt[testblock.name][metric.name] = {}
-                    bmt[testblock.name][metric.name][test.name] = metric
-
-                    # mbt
-                    if metric.name            not in mbt.keys():
-                        mbt[metric.name] = {}
-                    if testblock.name         not in mbt[metric.name].keys():
-                        mbt[metric.name][testblock.name] = {}
-                    mbt[metric.name][testblock.name][test.name] = metric
-
-                    # mtb
-                    if metric.name            not in mtb.keys():
-                        mtb[metric.name] = {}
-                    if test.name              not in mtb[metric.name].keys():
-                        mtb[metric.name][test.name] = {}
-                    mtb[metric.name][test.name][testblock.name] = metric
-
-        ret = {}
-        ret['tbm'] = tbm
-        ret['tmb'] = tmb
-        ret['bmt'] = bmt
-        ret['mbt'] = mbt
-        ret['mtb'] = mtb
-        return ret
 
     def print_result(self, atf_result):
         if atf_result.result != None and not atf_result.result:
