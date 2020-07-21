@@ -9,21 +9,12 @@ from atf_msgs.msg import AtfResult, MetricResult
 from atf_core import ATFConfigurationParser
 
 import matplotlib.pyplot as plt
-from matplotlib.lines import Line2D
-
-
-import yaml
 
 import rosbag
-
-import pprint
-import re
 
 import numpy as np
 
 from matplotlib import cm
-
-from collections import namedtuple
 
 import argparse
 
