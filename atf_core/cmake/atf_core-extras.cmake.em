@@ -38,7 +38,10 @@ function(atf_test TEST_GENERATION_CONFIG_FILE)
           message(FATAL_ERROR "-- ATF: generating test files failed: exit_code='${generation_result}'")
         endif()
 
+        # replace directory "/" with "_"
         string(REPLACE "/" "_" TEST_GENERATION_CONFIG_FILE_REPLACED ${TEST_GENERATION_CONFIG_FILE})
+        # replace *.yaml with *_yaml
+        string(REPLACE "." "_" TEST_GENERATION_CONFIG_FILE_REPLACED ${TEST_GENERATION_CONFIG_FILE_REPLACED})
         set(TARGET_NAME ${PROJECT_NAME}_${TEST_GENERATION_CONFIG_FILE_REPLACED})
         set(TEST_GENERATED_PATH ${PROJECT_BINARY_DIR}/test_generated/${TEST_GENERATION_CONFIG_FILE_REPLACED})
         

@@ -36,7 +36,11 @@ class GenerateTests:
 
         self.test_list = {}
 
-        test_generation_config_file_name = self.test_generation_config_file.replace("/", "_")
+        test_generation_config_file_name = self.test_generation_config_file
+        # replace directory "/" with "_"
+        test_generation_config_file_name = test_generation_config_file_name.replace("/", "_")
+        # replace "*.yaml" with "*_yaml"
+        test_generation_config_file_name = test_generation_config_file_name.replace(".", "_")
         self.test_generated_path = os.path.join(self.package_bin_path, "test_generated", test_generation_config_file_name)
         self.create_folders()
 
