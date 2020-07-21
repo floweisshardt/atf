@@ -190,6 +190,9 @@ class Analyser:
                                         groundtruth_error_message += "\n"
                                     groundtruth_error_message += "groundtruth missmatch in subtest %s"%(test)
 
+                        if len(metric_result.series) == 0: # no matching substest found
+                            continue
+
                         metric_result.groundtruth = groundtruth
                         metric_result.groundtruth.result = groundtruth_result
                         metric_result.groundtruth.error_message = groundtruth_error_message
