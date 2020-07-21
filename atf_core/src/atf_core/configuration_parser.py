@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 import atf_core
+import fnmatch
 import yaml
 import rospkg
 import rosparam

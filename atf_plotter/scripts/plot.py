@@ -5,8 +5,6 @@ import matplotlib.style
 import matplotlib as mpl
 mpl.style.use('classic')
 
-import fnmatch
-
 from atf_msgs.msg import AtfResult, MetricResult
 from atf_core import ATFConfigurationParser
 
