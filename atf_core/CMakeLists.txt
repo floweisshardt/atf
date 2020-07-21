@@ -31,7 +31,6 @@ catkin_install_python(
         scripts/analyser.py
         scripts/cleaner.py
         scripts/generate_tests.py
-        scripts/merger.py
         scripts/record_tests.py
         scripts/sm_test.py
         test/test_dropbox_uploader.py

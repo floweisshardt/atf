@@ -1,4 +1,4 @@
 string name
-bool groundtruth_result
-string groundtruth_error_message
+bool result
+string error_message
 MetricResult[] results

@@ -8,8 +8,8 @@ import tf
 import tf2_py
 import tf2_ros
 
-from atf_core import ATFAnalyserError
-from atf_msgs.msg import MetricResult, KeyValue, DataStamped
+from atf_core import ATFAnalyserError, ATFConfigurationError
+from atf_msgs.msg import MetricResult, Groundtruth, KeyValue, DataStamped
 from atf_metrics import metrics_helper
 
 class CalculateTfLengthTranslationParamHandler:
@@ -19,33 +19,46 @@ class CalculateTfLengthTranslationParamHandler:
         """
         pass
 
-    def parse_parameter(self, testblock_name, params):
+    def parse_parameter(self, testblock_name, metric_name, params):
         """
         Method that returns the metric method with the given parameter.
         :param params: Parameter
         """
-        metrics = []
-        if type(params) is not list:
-            rospy.logerr("metric config not a list")
-            return False
+        metric_type = "tf_length_translation"
 
-        for metric in params:
-            # check for optional parameters
-            try:
-                groundtruth = metric["groundtruth"]
-                groundtruth_epsilon = metric["groundtruth_epsilon"]
-            except (TypeError, KeyError):
-                groundtruth = None
-                groundtruth_epsilon = None
-            try:
-                series_mode = metric["series_mode"]
-            except (TypeError, KeyError):
-                series_mode = None
-            metrics.append(CalculateTfLengthTranslation(metric["topics"], metric["root_frame"], metric["measured_frame"], groundtruth, groundtruth_epsilon, series_mode))
-        return metrics
+        split_name = metric_name.split("::")
+        if len(split_name) != 2:
+            raise ATFConfigurationError("no valid metric name for metric '%s' in testblock '%s'" %(metric_name, testblock_name))
+        if split_name[0] != metric_type:
+            raise ATFConfigurationError("called invalid metric handle for metric '%s' in testblock '%s'." %(metric_name, testblock_name))
+
+        if type(params) is not dict:
+            rospy.logerr("metric config not a dictionary")
+            raise ATFConfigurationError("no valid metric configuration for metric '%s' in testblock '%s': %s" %(metric_name, testblock_name, str(params)))
+
+        # check for optional parameters
+        groundtruth = Groundtruth()
+        try:
+            groundtruth.data = params["groundtruth"]
+            groundtruth.epsilon = params["groundtruth_epsilon"]
+            groundtruth.available = True
+        except (TypeError, KeyError):
+            groundtruth.data = 0
+            groundtruth.epsilon = 0
+            groundtruth.available = False
+        try:
+            mode = params["mode"]
+        except (TypeError, KeyError):
+            mode = MetricResult.SNAP
+        try:
+            series_mode = params["series_mode"]
+        except (TypeError, KeyError):
+            series_mode = None
+
+        return CalculateTfLengthTranslation(metric_name, params["topics"], params["root_frame"], params["measured_frame"], groundtruth, mode, series_mode)
 
 class CalculateTfLengthTranslation:
-    def __init__(self, topics, root_frame, measured_frame, groundtruth, groundtruth_epsilon, series_mode):
+    def __init__(self, name, topics, root_frame, measured_frame, groundtruth, mode, series_mode):
         """
         Class for calculating the distance covered by the given frame in relation to a given root frame.
         The tf data is sent over the tf topics given in the test_config.yaml.
@@ -54,15 +67,15 @@ class CalculateTfLengthTranslation:
         :param measured_frame: name of the second frame. The distance will be measured in relation to the root_frame.
         :type  measured_frame: string
         """
-        self.name = 'tf_length_translation'
+        self.name = name
         self.started = False
         self.finished = False
         self.active = False
         self.groundtruth = groundtruth
-        self.groundtruth_epsilon = groundtruth_epsilon
         self.topics = topics
         self.root_frame = root_frame
         self.measured_frame = measured_frame
+        self.mode = mode
         self.series_mode = series_mode
         self.series = []
         self.data = DataStamped()
@@ -142,26 +155,35 @@ class CalculateTfLengthTranslation:
     def get_result(self):
         metric_result = MetricResult()
         metric_result.name = self.name
+        metric_result.mode = self.mode
         metric_result.started = self.started # FIXME remove
         metric_result.finished = self.finished # FIXME remove
         metric_result.series = []
-        metric_result.data = None
-        metric_result.groundtruth = self.groundtruth
-        metric_result.groundtruth_epsilon = self.groundtruth_epsilon
+        metric_result.groundtruth.available = self.groundtruth.available
+        metric_result.groundtruth.data = self.groundtruth.data
+        metric_result.groundtruth.epsilon = self.groundtruth.epsilon
         
         # assign default value
-        metric_result.groundtruth_result = None
-        metric_result.groundtruth_error_message = None
+        metric_result.groundtruth.result = None
+        metric_result.groundtruth.error_message = None
 
         if metric_result.started and metric_result.finished: #  we check if the testblock was ever started and stopped
             # calculate metric data
             if self.series_mode != None:
                 metric_result.series = self.series
             metric_result.data = self.series[-1] # take last element from self.series
-            metric_result.min = metrics_helper.get_min(self.series)
-            metric_result.max = metrics_helper.get_max(self.series)
-            metric_result.mean = metrics_helper.get_mean(self.series)
-            metric_result.std = metrics_helper.get_std(self.series)
+            if metric_result.mode == MetricResult.SNAP:
+                metric_result.min = metric_result.data
+                metric_result.max = metric_result.data
+                metric_result.mean = metric_result.data.data
+                metric_result.std = 0.0
+            elif metric_result.mode == MetricResult.SPAN:
+                metric_result.min = metrics_helper.get_min(self.series)
+                metric_result.max = metrics_helper.get_max(self.series)
+                metric_result.mean = metrics_helper.get_mean(self.series)
+                metric_result.std = metrics_helper.get_std(self.series)
+            else: # invalid mode
+                raise ATFAnalyserError("Analysing failed, invalid mode '%s' for metric '%s'."%(metric_result.mode, metric_result.name))
 
             # fill details as KeyValue messages
             details = []
@@ -170,25 +192,22 @@ class CalculateTfLengthTranslation:
             metric_result.details = details
 
             # evaluate metric data
-            if metric_result.groundtruth == None and metric_result.groundtruth_epsilon == None: # no groundtruth given
-                metric_result.groundtruth_result = True
-                metric_result.groundtruth_error_message = "all OK (no groundtruth available)"
-            elif metric_result.data != None and metric_result.groundtruth != None and metric_result.groundtruth_epsilon != None:
-                if math.fabs(metric_result.groundtruth - metric_result.data.data) <= metric_result.groundtruth_epsilon:
-                    metric_result.groundtruth_result = True
-                    metric_result.groundtruth_error_message = "all OK"
+            if not metric_result.groundtruth.available: # no groundtruth given
+                metric_result.groundtruth.result = True
+                metric_result.groundtruth.error_message = "all OK (no groundtruth available)"
+            else: # groundtruth available
+                if math.fabs(metric_result.groundtruth.data - metric_result.data.data) <= metric_result.groundtruth.epsilon:
+                    metric_result.groundtruth.result = True
+                    metric_result.groundtruth.error_message = "all OK"
                 else:
-                    metric_result.groundtruth_result = False
-                    metric_result.groundtruth_error_message = "groundtruth missmatch: %f not within %f+-%f"%(metric_result.data.data, metric_result.groundtruth, metric_result.groundtruth_epsilon)
-            else:
-                metric_result.groundtruth_result = False
-                metric_result.groundtruth_error_message = "metric evaluation failed"
+                    metric_result.groundtruth.result = False
+                    metric_result.groundtruth.error_message = "groundtruth missmatch: %f not within %f+-%f"%(metric_result.data.data, metric_result.groundtruth.data, metric_result.groundtruth.epsilon)
 
-        if metric_result.data == None:
-            metric_result.groundtruth_result = False
-            metric_result.groundtruth_error_message = "no result"
+        else: # testblock did not start and/or finish
+            metric_result.groundtruth.result = False
+            metric_result.groundtruth.error_message = "no result"
 
-        if metric_result.groundtruth_result == None:
+        if metric_result.groundtruth.result == None:
             raise ATFAnalyserError("Analysing failed, metric result is None for metric '%s'."%metric_result.name)
 
         return metric_result

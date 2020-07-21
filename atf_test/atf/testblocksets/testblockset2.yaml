@@ -1,6 +1,6 @@
 # without groundtruth
 testblock_small:
-  time: []
+  time: [{}]
   tf_length_translation:
     - topics: [/tf, /tf_static]
       root_frame: world
@@ -43,9 +43,9 @@ testblock_small:
     - topic: topic7
     - topic: topic8
     - topic: topic9
-  user_result: []
+  user_result: [{}]
 testblock_large:
-  time: []
+  time: [{}]
   tf_length_translation:
     - topics: [/tf, /tf_static]
       root_frame: world
@@ -84,7 +84,7 @@ testblock_large:
     - topic: /topic7
     - topic: /topic8
     - topic: /topic9
-  user_result: []
+  user_result: [{}]
   interface:
     - node: publisher1
       publishers: 

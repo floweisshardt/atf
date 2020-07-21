@@ -1,4 +1,8 @@
+uint8 SNAP        = 0
+uint8 SPAN        = 1
+
 string name
+uint8 mode
 bool started
 bool finished
 DataStamped[] series
@@ -7,8 +11,5 @@ DataStamped min
 DataStamped max
 float64 mean
 float64 std
-bool groundtruth_result
-string groundtruth_error_message
-float64 groundtruth
-float64 groundtruth_epsilon
+Groundtruth groundtruth
 KeyValue[] details

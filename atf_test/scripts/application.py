@@ -22,8 +22,8 @@ class Application:
         # user result
         metric_result = MetricResult()
         metric_result.data.data = 0.8
-        metric_result.groundtruth_result = True
-        metric_result.groundtruth_error_message = "all ok in application of atf_test"
+        metric_result.groundtruth.result = True
+        metric_result.groundtruth.error_message = "all ok in application of atf_test"
         self.atf.stop("testblock_small", metric_result)
 
         # large testblock (circle r=2, time=5)

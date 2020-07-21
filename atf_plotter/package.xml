@@ -1,0 +1,23 @@
+<?xml version="1.0"?>
+<package format="2">
+    <name>atf_plotter</name>
+    <version>0.1.0</version>
+    <description>ATF plotting functionalities for ATF results.</description>
+
+    <maintainer email="florian.weisshardt@mojin-robotics.de">Florian Weisshardt</maintainer>
+
+    <author email="bjoern.eistel@mojin-robotics.de">Bjoern Eistel</author>
+    <author email="florian.weisshardt@mojin-robotics.de">Florian Weisshardt</author>
+
+    <license>Apache 2.0</license>
+
+    <buildtool_depend>catkin</buildtool_depend>
+
+    <exec_depend>atf_core</exec_depend>
+    <exec_depend>atf_msgs</exec_depend>
+    <exec_depend>python-matplotlib</exec_depend>
+    <exec_depend>python-numpy</exec_depend>
+    <exec_depend>rosbag</exec_depend>
+    <exec_depend>rospy</exec_depend>
+
+</package>
