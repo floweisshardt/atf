@@ -176,10 +176,24 @@ class Analyser:
                     for tl_test in tl_tests.keys():
                         #print "    tl_test=", tl_test
                         metric_result = MetricResult()
+                        groundtruth_result = True
+                        groundtruth_error_message = ""
                         for test in mbt[metric][testblock].keys():
                             if test.startswith(tl_test):
-                                #print "      ->", test, mbt[metric][testblock][test].data.data
                                 metric_result.series.append(mbt[metric][testblock][test].data)
+
+                                # aggregate groundtruth for every metric
+                                groundtruth = mbt[metric][testblock][test].groundtruth
+                                if groundtruth.result == False:
+                                    groundtruth_result = False
+                                    if groundtruth_error_message != "":
+                                        groundtruth_error_message += "\n"
+                                    groundtruth_error_message += "groundtruth missmatch in subtest %s"%(test)
+
+                        metric_result.groundtruth = groundtruth
+                        metric_result.groundtruth.result = groundtruth_result
+                        metric_result.groundtruth.error_message = groundtruth_error_message
+
                         metric_result.name          = mbt[metric][testblock][test].name
                         metric_result.mode          = MetricResult.SPAN # merged metrics are always SPAN
                         metric_result.started       = mbt[metric][testblock][test].started
@@ -191,11 +205,9 @@ class Analyser:
                         metric_result.max           = metrics_helper.get_max(metric_result.series)
                         metric_result.mean          = metric_result.data.data
                         metric_result.std           = metrics_helper.get_std(metric_result.series)
-                        metric_result.groundtruth   = mbt[metric][testblock][test].groundtruth
+                        # metric_result.groundtruth is set above
                         metric_result.details       = mbt[metric][testblock][test].details
                         mbt_merged[metric][testblock][tl_test] = metric_result
-                            #else:
-                            #    break
 
         # convert mbt to tbm
         tbm = {}
@@ -212,7 +224,6 @@ class Analyser:
                     tbm[test][testblock][metric] = mbt_merged[metric][testblock][test]
 
         # convert tbm to atf_result_merged
-        #atf_result_merged = copy.deepcopy(atf_result)
         atf_result_merged = AtfResult()
         atf_result_merged.header = atf_result.header
         atf_result_merged.result = True
