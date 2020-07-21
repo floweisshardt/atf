@@ -5,9 +5,8 @@ import matplotlib.style
 import matplotlib as mpl
 mpl.style.use('classic')
 
-import fnmatch
-
 from atf_msgs.msg import AtfResult, MetricResult
+from atf_core import ATFConfigurationParser
 
 import matplotlib.pyplot as plt
 from matplotlib.lines import Line2D
@@ -53,72 +52,6 @@ class AtfPlotter(object):
             bag.close()
             break
 
-    def get_sorted_plot_dicts(self, atf_result, filter_tests, filter_testblocks, filter_metrics):
-        tbm = {}
-        tmb = {}
-        bmt = {}
-        mbt = {}
-        mtb = {}
-
-        for test in atf_result.results:
-            #print test.name
-            if len(filter_tests) != 0 and not fnmatch.fnmatch(test.name, filter_tests):
-                continue
-
-            for testblock in test.results:
-                #print "  -", testblock.name
-                if len(filter_testblocks) != 0 and not fnmatch.fnmatch(testblock.name, filter_testblocks):
-                    continue
-
-                for metric in testblock.results:
-                    #print "    -", metric.name
-                    split_name = metric.name.split("::")
-                    if len(filter_metrics) != 0 and not fnmatch.fnmatch(metric.name, filter_metrics) and not fnmatch.fnmatch(split_name[0],filter_metrics):
-                        continue
-
-                    # tbm
-                    if test.name                 not in tbm.keys():
-                        tbm[test.name] = {}
-                    if testblock.name            not in tbm[test.name].keys():
-                        tbm[test.name][testblock.name] = {}
-                    tbm[test.name][testblock.name][metric.name] = metric
-
-                    # tmb
-                    if test.name                 not in tmb.keys():
-                        tmb[test.name] = {}
-                    if metric.name               not in tmb[test.name].keys():
-                        tmb[test.name][metric.name] = {}
-                    tmb[test.name][metric.name][testblock.name] = metric
-
-                    # bmt
-                    if testblock.name            not in bmt.keys():
-                        bmt[testblock.name] = {}
-                    if metric.name               not in bmt[testblock.name].keys():
-                        bmt[testblock.name][metric.name] = {}
-                    bmt[testblock.name][metric.name][test.name] = metric
-
-                    # mbt
-                    if metric.name            not in mbt.keys():
-                        mbt[metric.name] = {}
-                    if testblock.name         not in mbt[metric.name].keys():
-                        mbt[metric.name][testblock.name] = {}
-                    mbt[metric.name][testblock.name][test.name] = metric
-
-                    # mtb
-                    if metric.name            not in mtb.keys():
-                        mtb[metric.name] = {}
-                    if test.name              not in mtb[metric.name].keys():
-                        mtb[metric.name][test.name] = {}
-                    mtb[metric.name][test.name][testblock.name] = metric
-
-        ret = {}
-        ret['tbm'] = tbm
-        ret['tmb'] = tmb
-        ret['bmt'] = bmt
-        ret['mbt'] = mbt
-        ret['mtb'] = mtb
-        return ret
-
     def print_structure(self):
         for test in self.atf_result.results:
             print test.name
@@ -129,7 +62,7 @@ class AtfPlotter(object):
 
     def plot_benchmark(self, style, sharey, hide_groundtruth, hide_min_max, filter_tests, filter_testblocks, filter_metrics):
 
-        sorted_atf_results = self.get_sorted_plot_dicts(self.atf_result, filter_tests, filter_testblocks, filter_metrics)
+        sorted_atf_results = ATFConfigurationParser().get_sorted_plot_dicts(self.atf_result, filter_tests, filter_testblocks, filter_metrics)
 
         if style not in sorted_atf_results.keys():
             print "ERROR: style '%s' not implemented"%style

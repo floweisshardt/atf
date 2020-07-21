@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 import atf_core
+import fnmatch
 import yaml
 import rospkg
 import rosparam
@@ -13,14 +14,16 @@ from atf_core import ATFConfigurationError
 from atf_core import Test, Testblock
 
 class ATFConfigurationParser:
-    def __init__(self, package_name, test_generation_config_file = None, skip_metrics = False):
+    def __init__(self, package_name = None, test_generation_config_file = None, skip_metrics = False):
         if test_generation_config_file == None:
             test_generation_config_file = "atf/test_generation_config.yaml"
             print "ATF Warning: No test_generation_config_file specified. Continue using default '%s'"%test_generation_config_file
 
         self.parsing_error_message = ""
         
-        if "/" in package_name: # assume no package but full path to package (needed for generate_tests.py in travis because RPS_PACKAGE_PATH is not yet set correclty)
+        if package_name == None: # no package given
+            return
+        elif "/" in package_name: # assume no package but full path to package (needed for generate_tests.py in travis because RPS_PACKAGE_PATH is not yet set correclty)
             full_path_to_test_package = package_name
         else: # assume package name only
             full_path_to_test_package = rospkg.RosPack().get_path(package_name)
@@ -248,3 +251,69 @@ class ATFConfigurationParser:
             error_message = "ATF configuration Error: key '%s' of type '%s' with value '%s' cannot be parsed as list of dictionaries"%(str(key), value_type, value)
             print error_message
             raise ATFConfigurationError(error_message)
+
+    def get_sorted_plot_dicts(self, atf_result, filter_tests, filter_testblocks, filter_metrics):
+        tbm = {}
+        tmb = {}
+        bmt = {}
+        mbt = {}
+        mtb = {}
+
+        for test in atf_result.results:
+            #print test.name
+            if len(filter_tests) != 0 and not fnmatch.fnmatch(test.name, filter_tests):
+                continue
+
+            for testblock in test.results:
+                #print "  -", testblock.name
+                if len(filter_testblocks) != 0 and not fnmatch.fnmatch(testblock.name, filter_testblocks):
+                    continue
+
+                for metric in testblock.results:
+                    #print "    -", metric.name
+                    split_name = metric.name.split("::")
+                    if len(filter_metrics) != 0 and not fnmatch.fnmatch(metric.name, filter_metrics) and not fnmatch.fnmatch(split_name[0],filter_metrics):
+                        continue
+
+                    # tbm
+                    if test.name                 not in tbm.keys():
+                        tbm[test.name] = {}
+                    if testblock.name            not in tbm[test.name].keys():
+                        tbm[test.name][testblock.name] = {}
+                    tbm[test.name][testblock.name][metric.name] = metric
+
+                    # tmb
+                    if test.name                 not in tmb.keys():
+                        tmb[test.name] = {}
+                    if metric.name               not in tmb[test.name].keys():
+                        tmb[test.name][metric.name] = {}
+                    tmb[test.name][metric.name][testblock.name] = metric
+
+                    # bmt
+                    if testblock.name            not in bmt.keys():
+                        bmt[testblock.name] = {}
+                    if metric.name               not in bmt[testblock.name].keys():
+                        bmt[testblock.name][metric.name] = {}
+                    bmt[testblock.name][metric.name][test.name] = metric
+
+                    # mbt
+                    if metric.name            not in mbt.keys():
+                        mbt[metric.name] = {}
+                    if testblock.name         not in mbt[metric.name].keys():
+                        mbt[metric.name][testblock.name] = {}
+                    mbt[metric.name][testblock.name][test.name] = metric
+
+                    # mtb
+                    if metric.name            not in mtb.keys():
+                        mtb[metric.name] = {}
+                    if test.name              not in mtb[metric.name].keys():
+                        mtb[metric.name][test.name] = {}
+                    mtb[metric.name][test.name][testblock.name] = metric
+
+        ret = {}
+        ret['tbm'] = tbm
+        ret['tmb'] = tmb
+        ret['bmt'] = bmt
+        ret['mbt'] = mbt
+        ret['mtb'] = mtb
+        return ret
