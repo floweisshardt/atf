@@ -81,9 +81,6 @@ class GenerateTests:
             #print "self.test_list[test_name]=", self.test_list[test_name]
 
             test_record = xml_launch(
-                #arg(name="robot", value=self.test_list[test_name]["robot"]),
-                #include(arg(name="test_status_list", value="$(find " + self.package_name + ")/test_status.yaml"),
-                #        file="$(find atf_status_server)/launch/atf_status_server.launch"),
                 xml_arg(name="execute_as_test", default="true"),
                 xml_param(name=self.ns + "package_name", value=self.package_name),
                 xml_param(name=self.ns + "test_generation_config_file", value=self.test_generation_config_file),
