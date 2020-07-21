@@ -21,6 +21,7 @@ class Analyser:
         start_time = time.time()
         self.ns = "/atf/"
         self.error = False
+        self.package_name = package_name
 
         # parse configuration
         self.configuration_parser = ATFConfigurationParser(package_name, test_generation_config_file)
@@ -116,6 +117,7 @@ class Analyser:
     def get_result(self):
         atf_result = AtfResult()
         atf_result.header.stamp = rospy.Time(time.time())
+        atf_result.name = self.package_name
         atf_result.result = None
         atf_result.error_message = "All tests OK"
         for test in self.tests:

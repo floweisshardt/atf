@@ -163,7 +163,7 @@ class AtfPlotter(object):
         fig.autofmt_xdate(rotation=45)
         plt.tight_layout()
 
-        title = "ATF Result for %s\ntotal # of tests: %d\ntotal # of plots: %d"%("PACKAGE", len(self.atf_result.results), nr_unique_plots)   # replace PACKAGE with self.atf_result.package (needs to be added to message first)
+        title = "ATF Result for %s\ntotal # of tests: %d\ntotal # of plots: %d"%(self.atf_result.name, len(self.atf_result.results), nr_unique_plots)
         st = fig.suptitle(title, fontsize="x-large")
         # shift subplots down:
         st.set_y(0.95)
