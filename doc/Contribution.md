@@ -2,7 +2,6 @@
 Auto-generated TOC with https://imthenachoman.github.io/nGitHubTOC/.
 - [Extend the ATF with your own metric](#extend-the-atf-with-your-own-metric)
   - [Python File](#python-file)
-  - [ATF Presenter](#atf-presenter)
 
 ## Extend the ATF with your own metric
 The following steps are needed to implement a new metrics in ATF:
@@ -44,47 +43,3 @@ from atf_metrics.calculate_jerk import CalculateJerk, CalculateJerkParamHandler
 jerk:
   handler: CalculateJerkParamHandler
 ```
-### ATF Presenter
-- In file ```atf/atf_presenter/html/js/atf_tools/test_list.js``` add (using "jerk" as an example):
-```javascript
-var plot_options = {
-      jerk: {
-        chart: {
-          defaultSeriesType: 'column',
-          type: 'column',
-          zoomType: 'xy'
-        },
-        title: {
-          text: 'Jerk'
-        },
-        yAxis: {
-          title: {
-            text: 'Jerk [m/s^3]'
-          }
-        },
-        xAxis: {
-          labels: {
-            enabled: false
-          }
-        },
-        plotOptions: {},
-        tooltip: plot_tooltip
-      },
-};
-```
-  search the following if-statement:
-```javascript
-if ((metric_name == 'time') || (metric_name == 'path_length') || (metric_name == 'publish_rate') || (metric_name == 'interface') || (metric_name == 'jerk'))
-```
-  and add the new metrics as ```|| (metric_name == '*name*')```. In the following lines...
-```javascript
-if (metric_name == 'path_length') chart_legend_name = testblock_name + "<br>(" + metric_data['details']['root_frame'] + " to " + metric_data['details']['measured_frame'] + ")"
-if (metric_name == 'publish_rate') chart_legend_name = testblock_name + "<br>(" + metric_data['details']['topic'] + ")"
-if (metric_name == 'interface') chart_legend_name = testblock_name + "<br>(" + metric_data['details'] + ")"
-if (metric_name == 'jerk') chart_legend_name = testblock_name + "<br>(" + metric_data['details']['topic'] + ")"
-```
-  add...
-```javascript
-if (metric_name == '*name*') chart_legend_name = testblock_name + "<br>(" + metric_data['details'] + ")"
-```
-To get additional information in the presenter. The "details" you store in the "metrics\_data" will be shown below the metrics-name in brackets.
