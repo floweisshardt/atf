@@ -148,29 +148,29 @@ class Analyser:
         self.configuration_parser.export_to_file(atf_result, os.path.join(test.generation_config["txt_output"], "atf_result.txt"))
         self.configuration_parser.export_to_file(atf_result, os.path.join(test.generation_config["txt_output"], "atf_result.bag"))
 
-        # merge results
-        atf_result_merged = self.merge_results(atf_result)
-        #print "\natf_result_merged:\n", atf_result_merged
-        self.configuration_parser.export_to_file(atf_result_merged, os.path.join(test.generation_config["txt_output"], "atf_result_merged.txt"))
-        self.configuration_parser.export_to_file(atf_result_merged, os.path.join(test.generation_config["txt_output"], "atf_result_merged.bag"))
+        # aggregate results
+        atf_result_aggregated = self.aggregate_results(atf_result)
+        #print "\natf_result_aggregated:\n", atf_result_aggregated
+        self.configuration_parser.export_to_file(atf_result_aggregated, os.path.join(test.generation_config["txt_output"], "atf_result_aggregated.txt"))
+        self.configuration_parser.export_to_file(atf_result_aggregated, os.path.join(test.generation_config["txt_output"], "atf_result_aggregated.bag"))
 
         return atf_result
 
-    def merge_results(self, atf_result):
+    def aggregate_results(self, atf_result):
         test_list = self.configuration_parser.get_test_list()
 
         ret = self.configuration_parser.get_sorted_plot_dicts(atf_result, "", "", "")
 
         mbt = ret['mbt']
-        mbt_merged = {}
+        mbt_aggregated = {}
         for metric in mbt.keys():
             #print "m=", metric
-            if metric not in mbt_merged.keys():
-                mbt_merged[metric] = {}
+            if metric not in mbt_aggregated.keys():
+                mbt_aggregated[metric] = {}
             for testblock in mbt[metric].keys():
                 #print "  b=", testblock
-                if testblock not in mbt_merged[metric].keys():
-                    mbt_merged[metric][testblock] = {}
+                if testblock not in mbt_aggregated[metric].keys():
+                    mbt_aggregated[metric][testblock] = {}
                 for tl_tests in test_list:
                     #print "tl_tests=", tl_tests
                     for tl_test in tl_tests.keys():
@@ -198,7 +198,7 @@ class Analyser:
                         metric_result.groundtruth.error_message = groundtruth_error_message
 
                         metric_result.name          = mbt[metric][testblock][test].name
-                        metric_result.mode          = MetricResult.SPAN # merged metrics are always SPAN
+                        metric_result.mode          = MetricResult.SPAN # aggregated metrics are always SPAN
                         metric_result.started       = mbt[metric][testblock][test].started
                         metric_result.finished      = mbt[metric][testblock][test].finished
                         # metric_result.series is set above
@@ -210,26 +210,26 @@ class Analyser:
                         metric_result.std           = metrics_helper.get_std(metric_result.series)
                         # metric_result.groundtruth is set above
                         metric_result.details       = mbt[metric][testblock][test].details
-                        mbt_merged[metric][testblock][tl_test] = metric_result
+                        mbt_aggregated[metric][testblock][tl_test] = metric_result
 
         # convert mbt to tbm
         tbm = {}
-        for metric in mbt_merged.keys():
+        for metric in mbt_aggregated.keys():
             #print "m=", metric
-            for testblock in mbt_merged[metric].keys():
+            for testblock in mbt_aggregated[metric].keys():
                 #print "  b=", testblock
-                for test in mbt_merged[metric][testblock].keys():
+                for test in mbt_aggregated[metric][testblock].keys():
                     #print "    t=", test
                     if test not in tbm.keys():
                         tbm[test] = {}
                     if testblock not in tbm[test].keys():
                         tbm[test][testblock] = {}
-                    tbm[test][testblock][metric] = mbt_merged[metric][testblock][test]
+                    tbm[test][testblock][metric] = mbt_aggregated[metric][testblock][test]
 
-        # convert tbm to atf_result_merged
-        atf_result_merged = AtfResult()
-        atf_result_merged.header = atf_result.header
-        atf_result_merged.result = True
+        # convert tbm to atf_result_aggregated
+        atf_result_aggregated = AtfResult()
+        atf_result_aggregated.header = atf_result.header
+        atf_result_aggregated.result = True
         for test in sorted(tbm.keys()):
             test_result = TestResult()
             test_result.name = test
@@ -262,13 +262,13 @@ class Analyser:
                     test_result.result = False
                     test_result.error_message += "\n   - testblock '%s': %s"%(testblock_result.name, testblock_result.error_message)
 
-            atf_result_merged.results.append(test_result)
+            atf_result_aggregated.results.append(test_result)
             # aggregate test result
             if test_result.result == False:
-                atf_result_merged.result = False
-                atf_result_merged.error_message += "\n - test '%s' (%s, %s, %s, %s): %s"%(test_result.name, test_result.robot, test_result.env, test_result.test_config, test_result.testblockset, test_result.error_message)
+                atf_result_aggregated.result = False
+                atf_result_aggregated.error_message += "\n - test '%s' (%s, %s, %s, %s): %s"%(test_result.name, test_result.robot, test_result.env, test_result.test_config, test_result.testblockset, test_result.error_message)
 
-        return atf_result_merged
+        return atf_result_aggregated
 
     def print_result(self, atf_result):
         if atf_result.result != None and not atf_result.result:

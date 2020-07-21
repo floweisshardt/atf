@@ -160,21 +160,6 @@ class GenerateTests:
         with open(filepath, "w") as f:
             f.write(xmlstr)
 
-        # Merging
-        test_merge = xml_launch(
-            #param(name=self.ns + "test_name", value=test_name),
-            #param(name=self.ns + "test_config_name", value=self.test_list[test_name]["test_config"]),
-            #rosparam(param=self.ns + "test_config", command="load", file="$(find " + self.package_name + ")/" + os.path.join(self.generation_config["test_config_path"], self.test_list[test_name]["test_config"] + ".yaml")),
-            #param(name=self.ns + "yaml_output", value=self.generation_config["yaml_output"]),
-            #param(name=self.ns + "json_output", value=self.generation_config["json_output"]),
-            xml_test({'test-name': "merging", 'pkg': "atf_core", 'type': "merger.py",
-                    'time-limit': "60", 'args': self.package_name})
-        )
-        xmlstr = minidom.parseString(ElementTree.tostring(test_merge)).toprettyxml(indent="    ")
-        filepath = os.path.join(self.test_generated_path, "merging.test")
-        with open(filepath, "w") as f:
-            f.write(xmlstr)
-
         # Uploading
         test_upload = xml_launch()
         if test.generation_config["upload_data"]:

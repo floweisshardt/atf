@@ -222,7 +222,7 @@ if __name__ == '__main__':
 
 
     parser.add_argument('filenames', metavar='filenames', nargs='+',
-                        help='merged atf result file (multiple files not yet implemented)')
+                        help='atf result file(s) (multiple files not yet implemented, will only take first file)')
     argparse_result = parser.parse_args()
 
 
