@@ -53,7 +53,11 @@ if __name__ == '__main__':
         sys.exit(1)
     
     # get all recording files
-    test_generation_config_file_replaced = test_generation_config_file.replace("/", "_")
+    test_generation_config_file_replaced = test_generation_config_file
+    # replace directory "/" with "_"
+    test_generation_config_file_replaced = test_generation_config_file_replaced.replace("/", "_")
+    # replace "*.yaml" with "*_yaml"
+    test_generation_config_file_replaced = test_generation_config_file_replaced.replace(".", "_")
     path_to_test_files = os.path.join(path_to_build_space, "test_generated", test_generation_config_file_replaced)
     filenames = glob.glob(os.path.join(path_to_test_files, "recording_*" + test + "*.test"))
     filenames.sort() # sort tests alphabetically
