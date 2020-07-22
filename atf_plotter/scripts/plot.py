@@ -161,13 +161,12 @@ class AtfPlotter(object):
                     ax.plot(plots.index(plot), 0, '')
 
         fig.autofmt_xdate(rotation=45)
-        plt.tight_layout()
+        #plt.tight_layout() # FIXME enabling this causes the x labels to be partly out of the image
 
-        title = "ATF Result for %s\ntotal # of tests: %d\ntotal # of plots: %d"%(self.atf_result.name, len(self.atf_result.results), nr_unique_plots)
-        st = fig.suptitle(title, fontsize="x-large")
+        title = "ATF result for %s"%(self.atf_result.name)
+        st = fig.suptitle(title, fontsize="large")
         # shift subplots down:
-        st.set_y(0.95)
-        fig.subplots_adjust(top=0.85) # move top for title
+        fig.subplots_adjust(top=0.90) # move top for title
 
         fig.savefig("/tmp/test.png")
         plt.show()
