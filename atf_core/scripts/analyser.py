@@ -231,6 +231,7 @@ class Analyser:
         # convert tbm to atf_result_aggregated
         atf_result_aggregated = AtfResult()
         atf_result_aggregated.header = atf_result.header
+        atf_result_aggregated.name = atf_result.name
         atf_result_aggregated.result = True
         for test in sorted(tbm.keys()):
             test_result = TestResult()
