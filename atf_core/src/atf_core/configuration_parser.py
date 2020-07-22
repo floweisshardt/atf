@@ -15,18 +15,16 @@ from atf_core import Test, Testblock
 
 class ATFConfigurationParser:
     def __init__(self, package_name = None, test_generation_config_file = None, skip_metrics = False):
-        if test_generation_config_file == None:
-            test_generation_config_file = "atf/test_generation_config.yaml"
-            print "ATF Warning: No test_generation_config_file specified. Continue using default '%s'"%test_generation_config_file
-
-        self.parsing_error_message = ""
-        
         if package_name == None: # no package given
             return
         elif "/" in package_name: # assume no package but full path to package (needed for generate_tests.py in travis because RPS_PACKAGE_PATH is not yet set correclty)
             full_path_to_test_package = package_name
         else: # assume package name only
             full_path_to_test_package = rospkg.RosPack().get_path(package_name)
+
+        if test_generation_config_file == None:
+            test_generation_config_file = "atf/test_generation_config.yaml"
+            print "ATF Warning: No test_generation_config_file specified. Continue using default '%s'"%test_generation_config_file
 
         self.generation_config = self.load_data(os.path.join(full_path_to_test_package, test_generation_config_file))
         #print "generation_config:", self.generation_config
@@ -252,6 +250,17 @@ class ATFConfigurationParser:
             print error_message
             raise ATFConfigurationError(error_message)
 
+    def match_filter(self, name, filter):
+        if filter == "":
+            return True
+
+        filter_list = filter.split(',')
+        for filter in filter_list:
+            if fnmatch.fnmatch(name, filter):
+                return True
+        
+        return False
+
     def get_sorted_plot_dicts(self, atf_result, filter_tests, filter_testblocks, filter_metrics):
         tbm = {}
         tmb = {}
@@ -261,18 +270,18 @@ class ATFConfigurationParser:
 
         for test in atf_result.results:
             #print test.name
-            if len(filter_tests) != 0 and not fnmatch.fnmatch(test.name, filter_tests):
+            if not self.match_filter(test.name, filter_tests):
                 continue
 
             for testblock in test.results:
                 #print "  -", testblock.name
-                if len(filter_testblocks) != 0 and not fnmatch.fnmatch(testblock.name, filter_testblocks):
+                if not self.match_filter(testblock.name, filter_testblocks):
                     continue
 
                 for metric in testblock.results:
                     #print "    -", metric.name
                     split_name = metric.name.split("::")
-                    if len(filter_metrics) != 0 and not fnmatch.fnmatch(metric.name, filter_metrics) and not fnmatch.fnmatch(split_name[0],filter_metrics):
+                    if not self.match_filter(metric.name, filter_metrics) and not self.match_filter(metric.name[0], filter_metrics):
                         continue
 
                     # tbm
