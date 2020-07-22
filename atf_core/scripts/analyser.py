@@ -12,7 +12,7 @@ import unittest
 import yaml
 
 from atf_core import ATFConfigurationParser
-from atf_msgs.msg import AtfResult, TestResult, TestblockResult, MetricResult, TestblockStatus
+from atf_msgs.msg import AtfResult, TestResult, TestblockResult, MetricResult, TestblockStatus, KeyValue
 from atf_metrics import metrics_helper
 
 class Analyser:
@@ -180,17 +180,22 @@ class Analyser:
                         metric_result = MetricResult()
                         groundtruth_result = True
                         groundtruth_error_message = ""
+                        details = []
                         for test in mbt[metric][testblock].keys():
                             if test.startswith(tl_test):
+                                # aggregate data from every metric_result
                                 metric_result.series.append(mbt[metric][testblock][test].data)
 
-                                # aggregate groundtruth for every metric
+                                # aggregate groundtruth from every metric_result
                                 groundtruth = mbt[metric][testblock][test].groundtruth
                                 if groundtruth.result == False:
                                     groundtruth_result = False
                                     if groundtruth_error_message != "":
                                         groundtruth_error_message += "\n"
                                     groundtruth_error_message += "groundtruth missmatch in subtest %s"%(test)
+                                
+                                # aggregate details from every metric_result
+                                details = details + mbt[metric][testblock][test].details
 
                         if len(metric_result.series) == 0: # no matching substest found
                             continue
@@ -211,7 +216,7 @@ class Analyser:
                         metric_result.mean          = metric_result.data.data
                         metric_result.std           = metrics_helper.get_std(metric_result.series)
                         # metric_result.groundtruth is set above
-                        metric_result.details       = mbt[metric][testblock][test].details
+                        metric_result.details       = details
                         mbt_aggregated[metric][testblock][tl_test] = metric_result
 
         # convert mbt to tbm
