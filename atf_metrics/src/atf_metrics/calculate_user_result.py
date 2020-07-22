@@ -90,6 +90,7 @@ class CalculateUserResult:
 
         # check if user result is set
         if self.metric_result != None and not (self.metric_result.groundtruth.result == False\
+            and self.metric_result.groundtruth.available == False\
             and self.metric_result.groundtruth.error_message == ""\
             and self.metric_result.groundtruth.data == 0.0\
             and self.metric_result.groundtruth.epsilon == 0.0):
