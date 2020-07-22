@@ -82,7 +82,7 @@ class AtfPlotter(object):
         print "\nplotting in style '%s' (rows: %d, cols: %d, plots: %d)"%(style, len(rows), len(cols), len(plots))
         meanlineprops = dict(linestyle='--', color='purple')
 
-        fig, axs = plt.subplots(len(rows), len(cols), squeeze=False, sharex=True, sharey=sharey, figsize=(20, 15)) # FIXME calculate width with nr_testblocks
+        fig, axs = plt.subplots(len(rows), len(cols), squeeze=False, sharex=True, sharey=sharey, figsize=(8, 8)) # FIXME calculate width with nr_testblocks
 
         # always make this a numpy 2D matrix to access rows and cols correclty if len(rows)=1 or len(cols)=1
         #axs = np.atleast_2d(axs) 
@@ -167,6 +167,8 @@ class AtfPlotter(object):
         st = fig.suptitle(title, fontsize="large")
         # shift subplots down:
         fig.subplots_adjust(top=0.90) # move top for title
+
+        fig.set_facecolor("white")
 
         fig.savefig("/tmp/test.png")
         plt.show()
