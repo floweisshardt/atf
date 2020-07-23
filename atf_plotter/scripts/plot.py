@@ -83,7 +83,7 @@ class AtfPlotter(object):
         print "\nplotting in style '%s' (rows: %d, cols: %d, plots: %d)"%(style, len(rows), len(cols), len(plots))
         meanlineprops = dict(linestyle='--', color='purple')
 
-        fig, axs = plt.subplots(len(rows), len(cols), squeeze=False, sharex=True, sharey=sharey, figsize=(8, 8)) # FIXME calculate width with nr_testblocks
+        fig, axs = plt.subplots(len(rows), len(cols), squeeze=False, sharex=True, sharey=sharey, figsize=(10, 10)) # FIXME calculate width with nr_testblocks
 
         # always make this a numpy 2D matrix to access rows and cols correclty if len(rows)=1 or len(cols)=1
         #axs = np.atleast_2d(axs) 
@@ -96,15 +96,15 @@ class AtfPlotter(object):
 
         for row in rows:
             #print "\nrow=", row
-            
-            
+
             for col in cols:
                 #print "  col=", col
 
-                x = np.arange(len(plots))
+                # select subplot
                 ax = axs[rows.index(row)][cols.index(col)]
 
                 # format x axis
+                x = np.arange(len(plots))
                 ax.set_xticks(x)
                 ax.set_xticklabels(plots)
                 ax.set_xlim(-1, len(plots))
@@ -117,7 +117,7 @@ class AtfPlotter(object):
                 if rows.index(row) == 0:
                     ax.set_title(col)
                 if cols.index(col) == 0:
-                    ax.set_ylabel(row, rotation=90)
+                    ax.set_ylabel(row, rotation=45, ha="right")
 
                 for plot in plots:
                     #print "    plot=", plot
@@ -165,7 +165,7 @@ class AtfPlotter(object):
                     ax.plot(plots.index(plot), 0, '')
 
         fig.autofmt_xdate(rotation=45)
-        #plt.tight_layout() # FIXME enabling this causes the x labels to be partly out of the image
+        plt.tight_layout()
 
         title = "ATF result for %s"%(self.atf_result.name)
         st = fig.suptitle(title, fontsize="large")
