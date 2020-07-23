@@ -11,6 +11,7 @@ from atf_core import ATFConfigurationParser
 import matplotlib.pyplot as plt
 
 import rosbag
+import rospy
 
 import numpy as np
 
@@ -141,7 +142,10 @@ class AtfPlotter(object):
                         yerr = [[0], [0]]
 
                     # set marker transparency (filled or transparent)
-                    if metric_result.groundtruth.result or not metric_result.groundtruth.available:
+                    if metric_result.started\
+                        and metric_result.finished\
+                        and (metric_result.groundtruth.result or not metric_result.groundtruth.available)\
+                        and metric_result.data.stamp != rospy.Time(0):
                         markerfacecolor = None      # plot filled marker
                     else:
                         markerfacecolor = 'None'    # plot transparent marker
