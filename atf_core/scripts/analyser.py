@@ -12,7 +12,7 @@ import unittest
 import yaml
 
 from atf_core import ATFConfigurationParser
-from atf_msgs.msg import AtfResult, TestResult, TestblockResult, MetricResult, TestblockStatus, KeyValue
+from atf_msgs.msg import AtfResult, TestResult, TestblockResult, MetricResult, TestblockStatus, KeyValue, DataStamped
 from atf_metrics import metrics_helper
 
 class Analyser:
@@ -178,13 +178,26 @@ class Analyser:
                     for tl_test in tl_tests.keys():
                         #print "    tl_test=", tl_test
                         metric_result = MetricResult()
+                        started = True
+                        finished = True
                         groundtruth_result = True
                         groundtruth_error_message = ""
                         details = []
                         for test in mbt[metric][testblock].keys():
                             if test.startswith(tl_test):
+                                # aggregate started/stopped from every metric_result
+                                if not mbt[metric][testblock][test].started:
+                                    started = False
+                                if not mbt[metric][testblock][test].finished:
+                                    finished = False
+
                                 # aggregate data from every metric_result
-                                metric_result.series.append(mbt[metric][testblock][test].data)
+                                data = mbt[metric][testblock][test].data
+                                stamp = data.stamp
+                                # check if data is set (not all default values anymore)
+                                if data.stamp == rospy.Time(0) and data.data == 0:
+                                    stamp = rospy.Time(0) # mark metric result as invalid by settimg timestamp to zero
+                                metric_result.series.append(data)
 
                                 # aggregate groundtruth from every metric_result
                                 groundtruth = mbt[metric][testblock][test].groundtruth
@@ -206,10 +219,10 @@ class Analyser:
 
                         metric_result.name          = mbt[metric][testblock][test].name
                         metric_result.mode          = MetricResult.SPAN # aggregated metrics are always SPAN
-                        metric_result.started       = mbt[metric][testblock][test].started
-                        metric_result.finished      = mbt[metric][testblock][test].finished
+                        metric_result.started       = started
+                        metric_result.finished      = finished
                         # metric_result.series is set above
-                        metric_result.data.stamp    = atf_result.header.stamp
+                        metric_result.data.stamp    = stamp
                         metric_result.data.data     = metrics_helper.get_mean(metric_result.series)
                         metric_result.min           = metrics_helper.get_min(metric_result.series)
                         metric_result.max           = metrics_helper.get_max(metric_result.series)
