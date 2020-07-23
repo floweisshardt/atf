@@ -88,21 +88,31 @@ class CalculateUserResult:
         metric_result.started = self.started # FIXME remove
         metric_result.finished = self.finished # FIXME remove
 
-        # check if user result is set
-        if self.metric_result != None and not (self.metric_result.groundtruth.result == False\
-            and self.metric_result.groundtruth.available == False\
-            and self.metric_result.groundtruth.error_message == ""\
-            and self.metric_result.groundtruth.data == 0.0\
-            and self.metric_result.groundtruth.epsilon == 0.0):
-            #print "groundtruth data is set from user within atf application for testblock %s. Skipping groundtruth evaluation from test_config"%self.testblock_name
+        # check if user result is set at all
+        if self.metric_result == None:
+            #print "no user result set"
+            return metric_result
+
+        # check if groundtruth is set via user result (not all default values anymore)
+        if self.metric_result.groundtruth.result\
+            or self.metric_result.groundtruth.available\
+            or self.metric_result.groundtruth.error_message != ""\
+            or self.metric_result.groundtruth.data != 0\
+            or self.metric_result.groundtruth.epsilon != 0:
             
+            #print "groundtruth data is set from user within atf application for testblock %s. Skipping groundtruth evaluation from test_config"%self.testblock_name
+
             # use data from user result
             metric_result = self.metric_result
 
             # overwrite user_result data with mandatory ATF filds
-            metric_result.name = self.name 
+            metric_result.name = self.name
+            metric_result.started = True
+            metric_result.finished = True
             metric_result.groundtruth.available = True
             return metric_result
+        
+        #print "no groundtruth set via user_result", self.metric_result.groundtruth
 
         metric_result.groundtruth.available = self.groundtruth.available
         metric_result.groundtruth.data = self.groundtruth.data
@@ -114,11 +124,19 @@ class CalculateUserResult:
 
         if metric_result.started and metric_result.finished: #  we check if the testblock was ever started and stopped
             # calculate metric data
-            if self.metric_result == None:
-                print "ERROR user result for testblock %s not set"%self.testblock_name
-                metric_result.data = None
-            else:
-                metric_result.data = self.metric_result.data
+            # check if user has set any metric_result (not all default values anymore)
+            if not self.metric_result.started\
+                and not self.metric_result.finished\
+                and len(self.metric_result.series) == 0\
+                and self.metric_result.data.stamp == rospy.Time(0)\
+                and self.metric_result.data.data == 0:
+
+                # let the analyzer know that this test failed
+                metric_result.groundtruth.result = False
+                metric_result.groundtruth.error_message = "ERROR user result for testblock %s not set"%self.testblock_name
+                return metric_result
+
+            metric_result.data = self.metric_result.data
 
             # fill details as KeyValue messages
             metric_result.details = self.metric_result.details
