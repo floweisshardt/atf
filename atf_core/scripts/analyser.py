@@ -138,7 +138,7 @@ class Analyser:
                 if atf_result.result == None:
                     atf_result.error_message = "Failed ATF tests:"
                 atf_result.result = False
-                atf_result.error_message += "\n - test '%s' (%s, %s, %s, %s): %s"%(test_result.name, test_result.robot, test_result.env, test_result.test_config, test_result.testblockset, test_result.error_message)
+                atf_result.error_message += "\n - test '%s' (%s, %s, %s, %s): %s"%(test_result.name, test_result.test_config, test_result.robot, test_result.env, test_result.testblockset, test_result.error_message)
             if atf_result.result == None and test_result.result:
                 atf_result.result = True
 
@@ -287,7 +287,7 @@ class Analyser:
             # aggregate test result
             if test_result.result == False:
                 atf_result_aggregated.result = False
-                atf_result_aggregated.error_message += "\n - test '%s' (%s, %s, %s, %s): %s"%(test_result.name, test_result.robot, test_result.env, test_result.test_config, test_result.testblockset, test_result.error_message)
+                atf_result_aggregated.error_message += "\n - test '%s' (%s, %s, %s, %s): %s"%(test_result.name, test_result.test_config, test_result.robot, test_result.env, test_result.testblockset, test_result.error_message)
 
         return atf_result_aggregated
 
@@ -320,9 +320,9 @@ class Analyser:
         print "**********************"
         for result in atf_result.results:
             if result.result:
-                print "test '%s' (%s, %s, %s, %s): succeeded"%(result.name, result.robot, result.env, result.test_config, result.testblockset)
+                print "test '%s' (%s, %s, %s, %s): succeeded"%(result.name, result.test_config, result.robot, result.env, result.testblockset)
             else:
-                print "test '%s' (%s, %s, %s, %s): failed"%(result.name, result.robot, result.env, result.test_config, result.testblockset)
+                print "test '%s' (%s, %s, %s, %s): failed"%(result.name, result.test_config, result.robot, result.env, result.testblockset)
 
 class TestAnalysing(unittest.TestCase):
     def test_analysing(self):
