@@ -12,7 +12,7 @@ import unittest
 import yaml
 
 from atf_core import ATFConfigurationParser
-from atf_msgs.msg import AtfResult, TestResult, TestblockResult, MetricResult, TestblockStatus
+from atf_msgs.msg import AtfResult, TestResult, TestblockResult, MetricResult, TestblockStatus, KeyValue, DataStamped
 from atf_metrics import metrics_helper
 
 class Analyser:
@@ -21,6 +21,7 @@ class Analyser:
         start_time = time.time()
         self.ns = "/atf/"
         self.error = False
+        self.package_name = package_name
 
         # parse configuration
         self.configuration_parser = ATFConfigurationParser(package_name, test_generation_config_file)
@@ -116,6 +117,7 @@ class Analyser:
     def get_result(self):
         atf_result = AtfResult()
         atf_result.header.stamp = rospy.Time(time.time())
+        atf_result.name = self.package_name
         atf_result.result = None
         atf_result.error_message = "All tests OK"
         for test in self.tests:
@@ -136,7 +138,7 @@ class Analyser:
                 if atf_result.result == None:
                     atf_result.error_message = "Failed ATF tests:"
                 atf_result.result = False
-                atf_result.error_message += "\n - test '%s' (%s, %s, %s, %s): %s"%(test_result.name, test_result.robot, test_result.env, test_result.test_config, test_result.testblockset, test_result.error_message)
+                atf_result.error_message += "\n - test '%s' (%s, %s, %s, %s): %s"%(test_result.name, test_result.test_config, test_result.robot, test_result.env, test_result.testblockset, test_result.error_message)
             if atf_result.result == None and test_result.result:
                 atf_result.result = True
 
@@ -176,19 +178,37 @@ class Analyser:
                     for tl_test in tl_tests.keys():
                         #print "    tl_test=", tl_test
                         metric_result = MetricResult()
+                        started = True
+                        finished = True
                         groundtruth_result = True
                         groundtruth_error_message = ""
+                        details = []
                         for test in mbt[metric][testblock].keys():
                             if test.startswith(tl_test):
-                                metric_result.series.append(mbt[metric][testblock][test].data)
+                                # aggregate started/stopped from every metric_result
+                                if not mbt[metric][testblock][test].started:
+                                    started = False
+                                if not mbt[metric][testblock][test].finished:
+                                    finished = False
 
-                                # aggregate groundtruth for every metric
+                                # aggregate data from every metric_result
+                                data = mbt[metric][testblock][test].data
+                                stamp = data.stamp
+                                # check if data is set (not all default values anymore)
+                                if data.stamp == rospy.Time(0) and data.data == 0:
+                                    stamp = rospy.Time(0) # mark metric result as invalid by settimg timestamp to zero
+                                metric_result.series.append(data)
+
+                                # aggregate groundtruth from every metric_result
                                 groundtruth = mbt[metric][testblock][test].groundtruth
                                 if groundtruth.result == False:
                                     groundtruth_result = False
                                     if groundtruth_error_message != "":
                                         groundtruth_error_message += "\n"
                                     groundtruth_error_message += "groundtruth missmatch in subtest %s"%(test)
+                                
+                                # aggregate details from every metric_result
+                                details = details + mbt[metric][testblock][test].details
 
                         if len(metric_result.series) == 0: # no matching substest found
                             continue
@@ -199,17 +219,17 @@ class Analyser:
 
                         metric_result.name          = mbt[metric][testblock][test].name
                         metric_result.mode          = MetricResult.SPAN # aggregated metrics are always SPAN
-                        metric_result.started       = mbt[metric][testblock][test].started
-                        metric_result.finished      = mbt[metric][testblock][test].finished
+                        metric_result.started       = started
+                        metric_result.finished      = finished
                         # metric_result.series is set above
-                        metric_result.data.stamp    = atf_result.header.stamp
+                        metric_result.data.stamp    = stamp
                         metric_result.data.data     = metrics_helper.get_mean(metric_result.series)
                         metric_result.min           = metrics_helper.get_min(metric_result.series)
                         metric_result.max           = metrics_helper.get_max(metric_result.series)
                         metric_result.mean          = metric_result.data.data
                         metric_result.std           = metrics_helper.get_std(metric_result.series)
                         # metric_result.groundtruth is set above
-                        metric_result.details       = mbt[metric][testblock][test].details
+                        metric_result.details       = details
                         mbt_aggregated[metric][testblock][tl_test] = metric_result
 
         # convert mbt to tbm
@@ -229,6 +249,7 @@ class Analyser:
         # convert tbm to atf_result_aggregated
         atf_result_aggregated = AtfResult()
         atf_result_aggregated.header = atf_result.header
+        atf_result_aggregated.name = atf_result.name
         atf_result_aggregated.result = True
         for test in sorted(tbm.keys()):
             test_result = TestResult()
@@ -266,7 +287,7 @@ class Analyser:
             # aggregate test result
             if test_result.result == False:
                 atf_result_aggregated.result = False
-                atf_result_aggregated.error_message += "\n - test '%s' (%s, %s, %s, %s): %s"%(test_result.name, test_result.robot, test_result.env, test_result.test_config, test_result.testblockset, test_result.error_message)
+                atf_result_aggregated.error_message += "\n - test '%s' (%s, %s, %s, %s): %s"%(test_result.name, test_result.test_config, test_result.robot, test_result.env, test_result.testblockset, test_result.error_message)
 
         return atf_result_aggregated
 
@@ -299,9 +320,9 @@ class Analyser:
         print "**********************"
         for result in atf_result.results:
             if result.result:
-                print "test '%s' (%s, %s, %s, %s): succeeded"%(result.name, result.robot, result.env, result.test_config, result.testblockset)
+                print "test '%s' (%s, %s, %s, %s): succeeded"%(result.name, result.test_config, result.robot, result.env, result.testblockset)
             else:
-                print "test '%s' (%s, %s, %s, %s): failed"%(result.name, result.robot, result.env, result.test_config, result.testblockset)
+                print "test '%s' (%s, %s, %s, %s): failed"%(result.name, result.test_config, result.robot, result.env, result.testblockset)
 
 class TestAnalysing(unittest.TestCase):
     def test_analysing(self):

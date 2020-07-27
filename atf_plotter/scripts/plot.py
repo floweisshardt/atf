@@ -11,6 +11,7 @@ from atf_core import ATFConfigurationParser
 import matplotlib.pyplot as plt
 
 import rosbag
+import rospy
 
 import numpy as np
 
@@ -80,9 +81,8 @@ class AtfPlotter(object):
         plots.sort()
 
         print "\nplotting in style '%s' (rows: %d, cols: %d, plots: %d)"%(style, len(rows), len(cols), len(plots))
-        meanlineprops = dict(linestyle='--', color='purple')
 
-        fig, axs = plt.subplots(len(rows), len(cols), squeeze=False, sharex=True, sharey=sharey, figsize=(20, 15)) # FIXME calculate width with nr_testblocks
+        fig, axs = plt.subplots(len(rows), len(cols), squeeze=False, sharex=True, sharey=sharey, figsize=(10, 12)) # FIXME calculate width with nr_testblocks
 
         # always make this a numpy 2D matrix to access rows and cols correclty if len(rows)=1 or len(cols)=1
         #axs = np.atleast_2d(axs) 
@@ -92,18 +92,19 @@ class AtfPlotter(object):
         # define colormap (one color per plot)
         clut = cm._generate_cmap('Dark2', len(plots))
         colors = [clut(plots.index(plot)) for plot in plots]
+        #colors = [(0.10588235294117647, 0.61960784313725492, 0.46666666666666667, 1.0), (0.85098039215686272, 0.37254901960784315, 0.0078431372549019607, 1.0)]*len(plots)
 
         for row in rows:
             #print "\nrow=", row
-            
-            
+
             for col in cols:
                 #print "  col=", col
 
-                x = np.arange(len(plots))
+                # select subplot
                 ax = axs[rows.index(row)][cols.index(col)]
 
                 # format x axis
+                x = np.arange(len(plots))
                 ax.set_xticks(x)
                 ax.set_xticklabels(plots)
                 ax.set_xlim(-1, len(plots))
@@ -116,7 +117,7 @@ class AtfPlotter(object):
                 if rows.index(row) == 0:
                     ax.set_title(col)
                 if cols.index(col) == 0:
-                    ax.set_ylabel(row, rotation=90)
+                    ax.set_ylabel(row, rotation=45, ha="right")
 
                 for plot in plots:
                     #print "    plot=", plot
@@ -141,7 +142,10 @@ class AtfPlotter(object):
                         yerr = [[0], [0]]
 
                     # set marker transparency (filled or transparent)
-                    if metric_result.groundtruth.result or not metric_result.groundtruth.available:
+                    if metric_result.started\
+                        and metric_result.finished\
+                        and (metric_result.groundtruth.result or not metric_result.groundtruth.available)\
+                        and metric_result.data.stamp != rospy.Time(0):
                         markerfacecolor = None      # plot filled marker
                     else:
                         markerfacecolor = 'None'    # plot transparent marker
@@ -163,11 +167,12 @@ class AtfPlotter(object):
         fig.autofmt_xdate(rotation=45)
         plt.tight_layout()
 
-        title = "ATF Result for %s\ntotal # of tests: %d\ntotal # of plots: %d"%("PACKAGE", len(self.atf_result.results), nr_unique_plots)   # replace PACKAGE with self.atf_result.package (needs to be added to message first)
-        st = fig.suptitle(title, fontsize="x-large")
+        title = "ATF result for %s"%(self.atf_result.name)
+        st = fig.suptitle(title, fontsize="large")
         # shift subplots down:
-        st.set_y(0.95)
-        fig.subplots_adjust(top=0.85) # move top for title
+        fig.subplots_adjust(top=0.90) # move top for title
+
+        fig.set_facecolor("white")
 
         fig.savefig("/tmp/test.png")
         plt.show()
