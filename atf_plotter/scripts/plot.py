@@ -81,9 +81,8 @@ class AtfPlotter(object):
         plots.sort()
 
         print "\nplotting in style '%s' (rows: %d, cols: %d, plots: %d)"%(style, len(rows), len(cols), len(plots))
-        meanlineprops = dict(linestyle='--', color='purple')
 
-        fig, axs = plt.subplots(len(rows), len(cols), squeeze=False, sharex=True, sharey=sharey, figsize=(10, 10)) # FIXME calculate width with nr_testblocks
+        fig, axs = plt.subplots(len(rows), len(cols), squeeze=False, sharex=True, sharey=sharey, figsize=(10, 12)) # FIXME calculate width with nr_testblocks
 
         # always make this a numpy 2D matrix to access rows and cols correclty if len(rows)=1 or len(cols)=1
         #axs = np.atleast_2d(axs) 
@@ -93,6 +92,7 @@ class AtfPlotter(object):
         # define colormap (one color per plot)
         clut = cm._generate_cmap('Dark2', len(plots))
         colors = [clut(plots.index(plot)) for plot in plots]
+        #colors = [(0.10588235294117647, 0.61960784313725492, 0.46666666666666667, 1.0), (0.85098039215686272, 0.37254901960784315, 0.0078431372549019607, 1.0)]*len(plots)
 
         for row in rows:
             #print "\nrow=", row
