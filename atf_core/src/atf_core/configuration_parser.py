@@ -273,6 +273,8 @@ class ATFConfigurationParser:
             if not self.match_filter(test.name, filter_tests):
                 continue
 
+            test_description = "(%s, %s, %s, %s)"%(test.test_config, test.robot, test.env, test.testblockset)
+
             for testblock in test.results:
                 #print "  -", testblock.name
                 if not self.match_filter(testblock.name, filter_testblocks):
@@ -310,7 +312,8 @@ class ATFConfigurationParser:
                         mbt[metric.name] = {}
                     if testblock.name         not in mbt[metric.name].keys():
                         mbt[metric.name][testblock.name] = {}
-                    mbt[metric.name][testblock.name][test.name] = metric
+                    #mbt[metric.name][testblock.name][test.name] = metric
+                    mbt[metric.name][testblock.name][test.name + "\n" + test_description] = metric
 
                     # mtb
                     if metric.name            not in mtb.keys():
