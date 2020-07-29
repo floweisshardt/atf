@@ -91,6 +91,9 @@ class CalculateUserResult:
         # check if user result is set at all
         if self.metric_result == None:
             #print "no user result set"
+            metric_result.groundtruth.result = False
+            metric_result.groundtruth.error_message = "no result"
+            #print "EXIT 0", metric_result.data.data, metric_result.groundtruth.result, metric_result.groundtruth.error_message
             return metric_result
 
         # check if groundtruth is set via user result (not all default values anymore)
@@ -110,6 +113,7 @@ class CalculateUserResult:
             metric_result.started = True
             metric_result.finished = True
             metric_result.groundtruth.available = True
+            #print "EXIT 1", metric_result.data.data, metric_result.groundtruth.result, metric_result.groundtruth.error_message
             return metric_result
         
         #print "no groundtruth set via user_result", self.metric_result.groundtruth
@@ -133,7 +137,8 @@ class CalculateUserResult:
 
                 # let the analyzer know that this test failed
                 metric_result.groundtruth.result = False
-                metric_result.groundtruth.error_message = "ERROR user result for testblock %s not set"%self.testblock_name
+                metric_result.groundtruth.error_message = "user result for testblock %s not set"%self.testblock_name
+                #print "EXIT 2", metric_result.data.data, metric_result.groundtruth.result, metric_result.groundtruth.error_message
                 return metric_result
 
             metric_result.data = self.metric_result.data
@@ -160,4 +165,5 @@ class CalculateUserResult:
         if metric_result.groundtruth.result == None:
             raise ATFAnalyserError("Analysing failed, metric result is None for metric '%s'."%metric_result.name)
 
+        #print "EXIT 3", metric_result.data.data, metric_result.groundtruth.result, metric_result.groundtruth.error_message
         return metric_result
