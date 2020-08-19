@@ -207,7 +207,7 @@ class CalculateInterface:
         metric_result.groundtruth.result = None
         metric_result.groundtruth.error_message = None
 
-        if metric_result.started and metric_result.finished: #  we check if the testblock was ever started and stopped
+        if metric_result.started and metric_result.finished and len(self.series) != 0: #  we check if the testblock was ever started and stopped and if result data is available
             # calculate metric data
             if self.series_mode != None:
                 metric_result.series = self.series
