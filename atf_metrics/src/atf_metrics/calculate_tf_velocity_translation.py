@@ -1,0 +1,205 @@
+#!/usr/bin/env python
+import copy
+import math
+import os
+import rospy
+import sys
+import tf
+import tf2_py
+import tf2_ros
+
+from atf_core import ATFAnalyserError, ATFConfigurationError
+from atf_msgs.msg import MetricResult, Groundtruth, KeyValue, DataStamped
+from atf_metrics import metrics_helper
+
+class CalculateTfVelocityTranslationParamHandler:
+    def __init__(self):
+        """
+        Class for returning the corresponding metric class with the given parameter.
+        """
+        pass
+
+    def parse_parameter(self, testblock_name, metric_name, params):
+        """
+        Method that returns the metric method with the given parameter.
+        :param params: Parameter
+        """
+        metric_type = "tf_velocity_translation"
+
+        split_name = metric_name.split("::")
+        if len(split_name) != 2:
+            raise ATFConfigurationError("no valid metric name for metric '%s' in testblock '%s'" %(metric_name, testblock_name))
+        if split_name[0] != metric_type:
+            raise ATFConfigurationError("called invalid metric handle for metric '%s' in testblock '%s'." %(metric_name, testblock_name))
+
+        if type(params) is not dict:
+            rospy.logerr("metric config not a dictionary")
+            raise ATFConfigurationError("no valid metric configuration for metric '%s' in testblock '%s': %s" %(metric_name, testblock_name, str(params)))
+
+        # check for optional parameters
+        groundtruth = Groundtruth()
+        try:
+            groundtruth.data = params["groundtruth"]
+            groundtruth.epsilon = params["groundtruth_epsilon"]
+            groundtruth.available = True
+        except (TypeError, KeyError):
+            groundtruth.data = 0
+            groundtruth.epsilon = 0
+            groundtruth.available = False
+        try:
+            mode = params["mode"]
+        except (TypeError, KeyError):
+            mode = MetricResult.SPAN
+        try:
+            series_mode = params["series_mode"]
+        except (TypeError, KeyError):
+            series_mode = None
+
+        return CalculateTfVelocityTranslation(metric_name, params["topics"], params["root_frame"], params["measured_frame"], groundtruth, mode, series_mode)
+
+class CalculateTfVelocityTranslation:
+    def __init__(self, name, topics, root_frame, measured_frame, groundtruth, mode, series_mode):
+        """
+        Class for calculating the velocity by the given frame in relation to a given root frame.
+        The tf data is sent over the tf topics given in the test_config.yaml.
+        :param root_frame: name of the first frame
+        :type  root_frame: string
+        :param measured_frame: name of the second frame. The velocity will be measured in relation to the root_frame.
+        :type  measured_frame: string
+        """
+        self.name = name
+        self.started = False
+        self.finished = False
+        self.active = False
+        self.groundtruth = groundtruth
+        self.topics = topics
+        self.root_frame = root_frame
+        self.measured_frame = measured_frame
+        self.mode = mode
+        self.series_mode = series_mode
+        self.series = []
+        self.data = DataStamped()
+
+        self.t = tf.Transformer(True, rospy.Duration(10.0))
+
+    def start(self, status):
+        self.active = True
+        self.started = True
+
+    def stop(self, status):
+        self.active = False
+        self.finished = True
+
+    def pause(self, status):
+        self.active = False
+
+    def purge(self, status):
+        pass
+
+    def update(self, topic, msg, t):
+        # make sure we're handling a TFMessage (from /tf or /tf_static)
+        # TODO check type instead of topic names
+        if topic in self.topics:
+            for transform in msg.transforms:
+                self.t.setTransform(transform)
+
+        # get data if testblock is active
+        if self.active:
+            self.data.stamp = t
+            distance = round(self.get_distance(),6)
+            self.data.data = distance / (self.series[-1].stamp - self.data.stamp)
+            self.series.append(copy.deepcopy(self.data))  # FIXME handle fixed rates
+
+    def get_distance(self):
+        distance = 0.0
+        try:
+            sys.stdout = open(os.devnull, 'w') # supress stdout
+            (trans, rot) = self.t.lookupTransform(self.root_frame, self.measured_frame, rospy.Time(0))
+        except tf2_ros.LookupException as e:
+            sys.stdout = sys.__stdout__  # restore stdout
+            #print "Exception in metric '%s' %s %s"%(self.name, type(e), e)
+            return distance
+        except tf2_py.ExtrapolationException as e:
+            sys.stdout = sys.__stdout__  # restore stdout
+            #print "Exception in metric '%s' %s %s"%(self.name, type(e), e)
+            return distance
+        except tf2_py.ConnectivityException as e:
+            sys.stdout = sys.__stdout__  # restore stdout
+            #print "Exception in metric '%s' %s %s"%(self.name, type(e), e)
+            return distance
+        except Exception as e:
+            sys.stdout = sys.__stdout__  # restore stdout
+            print "general exeption in metric '%s':"%self.name, type(e), e
+            return distance
+        sys.stdout = sys.__stdout__  # restore stdout
+
+        # This calculates the tf distance from the first transform (root_frame to measured_frame) to the last transform (root_frame to measured_frame)
+        #self.data.data = round(sum([(fl - ll)**2 for fl, ll in zip(lin_first, lin_last)])**0.5, 9)
+
+        # This calculates the tf distance between root_frame and measured_frame at the end of the testblock
+        distance = sum(axis**2 for axis in trans)**0.5
+
+        return distance
+
+    def get_topics(self):
+        return self.topics
+
+    def get_result(self):
+        metric_result = MetricResult()
+        metric_result.name = self.name
+        metric_result.mode = self.mode
+        metric_result.started = self.started # FIXME remove
+        metric_result.finished = self.finished # FIXME remove
+        metric_result.series = []
+        metric_result.groundtruth.available = self.groundtruth.available
+        metric_result.groundtruth.data = self.groundtruth.data
+        metric_result.groundtruth.epsilon = self.groundtruth.epsilon
+        
+        # assign default value
+        metric_result.groundtruth.result = None
+        metric_result.groundtruth.error_message = None
+
+        if metric_result.started and metric_result.finished: #  we check if the testblock was ever started and stopped
+            # calculate metric data
+            if self.series_mode != None:
+                metric_result.series = self.series
+            metric_result.data = self.series[-1] # take last element from self.series
+            if metric_result.mode == MetricResult.SNAP:
+                metric_result.min = metric_result.data
+                metric_result.max = metric_result.data
+                metric_result.mean = metric_result.data.data
+                metric_result.std = 0.0
+            elif metric_result.mode == MetricResult.SPAN:
+                metric_result.min = metrics_helper.get_min(self.series)
+                metric_result.max = metrics_helper.get_max(self.series)
+                metric_result.mean = metrics_helper.get_mean(self.series)
+                metric_result.std = metrics_helper.get_std(self.series)
+            else: # invalid mode
+                raise ATFAnalyserError("Analysing failed, invalid mode '%s' for metric '%s'."%(metric_result.mode, metric_result.name))
+
+            # fill details as KeyValue messages
+            details = []
+            details.append(KeyValue("root_frame", self.root_frame))
+            details.append(KeyValue("measured_frame", self.measured_frame))
+            metric_result.details = details
+
+            # evaluate metric data
+            if not metric_result.groundtruth.available: # no groundtruth given
+                metric_result.groundtruth.result = True
+                metric_result.groundtruth.error_message = "all OK (no groundtruth available)"
+            else: # groundtruth available
+                if math.fabs(metric_result.groundtruth.data - metric_result.data.data) <= metric_result.groundtruth.epsilon:
+                    metric_result.groundtruth.result = True
+                    metric_result.groundtruth.error_message = "all OK"
+                else:
+                    metric_result.groundtruth.result = False
+                    metric_result.groundtruth.error_message = "groundtruth missmatch: %f not within %f+-%f"%(metric_result.data.data, metric_result.groundtruth.data, metric_result.groundtruth.epsilon)
+
+        else: # testblock did not start and/or finish
+            metric_result.groundtruth.result = False
+            metric_result.groundtruth.error_message = "no result"
+
+        if metric_result.groundtruth.result == None:
+            raise ATFAnalyserError("Analysing failed, metric result is None for metric '%s'."%metric_result.name)
+
+        return metric_result
