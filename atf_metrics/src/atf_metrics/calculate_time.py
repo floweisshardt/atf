@@ -114,13 +114,15 @@ class CalculateTime:
             # calculate metric data
             if self.series_mode != None:
                 metric_result.series = self.series
-            metric_result.data = self.series[-1] # take last element from self.series
             if metric_result.mode == MetricResult.SNAP:
+                metric_result.data = self.series[-1]                           # take last element from self.series for data and stamp
                 metric_result.min = metric_result.data
                 metric_result.max = metric_result.data
                 metric_result.mean = metric_result.data.data
                 metric_result.std = 0.0
             elif metric_result.mode == MetricResult.SPAN:
+                metric_result.data.data = metrics_helper.get_mean(self.series) # take mean for data
+                metric_result.data.stamp = self.series[-1].stamp               # take stamp from last element in self.series for stamp
                 metric_result.min = metrics_helper.get_min(self.series)
                 metric_result.max = metrics_helper.get_max(self.series)
                 metric_result.mean = metrics_helper.get_mean(self.series)

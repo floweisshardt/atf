@@ -79,6 +79,9 @@ class CalculateTfVelocityTranslation:
         self.series_mode = series_mode
         self.series = []
         self.data = DataStamped()
+        self.trans_old = []
+        self.rot_old = []
+        self.time_old = None
 
         self.t = tf.Transformer(True, rospy.Duration(10.0))
 
@@ -105,41 +108,54 @@ class CalculateTfVelocityTranslation:
 
         # get data if testblock is active
         if self.active:
+            data = self.get_data(t)
+            if data == None:
+                return
             self.data.stamp = t
-            distance = round(self.get_distance(),6)
-            self.data.data = distance / (self.series[-1].stamp - self.data.stamp)
+            self.data.data = round(data, 6)
             self.series.append(copy.deepcopy(self.data))  # FIXME handle fixed rates
 
-    def get_distance(self):
-        distance = 0.0
+    def get_data(self, t):
         try:
             sys.stdout = open(os.devnull, 'w') # supress stdout
             (trans, rot) = self.t.lookupTransform(self.root_frame, self.measured_frame, rospy.Time(0))
         except tf2_ros.LookupException as e:
             sys.stdout = sys.__stdout__  # restore stdout
             #print "Exception in metric '%s' %s %s"%(self.name, type(e), e)
-            return distance
+            return None
         except tf2_py.ExtrapolationException as e:
             sys.stdout = sys.__stdout__  # restore stdout
             #print "Exception in metric '%s' %s %s"%(self.name, type(e), e)
-            return distance
+            return None
         except tf2_py.ConnectivityException as e:
             sys.stdout = sys.__stdout__  # restore stdout
             #print "Exception in metric '%s' %s %s"%(self.name, type(e), e)
-            return distance
+            return None
         except Exception as e:
             sys.stdout = sys.__stdout__  # restore stdout
             print "general exeption in metric '%s':"%self.name, type(e), e
-            return distance
+            return None
         sys.stdout = sys.__stdout__  # restore stdout
 
-        # This calculates the tf distance from the first transform (root_frame to measured_frame) to the last transform (root_frame to measured_frame)
-        #self.data.data = round(sum([(fl - ll)**2 for fl, ll in zip(lin_first, lin_last)])**0.5, 9)
+        if self.time_old == None:
+            self.trans_old = trans
+            self.rot_old = rot
+            self.time_old = t
+            return None
 
-        # This calculates the tf distance between root_frame and measured_frame at the end of the testblock
-        distance = sum(axis**2 for axis in trans)**0.5
+        path_increment = sum([(axis - axis_old)**2 for axis, axis_old in zip(trans, self.trans_old)])**0.5
+        time_increment = t - self.time_old
 
-        return distance
+        if time_increment < rospy.Duration(0.5): # TODO make this a parameter
+            return None
+
+        velocity = path_increment / time_increment.to_sec()
+
+        self.trans_old = trans
+        self.rot_old = rot
+        self.time_old = t
+
+        return velocity
 
     def get_topics(self):
         return self.topics
@@ -163,13 +179,15 @@ class CalculateTfVelocityTranslation:
             # calculate metric data
             if self.series_mode != None:
                 metric_result.series = self.series
-            metric_result.data = self.series[-1] # take last element from self.series
             if metric_result.mode == MetricResult.SNAP:
+                metric_result.data = self.series[-1]                           # take last element from self.series for data and stamp
                 metric_result.min = metric_result.data
                 metric_result.max = metric_result.data
                 metric_result.mean = metric_result.data.data
                 metric_result.std = 0.0
             elif metric_result.mode == MetricResult.SPAN:
+                metric_result.data.data = metrics_helper.get_mean(self.series) # take mean for data
+                metric_result.data.stamp = self.series[-1].stamp               # take stamp from last element in self.series for stamp
                 metric_result.min = metrics_helper.get_min(self.series)
                 metric_result.max = metrics_helper.get_max(self.series)
                 metric_result.mean = metrics_helper.get_mean(self.series)

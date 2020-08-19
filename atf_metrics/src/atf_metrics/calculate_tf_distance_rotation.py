@@ -107,31 +107,33 @@ class CalculateTfDistanceRotation:
 
         # get data if testblock is active
         if self.active:
+            data = self.get_data(t)
+            if data == None:
+                return
             self.data.stamp = t
-            self.data.data = round(self.get_distance(),6)
+            self.data.data = round(data, 6)
             self.series.append(copy.deepcopy(self.data))  # FIXME handle fixed rates
 
-    def get_distance(self):
-        distance = 0.0
+    def get_data(self, t):
         try:
             sys.stdout = open(os.devnull, 'w') # supress stdout
             (trans, rot) = self.t.lookupTransform(self.root_frame, self.measured_frame, rospy.Time(0))
         except tf2_ros.LookupException as e:
             sys.stdout = sys.__stdout__  # restore stdout
             #print "Exception in metric '%s' %s %s"%(self.name, type(e), e)
-            return distance
+            return None
         except tf2_py.ExtrapolationException as e:
             sys.stdout = sys.__stdout__  # restore stdout
             #print "Exception in metric '%s' %s %s"%(self.name, type(e), e)
-            return distance
+            return None
         except tf2_py.ConnectivityException as e:
             sys.stdout = sys.__stdout__  # restore stdout
             #print "Exception in metric '%s' %s %s"%(self.name, type(e), e)
-            return distance
+            return None
         except Exception as e:
             sys.stdout = sys.__stdout__  # restore stdout
             print "general exeption in metric '%s':"%self.name, type(e), e
-            return distance
+            return None
         sys.stdout = sys.__stdout__  # restore stdout
 
         # convert rotation to euler before calculating a cartesian distance
@@ -167,13 +169,15 @@ class CalculateTfDistanceRotation:
             # calculate metric data
             if self.series_mode != None:
                 metric_result.series = self.series
-            metric_result.data = self.series[-1] # take last element from self.series
             if metric_result.mode == MetricResult.SNAP:
+                metric_result.data = self.series[-1]                           # take last element from self.series for data and stamp
                 metric_result.min = metric_result.data
                 metric_result.max = metric_result.data
                 metric_result.mean = metric_result.data.data
                 metric_result.std = 0.0
             elif metric_result.mode == MetricResult.SPAN:
+                metric_result.data.data = metrics_helper.get_mean(self.series) # take mean for data
+                metric_result.data.stamp = self.series[-1].stamp               # take stamp from last element in self.series for stamp
                 metric_result.min = metrics_helper.get_min(self.series)
                 metric_result.max = metrics_helper.get_max(self.series)
                 metric_result.mean = metrics_helper.get_mean(self.series)
