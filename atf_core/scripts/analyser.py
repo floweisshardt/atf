@@ -218,7 +218,7 @@ class Analyser:
                         metric_result.groundtruth.error_message = groundtruth_error_message
 
                         metric_result.name          = mbt[metric][testblock][test].name
-                        metric_result.mode          = MetricResult.SPAN # aggregated metrics are always SPAN
+                        metric_result.mode          = MetricResult.SPAN_MEAN # aggregated metrics are always SPAN_MEAN
                         metric_result.started       = started
                         metric_result.finished      = finished
                         # metric_result.series is set above

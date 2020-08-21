@@ -17,9 +17,9 @@ class PublishTf:
         self.child2_frame_id = "reference2"
         self.child3_frame_id = "reference3"
         self.child4_frame_id = "reference4"
-        #rospy.Timer(rospy.Duration(1 / self.pub_freq), self.reference2)
-        #rospy.Timer(rospy.Duration(1 / self.pub_freq), self.reference3)
-        #rospy.Timer(rospy.Duration(1 / self.pub_freq), self.reference4)
+        rospy.Timer(rospy.Duration(1 / self.pub_freq), self.reference2)
+        rospy.Timer(rospy.Duration(1 / self.pub_freq), self.reference3)
+        rospy.Timer(rospy.Duration(1 / self.pub_freq), self.reference4)
         rospy.sleep(1.0)
 
     def reference2(self, event):

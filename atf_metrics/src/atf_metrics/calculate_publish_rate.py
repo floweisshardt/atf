@@ -44,7 +44,7 @@ class CalculatePublishRateParamHandler:
         try:
             mode = params["mode"]
         except (TypeError, KeyError):
-            mode = MetricResult.SPAN
+            mode = MetricResult.SPAN_MEAN
         try:
             series_mode = params["series_mode"]
         except (TypeError, KeyError):
@@ -129,21 +129,47 @@ class CalculatePublishRate:
         metric_result.groundtruth.result = None
         metric_result.groundtruth.error_message = None
 
-        if metric_result.started and metric_result.finished: #  we check if the testblock was ever started and stopped
+        if metric_result.started and metric_result.finished and len(self.series) != 0: #  we check if the testblock was ever started and stopped and if result data is available
             # calculate metric data
             if self.series_mode != None:
                 metric_result.series = self.series
-            metric_result.data = self.series[-1] # take last element from self.series
             if metric_result.mode == MetricResult.SNAP:
+                metric_result.data = self.series[-1]                           # take last element from self.series for data and stamp
                 metric_result.min = metric_result.data
                 metric_result.max = metric_result.data
                 metric_result.mean = metric_result.data.data
                 metric_result.std = 0.0
-            elif metric_result.mode == MetricResult.SPAN:
+            elif metric_result.mode == MetricResult.SPAN_MEAN:
                 metric_result.min = metrics_helper.get_min(self.series)
                 metric_result.max = metrics_helper.get_max(self.series)
                 metric_result.mean = metrics_helper.get_mean(self.series)
                 metric_result.std = metrics_helper.get_std(self.series)
+                metric_result.data.data = metric_result.mean                   # take mean for data
+                metric_result.data.stamp = self.series[-1].stamp               # take stamp from last element in self.series for stamp
+            elif metric_result.mode == MetricResult.SPAN_MIN:
+                metric_result.min = metrics_helper.get_min(self.series)
+                metric_result.max = metrics_helper.get_max(self.series)
+                metric_result.mean = metrics_helper.get_mean(self.series)
+                metric_result.std = metrics_helper.get_std(self.series)
+                metric_result.data = metric_result.min
+            elif metric_result.mode == MetricResult.SPAN_ABSMIN:
+                metric_result.min = metrics_helper.get_absmin(self.series)
+                metric_result.max = metrics_helper.get_absmax(self.series)
+                metric_result.mean = metrics_helper.get_mean(self.series)
+                metric_result.std = metrics_helper.get_std(self.series)
+                metric_result.data = metric_result.min
+            elif metric_result.mode == MetricResult.SPAN_MAX:
+                metric_result.min = metrics_helper.get_min(self.series)
+                metric_result.max = metrics_helper.get_max(self.series)
+                metric_result.mean = metrics_helper.get_mean(self.series)
+                metric_result.std = metrics_helper.get_std(self.series)
+                metric_result.data = metric_result.max
+            elif metric_result.mode == MetricResult.SPAN_ABSMAX:
+                metric_result.min = metrics_helper.get_absmin(self.series)
+                metric_result.max = metrics_helper.get_absmax(self.series)
+                metric_result.mean = metrics_helper.get_mean(self.series)
+                metric_result.std = metrics_helper.get_std(self.series)
+                metric_result.data = metric_result.max
             else: # invalid mode
                 raise ATFAnalyserError("Analysing failed, invalid mode '%s' for metric '%s'."%(metric_result.mode, metric_result.name))
 

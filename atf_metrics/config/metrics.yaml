@@ -12,6 +12,12 @@ tf_distance_translation:
   handler: CalculateTfDistanceTranslationParamHandler
 tf_distance_rotation:
   handler: CalculateTfDistanceRotationParamHandler
+tf_velocity_translation:
+  handler: CalculateTfVelocityTranslationParamHandler
+tf_acceleration_translation:
+  handler: CalculateTfAccelerationTranslationParamHandler
+tf_jerk_translation:
+  handler: CalculateTfJerkTranslationParamHandler
 publish_rate:
   handler: CalculatePublishRateParamHandler
 resources:
