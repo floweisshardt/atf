@@ -157,7 +157,7 @@ class AtfPlotter(object):
                     ax.errorbar(plots.index(plot), data, yerr=yerr, fmt='D', markersize=12, markerfacecolor=markerfacecolor, color=color)
 
                     # plot min and max
-                    if metric_result.mode == MetricResult.SPAN and not hide_min_max:
+                    if not hide_min_max and not metric_result.mode == MetricResult.SNAP: # only plot min max for SPAN modes
                         ax.plot(plots.index(plot), metric_result.min.data, '^', markersize=8, color=color)
                         ax.plot(plots.index(plot), metric_result.max.data, 'v', markersize=8, color=color)
 

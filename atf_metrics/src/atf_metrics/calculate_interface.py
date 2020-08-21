@@ -217,13 +217,37 @@ class CalculateInterface:
                 metric_result.max = metric_result.data
                 metric_result.mean = metric_result.data.data
                 metric_result.std = 0.0
-            elif metric_result.mode == MetricResult.SPAN:
-                metric_result.data.data = metrics_helper.get_mean(self.series) # take mean for data
-                metric_result.data.stamp = self.series[-1].stamp               # take stamp from last element in self.series for stamp
+            elif metric_result.mode == MetricResult.SPAN_MEAN:
                 metric_result.min = metrics_helper.get_min(self.series)
                 metric_result.max = metrics_helper.get_max(self.series)
                 metric_result.mean = metrics_helper.get_mean(self.series)
                 metric_result.std = metrics_helper.get_std(self.series)
+                metric_result.data.data = metric_result.mean                   # take mean for data
+                metric_result.data.stamp = self.series[-1].stamp               # take stamp from last element in self.series for stamp
+            elif metric_result.mode == MetricResult.SPAN_MIN:
+                metric_result.min = metrics_helper.get_min(self.series)
+                metric_result.max = metrics_helper.get_max(self.series)
+                metric_result.mean = metrics_helper.get_mean(self.series)
+                metric_result.std = metrics_helper.get_std(self.series)
+                metric_result.data = metric_result.min
+            elif metric_result.mode == MetricResult.SPAN_ABSMIN:
+                metric_result.min = metrics_helper.get_absmin(self.series)
+                metric_result.max = metrics_helper.get_absmax(self.series)
+                metric_result.mean = metrics_helper.get_mean(self.series)
+                metric_result.std = metrics_helper.get_std(self.series)
+                metric_result.data = metric_result.min
+            elif metric_result.mode == MetricResult.SPAN_MAX:
+                metric_result.min = metrics_helper.get_min(self.series)
+                metric_result.max = metrics_helper.get_max(self.series)
+                metric_result.mean = metrics_helper.get_mean(self.series)
+                metric_result.std = metrics_helper.get_std(self.series)
+                metric_result.data = metric_result.max
+            elif metric_result.mode == MetricResult.SPAN_ABSMAX:
+                metric_result.min = metrics_helper.get_absmin(self.series)
+                metric_result.max = metrics_helper.get_absmax(self.series)
+                metric_result.mean = metrics_helper.get_mean(self.series)
+                metric_result.std = metrics_helper.get_std(self.series)
+                metric_result.data = metric_result.max
             else: # invalid mode
                 raise ATFAnalyserError("Analysing failed, invalid mode '%s' for metric '%s'."%(metric_result.mode, metric_result.name))
 
