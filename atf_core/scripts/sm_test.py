@@ -85,12 +85,10 @@ class Test(unittest.TestCase):
 
 if __name__ == '__main__':
     rospy.init_node('test_name')
-    if "standalone" in sys.argv:
+    if "execute_as_test" in sys.argv:
+        rostest.rosrun('application', 'recording', Test)
+    else:
         rec = Recorder()
         # Execute SMACH plan
-        #print "before execute"
         rec.sm_top.execute()
-        #print "after execute"
         rec.sis.stop()
-    else:
-        rostest.rosrun('application', 'recording', Test, sysargs=None)

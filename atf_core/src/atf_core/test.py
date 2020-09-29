@@ -28,7 +28,7 @@ class Test:
         test_result.env = self.env_name
         test_result.test_config = self.test_config_name
         test_result.testblockset = self.testblockset_name
-        test_result.groundtruth_result = None
+        test_result.result = None
         for testblock in self.testblocks:
             # get result
             testblock_result = testblock.get_result()
@@ -37,12 +37,15 @@ class Test:
             test_result.results.append(testblock_result)
 
             # aggregate result
-            if testblock_result.groundtruth_result != None and not testblock_result.groundtruth_result:
-                test_result.groundtruth_result = False
-                test_result.groundtruth_error_message += "\n   - testblock '%s': %s"%(testblock_result.name, testblock_result.groundtruth_error_message)
-                #print test_result.groundtruth_error_message
-            if test_result.groundtruth_result == None and testblock_result.groundtruth_result:
-                test_result.groundtruth_result = True
+            if testblock_result.result != None and not testblock_result.result:
+                test_result.result = False
+                test_result.error_message += "\n   - testblock '%s': %s"%(testblock_result.name, testblock_result.error_message)
+                #print test_result.error_message
+            if test_result.result == None and testblock_result.result:
+                test_result.result = True
+            
+        if test_result.result == None:
+            raise ATFAnalyserError("Analysing failed, test result is None for test '%s'."%test_result.name)
 
         if len(test_result.results) == 0:
             raise ATFAnalyserError("Analysing failed, no test result available for test '%s'."%test_result.name)

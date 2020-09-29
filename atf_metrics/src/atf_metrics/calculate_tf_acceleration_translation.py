@@ -1,14 +1,18 @@
 #!/usr/bin/env python
 import copy
 import math
+import os
 import rospy
+import sys
+import tf
+import tf2_py
+import tf2_ros
 
 from atf_core import ATFAnalyserError, ATFConfigurationError
-from atf_msgs.msg import Api
 from atf_msgs.msg import MetricResult, Groundtruth, KeyValue, DataStamped
 from atf_metrics import metrics_helper
 
-class CalculateInterfaceParamHandler:
+class CalculateTfAccelerationTranslationParamHandler:
     def __init__(self):
         """
         Class for returning the corresponding metric class with the given parameter.
@@ -20,7 +24,7 @@ class CalculateInterfaceParamHandler:
         Method that returns the metric method with the given parameter.
         :param params: Parameter
         """
-        metric_type = "interface"
+        metric_type = "tf_acceleration_translation"
 
         split_name = metric_name.split("::")
         if len(split_name) != 2:
@@ -32,50 +36,55 @@ class CalculateInterfaceParamHandler:
             rospy.logerr("metric config not a dictionary")
             raise ATFConfigurationError("no valid metric configuration for metric '%s' in testblock '%s': %s" %(metric_name, testblock_name, str(params)))
 
-        for interface, data in params.items():
-            if type(data) is list:
-                new_data = []
-                for interface_name, interface_type in data:
-                    if interface_name[0] != "/":
-                        interface_name = "/" + interface_name
-                    new_data.append([interface_name, interface_type])
-                params[interface] = new_data
-            elif type(data) is str:
-                if data[0] != "/":
-                    params[interface] = "/" + data
         # check for optional parameters
+        groundtruth = Groundtruth()
+        try:
+            groundtruth.data = params["groundtruth"]
+            groundtruth.epsilon = params["groundtruth_epsilon"]
+            groundtruth.available = True
+        except (TypeError, KeyError):
+            groundtruth.data = 0
+            groundtruth.epsilon = 0
+            groundtruth.available = False
         try:
             mode = params["mode"]
         except (TypeError, KeyError):
-            mode = MetricResult.SNAP
+            mode = MetricResult.SPAN_ABSMAX
         try:
             series_mode = params["series_mode"]
         except (TypeError, KeyError):
             series_mode = None
 
-        return CalculateInterface(metric_name, testblock_name, params, mode, series_mode)
+        return CalculateTfAccelerationTranslation(metric_name, params["topics"], params["root_frame"], params["measured_frame"], groundtruth, mode, series_mode)
 
-class CalculateInterface:
-    def __init__(self, name, testblock_name, params, mode, series_mode):
+class CalculateTfAccelerationTranslation:
+    def __init__(self, name, topics, root_frame, measured_frame, groundtruth, mode, series_mode):
         """
-        Class for calculating the interface type.
+        Class for calculating the acceleration by the given frame in relation to a given root frame.
+        The tf data is sent over the tf topics given in the test_config.yaml.
+        :param root_frame: name of the first frame
+        :type  root_frame: string
+        :param measured_frame: name of the second frame. The acceleration will be measured in relation to the root_frame.
+        :type  measured_frame: string
         """
         self.name = name
         self.started = False
         self.finished = False
         self.active = False
-        self.groundtruth = Groundtruth()
-        self.groundtruth.available = True
-        self.groundtruth.data = 100         # this is the max score
-        self.groundtruth.epsilon = 0        # no deviation from max score allowed
+        self.groundtruth = groundtruth
+        self.topics = topics
+        self.root_frame = root_frame
+        self.measured_frame = measured_frame
         self.mode = mode
         self.series_mode = series_mode
         self.series = []
         self.data = DataStamped()
-        self.interface_details = {}
-        self.api_dict = {}
-        self.testblock_name = testblock_name
-        self.params = params
+        self.trans_old = []
+        self.rot_old = []
+        self.time_old = None
+        self.velocity_old = None
+
+        self.t = tf.Transformer(True, rospy.Duration(10.0))
 
     def start(self, status):
         self.active = True
@@ -86,111 +95,82 @@ class CalculateInterface:
         self.finished = True
 
     def pause(self, status):
-        pass
+        self.active = False
 
     def purge(self, status):
         pass
 
     def update(self, topic, msg, t):
+        # make sure we're handling a TFMessage (from /tf or /tf_static)
+        # TODO check type instead of topic names
+        if topic in self.topics:
+            for transform in msg.transforms:
+                self.t.setTransform(transform)
+
         # get data if testblock is active
         if self.active:
-            if topic == "/atf/api" and msg.testblock_name == self.testblock_name:
-                self.api_dict = self.msg_to_dict(msg)
-                interface_data, self.interface_details = self.calculate_data_and_details()
-                self.data.stamp = t
-                self.data.data = interface_data
-                self.series.append(copy.deepcopy(self.data))  # FIXME handle fixed rates
+            data = self.get_data(t)
+            if data == None:
+                return
+            self.data.stamp = t
+            self.data.data = round(data, 6)
+            self.series.append(copy.deepcopy(self.data))  # FIXME handle fixed rates
 
-    def msg_to_dict(self, msg):
-        api_dict = {}
+    def get_data(self, t):
+        try:
+            sys.stdout = open(os.devnull, 'w') # supress stdout
+            (trans, rot) = self.t.lookupTransform(self.root_frame, self.measured_frame, rospy.Time(0))
+        except tf2_ros.LookupException as e:
+            sys.stdout = sys.__stdout__  # restore stdout
+            #print "Exception in metric '%s' %s %s"%(self.name, type(e), e)
+            return None
+        except tf2_py.ExtrapolationException as e:
+            sys.stdout = sys.__stdout__  # restore stdout
+            #print "Exception in metric '%s' %s %s"%(self.name, type(e), e)
+            return None
+        except tf2_py.ConnectivityException as e:
+            sys.stdout = sys.__stdout__  # restore stdout
+            #print "Exception in metric '%s' %s %s"%(self.name, type(e), e)
+            return None
+        except Exception as e:
+            sys.stdout = sys.__stdout__  # restore stdout
+            print "general exeption in metric '%s':"%self.name, type(e), e
+            return None
+        sys.stdout = sys.__stdout__  # restore stdout
 
-        for node_api in msg.nodes:
-            #print "node_api=", node_api
-            api_dict[node_api.name] = {}
+        if self.time_old == None:
+            self.trans_old = trans
+            self.rot_old = rot
+            self.time_old = t
+            return None
 
-            api_dict[node_api.name]["publishers"] = []
-            for item in node_api.interface.publishers:
-                api_dict[node_api.name]["publishers"].append([item.name, item.type])
+        path_increment = sum([(axis - axis_old)**2 for axis, axis_old in zip(trans, self.trans_old)])**0.5
+        time_increment = t - self.time_old
 
-            api_dict[node_api.name]["subscribers"] = []
-            for item in node_api.interface.subscribers:
-                api_dict[node_api.name]["subscribers"].append([item.name, item.type])
+        if time_increment < rospy.Duration(0.5): # TODO make this a parameter
+            return None
 
-            api_dict[node_api.name]["services"] = []
-            for item in node_api.interface.services:
-                api_dict[node_api.name]["services"].append([item.name, item.type])
+        velocity = path_increment / time_increment.to_sec()
 
-            #TODO actions
-        #print "api_dict=", api_dict
-        return api_dict
+        if self.velocity_old == None:
+            self.trans_old = trans
+            self.rot_old = rot
+            self.time_old = t
+            self.velocity_old = velocity
+            return None
 
-    def check_interface(self, name, topic_type, interface):
-        #print "name=", name
-        #print "topic_type=", topic_type
-        #print "interface=", interface
-        for i in interface:
-            if i[0] == name:
-                if i[1] == topic_type:
-                    return True, True # all OK
-                else:
-                    return True, False # only name OK, but type failed
-        return False, False
+        acceleration = (velocity - self.velocity_old) / time_increment.to_sec()
+
+        # save old values for next step
+        self.trans_old = trans
+        self.rot_old = rot
+        self.time_old = t
+        self.velocity_old = velocity
+
+        return acceleration
 
     def get_topics(self):
-        topics = []
-        #print "self.metric=", self.metric
-        if "publishers" in self.params.keys():
-            for topic_with_type in self.params["publishers"]:
-                topic = topic_with_type[0]
-                if topic not in topics:
-                    topics.append(topic)
-        if "subscribers" in self.params.keys():
-            for topic_with_type in self.params["subscribers"]:
-                topic = topic_with_type[0]
-                if topic not in topics:
-                    topics.append(topic)
-        return topics
-
-    def calculate_data_and_details(self):
-        # As interface metric is not numeric, we'll use the following numeric representation:
-        # max score = 100.0
-        # node in api: score = 33.3
-        # all interfaces available: score = 66.6
-        # all types correct: score = 100.0
-        data = None
-        groundtruth = Groundtruth()
-        details = None
-        node_name = self.params['node']
-        if node_name not in self.api_dict:
-            details = "node " + node_name + " is not in api"
-            groundtruth.result = False
-            data = 0.0
-        else:
-            details = "node " + node_name + " is in api"
-            groundtruth.result = True
-            data = 100.0
-            for interface, interface_data in self.params.items():
-                if interface == "publishers" or interface == "subscribers" or interface == "services":
-                    for topic_name, topic_type in interface_data:
-                        #print "node_name=", node_name
-                        #print "topic_name=", topic_name
-                        #print "topic_type=", topic_type
-                        #print "self.api_dict[node_name][interface]=", self.api_dict[node_name][interface]
-                        name_check, type_check = self.check_interface(topic_name, topic_type, self.api_dict[node_name][interface])
-                        if not name_check:
-                            details += ", but " + topic_name + " is not an interface of node " + node_name + ". Interfaces are: " + str(self.api_dict[node_name][interface])
-                            groundtruth.result = False
-                            data = 33.3
-                        else:
-                            if not type_check:
-                                details += ", but " + topic_name + " (with type " + topic_type + ") is not an interface of node " + node_name + ". Interfaces are: " + str(self.api_dict[node_name][interface])
-                                groundtruth.result = False
-                                data = 66.0
-                            else: # all Ok
-                                details += ", all interfaces of node " + node_name + ": OK"
-                                groundtruth.result = True
-                                data = 100.0
-        return data, details
+        return self.topics
 
     def get_result(self):
         metric_result = MetricResult()
@@ -253,7 +233,8 @@ class CalculateInterface:
 
             # fill details as KeyValue messages
             details = []
-            details.append(KeyValue("api_status", self.interface_details))
+            details.append(KeyValue("root_frame", self.root_frame))
+            details.append(KeyValue("measured_frame", self.measured_frame))
             metric_result.details = details
 
             # evaluate metric data

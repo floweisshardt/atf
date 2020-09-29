@@ -58,25 +58,15 @@ cat /tmp/atf_test/results_txt/ts0_c0_r0_e0_s0_0.txt
 ```
 
 ### Visualize the results
-You an use the ATF presenter (**!!deprecated!!**) to visualize the results in a webbrowser:
+You an use the ATF plotter to visualize the results:
 ```
-rosrun atf_presenter chromium.sh
+rosrun atf_plotter plot.py --help
 ```
-You should now see 
 
-<img src="data/atf_presenter1.png" width="500">
-
-Please select the file ```test_list.json``` and all ```merged_*.json``` files out of the ```results_json``` directory.
-
-<img src="data/atf_presenter2.png" width="500">
-
-If all results could be loaded successfully you can press on the 'Details' button to see the test details.
-
-<img src="data/atf_presenter3.png" width="500">
-
-Now for all analyzed metrics you will see a diagramm showing the average results, the min/max deviation and the allowed groundtruth tollerances.
-
-<img src="data/atf_presenter4.png" width="500">
+Example usage:
+```
+rosrun atf_plotter plot.py plot-benchmark /tmp/atf_test_app_publish_rate/results_txt/atf_result_aggregated.bag
+```
 
 ## Integrate the ATF into your own application
 ### Python
@@ -162,8 +152,7 @@ If you have your test app written and configuration setup as shown in the [examp
 * ```catkin atf_<YOUR_PACKAGE>_cleaning ```: cleans all test artefacts (bag, json and yaml files)
 * ```catkin atf_<YOUR_PACKAGE>_recording```: triggers the ```cleaning``` target and all recording tests
 * ```catkin atf_<YOUR_PACKAGE>_analysing```: triggers the ```recording``` target and all analysing tests
-* ```catkin atf_<YOUR_PACKAGE>_merging  ```: triggers the ```analysing``` target and the merge test
-* ```catkin atf_<YOUR_PACKAGE>_uploading```: triggers the ```merging``` target and the uploading test
+* ```catkin atf_<YOUR_PACKAGE>_uploading```: triggers the ```analysing``` target and the uploading test
 * ```catkin atf_<YOUR_PACKAGE>          ```: triggers all tests in your package
 * ```catkin run_tests                   ```: triggers all tests in your catkin workspace
 
@@ -227,11 +216,11 @@ rosrun rviz rviz
 
 ### Analysing
 ```
-rosrun atf_core analyser.py atf_test standalone
+rosrun atf_core analyser.py atf_test
 ```
 or for full result print
 ```
-rosrun atf_core analyser.py atf_test standalone verbose
+rosrun atf_core analyser.py atf_test verbose
 ```
 
 check results

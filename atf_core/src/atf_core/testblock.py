@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+from atf_core import ATFAnalyserError
 from atf_msgs.msg import TestblockResult, TestblockStatus
 
 class Testblock:
@@ -18,12 +19,12 @@ class Testblock:
 
         testblock_result = TestblockResult()
         testblock_result.name = self.name
-        testblock_result.groundtruth_result = None
+        testblock_result.result = None
 
         if self.status == TestblockStatus.ERROR:
-            testblock_result.groundtruth_result = False
-            testblock_result.groundtruth_error_message = "An error occured during analysis of testblock '%s', no results available."%self.name
-            print testblock_result.groundtruth_error_message
+            testblock_result.result = False
+            testblock_result.error_message = "An error occured during analysis of testblock '%s', no results available."%self.name
+            print testblock_result.error_message
         else:
             #print "testblock.metrics=", self.metric_handles
             for metric_handle in self.metric_handles:
@@ -34,12 +35,15 @@ class Testblock:
                 testblock_result.results.append(metric_result)
 
                 # aggregate result
-                if metric_result.groundtruth_result != None and not metric_result.groundtruth_result:
-                    testblock_result.groundtruth_result = False
-                    testblock_result.groundtruth_error_message += "\n     - metric '%s': %s"%(metric_result.name, metric_result.groundtruth_error_message)
+                if metric_result.groundtruth.result != None and not metric_result.groundtruth.result:
+                    testblock_result.result = False
+                    testblock_result.error_message += "\n     - metric '%s': %s"%(metric_result.name, metric_result.groundtruth.error_message)
                     #print testblock_result.groundtruth_error_message
-                if testblock_result.groundtruth_result == None and metric_result.groundtruth_result:
-                    testblock_result.groundtruth_result = True
+                if testblock_result.result == None and metric_result.groundtruth.result:
+                    testblock_result.result = True
+
+        if testblock_result.result == None:
+            raise ATFAnalyserError("Analysing failed, testblock result is None for testblock '%s'."%testblock_result.name)
 
         #print "\ntestblock_result:\n", testblock_result
         return testblock_result

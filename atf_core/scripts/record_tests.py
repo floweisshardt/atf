@@ -11,18 +11,25 @@ if __name__ == '__main__':
     if len(sys.argv) == 2:
         pkg = sys.argv[1]
         test="*"
-        print "recording all in package '" + pkg + "'"
+        test_generation_config_file = "atf/test_generation_config.yaml"
     elif len(sys.argv) == 3:
         pkg = sys.argv[1]
         test = sys.argv[2]
+        test_generation_config_file = "atf/test_generation_config.yaml"
+    elif len (sys.argv) == 4:
+        pkg = sys.argv[1]
+        test = sys.argv[2]
+        test_generation_config_file = sys.argv[3]
     else:
-        print "Not enought arguments. Usage: 'record_tests.py <<pkg>> [<<test>>]'"
-        print "e.g. 'record_tests.py atf_test'                   --> record all tests"
-        print "e.g. 'record_tests.py atf_test ts0_c0_r0_e0_s0_0' --> record test ts0_c0_r0_e0_s0_0"
-        print "e.g. 'record_tests.py atf_test ts0_c0_r0_e0_s0_*' --> record all iterations of test ts0_c0_r0_e0_s0_*"
-        print "e.g. 'record_tests.py atf_test ts0_*'             --> record all tests with ts0"
-        print "e.g. 'record_tests.py atf_test ts0_*_r0_*'        --> record all tests with ts0 and r0"
+        print "wrong arguments. Usage: 'record_tests.py <<pkg>> [<<test>>]'"
+        print "e.g. 'record_tests.py atf_test'                                      --> record all tests"
+        print "e.g. 'record_tests.py atf_test ts0_c0_r0_e0_s0_0'                    --> record test ts0_c0_r0_e0_s0_0"
+        print "e.g. 'record_tests.py atf_test ts0_c0_r0_e0_s0_*'                    --> record all iterations of test ts0_c0_r0_e0_s0_*"
+        print "e.g. 'record_tests.py atf_test ts0_*'                                --> record all tests with ts0"
+        print "e.g. 'record_tests.py atf_test ts0_*_r0_*'                           --> record all tests with ts0 and r0"
+        print "e.g. 'record_tests.py atf_test ts* atf/test_generation_config.yaml'  --> record all tests defined in atf/test_generation_config.yaml"
         sys.exit(1)
+    print "recording test in package '%s' with test generation file '%s'"%(pkg, test_generation_config_file)
 
     cmake_prefix_path = os.environ['CMAKE_PREFIX_PATH']
 
@@ -46,7 +53,12 @@ if __name__ == '__main__':
         sys.exit(1)
     
     # get all recording files
-    path_to_test_files = os.path.join(path_to_build_space, "test_generated")
+    test_generation_config_file_replaced = test_generation_config_file
+    # replace directory "/" with "_"
+    test_generation_config_file_replaced = test_generation_config_file_replaced.replace("/", "_")
+    # replace "*.yaml" with "*_yaml"
+    test_generation_config_file_replaced = test_generation_config_file_replaced.replace(".", "_")
+    path_to_test_files = os.path.join(path_to_build_space, "test_generated", test_generation_config_file_replaced)
     filenames = glob.glob(os.path.join(path_to_test_files, "recording_*" + test + "*.test"))
     filenames.sort() # sort tests alphabetically
     print "found %d files for '%s':\n%s"%(len(filenames), pkg, str(filenames))

@@ -20,9 +20,29 @@ def get_min(series):
             result = data
     return result
 
+def get_absmin(series):
+    result = None
+    for data in series:
+        data.data = abs(data.data)
+        if result == None:
+            result = data
+        elif data.data < result.data: # '<' takes first accurance for multiple min elements
+            result = data
+    return result
+
 def get_max(series):
     result = None
     for data in series:
+        if result == None:
+            result = data
+        elif data.data > result.data: # '>' takes first accurance for multiple max elements
+            result = data
+    return result
+
+def get_absmax(series):
+    result = None
+    for data in series:
+        data.data = abs(data.data)
         if result == None:
             result = data
         elif data.data > result.data: # '>' takes first accurance for multiple max elements

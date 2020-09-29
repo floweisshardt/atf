@@ -1,6 +1,6 @@
 # without groundtruth
 testblock_small:
-  time: []
+  time: [{}]
   tf_length_translation:
     - topics: [/tf, /tf_static]
       root_frame: world
@@ -9,11 +9,38 @@ testblock_small:
     - topics: [/tf, /tf_static]
       root_frame: world
       measured_frame: reference1_static
+      series_mode: True
   tf_length_rotation:
     - topics: [/tf, /tf_static]
       root_frame: world
       measured_frame: reference1
       series_mode: True
+    - topics: [/tf, /tf_static]
+      root_frame: world
+      measured_frame: reference1_static
+      series_mode: True
+  tf_velocity_translation:
+    - topics: [/tf, /tf_static]
+      root_frame: world
+      measured_frame: reference1
+      series_mode: True
+    - topics: [/tf, /tf_static]
+      root_frame: world
+      measured_frame: reference1_static
+      series_mode: True
+  tf_acceleration_translation:
+    - topics: [/tf, /tf_static]
+      root_frame: world
+      measured_frame: reference1
+      series_mode: True
+    - topics: [/tf, /tf_static]
+      root_frame: world
+      measured_frame: reference1_static
+      series_mode: True
+  tf_jerk_translation:
+    - topics: [/tf, /tf_static]
+      root_frame: world
+      measured_frame: reference1
     - topics: [/tf, /tf_static]
       root_frame: world
       measured_frame: reference1_static
@@ -43,23 +70,54 @@ testblock_small:
     - topic: topic7
     - topic: topic8
     - topic: topic9
-  user_result: []
+  user_result: [{}]
 testblock_large:
-  time: []
+  time: [{}]
   tf_length_translation:
     - topics: [/tf, /tf_static]
       root_frame: world
       measured_frame: reference1
+      series_mode: True
     - topics: [/tf, /tf_static]
       root_frame: world
       measured_frame: reference1_static
+      series_mode: True
   tf_length_rotation:
     - topics: [/tf, /tf_static]
       root_frame: world
       measured_frame: reference1
+      series_mode: True
     - topics: [/tf, /tf_static]
       root_frame: world
       measured_frame: reference1_static
+      series_mode: True
+  tf_velocity_translation:
+    - topics: [/tf, /tf_static]
+      root_frame: world
+      measured_frame: reference1
+      series_mode: True
+    - topics: [/tf, /tf_static]
+      root_frame: world
+      measured_frame: reference1_static
+      series_mode: True
+  tf_acceleration_translation:
+    - topics: [/tf, /tf_static]
+      root_frame: world
+      measured_frame: reference1
+      series_mode: True
+    - topics: [/tf, /tf_static]
+      root_frame: world
+      measured_frame: reference1_static
+      series_mode: True
+  tf_jerk_translation:
+    - topics: [/tf, /tf_static]
+      root_frame: world
+      measured_frame: reference1
+      series_mode: True
+    - topics: [/tf, /tf_static]
+      root_frame: world
+      measured_frame: reference1_static
+      series_mode: True
   tf_distance_translation:
     - topics: [/tf, /tf_static]
       root_frame: world
@@ -84,7 +142,7 @@ testblock_large:
     - topic: /topic7
     - topic: /topic8
     - topic: /topic9
-  user_result: []
+  user_result: [{}]
   interface:
     - node: publisher1
       publishers: 

@@ -2,7 +2,7 @@
 <package format="2">
     <name>atf_core</name>
     <version>0.1.0</version>
-    <description>ATF functionalities for generating tests, recording data, analysing data and merging results.</description>
+    <description>ATF functionalities for generating tests, recording data, analysing data and aggregating results.</description>
 
     <maintainer email="florian.weisshardt@mojin-robotics.de">Florian Weisshardt</maintainer>
 
@@ -16,7 +16,7 @@
     <exec_depend>atf_metrics</exec_depend>
     <exec_depend>atf_msgs</exec_depend>
     <exec_depend>atf_recorder_plugins</exec_depend>
-    <exec_depend>atf_status_server</exec_depend>
+    <exec_depend>diagnostic_msgs</exec_depend>
     <exec_depend>python-lxml</exec_depend>
     <exec_depend>python-progressbar</exec_depend>
     <exec_depend>roslaunch</exec_depend>

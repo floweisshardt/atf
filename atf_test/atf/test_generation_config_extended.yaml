@@ -1,0 +1,44 @@
+tests_config_path: atf/tests                                        # Folder which contains the tests config files
+robots_config_path: atf/robots                                      # Folder which contains the robots config files
+envs_config_path: atf/envs                                          # Folder which contains the envs config files
+testblocksets_config_path: atf/testblocksets                        # Folder which contains the testblocks config files
+
+app_executable: application.py                                      # Name of the application's executable file
+app_launch_file: launch/application.launch                          # Path of the application's launch file
+
+bagfile_output: /tmp/atf_test_extended/data/                        # Folder for bagfile output
+txt_output: /tmp/atf_test_extended/results_txt/                     # Folder for the txt files output
+json_output: /tmp/atf_test_extended/results_json/                   # Folder for the json files output
+yaml_output: /tmp/atf_test_extended/results_yaml/                   # Folder for the yaml files output
+
+time_limit_recording: 180.0                                         # Time limit in seconds for recording
+time_limit_analysing: 120.0                                         # Time limit in seconds for analysing
+time_limit_uploading: 60.0                                          # Time limit in seconds for uploading
+
+upload_data: false
+upload_result: false
+
+# Definition of various test suites
+testsuites:                # You have to define at least one testsuite
+  - tests:                 # You have to define at least one test
+      - test1
+      - test2
+    robots:                # You have to define at least one robot
+      - robot1
+      - robot2
+    envs:                  # You have to define at least one env
+      - env1
+    testblocksets:         # You have to define at least one testblockset
+      - testblockset1
+      - testblockset2
+#    repetitions: 1        # Number of repetitions per test (this is an optional parameter, default = 1)
+
+  - tests:
+      - test1
+    robots:
+      - robot1
+    envs:
+      - env1
+    testblocksets:
+      - testblockset1
+    repetitions: 10

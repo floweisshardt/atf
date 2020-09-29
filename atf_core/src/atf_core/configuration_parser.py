@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 import atf_core
+import fnmatch
 import yaml
 import rospkg
 import rosparam
@@ -7,21 +8,23 @@ import atf_metrics
 import os
 import itertools as it
 import json
+import rosbag
 
+from atf_core import ATFConfigurationError
 from atf_core import Test, Testblock
 
 class ATFConfigurationParser:
-    def __init__(self, package_name, test_generation_config_file = None, skip_metrics = False):
-        if test_generation_config_file == None:
-            test_generation_config_file = "atf/test_generation_config.yaml"
-            print "ATF Warning: No test_generation_config_file specified. Continue using default '%s'"%test_generation_config_file
-
-        self.parsing_error_message = ""
-        
-        if "/" in package_name: # assume no package but full path to package (needed for generate_tests.py in travis because RPS_PACKAGE_PATH is not yet set correclty)
+    def __init__(self, package_name = None, test_generation_config_file = None, skip_metrics = False):
+        if package_name == None: # no package given
+            return
+        elif "/" in package_name: # assume no package but full path to package (needed for generate_tests.py in travis because RPS_PACKAGE_PATH is not yet set correclty)
             full_path_to_test_package = package_name
         else: # assume package name only
             full_path_to_test_package = rospkg.RosPack().get_path(package_name)
+
+        if test_generation_config_file == None:
+            test_generation_config_file = "atf/test_generation_config.yaml"
+            print "ATF Warning: No test_generation_config_file specified. Continue using default '%s'"%test_generation_config_file
 
         self.generation_config = self.load_data(os.path.join(full_path_to_test_package, test_generation_config_file))
         #print "generation_config:", self.generation_config
@@ -153,6 +156,10 @@ class ATFConfigurationParser:
             yaml.dump(data, stream, default_flow_style=False)
         elif file_extension == ".txt":
             stream.write(str(data))
+        elif file_extension == ".bag":
+            bag = rosbag.Bag(target, 'w')
+            bag.write("atf_result", data)
+            bag.close()
         else:
             raise ATFConfigurationError("ATF cannot export file extension %s"%(file_extension))
 
@@ -163,19 +170,54 @@ class ATFConfigurationParser:
             #print "metrics=", metrics
             metric_handlers_config = self.load_data(rospkg.RosPack().get_path("atf_metrics") + "/config/metrics.yaml")
             #print "metric_handlers_config=", metric_handlers_config
-            if  metric_handlers_config and metrics:
-                for metric_name in metrics:
-                    #print "metric_name=", metric_name
-                    metrics_return_list = getattr(atf_metrics, metric_handlers_config[metric_name]["handler"])().parse_parameter(testblock_name, metrics[metric_name])
-                    #print "metrics_return_list=", metrics_return_list
-                    if metrics_return_list and (type(metrics_return_list) == list):
-                        for metric_return in metrics_return_list:
-                            #print "metric_return=", metric_return
-                            metric_handles.append(metric_return)
-                    else:
-                        raise ATFConfigurationError("no valid metric configuration for metric '%s' in testblock '%s'" %(metric_name, testblock_name))
+            if metric_handlers_config and metrics:
+                for metric_type in metrics.keys():
+                    if metric_type not in metric_handlers_config:
+    	                raise ATFConfigurationError("metric '%s' is not implemented"%metric_type)
+
+                    if len(metrics[metric_type]) == 0:
+                        raise ATFConfigurationError("empty configuration for metric '%s' in testblock '%s' (should be a list of dicts, e.g. '[{}]' for no parameters)"%(metric_type, testblock_name))
+
+                    for id, params in enumerate(metrics[metric_type]):
+                        if not self.validate_metric_parameters(metric_type, params):
+                            raise ATFConfigurationError("invalid configuration for metric '%s' in testblock '%s': %s"%(metric_type, testblock_name, str(params)))
+
+                        try:
+                            suffix = params["suffix"]
+                        except (TypeError, KeyError):
+                            suffix = id
+                        metric_name = metric_type + "::" + str(suffix)
+
+                        # check if metric_handle.names are unique #FIXME is there a more performant way to implement this without the additional for loop?
+                        for metric_handle in metric_handles:
+                            if metric_name == metric_handle.name:
+                                raise ATFConfigurationError("metric_name '%s' is not unique in testblock '%s'"%(metric_name, testblock_name))
+
+                        metric_handle = getattr(atf_metrics, metric_handlers_config[metric_type]["handler"])().parse_parameter(testblock_name, metric_name, params)
+                        metric_handles.append(metric_handle)
+
         #print "metric_handles=", metric_handles
         return metric_handles
+
+    def validate_metric_parameters(self, metric_type, params):
+        if params == None:
+            print "params None"
+            return False
+
+        if type(params) is not dict:
+            print "params not a dict"
+            return False        
+
+        if "groundtruth" in params and "groundtruth_epsilon" in params: # groundtruth specified
+            pass
+        elif "groundtruth" not in params and "groundtruth_epsilon" not in params: # no groundtruth specified
+            pass
+        else: # invalid configuration
+            # e.g. (params["groundtruth"] == None and params["groundtruth_epsilon"] != None) or (params["groundtruth"] != None and params["groundtruth_epsilon"] == None)
+            print "invalid groundtruth specified:", params
+            return False
+        
+        return True # all checks successfull
 
     def load_data(self, filename):
         #print "config parser filename:", filename
@@ -207,5 +249,83 @@ class ATFConfigurationParser:
             error_message = "ATF configuration Error: key '%s' of type '%s' with value '%s' cannot be parsed as list of dictionaries"%(str(key), value_type, value)
             print error_message
             raise ATFConfigurationError(error_message)
-class ATFConfigurationError(Exception):
-    pass
+
+    def match_filter(self, name, filter):
+        if filter == "":
+            return True
+
+        filter_list = filter.split(',')
+        for filter in filter_list:
+            if fnmatch.fnmatch(name, filter):
+                return True
+        
+        return False
+
+    def get_sorted_plot_dicts(self, atf_result, filter_tests, filter_testblocks, filter_metrics):
+        tbm = {}
+        tmb = {}
+        bmt = {}
+        mbt = {}
+        mtb = {}
+
+        for test in atf_result.results:
+            #print test.name
+            if not self.match_filter(test.name, filter_tests):
+                continue
+
+            test_description = "(%s, %s, %s, %s)"%(test.test_config, test.robot, test.env, test.testblockset)
+
+            for testblock in test.results:
+                #print "  -", testblock.name
+                if not self.match_filter(testblock.name, filter_testblocks):
+                    continue
+
+                for metric in testblock.results:
+                    #print "    -", metric.name
+                    split_name = metric.name.split("::")
+                    if not self.match_filter(metric.name, filter_metrics) and not self.match_filter(metric.name[0], filter_metrics):
+                        continue
+
+                    # tbm
+                    if test.name                 not in tbm.keys():
+                        tbm[test.name] = {}
+                    if testblock.name            not in tbm[test.name].keys():
+                        tbm[test.name][testblock.name] = {}
+                    tbm[test.name][testblock.name][metric.name] = metric
+
+                    # tmb
+                    if test.name                 not in tmb.keys():
+                        tmb[test.name] = {}
+                    if metric.name               not in tmb[test.name].keys():
+                        tmb[test.name][metric.name] = {}
+                    tmb[test.name][metric.name][testblock.name] = metric
+
+                    # bmt
+                    if testblock.name            not in bmt.keys():
+                        bmt[testblock.name] = {}
+                    if metric.name               not in bmt[testblock.name].keys():
+                        bmt[testblock.name][metric.name] = {}
+                    bmt[testblock.name][metric.name][test.name] = metric
+
+                    # mbt
+                    if metric.name            not in mbt.keys():
+                        mbt[metric.name] = {}
+                    if testblock.name         not in mbt[metric.name].keys():
+                        mbt[metric.name][testblock.name] = {}
+                    #mbt[metric.name][testblock.name][test.name] = metric
+                    mbt[metric.name][testblock.name][test.name + "\n" + test_description] = metric
+
+                    # mtb
+                    if metric.name            not in mtb.keys():
+                        mtb[metric.name] = {}
+                    if test.name              not in mtb[metric.name].keys():
+                        mtb[metric.name][test.name] = {}
+                    mtb[metric.name][test.name][testblock.name] = metric
+
+        ret = {}
+        ret['tbm'] = tbm
+        ret['tmb'] = tmb
+        ret['bmt'] = bmt
+        ret['mbt'] = mbt
+        ret['mtb'] = mtb
+        return ret

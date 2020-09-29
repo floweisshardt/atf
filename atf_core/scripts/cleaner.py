@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-import rospy
 import unittest
 import rostest
 import shutil
@@ -10,10 +9,9 @@ from atf_core import ATFConfigurationParser
 
 
 class Cleaner():
-    def __init__(self, package_name):
-        self.result = False
-
-        self.atf_configuration_parser = ATFConfigurationParser(package_name)
+    def __init__(self, package_name, test_generation_config_file):
+        # parse configuration
+        self.atf_configuration_parser = ATFConfigurationParser(package_name, test_generation_config_file)
 
     def clean(self):
         if os.path.exists(self.atf_configuration_parser.generation_config["bagfile_output"]):
@@ -24,17 +22,29 @@ class Cleaner():
             shutil.rmtree(self.atf_configuration_parser.generation_config["json_output"])
         if os.path.exists(self.atf_configuration_parser.generation_config["yaml_output"]):
             shutil.rmtree(self.atf_configuration_parser.generation_config["yaml_output"])
-        self.result = True
+        return True
 
 class TestCleaning(unittest.TestCase):
+
     def test_cleaning_results(self):
-        cleaner = Cleaner(sys.argv[1])
-        cleaner.clean()
-        self.assertTrue(cleaner.result, "Could not clean results.")
+        cleaner = Cleaner(package_name, test_generation_config_file)
+        self.assertTrue(cleaner.clean(), "Could not clean results.")
 
 if __name__ == '__main__':
-    print "cleaning for package", sys.argv[1]
-    if "standalone" in sys.argv:
-        cleaner = Cleaner(sys.argv[1])
+    if len(sys.argv) == 2:
+        package_name = sys.argv[1]
+        test_generation_config_file = "atf/test_generation_config.yaml"
+    elif len(sys.argv) > 2:
+        package_name = sys.argv[1]
+        test_generation_config_file = sys.argv[2]
     else:
-        rostest.rosrun("atf_core", 'cleaning', TestCleaning, sysargs=sys.argv)
+        print "ERROR: please specify a test package"
+        print "usage: rosrun atf_core cleaner.py <<ATF TEST PACKAGE>> [<<TEST_GENERATION_CONFIG_FILE>>]"
+        sys.exit(1)
+    print "cleaning for package '%s' and test generation config file '%s'" %(package_name, test_generation_config_file)
+
+    if "execute_as_test" in sys.argv:
+        rostest.rosrun("atf_core", 'cleaning', TestCleaning)
+    else:
+        cleaner = Cleaner(package_name, test_generation_config_file)
+        cleaner.clean()

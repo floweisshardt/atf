@@ -1,4 +1,5 @@
 Header header
-bool groundtruth_result
-string groundtruth_error_message
+string name
+bool result
+string error_message
 TestResult[] results
