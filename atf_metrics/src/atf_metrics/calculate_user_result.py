@@ -111,7 +111,7 @@ class CalculateUserResult:
             return metric_result
 
         # check if result is available
-        if metric_result.groundtruth.error_message.startswith("!!USER ERROR!!: no user result set"): # TODO use from global field (same as in atf.stop())
+        if self.metric_result.groundtruth.error_message.startswith("!!USER ERROR!!: no user result set"): # TODO use from global field (same as in atf.stop())
             # let the analyzer know that this test failed
             metric_result.groundtruth.result = False
             metric_result.groundtruth.error_message = "testblock %s stopped without user_result"%self.testblock_name
