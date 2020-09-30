@@ -90,7 +90,7 @@ class ATF():
                 raise atf_core.ATFError(error_msg)
 
         else:
-            rospy.logwarn("no user result set for testblock \'%s\'"%testblock)
+            rospy.loginfo("no user result set for testblock \'%s\'"%testblock)
             metric_result = MetricResult()
             metric_result.groundtruth.error_message = "!!USER ERROR!!: no user result set for testblock %s"%testblock # TODO use from global field (same as in atf.stop())
 
