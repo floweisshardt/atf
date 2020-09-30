@@ -36,39 +36,39 @@ testblock_small:
       measured_frame: reference1
       groundtruth:
         data: 2.0
-        epsilon: 1.999
+        epsilon: 1.9999
     - topics: [/tf, /tf_static]
       root_frame: world
       measured_frame: reference1_static
       groundtruth:
         data: 2.0
-        epsilon: 1.999
+        epsilon: 1.9999
   tf_acceleration_translation:
     - topics: [/tf, /tf_static]
       root_frame: world
       measured_frame: reference1
       groundtruth:
         data: 2.0
-        epsilon: 1.999
+        epsilon: 1.9999
     - topics: [/tf, /tf_static]
       root_frame: world
       measured_frame: reference1_static
       groundtruth:
         data: 2.0
-        epsilon: 1.999
+        epsilon: 1.9999
   tf_jerk_translation:
     - topics: [/tf, /tf_static]
       root_frame: world
       measured_frame: reference1
       groundtruth:
         data: 2.0
-        epsilon: 1.999
+        epsilon: 1.9999
     - topics: [/tf, /tf_static]
       root_frame: world
       measured_frame: reference1_static
       groundtruth:
         data: 2.0
-        epsilon: 1.999
+        epsilon: 1.9999
   tf_distance_translation:
     - topics: [/tf, /tf_static]
       root_frame: world
@@ -173,39 +173,39 @@ testblock_large:
       measured_frame: reference1
       groundtruth:
         data: 2.0
-        epsilon: 1.999
+        epsilon: 1.9999
     - topics: [/tf, /tf_static]
       root_frame: world
       measured_frame: reference1_static
       groundtruth:
         data: 2.0
-        epsilon: 1.999
+        epsilon: 1.9999
   tf_acceleration_translation:
     - topics: [/tf, /tf_static]
       root_frame: world
       measured_frame: reference1
       groundtruth:
         data: 2.0
-        epsilon: 1.999
+        epsilon: 1.9999
     - topics: [/tf, /tf_static]
       root_frame: world
       measured_frame: reference1_static
       groundtruth:
         data: 2.0
-        epsilon: 1.999
+        epsilon: 1.9999
   tf_jerk_translation:
     - topics: [/tf, /tf_static]
       root_frame: world
       measured_frame: reference1
       groundtruth:
         data: 2.0
-        epsilon: 1.999
+        epsilon: 1.9999
     - topics: [/tf, /tf_static]
       root_frame: world
       measured_frame: reference1_static
       groundtruth:
         data: 2.0
-        epsilon: 1.999
+        epsilon: 1.9999
   tf_distance_translation:
     - topics: [/tf, /tf_static]
       root_frame: world
