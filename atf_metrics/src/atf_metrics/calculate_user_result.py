@@ -1,8 +1,8 @@
 #!/usr/bin/env python
-import rospy
 import math
+import rospy
 
-from atf_core import ATFAnalyserError
+from atf_core import ATFAnalyserError, ATFConfigurationError
 from atf_msgs.msg import MetricResult, Groundtruth, KeyValue
 
 class CalculateUserResultParamHandler:
@@ -32,8 +32,8 @@ class CalculateUserResultParamHandler:
         # check for optional parameters
         groundtruth = Groundtruth()
         try:
-            groundtruth.data = params["groundtruth"]
-            groundtruth.epsilon = params["groundtruth_epsilon"]
+            groundtruth.data = params["groundtruth"]["data"]
+            groundtruth.epsilon = params["groundtruth"]["epsilon"]
             groundtruth.available = True
         except (TypeError, KeyError):
             groundtruth.data = 0
@@ -88,83 +88,56 @@ class CalculateUserResult:
         metric_result.started = self.started # FIXME remove
         metric_result.finished = self.finished # FIXME remove
 
-        # check if user result is set at all
+        if not self.started:
+            error_message = "testblock %s never started"%self.testblock_name
+            #print error_message
+            metric_result.groundtruth.result = False
+            metric_result.groundtruth.error_message = error_message
+            return metric_result
+
+        if not self.finished:
+            error_message = "testblock %s never stopped"%self.testblock_name
+            #print error_message
+            metric_result.groundtruth.result = False
+            metric_result.groundtruth.error_message = error_message
+            return metric_result
+
+        # check if stop was called
         if self.metric_result == None:
-            #print "no user result set"
+            error_message = "YOU SHOULD NOT END UP HERE: testblock %s stopped but metric_result is None"%self.testblock_name
+            #print error_message
             metric_result.groundtruth.result = False
-            metric_result.groundtruth.error_message = "no result"
-            #print "EXIT 0", metric_result.data.data, metric_result.groundtruth.result, metric_result.groundtruth.error_message
+            metric_result.groundtruth.error_message = error_message
             return metric_result
 
-        # check if groundtruth is set via user result (not all default values anymore)
-        if self.metric_result.groundtruth.result\
-            or self.metric_result.groundtruth.available\
-            or self.metric_result.groundtruth.error_message != ""\
-            or self.metric_result.groundtruth.data != 0\
-            or self.metric_result.groundtruth.epsilon != 0:
-            
-            #print "groundtruth data is set from user within atf application for testblock %s. Skipping groundtruth evaluation from test_config"%self.testblock_name
-
-            # use data from user result
-            metric_result = self.metric_result
-
-            # overwrite user_result data with mandatory ATF filds
-            metric_result.name = self.name
-            metric_result.started = True
-            metric_result.finished = True
-            metric_result.groundtruth.available = True
-            #print "EXIT 1", metric_result.data.data, metric_result.groundtruth.result, metric_result.groundtruth.error_message
+        # check if result is available
+        if metric_result.groundtruth.error_message.startswith("!!USER ERROR!!: no user result set"): # TODO use from global field (same as in atf.stop())
+            # let the analyzer know that this test failed
+            metric_result.groundtruth.result = False
+            metric_result.groundtruth.error_message = "testblock %s stopped without user_result"%self.testblock_name
             return metric_result
-        
-        #print "no groundtruth set via user_result", self.metric_result.groundtruth
 
-        metric_result.groundtruth.available = self.groundtruth.available
-        metric_result.groundtruth.data = self.groundtruth.data
-        metric_result.groundtruth.epsilon = self.groundtruth.epsilon
-        
-        # assign default value
-        metric_result.groundtruth.result = None
-        metric_result.groundtruth.error_message = None
+        # at this point we're sure that any user_result is available
 
-        if metric_result.started and metric_result.finished: #  we check if the testblock was ever started and stopped
-            # calculate metric data
-            # check if user has set any metric_result (not all default values anymore)
-            if not self.metric_result.started\
-                and not self.metric_result.finished\
-                and len(self.metric_result.series) == 0\
-                and self.metric_result.data.stamp == rospy.Time(0)\
-                and self.metric_result.data.data == 0\
-                and len(self.metric_result.details) == 0:
+        # overwrite user_result data with mandatory ATF fields
+        metric_result = self.metric_result
+        metric_result.name = self.name
+        metric_result.started = True
+        metric_result.finished = True
 
-                # let the analyzer know that this test failed
-                metric_result.groundtruth.result = False
-                metric_result.groundtruth.error_message = "user result for testblock %s not set"%self.testblock_name
-                #print "EXIT 2", metric_result.data.data, metric_result.groundtruth.result, metric_result.groundtruth.error_message
-                return metric_result
-
-            metric_result.data = self.metric_result.data
-
-            # fill details as KeyValue messages
-            metric_result.details = self.metric_result.details
-
-            # evaluate metric data
-            if not metric_result.groundtruth.available: # no groundtruth given
+        # evaluate metric data
+        if self.groundtruth.available: # groundtruth available
+            # overwrite grundtruth with data from yaml file
+            metric_result.groundtruth = self.groundtruth
+            if math.fabs(metric_result.groundtruth.data - metric_result.data.data) <= metric_result.groundtruth.epsilon:
                 metric_result.groundtruth.result = True
-                metric_result.groundtruth.error_message = "all OK (no groundtruth available)"
-            else: # groundtruth available
-                if math.fabs(metric_result.groundtruth.data - metric_result.data.data) <= metric_result.groundtruth.epsilon:
-                    metric_result.groundtruth.result = True
-                    metric_result.groundtruth.error_message = "all OK"
-                else:
-                    metric_result.groundtruth.result = False
-                    metric_result.groundtruth.error_message = "groundtruth missmatch: %f not within %f+-%f"%(metric_result.data.data, metric_result.groundtruth.data, metric_result.groundtruth.epsilon)
+                metric_result.groundtruth.error_message = "all OK"
+            else:
+                metric_result.groundtruth.result = False
+                metric_result.groundtruth.error_message = "groundtruth missmatch: %f not within %f+-%f"%(metric_result.data.data, metric_result.groundtruth.data, metric_result.groundtruth.epsilon)
 
-        else: # testblock did not start and/or finish
-            metric_result.groundtruth.result = False
-            metric_result.groundtruth.error_message = "no result"
+        else: # groundtruth not available
+            metric_result.groundtruth.result = True
+            metric_result.groundtruth.error_message = "all OK (no groundtruth available)"
 
-        if metric_result.groundtruth.result == None:
-            raise ATFAnalyserError("Analysing failed, metric result is None for metric '%s'."%metric_result.name)
-
-        #print "EXIT 3", metric_result.data.data, metric_result.groundtruth.result, metric_result.groundtruth.error_message
         return metric_result
