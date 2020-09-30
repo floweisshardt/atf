@@ -133,7 +133,8 @@ class CalculateUserResult:
                 and not self.metric_result.finished\
                 and len(self.metric_result.series) == 0\
                 and self.metric_result.data.stamp == rospy.Time(0)\
-                and self.metric_result.data.data == 0:
+                and self.metric_result.data.data == 0\
+                and len(self.metric_result.details) == 0:
 
                 # let the analyzer know that this test failed
                 metric_result.groundtruth.result = False
