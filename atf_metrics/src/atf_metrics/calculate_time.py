@@ -34,8 +34,8 @@ class CalculateTimeParamHandler:
         # check for optional parameters
         groundtruth = Groundtruth()
         try:
-            groundtruth.data = params["groundtruth"]
-            groundtruth.epsilon = params["groundtruth_epsilon"]
+            groundtruth.data = params["groundtruth"]["data"]
+            groundtruth.epsilon = params["groundtruth"]["epsilon"]
             groundtruth.available = True
         except (TypeError, KeyError):
             groundtruth.data = 0
@@ -50,10 +50,10 @@ class CalculateTimeParamHandler:
         except (TypeError, KeyError):
             series_mode = None
 
-        return CalculateTime(metric_name, groundtruth, mode, series_mode)
+        return CalculateTime(metric_name, testblock_name, groundtruth, mode, series_mode)
 
 class CalculateTime:
-    def __init__(self, name, groundtruth, mode, series_mode):
+    def __init__(self, name, testblock_name, groundtruth, mode, series_mode):
         """
         Class for calculating the time between the trigger 'ACTIVATE' and 'FINISH' on the topic assigned to the
         testblock.
@@ -63,6 +63,7 @@ class CalculateTime:
         self.finished = False
         self.active = False
         self.groundtruth = groundtruth
+        self.testblock_name = testblock_name
         self.mode = mode
         self.series_mode = series_mode
         self.series = []
@@ -105,78 +106,90 @@ class CalculateTime:
         metric_result.groundtruth.available = self.groundtruth.available
         metric_result.groundtruth.data = self.groundtruth.data
         metric_result.groundtruth.epsilon = self.groundtruth.epsilon
-        
-        # assign default value
-        metric_result.groundtruth.result = None
-        metric_result.groundtruth.error_message = None
 
-        if metric_result.started and metric_result.finished and len(self.series) != 0: #  we check if the testblock was ever started and stopped and if result data is available
-            # calculate metric data
-            if self.series_mode != None:
-                metric_result.series = self.series
-            if metric_result.mode == MetricResult.SNAP:
-                metric_result.data = self.series[-1]                           # take last element from self.series for data and stamp
-                metric_result.min = metric_result.data
-                metric_result.max = metric_result.data
-                metric_result.mean = metric_result.data.data
-                metric_result.std = 0.0
-            elif metric_result.mode == MetricResult.SPAN_MEAN:
-                metric_result.min = metrics_helper.get_min(self.series)
-                metric_result.max = metrics_helper.get_max(self.series)
-                metric_result.mean = metrics_helper.get_mean(self.series)
-                metric_result.std = metrics_helper.get_std(self.series)
-                metric_result.data.data = metric_result.mean                   # take mean for data
-                metric_result.data.stamp = self.series[-1].stamp               # take stamp from last element in self.series for stamp
-            elif metric_result.mode == MetricResult.SPAN_MIN:
-                metric_result.min = metrics_helper.get_min(self.series)
-                metric_result.max = metrics_helper.get_max(self.series)
-                metric_result.mean = metrics_helper.get_mean(self.series)
-                metric_result.std = metrics_helper.get_std(self.series)
-                metric_result.data = metric_result.min
-            elif metric_result.mode == MetricResult.SPAN_ABSMIN:
-                metric_result.min = metrics_helper.get_absmin(self.series)
-                metric_result.max = metrics_helper.get_absmax(self.series)
-                metric_result.mean = metrics_helper.get_mean(self.series)
-                metric_result.std = metrics_helper.get_std(self.series)
-                metric_result.data = metric_result.min
-            elif metric_result.mode == MetricResult.SPAN_MAX:
-                metric_result.min = metrics_helper.get_min(self.series)
-                metric_result.max = metrics_helper.get_max(self.series)
-                metric_result.mean = metrics_helper.get_mean(self.series)
-                metric_result.std = metrics_helper.get_std(self.series)
-                metric_result.data = metric_result.max
-            elif metric_result.mode == MetricResult.SPAN_ABSMAX:
-                metric_result.min = metrics_helper.get_absmin(self.series)
-                metric_result.max = metrics_helper.get_absmax(self.series)
-                metric_result.mean = metrics_helper.get_mean(self.series)
-                metric_result.std = metrics_helper.get_std(self.series)
-                metric_result.data = metric_result.max
-            else: # invalid mode
-                raise ATFAnalyserError("Analysing failed, invalid mode '%s' for metric '%s'."%(metric_result.mode, metric_result.name))
-
-            # fill details as KeyValue messages
-            details = []
-            details.append(KeyValue("start_time", str(self.start_time.to_sec())))
-            details.append(KeyValue("stop_time", str(self.data.data)))
-            metric_result.details = details
-
-            # evaluate metric data
-            if not metric_result.groundtruth.available: # no groundtruth given
-                metric_result.groundtruth.result = True
-                metric_result.groundtruth.error_message = "all OK (no groundtruth available)"
-            else: # groundtruth available
-                if math.fabs(metric_result.groundtruth.data - metric_result.data.data) <= metric_result.groundtruth.epsilon:
-                    metric_result.groundtruth.result = True
-                    metric_result.groundtruth.error_message = "all OK"
-                else:
-                    metric_result.groundtruth.result = False
-                    metric_result.groundtruth.error_message = "groundtruth missmatch: %f not within %f+-%f"%(metric_result.data.data, metric_result.groundtruth.data, metric_result.groundtruth.epsilon)
-
-        else: # testblock did not start and/or finish
+        if not self.started:
+            error_message = "testblock %s never started"%self.testblock_name
+            #print error_message
             metric_result.groundtruth.result = False
-            metric_result.groundtruth.error_message = "no result"
+            metric_result.groundtruth.error_message = error_message
+            return metric_result
 
-        if metric_result.groundtruth.result == None:
-            raise ATFAnalyserError("Analysing failed, metric result is None for metric '%s'."%metric_result.name)
+        if not self.finished:
+            error_message = "testblock %s never stopped"%self.testblock_name
+            #print error_message
+            metric_result.groundtruth.result = False
+            metric_result.groundtruth.error_message = error_message
+            return metric_result
+
+        # check if result is available
+        if len(self.series) == 0:
+            # let the analyzer know that this test failed
+            metric_result.groundtruth.result = False
+            metric_result.groundtruth.error_message = "testblock %s stopped without result"%self.testblock_name
+            return metric_result
+
+        # at this point we're sure that any result is available
+
+        # calculate metric data
+        if self.series_mode != None:
+            metric_result.series = self.series
+        if metric_result.mode == MetricResult.SNAP:
+            metric_result.data = self.series[-1]                           # take last element from self.series for data and stamp
+            metric_result.min = metric_result.data
+            metric_result.max = metric_result.data
+            metric_result.mean = metric_result.data.data
+            metric_result.std = 0.0
+        elif metric_result.mode == MetricResult.SPAN_MEAN:
+            metric_result.min = metrics_helper.get_min(self.series)
+            metric_result.max = metrics_helper.get_max(self.series)
+            metric_result.mean = metrics_helper.get_mean(self.series)
+            metric_result.std = metrics_helper.get_std(self.series)
+            metric_result.data.data = metric_result.mean                   # take mean for data
+            metric_result.data.stamp = self.series[-1].stamp               # take stamp from last element in self.series for stamp
+        elif metric_result.mode == MetricResult.SPAN_MIN:
+            metric_result.min = metrics_helper.get_min(self.series)
+            metric_result.max = metrics_helper.get_max(self.series)
+            metric_result.mean = metrics_helper.get_mean(self.series)
+            metric_result.std = metrics_helper.get_std(self.series)
+            metric_result.data = metric_result.min
+        elif metric_result.mode == MetricResult.SPAN_ABSMIN:
+            metric_result.min = metrics_helper.get_absmin(self.series)
+            metric_result.max = metrics_helper.get_absmax(self.series)
+            metric_result.mean = metrics_helper.get_mean(self.series)
+            metric_result.std = metrics_helper.get_std(self.series)
+            metric_result.data = metric_result.min
+        elif metric_result.mode == MetricResult.SPAN_MAX:
+            metric_result.min = metrics_helper.get_min(self.series)
+            metric_result.max = metrics_helper.get_max(self.series)
+            metric_result.mean = metrics_helper.get_mean(self.series)
+            metric_result.std = metrics_helper.get_std(self.series)
+            metric_result.data = metric_result.max
+        elif metric_result.mode == MetricResult.SPAN_ABSMAX:
+            metric_result.min = metrics_helper.get_absmin(self.series)
+            metric_result.max = metrics_helper.get_absmax(self.series)
+            metric_result.mean = metrics_helper.get_mean(self.series)
+            metric_result.std = metrics_helper.get_std(self.series)
+            metric_result.data = metric_result.max
+        else: # invalid mode
+            raise ATFAnalyserError("Analysing failed, invalid mode '%s' for metric '%s'."%(metric_result.mode, metric_result.name))
+
+        # fill details as KeyValue messages
+        details = []
+        details.append(KeyValue("start_time", str(self.start_time.to_sec())))
+        details.append(KeyValue("stop_time", str(self.data.data)))
+        metric_result.details = details
+
+        # evaluate metric data
+        if metric_result.groundtruth.available: # groundtruth available
+            if math.fabs(metric_result.groundtruth.data - metric_result.data.data) <= metric_result.groundtruth.epsilon:
+                metric_result.groundtruth.result = True
+                metric_result.groundtruth.error_message = "all OK"
+            else:
+                metric_result.groundtruth.result = False
+                metric_result.groundtruth.error_message = "groundtruth missmatch: %f not within %f+-%f"%(metric_result.data.data, metric_result.groundtruth.data, metric_result.groundtruth.epsilon)
+
+        else: # groundtruth not available
+            metric_result.groundtruth.result = True
+            metric_result.groundtruth.error_message = "all OK (no groundtruth available)"
 
         return metric_result
