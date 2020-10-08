@@ -35,11 +35,6 @@ add_message_files(
         TestblockTrigger.msg
 )
 
-add_action_files(
-    FILES
-        TestblockTrigger.action
-)
-
 generate_messages(
     DEPENDENCIES
         actionlib_msgs
