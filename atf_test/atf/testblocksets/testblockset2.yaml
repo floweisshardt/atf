@@ -142,7 +142,10 @@ testblock_large:
     - topic: /topic7
     - topic: /topic8
     - topic: /topic9
-  user_result: [{}]
+  user_result:
+    - groundtruth:
+        data: 0.8
+        epsilon: 0.2
   interface:
     - node: publisher1
       publishers: 

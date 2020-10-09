@@ -3,7 +3,8 @@ import math
 import rospy
 
 from atf_core import ATFAnalyserError, ATFConfigurationError
-from atf_msgs.msg import MetricResult, Groundtruth, KeyValue
+from atf_msgs.msg import MetricResult, Groundtruth, KeyValue, TestblockStatus
+from atf_metrics import metrics_helper
 
 class CalculateUserResultParamHandler:
     def __init__(self):
@@ -48,25 +49,23 @@ class CalculateUserResult:
         Class for collecting the the user result.
         """
         self.name = name
-        self.started = False
-        self.finished = False
-        self.active = False
-        self.groundtruth = groundtruth
         self.testblock_name = testblock_name
+        self.status = TestblockStatus()
+        self.status.name = testblock_name
+        self.groundtruth = groundtruth
+
         self.metric_result = None
 
     def start(self, status):
+        self.status = status
         if self.metric_result != None:
             print "WARN: user_result should be None but is already set for testblock %s"%self.testblock_name
-        self.active = True
-        self.started = True
 
     def stop(self, status):
+        self.status = status
         if self.metric_result != None:
             print "WARN: user_result should be None but is already set for testblock %s"%self.testblock_name
         self.metric_result = status.user_result
-        self.active = False
-        self.finished = True
 
     def pause(self, status):
         # TODO: Implement pause
@@ -85,35 +84,18 @@ class CalculateUserResult:
     def get_result(self):
         metric_result = MetricResult()
         metric_result.name = self.name
-        metric_result.started = self.started # FIXME remove
-        metric_result.finished = self.finished # FIXME remove
+        metric_result.status = self.status.status
 
-        if not self.started:
-            error_message = "testblock %s never started"%self.testblock_name
-            #print error_message
-            metric_result.groundtruth.result = False
-            metric_result.groundtruth.error_message = error_message
-            return metric_result
-
-        if not self.finished:
-            error_message = "testblock %s never stopped"%self.testblock_name
-            #print error_message
-            metric_result.groundtruth.result = False
-            metric_result.groundtruth.error_message = error_message
-            return metric_result
-
-        # check if stop was called
-        if self.metric_result == None:
-            error_message = "YOU SHOULD NOT END UP HERE: testblock %s stopped but metric_result is None"%self.testblock_name
-            #print error_message
-            metric_result.groundtruth.result = False
-            metric_result.groundtruth.error_message = error_message
+        if self.status.status != TestblockStatus.SUCCEEDED:
+            metric_result.groundtruth.result = Groundtruth.FAILED
+            metric_result.groundtruth.error_message = metrics_helper.extract_error_message(self.status)
             return metric_result
 
         # check if result is available
-        if self.metric_result.groundtruth.error_message.startswith("!!USER ERROR!!: no user result set"): # TODO use from global field (same as in atf.stop())
+        if self.metric_result.groundtruth.result == Groundtruth.UNSET and not self.groundtruth.available:
             # let the analyzer know that this test failed
-            metric_result.groundtruth.result = False
+            print self.metric_result.groundtruth.result, self.status.status
+            metric_result.groundtruth.result = Groundtruth.FAILED
             metric_result.groundtruth.error_message = "testblock %s stopped without user_result"%self.testblock_name
             return metric_result
 
@@ -122,22 +104,21 @@ class CalculateUserResult:
         # overwrite user_result data with mandatory ATF fields
         metric_result = self.metric_result
         metric_result.name = self.name
-        metric_result.started = True
-        metric_result.finished = True
+        metric_result.status = self.status.status
 
         # evaluate metric data
         if self.groundtruth.available: # groundtruth available
             # overwrite grundtruth with data from yaml file
             metric_result.groundtruth = self.groundtruth
             if math.fabs(metric_result.groundtruth.data - metric_result.data.data) <= metric_result.groundtruth.epsilon:
-                metric_result.groundtruth.result = True
+                metric_result.groundtruth.result = Groundtruth.SUCCEEDED
                 metric_result.groundtruth.error_message = "all OK"
             else:
-                metric_result.groundtruth.result = False
+                metric_result.groundtruth.result = Groundtruth.FAILED
                 metric_result.groundtruth.error_message = "groundtruth missmatch: %f not within %f+-%f"%(metric_result.data.data, metric_result.groundtruth.data, metric_result.groundtruth.epsilon)
 
         else: # groundtruth not available
-            metric_result.groundtruth.result = True
-            metric_result.groundtruth.error_message = "all OK (no groundtruth available)"
+            # we'll keep what is set in self.metric_result: user_result set by user
+            pass
 
         return metric_result

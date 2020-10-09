@@ -1,11 +1,10 @@
 #!/usr/bin/env python
-import copy
 import math
 import rospy
 
 from atf_core import ATFAnalyserError, ATFConfigurationError
 from atf_msgs.msg import Api
-from atf_msgs.msg import MetricResult, Groundtruth, KeyValue, DataStamped
+from atf_msgs.msg import MetricResult, Groundtruth, KeyValue, DataStamped, TestblockStatus
 from atf_metrics import metrics_helper
 
 class CalculateInterfaceParamHandler:
@@ -61,29 +60,25 @@ class CalculateInterface:
         Class for calculating the interface type.
         """
         self.name = name
-        self.started = False
-        self.finished = False
-        self.active = False
+        self.testblock_name = testblock_name
+        self.status = TestblockStatus()
         self.groundtruth = Groundtruth()
         self.groundtruth.available = True
         self.groundtruth.data = 100         # this is the max score
         self.groundtruth.epsilon = 0        # no deviation from max score allowed
-        self.testblock_name = testblock_name
         self.mode = mode
         self.series_mode = series_mode
         self.series = []
-        self.data = DataStamped()
+
         self.interface_details = {}
         self.api_dict = {}
         self.params = params
 
     def start(self, status):
-        self.active = True
-        self.started = True
+        self.status = status
 
     def stop(self, status):
-        self.active = False
-        self.finished = True
+        self.status = status
 
     def pause(self, status):
         pass
@@ -93,13 +88,14 @@ class CalculateInterface:
 
     def update(self, topic, msg, t):
         # get data if testblock is active
-        if self.active:
+        if self.status.status == TestblockStatus.ACTIVE:
             if topic == "/atf/api" and msg.testblock_name == self.testblock_name:
                 self.api_dict = self.msg_to_dict(msg)
                 interface_data, self.interface_details = self.calculate_data_and_details()
-                self.data.stamp = t
-                self.data.data = interface_data
-                self.series.append(copy.deepcopy(self.data))  # FIXME handle fixed rates
+                data = DataStamped()
+                data.stamp = t
+                data.data = interface_data
+                self.series.append(data)  # FIXME handle fixed rates
 
     def msg_to_dict(self, msg):
         api_dict = {}
@@ -196,78 +192,32 @@ class CalculateInterface:
         metric_result = MetricResult()
         metric_result.name = self.name
         metric_result.mode = self.mode
-        metric_result.started = self.started # FIXME remove
-        metric_result.finished = self.finished # FIXME remove
+        metric_result.status = self.status.status
         metric_result.series = []
         metric_result.groundtruth.available = self.groundtruth.available
         metric_result.groundtruth.data = self.groundtruth.data
         metric_result.groundtruth.epsilon = self.groundtruth.epsilon
 
-        if not self.started:
-            error_message = "testblock %s never started"%self.testblock_name
-            #print error_message
-            metric_result.groundtruth.result = False
-            metric_result.groundtruth.error_message = error_message
-            return metric_result
-
-        if not self.finished:
-            error_message = "testblock %s never stopped"%self.testblock_name
-            #print error_message
-            metric_result.groundtruth.result = False
-            metric_result.groundtruth.error_message = error_message
+        if self.status.status != TestblockStatus.SUCCEEDED:
+            metric_result.groundtruth.result = Groundtruth.FAILED
+            metric_result.groundtruth.error_message = metrics_helper.extract_error_message(self.status)
             return metric_result
 
         # check if result is available
         if len(self.series) == 0:
             # let the analyzer know that this test failed
-            metric_result.groundtruth.result = False
+            metric_result.groundtruth.result = Groundtruth.FAILED
             metric_result.groundtruth.error_message = "testblock %s stopped without result"%self.testblock_name
             return metric_result
 
         # at this point we're sure that any result is available
 
-        # calculate metric data
+        # set series
         if self.series_mode != None:
             metric_result.series = self.series
-        if metric_result.mode == MetricResult.SNAP:
-            metric_result.data = self.series[-1]                           # take last element from self.series for data and stamp
-            metric_result.min = metric_result.data
-            metric_result.max = metric_result.data
-            metric_result.mean = metric_result.data.data
-            metric_result.std = 0.0
-        elif metric_result.mode == MetricResult.SPAN_MEAN:
-            metric_result.min = metrics_helper.get_min(self.series)
-            metric_result.max = metrics_helper.get_max(self.series)
-            metric_result.mean = metrics_helper.get_mean(self.series)
-            metric_result.std = metrics_helper.get_std(self.series)
-            metric_result.data.data = metric_result.mean                   # take mean for data
-            metric_result.data.stamp = self.series[-1].stamp               # take stamp from last element in self.series for stamp
-        elif metric_result.mode == MetricResult.SPAN_MIN:
-            metric_result.min = metrics_helper.get_min(self.series)
-            metric_result.max = metrics_helper.get_max(self.series)
-            metric_result.mean = metrics_helper.get_mean(self.series)
-            metric_result.std = metrics_helper.get_std(self.series)
-            metric_result.data = metric_result.min
-        elif metric_result.mode == MetricResult.SPAN_ABSMIN:
-            metric_result.min = metrics_helper.get_absmin(self.series)
-            metric_result.max = metrics_helper.get_absmax(self.series)
-            metric_result.mean = metrics_helper.get_mean(self.series)
-            metric_result.std = metrics_helper.get_std(self.series)
-            metric_result.data = metric_result.min
-        elif metric_result.mode == MetricResult.SPAN_MAX:
-            metric_result.min = metrics_helper.get_min(self.series)
-            metric_result.max = metrics_helper.get_max(self.series)
-            metric_result.mean = metrics_helper.get_mean(self.series)
-            metric_result.std = metrics_helper.get_std(self.series)
-            metric_result.data = metric_result.max
-        elif metric_result.mode == MetricResult.SPAN_ABSMAX:
-            metric_result.min = metrics_helper.get_absmin(self.series)
-            metric_result.max = metrics_helper.get_absmax(self.series)
-            metric_result.mean = metrics_helper.get_mean(self.series)
-            metric_result.std = metrics_helper.get_std(self.series)
-            metric_result.data = metric_result.max
-        else: # invalid mode
-            raise ATFAnalyserError("Analysing failed, invalid mode '%s' for metric '%s'."%(metric_result.mode, metric_result.name))
+
+        # calculate metric data
+        [metric_result.data, metric_result.min, metric_result.max, metric_result.mean, metric_result.std] = metrics_helper.calculate_metric_data(metric_result.name, metric_result.mode, self.series)
 
         # fill details as KeyValue messages
         details = []
@@ -277,14 +227,14 @@ class CalculateInterface:
         # evaluate metric data
         if metric_result.groundtruth.available: # groundtruth available
             if math.fabs(metric_result.groundtruth.data - metric_result.data.data) <= metric_result.groundtruth.epsilon:
-                metric_result.groundtruth.result = True
+                metric_result.groundtruth.result = Groundtruth.SUCCEEDED
                 metric_result.groundtruth.error_message = "all OK"
             else:
-                metric_result.groundtruth.result = False
+                metric_result.groundtruth.result = Groundtruth.FAILED
                 metric_result.groundtruth.error_message = "groundtruth missmatch: %f not within %f+-%f"%(metric_result.data.data, metric_result.groundtruth.data, metric_result.groundtruth.epsilon)
 
         else: # groundtruth not available
-            metric_result.groundtruth.result = True
+            metric_result.groundtruth.result = Groundtruth.SUCCEEDED
             metric_result.groundtruth.error_message = "all OK (no groundtruth available)"
 
         return metric_result
