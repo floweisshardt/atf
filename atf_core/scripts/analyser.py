@@ -8,6 +8,7 @@ import rospy
 import rostest
 import sys
 import time
+import traceback
 import unittest
 import yaml
 
@@ -78,11 +79,13 @@ class Analyser:
                         break
                     except Exception as e:
                         print "general Exception in ATF analyser", type(e), e
+                        print traceback.format_exc()
                         count_error += 1
                         continue
                     bar.update(j)
             except Exception as e:
                 print "FATAL exception in bag file", type(e), e
+                print traceback.format_exc()
                 continue
             bar.finish()
 
@@ -178,18 +181,15 @@ class Analyser:
                     for tl_test in tl_tests.keys():
                         #print "    tl_test=", tl_test
                         metric_result = MetricResult()
-                        started = True
-                        finished = True
+                        status = TestblockStatus.SUCCEEDED
                         groundtruth_result = True
                         groundtruth_error_message = ""
                         details = []
                         for test in mbt[metric][testblock].keys():
                             if test.startswith(tl_test):
-                                # aggregate started/stopped from every metric_result
-                                if not mbt[metric][testblock][test].started:
-                                    started = False
-                                if not mbt[metric][testblock][test].finished:
-                                    finished = False
+                                # aggregate status SUCCEEDED from every metric_result
+                                if mbt[metric][testblock][test].status != TestblockStatus.SUCCEEDED:
+                                    status = TestblockStatus.ERROR
 
                                 # aggregate data from every metric_result
                                 data = mbt[metric][testblock][test].data
@@ -219,8 +219,7 @@ class Analyser:
 
                         metric_result.name          = mbt[metric][testblock][test].name
                         metric_result.mode          = MetricResult.SPAN_MEAN # aggregated metrics are always SPAN_MEAN
-                        metric_result.started       = started
-                        metric_result.finished      = finished
+                        metric_result.status        = status
                         # metric_result.series is set above
                         metric_result.data.stamp    = stamp
                         metric_result.data.data     = metrics_helper.get_mean(metric_result.series)
