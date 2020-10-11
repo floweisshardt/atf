@@ -12,7 +12,7 @@ class Testblock:
         self.trigger = None
         self.timestamp = None
         self.exception = None
-        self.status = None
+        self.status = TestblockStatus.INACTIVE
 
     def get_result(self):
 
@@ -34,7 +34,7 @@ class Testblock:
                 testblock_result.results.append(metric_result)
 
                 # aggregate result
-                if metric_result.groundtruth.result != None and metric_result.groundtruth.result != Groundtruth.SUCCEEDED:
+                if metric_result.groundtruth.result != Groundtruth.SUCCEEDED:
                     testblock_result.result = False
                     testblock_result.error_message += "\n     - metric '%s': %s"%(metric_result.name, metric_result.groundtruth.error_message)
                     #print testblock_result.groundtruth_error_message

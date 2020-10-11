@@ -13,7 +13,7 @@ import unittest
 import yaml
 
 from atf_core import ATFConfigurationParser
-from atf_msgs.msg import AtfResult, TestResult, TestblockResult, MetricResult, TestblockStatus, KeyValue, DataStamped
+from atf_msgs.msg import AtfResult, TestResult, TestblockResult, MetricResult, TestblockStatus, KeyValue, DataStamped, Groundtruth
 from atf_metrics import metrics_helper
 
 class Analyser:
@@ -21,7 +21,6 @@ class Analyser:
         print "ATF analyser: started!"
         start_time = time.time()
         self.ns = "/atf/"
-        self.error = False
         self.package_name = package_name
 
         # parse configuration
@@ -182,7 +181,7 @@ class Analyser:
                         #print "    tl_test=", tl_test
                         metric_result = MetricResult()
                         status = TestblockStatus.SUCCEEDED
-                        groundtruth_result = True
+                        groundtruth_result = Groundtruth.SUCCEEDED
                         groundtruth_error_message = ""
                         details = []
                         for test in mbt[metric][testblock].keys():
@@ -201,8 +200,8 @@ class Analyser:
 
                                 # aggregate groundtruth from every metric_result
                                 groundtruth = mbt[metric][testblock][test].groundtruth
-                                if groundtruth.result == False:
-                                    groundtruth_result = False
+                                if groundtruth.result != Groundtruth.SUCCEEDED:
+                                    groundtruth_result = Groundtruth.FAILED
                                     if groundtruth_error_message != "":
                                         groundtruth_error_message += "\n"
                                     groundtruth_error_message += "groundtruth missmatch in subtest %s"%(test)
@@ -272,7 +271,7 @@ class Analyser:
                     metric_result = tbm[test][testblock][metric]
                     testblock_result.results.append(metric_result)
                     # aggregate metric result
-                    if metric_result.groundtruth.result == False:
+                    if metric_result.groundtruth.result != Groundtruth.SUCCEEDED:
                         testblock_result.result = False
                         testblock_result.error_message += "\n     - metric '%s': %s"%(metric_result.name, metric_result.groundtruth.error_message)
                 

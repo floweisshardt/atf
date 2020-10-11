@@ -159,11 +159,11 @@ class CalculateInterface:
         node_name = self.params['node']
         if node_name not in self.api_dict:
             details = "node " + node_name + " is not in api"
-            groundtruth.result = False
+            groundtruth.result = Groundtruth.FAILED
             data = 0.0
         else:
             details = "node " + node_name + " is in api"
-            groundtruth.result = True
+            groundtruth.result = Groundtruth.SUCCEEDED
             data = 100.0
             for interface, interface_data in self.params.items():
                 if interface == "publishers" or interface == "subscribers" or interface == "services":
@@ -175,16 +175,16 @@ class CalculateInterface:
                         name_check, type_check = self.check_interface(topic_name, topic_type, self.api_dict[node_name][interface])
                         if not name_check:
                             details += ", but " + topic_name + " is not an interface of node " + node_name + ". Interfaces are: " + str(self.api_dict[node_name][interface])
-                            groundtruth.result = False
+                            groundtruth.result = Groundtruth.FAILED
                             data = 33.3
                         else:
                             if not type_check:
                                 details += ", but " + topic_name + " (with type " + topic_type + ") is not an interface of node " + node_name + ". Interfaces are: " + str(self.api_dict[node_name][interface])
-                                groundtruth.result = False
+                                groundtruth.result = Groundtruth.FAILED
                                 data = 66.0
                             else: # all Ok
                                 details += ", all interfaces of node " + node_name + ": OK"
-                                groundtruth.result = True
+                                groundtruth.result = Groundtruth.SUCCEEDED
                                 data = 100.0
         return data, details
 
