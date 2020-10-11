@@ -10,6 +10,9 @@ env:
   global:
     - CATKIN_LINT=pedantic
     - NOT_TEST_DOWNSTREAM=true
+    - PYLINT_ARGS="--output-format=parseable --errors-only --ignored-modules=catkin_pkg,matplotlib.pyplot,numpy,numpy.random,rospkg,tf2_ros,yaml"
+    - PYLINT2_CHECK=true
+    - PYLINT3_CHECK=false
     - PARALLEL_TESTS=true
     - ROS_REPO=ros
     - VERBOSE_OUTPUT=false
@@ -18,6 +21,6 @@ env:
     - ROS_DISTRO=kinetic
     - ROS_DISTRO=melodic
 install:
-  - git clone --quiet --depth 1 https://github.com/ros-industrial/industrial_ci.git .industrial_ci -b master
+  - git clone --quiet --depth 1 https://github.com/fmessmer/industrial_ci.git .industrial_ci -b master_pylint
 script:
   - .industrial_ci/travis.sh
