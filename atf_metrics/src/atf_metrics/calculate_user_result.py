@@ -94,7 +94,6 @@ class CalculateUserResult:
         # check if result is available
         if self.metric_result.groundtruth.result == Groundtruth.UNSET and not self.groundtruth.available:
             # let the analyzer know that this test failed
-            print self.metric_result.groundtruth.result, self.status.status
             metric_result.groundtruth.result = Groundtruth.FAILED
             metric_result.groundtruth.error_message = "testblock %s stopped without user_result"%self.testblock_name
             return metric_result

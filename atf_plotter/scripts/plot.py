@@ -5,7 +5,7 @@ import matplotlib.style
 import matplotlib as mpl
 mpl.style.use('classic')
 
-from atf_msgs.msg import AtfResult, MetricResult, TestblockStatus
+from atf_msgs.msg import AtfResult, MetricResult, TestblockStatus, Groundtruth
 from atf_core import ATFConfigurationParser
 
 import matplotlib.pyplot as plt
@@ -143,7 +143,7 @@ class AtfPlotter(object):
 
                     # set marker transparency (filled or transparent)
                     if metric_result.status == TestblockStatus.SUCCEEDED\
-                        and (metric_result.groundtruth.result or not metric_result.groundtruth.available):
+                        and (metric_result.groundtruth.result == Groundtruth.SUCCEEDED or not metric_result.groundtruth.available):
                         markerfacecolor = None      # plot filled marker
                     else:
                         markerfacecolor = 'None'    # plot transparent marker
