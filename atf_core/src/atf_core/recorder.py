@@ -12,6 +12,7 @@ import atf_core
 import tf
 
 from threading import Lock
+from atf_core.error import ATFRecorderError
 from atf_msgs.msg import TestblockTrigger
 from diagnostic_msgs.msg import DiagnosticStatus
 from tf2_msgs.msg import TFMessage

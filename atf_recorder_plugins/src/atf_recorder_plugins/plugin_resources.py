@@ -8,8 +8,7 @@ import rosnode
 from copy import copy
 from re import findall
 from subprocess import check_output, CalledProcessError
-from atf_msgs.msg import Resources, IO, Network
-from atf_recorder import BagfileWriter
+from atf_msgs.msg import Resources, IO, Network, TestblockTrigger, NodeResources
 
 
 class RecordResources:
@@ -31,7 +30,7 @@ class RecordResources:
 
     def update_requested_nodes(self, msg):
 
-        if msg.trigger.trigger == Trigger.ACTIVATE:
+        if msg.trigger.trigger == TestblockTrigger.START:
             for node in self.testblock_list[msg.name]:
                 if node not in self.requested_nodes:
                     self.requested_nodes[node] = copy(self.testblock_list[msg.name][node])
@@ -42,7 +41,7 @@ class RecordResources:
                         if res not in self.res_pipeline[node]:
                             self.res_pipeline[node].append(res)
 
-        elif msg.trigger.trigger == Trigger.FINISH:
+        elif msg.trigger.trigger == TestblockTrigger.STOP:
             for node in self.testblock_list[msg.name]:
                 for res in self.testblock_list[msg.name][node]:
                     self.requested_nodes[node].remove(res)
@@ -128,7 +127,7 @@ class RecordResources:
         if msg.name in self.testblock_list:
             self.update_requested_nodes(msg)
 
-        if msg.trigger.trigger == Trigger.ERROR:
+        if msg.trigger.trigger == TestblockTrigger.ERROR:
             self.res_pipeline = []
 
     def create_pid_list(self):
