@@ -13,6 +13,7 @@ import unittest
 import yaml
 
 from atf_core import ATFConfigurationParser
+from atf_core.error import ATFAnalyserError
 from atf_msgs.msg import AtfResult, TestResult, TestblockResult, MetricResult, TestblockStatus, KeyValue, DataStamped, Groundtruth
 from atf_metrics import metrics_helper
 
