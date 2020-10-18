@@ -6,7 +6,7 @@ import sys
 import tf
 import tf2_ros
 
-from atf_core import ATFConfigurationError
+from atf_core.error import ATFConfigurationError
 from atf_msgs.msg import MetricResult, Groundtruth, KeyValue, DataStamped, TestblockStatus
 from atf_metrics import metrics_helper
 
