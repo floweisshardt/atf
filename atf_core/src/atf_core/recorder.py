@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-import actionlib
 import roslib
 import rospy
 import rospkg
@@ -7,15 +6,16 @@ import rostopic
 import rosbag
 import yaml
 import os
-import atf_recorder_plugins
-import atf_core
 import tf
 
 from threading import Lock
-from atf_core.error import ATFRecorderError
-from atf_msgs.msg import TestblockTrigger
-from diagnostic_msgs.msg import DiagnosticStatus
 from tf2_msgs.msg import TFMessage
+from diagnostic_msgs.msg import DiagnosticStatus
+
+from actionlib.simple_action_client import SimpleActionClient
+from atf_core.bagfile_helper import BagfileWriter
+from atf_core.error import ATFRecorderError
+import atf_recorder_plugins
 
 
 class ATFRecorder:
@@ -42,7 +42,7 @@ class ATFRecorder:
         # create bag file writer handle
         self.lock_write = Lock()
         self.bag = rosbag.Bag(self.test.generation_config["bagfile_output"] + self.test.name + ".bag", 'w')
-        self.bag_file_writer = atf_core.BagfileWriter(self.bag, self.lock_write)
+        self.bag_file_writer = BagfileWriter(self.bag, self.lock_write)
 
         # Init metric recorder
         self.recorder_plugin_list = []
@@ -88,7 +88,7 @@ class ATFRecorder:
                     rospy.logerr(msg)
                     raise ATFRecorderError(msg)
                 topic_type = topic_type[0:len(topic_type)-4] # remove "Goal" from type
-                client = actionlib.SimpleActionClient(action, roslib.message.get_message_class(topic_type))
+                client = SimpleActionClient(action, roslib.message.get_message_class(topic_type))
 
                 # wait for action server
                 client.wait_for_server()

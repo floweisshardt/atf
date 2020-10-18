@@ -13,6 +13,7 @@
 
     <buildtool_depend>catkin</buildtool_depend>
 
+    <!--exec_depend>atf_core</exec_depend--> <!-- cyclic dependency -->
     <exec_depend>atf_msgs</exec_depend>
     <exec_depend>rospy</exec_depend>
     <exec_depend>tf</exec_depend>

@@ -5,7 +5,7 @@ import shutil
 import os
 import sys
 
-from atf_core import ATFConfigurationParser
+from atf_core.configuration_parser import ATFConfigurationParser
 
 
 class Cleaner():

@@ -2,8 +2,8 @@
 import math
 import rospy
 
-from atf_core import ATFAnalyserError, ATFConfigurationError
-from atf_msgs.msg import MetricResult, Groundtruth, KeyValue, TestblockStatus
+from atf_core.error import ATFConfigurationError
+from atf_msgs.msg import MetricResult, Groundtruth, TestblockStatus
 from atf_metrics import metrics_helper
 
 class CalculateUserResultParamHandler:
