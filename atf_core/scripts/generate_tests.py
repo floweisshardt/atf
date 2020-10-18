@@ -1,8 +1,5 @@
 #!/usr/bin/env python
 import yaml
-import json
-import re
-import itertools as it
 import rospkg
 import os
 import lxml.etree
@@ -13,9 +10,8 @@ import sys
 from xml.etree import ElementTree
 from xml.dom import minidom
 
-from copy import deepcopy, copy
-
 import atf_core
+from atf_core.configuration_parser import ATFConfigurationParser
 
 class GenerateTests:
     def __init__(self, arguments):
@@ -31,7 +27,7 @@ class GenerateTests:
         self.test_generation_config_file = arguments[2]
         self.package_src_path = arguments[3]
         self.package_bin_path = arguments[4]
-        self.atf_configuration_parser = atf_core.ATFConfigurationParser(self.package_src_path, self.test_generation_config_file, skip_metrics=True)
+        self.atf_configuration_parser = ATFConfigurationParser(self.package_src_path, self.test_generation_config_file, skip_metrics=True)
         self.tests = self.atf_configuration_parser.get_tests()
 
         self.test_list = {}

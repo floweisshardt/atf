@@ -1,27 +1,20 @@
 #!/usr/bin/env python2
 #-*- coding: utf-8 -*-
 
+import sys
+import time
+import argparse
+import numpy as np
+
 import matplotlib.style
 import matplotlib as mpl
 mpl.style.use('classic')
-
-from atf_msgs.msg import AtfResult, MetricResult, TestblockStatus, Groundtruth
-from atf_core import ATFConfigurationParser
-
 import matplotlib.pyplot as plt
-
-import rosbag
-import rospy
-
-import numpy as np
-
 from matplotlib import cm
 
-import argparse
-
-import sys
-
-import time
+import rosbag
+from atf_msgs.msg import AtfResult, MetricResult, TestblockStatus, Groundtruth
+from atf_core.configuration_parser import ATFConfigurationParser
 
 class AtfPlotter(object):
 

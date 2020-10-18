@@ -15,6 +15,7 @@
     <exec_depend>atf_core</exec_depend>
     <exec_depend>atf_metrics</exec_depend>
     <exec_depend>atf_msgs</exec_depend>
+    <exec_depend>atf_plotter</exec_depend>
     <exec_depend>atf_recorder_plugins</exec_depend>
     <exec_depend>atf_test</exec_depend>
     <exec_depend>atf_test_tools</exec_depend>

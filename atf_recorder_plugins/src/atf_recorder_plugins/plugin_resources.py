@@ -8,7 +8,9 @@ import rosnode
 from copy import copy
 from re import findall
 from subprocess import check_output, CalledProcessError
-from atf_msgs.msg import Resources, IO, Network, TestblockTrigger, NodeResources
+
+from atf_core.bagfile_helper import BagfileWriter
+from atf_msgs.msg import Resources, TestblockTrigger, NodeResources
 
 
 class RecordResources:

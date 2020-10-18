@@ -2,6 +2,7 @@
 import rospy
 
 from copy import copy
+from atf_core.bagfile_helper import BagfileWriter
 #from obstacle_distance.srv import GetObstacleDistance
 
 
@@ -19,8 +20,7 @@ class RecordObstacleDistance:
 
         rospy.loginfo("Waiting for obstacle_distance node...")
         rospy.wait_for_service(self.robot_config_file["obstacle_distance"]["services"])
-        #self.obstacle_distance_server = rospy.ServiceProxy(self.robot_config_file["obstacle_distance"]["services"],
-                                                           GetObstacleDistance)
+        #self.obstacle_distance_server = rospy.ServiceProxy(self.robot_config_file["obstacle_distance"]["services"], GetObstacleDistance)
 
         rospy.Timer(rospy.Duration.from_sec(self.timer_interval), self.collect_obstacle_distances)
 
@@ -31,7 +31,5 @@ class RecordObstacleDistance:
     def collect_obstacle_distances(self, event):
         pipeline = copy(self.res_pipeline)
         if not len(pipeline) == 0:
-
-
             #self.BfW.write_to_bagfile(topic, msg, rospy.Time.from_sec(time.time()))
             pass
