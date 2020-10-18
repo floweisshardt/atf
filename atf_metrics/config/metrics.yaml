@@ -1,24 +1,24 @@
 # example:
 #   handler: ExampleParamHandler
 interface:
-  handler: CalculateInterfaceParamHandler
+  handler: atf_metrics.calculate_interface.CalculateInterfaceParamHandler
 tf_length_translation:
-  handler: CalculateTfLengthTranslationParamHandler
+  handler: atf_metrics.calculate_tf_length_translation.CalculateTfLengthTranslationParamHandler
 tf_length_rotation:
-  handler: CalculateTfLengthRotationParamHandler
+  handler: atf_metrics.calculate_tf_length_rotation.CalculateTfLengthRotationParamHandler
 tf_distance_translation:
-  handler: CalculateTfDistanceTranslationParamHandler
+  handler: atf_metrics.calculate_tf_distance_translation.CalculateTfDistanceTranslationParamHandler
 tf_distance_rotation:
-  handler: CalculateTfDistanceRotationParamHandler
+  handler: atf_metrics.calculate_tf_distance_rotation.CalculateTfDistanceRotationParamHandler
 tf_velocity_translation:
-  handler: CalculateTfVelocityTranslationParamHandler
+  handler: atf_metrics.calculate_tf_velocity_translation.CalculateTfVelocityTranslationParamHandler
 tf_acceleration_translation:
-  handler: CalculateTfAccelerationTranslationParamHandler
+  handler: atf_metrics.calculate_tf_acceleration_translation.CalculateTfAccelerationTranslationParamHandler
 tf_jerk_translation:
-  handler: CalculateTfJerkTranslationParamHandler
+  handler: atf_metrics.calculate_tf_jerk_translation.CalculateTfJerkTranslationParamHandler
 publish_rate:
-  handler: CalculatePublishRateParamHandler
+  handler: atf_metrics.calculate_publish_rate.CalculatePublishRateParamHandler
 time:
-  handler: CalculateTimeParamHandler
+  handler: atf_metrics.calculate_time.CalculateTimeParamHandler
 user_result:
-  handler: CalculateUserResultParamHandler
+  handler: atf_metrics.calculate_user_result.CalculateUserResultParamHandler
