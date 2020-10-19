@@ -49,7 +49,7 @@ class ATFRecorder:
         #print "recorder_config", recorder_config
         if len(recorder_config) > 0:
             for value in recorder_config.values():
-                #print "value=", value
+                print "value=", value
                 self.recorder_plugin_list.append(getattr(atf_recorder_plugins, value)(self.lock_write,
                                                                                       self.bag_file_writer))
         #print "self.recorder_plugin_list", self.recorder_plugin_list
