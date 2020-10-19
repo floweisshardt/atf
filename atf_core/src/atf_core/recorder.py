@@ -109,6 +109,14 @@ class ATFRecorder:
             rospy.loginfo("... diagnostics are OK.")
 
         self.active_topics = {}
+
+        # special case for tf: make sure tf_buffer is already filled (even before the testblocks are started). Thus we need to record /tf and /tf_static all the time, even if there is no active testblock using tf.
+        for testblock in self.test.testblocks:
+            topics = self.get_topics_of_testblock(testblock.name)
+            if "/tf" in topics or "/tf_static" in topics:
+                self.active_topics["/tf"]           = ["always"]
+                self.active_topics["/tf_static"]    = ["always"]
+
         self.subscribers = {}
         self.tf_static_message = TFMessage()
 
