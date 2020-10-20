@@ -1,4 +1,2 @@
-#resources: RecordResources
 interface: RecordInterface
-#obstacle_distance: RecordObstacleDistance
 # example: Example

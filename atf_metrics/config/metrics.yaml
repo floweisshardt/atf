@@ -1,9 +1,7 @@
 # example:
 #   handler: ExampleParamHandler
 interface:
-    handler: CalculateInterfaceParamHandler
-obstacle_distance:
-  handler: CalculateDistanceToObstaclesParamHandler
+  handler: CalculateInterfaceParamHandler
 tf_length_translation:
   handler: CalculateTfLengthTranslationParamHandler
 tf_length_rotation:
@@ -20,8 +18,6 @@ tf_jerk_translation:
   handler: CalculateTfJerkTranslationParamHandler
 publish_rate:
   handler: CalculatePublishRateParamHandler
-resources:
-  handler: CalculateResourcesParamHandler
 time:
   handler: CalculateTimeParamHandler
 user_result:
