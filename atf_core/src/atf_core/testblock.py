@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 from atf_core import ATFAnalyserError
-from atf_msgs.msg import TestblockResult, TestblockStatus
+from atf_msgs.msg import TestblockResult, TestblockStatus, Groundtruth
 
 class Testblock:
     def __init__(self, name, metric_handles, recorder_handle):
@@ -12,8 +12,7 @@ class Testblock:
         self.trigger = None
         self.timestamp = None
         self.exception = None
-        self.atf_started = False
-        self.status = None
+        self.status = TestblockStatus.INACTIVE
 
     def get_result(self):
 
@@ -35,11 +34,11 @@ class Testblock:
                 testblock_result.results.append(metric_result)
 
                 # aggregate result
-                if metric_result.groundtruth.result != None and not metric_result.groundtruth.result:
+                if metric_result.groundtruth.result != Groundtruth.SUCCEEDED:
                     testblock_result.result = False
                     testblock_result.error_message += "\n     - metric '%s': %s"%(metric_result.name, metric_result.groundtruth.error_message)
                     #print testblock_result.groundtruth_error_message
-                if testblock_result.result == None and metric_result.groundtruth.result:
+                if testblock_result.result == None and metric_result.groundtruth.result == Groundtruth.SUCCEEDED:
                     testblock_result.result = True
 
         if testblock_result.result == None:

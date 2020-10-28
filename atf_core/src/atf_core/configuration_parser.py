@@ -208,15 +208,20 @@ class ATFConfigurationParser:
             print "params not a dict"
             return False        
 
-        if "groundtruth" in params and "groundtruth_epsilon" in params: # groundtruth specified
-            pass
-        elif "groundtruth" not in params and "groundtruth_epsilon" not in params: # no groundtruth specified
-            pass
-        else: # invalid configuration
-            # e.g. (params["groundtruth"] == None and params["groundtruth_epsilon"] != None) or (params["groundtruth"] != None and params["groundtruth_epsilon"] == None)
+        try:
+            params["groundtruth"]
+        except (TypeError, KeyError):
+            return True # no groundtruth specified
+
+        try:
+            params["groundtruth"]["data"]
+            params["groundtruth"]["epsilon"]
+            return True # groundtruth specified
+        except (TypeError, KeyError):
+            # e.g. (params["groundtruth"]["data"] == None and params["groundtruth"]["epsilon"] != None) or (params["groundtruth"]["data"] != None and params["groundtruth"]["epsilon"] == None)
             print "invalid groundtruth specified:", params
             return False
-        
+
         return True # all checks successfull
 
     def load_data(self, filename):

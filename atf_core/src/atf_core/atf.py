@@ -55,7 +55,7 @@ class ATF():
             error_msg = "testblock \'%s\' not in list of testblocks"%testblock
             self._send_error(error_msg)
             raise atf_core.ATFError(error_msg)
-        
+
         if metric_result != None:
 
             #TODO  check if metric_result is of type atf_msgs/MetricResult
@@ -91,14 +91,14 @@ class ATF():
 
         else:
             rospy.loginfo("no user result set for testblock \'%s\'"%testblock)
+            metric_result = MetricResult()
 
         rospy.loginfo("stopping testblock \'%s\'"%testblock)
         trigger = TestblockTrigger()
         trigger.stamp = rospy.Time.now()
         trigger.name = testblock
         trigger.trigger = TestblockTrigger.STOP
-        if metric_result != None:
-            trigger.user_result = metric_result
+        trigger.user_result = metric_result
         self.publisher_trigger.publish(trigger)
 
     def shutdown(self):
@@ -106,7 +106,10 @@ class ATF():
 
         # call stop for all testblocks
         for testblock in self.test.testblocks:
-            self.stop(testblock.name)
+            rospy.sleep(1) # TODO remove sleep and wait until all states have finished their transitions
+            if testblock.name in self.sm_container_status.active_states:
+                rospy.logwarn("shutdown called but testblock %s is still active: calling stop automatically"%testblock.name)
+                self.stop(testblock.name)
 
         # check if any testblock is still running
         rospy.loginfo("waiting for all states to be in a terminal state")

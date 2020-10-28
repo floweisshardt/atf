@@ -2,7 +2,7 @@
 import rospy
 
 import atf_core
-from atf_msgs.msg import MetricResult
+from atf_msgs.msg import MetricResult, Groundtruth
 from atf_test_tools import PublishTf
 
 class Application:
@@ -22,7 +22,7 @@ class Application:
         # user result
         metric_result = MetricResult()
         metric_result.data.data = 0.8
-        metric_result.groundtruth.result = True
+        metric_result.groundtruth.result = Groundtruth.SUCCEEDED
         metric_result.groundtruth.error_message = "all ok in application of atf_test"
         self.atf.stop("testblock_small", metric_result)
 

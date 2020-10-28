@@ -1,11 +1,10 @@
 #!/usr/bin/env python
-import copy
 import math
 import rospy
 
 from atf_core import ATFAnalyserError, ATFConfigurationError
 from atf_msgs.msg import Api
-from atf_msgs.msg import MetricResult, Groundtruth, KeyValue, DataStamped
+from atf_msgs.msg import MetricResult, Groundtruth, KeyValue, DataStamped, TestblockStatus
 from atf_metrics import metrics_helper
 
 class CalculateInterfaceParamHandler:
@@ -61,9 +60,8 @@ class CalculateInterface:
         Class for calculating the interface type.
         """
         self.name = name
-        self.started = False
-        self.finished = False
-        self.active = False
+        self.testblock_name = testblock_name
+        self.status = TestblockStatus()
         self.groundtruth = Groundtruth()
         self.groundtruth.available = True
         self.groundtruth.data = 100         # this is the max score
@@ -71,19 +69,16 @@ class CalculateInterface:
         self.mode = mode
         self.series_mode = series_mode
         self.series = []
-        self.data = DataStamped()
+
         self.interface_details = {}
         self.api_dict = {}
-        self.testblock_name = testblock_name
         self.params = params
 
     def start(self, status):
-        self.active = True
-        self.started = True
+        self.status = status
 
     def stop(self, status):
-        self.active = False
-        self.finished = True
+        self.status = status
 
     def pause(self, status):
         pass
@@ -93,13 +88,14 @@ class CalculateInterface:
 
     def update(self, topic, msg, t):
         # get data if testblock is active
-        if self.active:
+        if self.status.status == TestblockStatus.ACTIVE:
             if topic == "/atf/api" and msg.testblock_name == self.testblock_name:
                 self.api_dict = self.msg_to_dict(msg)
                 interface_data, self.interface_details = self.calculate_data_and_details()
-                self.data.stamp = t
-                self.data.data = interface_data
-                self.series.append(copy.deepcopy(self.data))  # FIXME handle fixed rates
+                data = DataStamped()
+                data.stamp = t
+                data.data = interface_data
+                self.series.append(data)  # FIXME handle fixed rates
 
     def msg_to_dict(self, msg):
         api_dict = {}
@@ -163,11 +159,11 @@ class CalculateInterface:
         node_name = self.params['node']
         if node_name not in self.api_dict:
             details = "node " + node_name + " is not in api"
-            groundtruth.result = False
+            groundtruth.result = Groundtruth.FAILED
             data = 0.0
         else:
             details = "node " + node_name + " is in api"
-            groundtruth.result = True
+            groundtruth.result = Groundtruth.SUCCEEDED
             data = 100.0
             for interface, interface_data in self.params.items():
                 if interface == "publishers" or interface == "subscribers" or interface == "services":
@@ -179,16 +175,16 @@ class CalculateInterface:
                         name_check, type_check = self.check_interface(topic_name, topic_type, self.api_dict[node_name][interface])
                         if not name_check:
                             details += ", but " + topic_name + " is not an interface of node " + node_name + ". Interfaces are: " + str(self.api_dict[node_name][interface])
-                            groundtruth.result = False
+                            groundtruth.result = Groundtruth.FAILED
                             data = 33.3
                         else:
                             if not type_check:
                                 details += ", but " + topic_name + " (with type " + topic_type + ") is not an interface of node " + node_name + ". Interfaces are: " + str(self.api_dict[node_name][interface])
-                                groundtruth.result = False
+                                groundtruth.result = Groundtruth.FAILED
                                 data = 66.0
                             else: # all Ok
                                 details += ", all interfaces of node " + node_name + ": OK"
-                                groundtruth.result = True
+                                groundtruth.result = Groundtruth.SUCCEEDED
                                 data = 100.0
         return data, details
 
@@ -196,83 +192,49 @@ class CalculateInterface:
         metric_result = MetricResult()
         metric_result.name = self.name
         metric_result.mode = self.mode
-        metric_result.started = self.started # FIXME remove
-        metric_result.finished = self.finished # FIXME remove
+        metric_result.status = self.status.status
         metric_result.series = []
         metric_result.groundtruth.available = self.groundtruth.available
         metric_result.groundtruth.data = self.groundtruth.data
         metric_result.groundtruth.epsilon = self.groundtruth.epsilon
-        
-        # assign default value
-        metric_result.groundtruth.result = None
-        metric_result.groundtruth.error_message = None
 
-        if metric_result.started and metric_result.finished and len(self.series) != 0: #  we check if the testblock was ever started and stopped and if result data is available
-            # calculate metric data
-            if self.series_mode != None:
-                metric_result.series = self.series
-            if metric_result.mode == MetricResult.SNAP:
-                metric_result.data = self.series[-1]                           # take last element from self.series for data and stamp
-                metric_result.min = metric_result.data
-                metric_result.max = metric_result.data
-                metric_result.mean = metric_result.data.data
-                metric_result.std = 0.0
-            elif metric_result.mode == MetricResult.SPAN_MEAN:
-                metric_result.min = metrics_helper.get_min(self.series)
-                metric_result.max = metrics_helper.get_max(self.series)
-                metric_result.mean = metrics_helper.get_mean(self.series)
-                metric_result.std = metrics_helper.get_std(self.series)
-                metric_result.data.data = metric_result.mean                   # take mean for data
-                metric_result.data.stamp = self.series[-1].stamp               # take stamp from last element in self.series for stamp
-            elif metric_result.mode == MetricResult.SPAN_MIN:
-                metric_result.min = metrics_helper.get_min(self.series)
-                metric_result.max = metrics_helper.get_max(self.series)
-                metric_result.mean = metrics_helper.get_mean(self.series)
-                metric_result.std = metrics_helper.get_std(self.series)
-                metric_result.data = metric_result.min
-            elif metric_result.mode == MetricResult.SPAN_ABSMIN:
-                metric_result.min = metrics_helper.get_absmin(self.series)
-                metric_result.max = metrics_helper.get_absmax(self.series)
-                metric_result.mean = metrics_helper.get_mean(self.series)
-                metric_result.std = metrics_helper.get_std(self.series)
-                metric_result.data = metric_result.min
-            elif metric_result.mode == MetricResult.SPAN_MAX:
-                metric_result.min = metrics_helper.get_min(self.series)
-                metric_result.max = metrics_helper.get_max(self.series)
-                metric_result.mean = metrics_helper.get_mean(self.series)
-                metric_result.std = metrics_helper.get_std(self.series)
-                metric_result.data = metric_result.max
-            elif metric_result.mode == MetricResult.SPAN_ABSMAX:
-                metric_result.min = metrics_helper.get_absmin(self.series)
-                metric_result.max = metrics_helper.get_absmax(self.series)
-                metric_result.mean = metrics_helper.get_mean(self.series)
-                metric_result.std = metrics_helper.get_std(self.series)
-                metric_result.data = metric_result.max
-            else: # invalid mode
-                raise ATFAnalyserError("Analysing failed, invalid mode '%s' for metric '%s'."%(metric_result.mode, metric_result.name))
+        if self.status.status != TestblockStatus.SUCCEEDED:
+            metric_result.groundtruth.result = Groundtruth.FAILED
+            metric_result.groundtruth.error_message = metrics_helper.extract_error_message(self.status)
+            return metric_result
 
-            # fill details as KeyValue messages
-            details = []
-            details.append(KeyValue("api_status", self.interface_details))
-            metric_result.details = details
+        # check if result is available
+        if len(self.series) == 0:
+            # let the analyzer know that this test failed
+            metric_result.groundtruth.result = Groundtruth.FAILED
+            metric_result.groundtruth.error_message = "testblock %s stopped without result"%self.testblock_name
+            return metric_result
 
-            # evaluate metric data
-            if not metric_result.groundtruth.available: # no groundtruth given
-                metric_result.groundtruth.result = True
-                metric_result.groundtruth.error_message = "all OK (no groundtruth available)"
-            else: # groundtruth available
-                if math.fabs(metric_result.groundtruth.data - metric_result.data.data) <= metric_result.groundtruth.epsilon:
-                    metric_result.groundtruth.result = True
-                    metric_result.groundtruth.error_message = "all OK"
-                else:
-                    metric_result.groundtruth.result = False
-                    metric_result.groundtruth.error_message = "groundtruth missmatch: %f not within %f+-%f"%(metric_result.data.data, metric_result.groundtruth.data, metric_result.groundtruth.epsilon)
+        # at this point we're sure that any result is available
 
-        else: # testblock did not start and/or finish
-            metric_result.groundtruth.result = False
-            metric_result.groundtruth.error_message = "no result"
+        # set series
+        if self.series_mode != None:
+            metric_result.series = self.series
 
-        if metric_result.groundtruth.result == None:
-            raise ATFAnalyserError("Analysing failed, metric result is None for metric '%s'."%metric_result.name)
+        # calculate metric data
+        [metric_result.data, metric_result.min, metric_result.max, metric_result.mean, metric_result.std] = metrics_helper.calculate_metric_data(metric_result.name, metric_result.mode, self.series)
+
+        # fill details as KeyValue messages
+        details = []
+        details.append(KeyValue("api_status", self.interface_details))
+        metric_result.details = details
+
+        # evaluate metric data
+        if metric_result.groundtruth.available: # groundtruth available
+            if math.fabs(metric_result.groundtruth.data - metric_result.data.data) <= metric_result.groundtruth.epsilon:
+                metric_result.groundtruth.result = Groundtruth.SUCCEEDED
+                metric_result.groundtruth.error_message = "all OK"
+            else:
+                metric_result.groundtruth.result = Groundtruth.FAILED
+                metric_result.groundtruth.error_message = "groundtruth missmatch: %f not within %f+-%f"%(metric_result.data.data, metric_result.groundtruth.data, metric_result.groundtruth.epsilon)
+
+        else: # groundtruth not available
+            metric_result.groundtruth.result = Groundtruth.SUCCEEDED
+            metric_result.groundtruth.error_message = "all OK (no groundtruth available)"
 
         return metric_result
