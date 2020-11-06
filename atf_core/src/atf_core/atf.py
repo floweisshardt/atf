@@ -3,9 +3,11 @@ import rospy
 import copy
 
 from atf_core.error import ATFError
+from atf_core.configuration_parser import ATFConfigurationParser
 from atf_metrics.error import ATFConfigurationError
 from atf_msgs.msg import MetricResult, TestblockTrigger, DataStamped
 from smach_msgs.msg import SmachContainerStatus
+
 
 ###########
 ### ATF ###
