@@ -33,12 +33,12 @@ testsuites:                # You have to define at least one testsuite
       - testblockset2
 #    repetitions: 1        # Number of repetitions per test (this is an optional parameter, default = 1)
 
-  - tests:
-      - test1
-    robots:
-      - robot1
-    envs:
-      - env1
-    testblocksets:
-      - testblockset1
-    repetitions: 2
+  # - tests:
+  #     - test1
+  #   robots:
+  #     - robot1
+  #   envs:
+  #     - env1
+  #   testblocksets:
+  #     - testblockset1
+  #   repetitions: 2
