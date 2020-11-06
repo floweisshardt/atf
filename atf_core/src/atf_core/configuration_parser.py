@@ -6,7 +6,7 @@ import os
 import json
 import rosbag
 
-from atf_core.error import ATFConfigurationError
+from atf_metrics.error import ATFConfigurationError
 from atf_core.test import Test
 from atf_core.testblock import Testblock
 import atf_metrics

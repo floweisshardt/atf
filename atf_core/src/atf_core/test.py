@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 from atf_msgs.msg import TestResult
-from atf_core.error import ATFAnalyserError
+from atf_metrics.error import ATFAnalyserError
 
 class Test:
     def __init__(self):

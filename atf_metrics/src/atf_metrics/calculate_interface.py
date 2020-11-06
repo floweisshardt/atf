@@ -4,7 +4,7 @@ import math
 import re
 import rospy
 
-from atf_core.error import ATFConfigurationError
+from atf_metrics.error import ATFConfigurationError
 from atf_msgs.msg import MetricResult, Groundtruth, KeyValue, DataStamped, TestblockStatus
 from atf_metrics import metrics_helper
 

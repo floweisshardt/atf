@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-from atf_core.error import ATFAnalyserError
+from atf_metrics.error import ATFAnalyserError
 from atf_msgs.msg import TestblockResult, TestblockStatus, Groundtruth
 
 class Testblock:

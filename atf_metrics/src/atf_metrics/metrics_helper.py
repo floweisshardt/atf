@@ -3,7 +3,7 @@
 #import statistics # only available for python >3.4
 import numpy
 
-from atf_core.error import ATFAnalyserError
+from atf_metrics.error import ATFAnalyserError
 from atf_msgs.msg import DataStamped, TestblockStatus, MetricResult
 
 def list_from_series(series):
