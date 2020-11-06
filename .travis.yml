@@ -10,7 +10,7 @@ env:
   global:
     - CATKIN_LINT=pedantic
     - NOT_TEST_DOWNSTREAM=true
-    - PYLINT_ARGS="--output-format=parseable --errors-only"
+    - PYLINT_ARGS="--output-format=parseable --errors-only --ignored-modules=tf2_ros"
     - PYLINT2_CHECK=true
     - PYLINT3_CHECK=false
     - PARALLEL_TESTS=false

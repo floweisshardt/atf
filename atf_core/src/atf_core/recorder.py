@@ -83,11 +83,12 @@ class ATFRecorder:
                 topic_type = rostopic._get_topic_type(action + "/goal")[0]
 
                 # remove "Goal" string from action type
-                if topic_type == None or not "Goal" in topic_type:
+                if topic_type == None or not "Goal" in topic_type:  ## pylint: disable=unsupported-membership-test
                     msg = "Could not get type for action %s. type is %s"%(action, topic_type)
                     rospy.logerr(msg)
                     raise ATFRecorderError(msg)
-                topic_type = topic_type[0:len(topic_type)-4] # remove "Goal" from type
+                # remove "Goal" from type
+                topic_type = topic_type[0:len(topic_type)-4] ## pylint: disable=unsubscriptable-object
                 client = SimpleActionClient(action, roslib.message.get_message_class(topic_type))
 
                 # wait for action server
