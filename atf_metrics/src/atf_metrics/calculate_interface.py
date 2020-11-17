@@ -1,5 +1,7 @@
 #!/usr/bin/env python
+import fnmatch
 import math
+import re
 import rospy
 
 from atf_core import ATFAnalyserError, ATFConfigurationError
@@ -71,7 +73,6 @@ class CalculateInterface:
         self.series = []
 
         self.interface_details = {}
-        self.api_dict = {}
         self.params = params
 
     def start(self, status):
@@ -90,8 +91,8 @@ class CalculateInterface:
         # get data if testblock is active
         if self.status.status == TestblockStatus.ACTIVE:
             if topic == "/atf/api" and msg.testblock_name == self.testblock_name:
-                self.api_dict = self.msg_to_dict(msg)
-                interface_data, self.interface_details = self.calculate_data_and_details()
+                api_dict = self.msg_to_dict(msg)
+                interface_data, self.interface_details = self.calculate_data_and_details(api_dict)
                 data = DataStamped()
                 data.stamp = t
                 data.data = interface_data
@@ -124,8 +125,10 @@ class CalculateInterface:
         #print "name=", name
         #print "topic_type=", topic_type
         #print "interface=", interface
+        regex = fnmatch.translate(name)
+        reobj = re.compile(regex)
         for i in interface:
-            if i[0] == name:
+            if reobj.match(i[0]):
                 if i[1] == topic_type:
                     return True, True # all OK
                 else:
@@ -147,7 +150,7 @@ class CalculateInterface:
                     topics.append(topic)
         return topics
 
-    def calculate_data_and_details(self):
+    def calculate_data_and_details(self, api_dict):
         # As interface metric is not numeric, we'll use the following numeric representation:
         # max score = 100.0
         # node in api: score = 33.3
@@ -157,35 +160,33 @@ class CalculateInterface:
         groundtruth = Groundtruth()
         details = None
         node_name = self.params['node']
-        if node_name not in self.api_dict:
+
+        if node_name not in api_dict:
             details = "node " + node_name + " is not in api"
             groundtruth.result = Groundtruth.FAILED
             data = 0.0
-        else:
-            details = "node " + node_name + " is in api"
-            groundtruth.result = Groundtruth.SUCCEEDED
-            data = 100.0
-            for interface, interface_data in self.params.items():
-                if interface == "publishers" or interface == "subscribers" or interface == "services":
-                    for topic_name, topic_type in interface_data:
-                        #print "node_name=", node_name
-                        #print "topic_name=", topic_name
-                        #print "topic_type=", topic_type
-                        #print "self.api_dict[node_name][interface]=", self.api_dict[node_name][interface]
-                        name_check, type_check = self.check_interface(topic_name, topic_type, self.api_dict[node_name][interface])
-                        if not name_check:
-                            details += ", but " + topic_name + " is not an interface of node " + node_name + ". Interfaces are: " + str(self.api_dict[node_name][interface])
+            return data, details
+
+        details = "node " + node_name + " is in api"
+        groundtruth.result = Groundtruth.SUCCEEDED
+        data = 100.0
+        for interface, interface_data in self.params.items():
+            if interface == "publishers" or interface == "subscribers" or interface == "services":
+                for topic_name, topic_type in interface_data:
+                    #print "node_name=", node_name
+                    #print "topic_name=", topic_name
+                    #print "topic_type=", topic_type
+                    #print "api_dict[node_name][interface]=", api_dict[node_name][interface]
+                    name_check, type_check = self.check_interface(topic_name, topic_type, api_dict[node_name][interface])
+                    if not name_check:
+                        details += ", but " + topic_name + " is not in the list of " + interface + " of node " + node_name + ". " + interface + " are: " + str(api_dict[node_name][interface])
+                        groundtruth.result = Groundtruth.FAILED
+                        data = min(data, 33.3)
+                    else:
+                        if not type_check:
+                            details += ", but " + topic_name + " (of type " + topic_type + ") is not in the list of " + interface + " of node " + node_name + ". " + interface + " are: " + str(api_dict[node_name][interface])
                             groundtruth.result = Groundtruth.FAILED
-                            data = 33.3
-                        else:
-                            if not type_check:
-                                details += ", but " + topic_name + " (with type " + topic_type + ") is not an interface of node " + node_name + ". Interfaces are: " + str(self.api_dict[node_name][interface])
-                                groundtruth.result = Groundtruth.FAILED
-                                data = 66.0
-                            else: # all Ok
-                                details += ", all interfaces of node " + node_name + ": OK"
-                                groundtruth.result = Groundtruth.SUCCEEDED
-                                data = 100.0
+                            data = min(data, 66.6)
         return data, details
 
     def get_result(self):
