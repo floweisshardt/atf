@@ -13,5 +13,5 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v1
-      - uses: 'ros-industrial/industrial_ci@master'
+      - uses: 'fmessmer/industrial_ci@master_pylint'
         env: ${{matrix.env}}
