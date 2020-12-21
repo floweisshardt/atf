@@ -20,5 +20,7 @@ publish_rate:
   handler: CalculatePublishRateParamHandler
 time:
   handler: CalculateTimeParamHandler
+topic_data:
+  handler: CalculateTopicDataParamHandler
 user_result:
   handler: CalculateUserResultParamHandler
