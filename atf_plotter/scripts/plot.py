@@ -107,8 +107,9 @@ class AtfPlotter(object):
                 ax.margins(y=0.2) # make it a little bigger than the min/max values
 
                 # only set title for upper row and ylabel for left col
+                title = col.replace("::","::\n")
                 if rows.index(row) == 0:
-                    ax.set_title(col)
+                    ax.set_title(title)
                 if cols.index(col) == 0:
                     ax.set_ylabel(row, rotation=45, ha="right")
 
