@@ -16,8 +16,8 @@ class Application:
         self.atf.start("testblock_small")
         # FIXME: due to timing problem the first tf message is sometimes omitted
         #        so next line (pub_zero) is used as a workaround
-        self.ptf.pub_zero(doSleep=True)
-        self.ptf.pub_circ(radius=1, time=3)
+        self.ptf.pub_zero()
+        self.ptf.pub_circ(radius=1, period_time=3)
 
         # user result
         metric_result = MetricResult()
@@ -28,7 +28,7 @@ class Application:
 
         # large testblock (circle r=2, time=5)
         self.atf.start("testblock_large")
-        self.ptf.pub_circ(radius=2, time=5)
+        self.ptf.pub_circ(radius=2, period_time=5)
 
         # user result
         metric_result = MetricResult()
