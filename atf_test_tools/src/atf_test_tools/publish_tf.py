@@ -8,10 +8,15 @@ import rospy
 from tf import transformations, TransformBroadcaster
 
 
+from std_msgs.msg import Float64
+
 class PublishTf:
     def __init__(self):
         self.br = TransformBroadcaster()
-        self.pub_freq = 20.0
+        self.pub_reference1_x = rospy.Publisher("reference1/x", Float64, queue_size=10)
+        self.pub_reference1_y = rospy.Publisher("reference1/y", Float64, queue_size=10)
+        self.pub_reference1_yaw = rospy.Publisher("reference1/yaw", Float64, queue_size=10)
+        self.pub_freq = 50.0
         self.parent_frame_id = "world"
         self.child1_frame_id = "reference1"
         self.child2_frame_id = "reference2"
@@ -46,6 +51,10 @@ class PublishTf:
         self.check_for_ctrlc()
         start = rospy.Time.now()
         try:
+            if child1_frame_id == "reference1":
+                self.pub_reference1_x.publish(xyz[0])
+                self.pub_reference1_y.publish(xyz[1])
+                self.pub_reference1_yaw.publish(rpy[2])
             self.br.sendTransform((xyz[0], xyz[1], xyz[2]), transformations.quaternion_from_euler(
                 rpy[0], rpy[1], rpy[2]), rospy.Time.now(), child1_frame_id, parent_frame_id)
         except rospy.ROSException:
@@ -77,18 +86,18 @@ class PublishTf:
             rate = rospy.Rate(int(self.pub_freq))
             rate.sleep()
 
-    def pub_circ(self, radius=1, time=1):
+    def pub_circ(self, radius=1, period_time=1, periods=1):
         rospy.loginfo("Circ")
         rate = rospy.Rate(int(self.pub_freq))
 
-        for i in range(int(self.pub_freq * time) + 1):
-            t = i / self.pub_freq / time
+        for i in range(int(self.pub_freq * period_time * periods) + 1):
+            t = i / self.pub_freq
 
-            a = 2 * math.pi * t
-            x, y = PublishTf.rotate(0, -radius, a)
+            yaw = 2 * math.pi * t / period_time
+            x, y = PublishTf.rotate(0, -radius, yaw)
             y += radius
 
-            self.pub_tf(self.parent_frame_id, self.child1_frame_id, [x, y, 0], [0, 0, a])
+            self.pub_tf(self.parent_frame_id, self.child1_frame_id, [x, y, 0], [0, 0, yaw])
             rate.sleep()
 
     def pub_quadrat(self, length=1, time=1, same_start_stop_orientation=True):
