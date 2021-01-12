@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 from atf_msgs.msg import TestResult
+from atf_metrics.error import ATFAnalyserError
 
 class Test:
     def __init__(self):
@@ -18,7 +19,6 @@ class Test:
         self.testblockset_name = None
 
         # testblocks with metrics
-        metrics_handle = None
         self.testblocks = []
     
     def get_result(self):

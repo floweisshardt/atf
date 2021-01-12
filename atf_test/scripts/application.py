@@ -1,13 +1,13 @@
 #!/usr/bin/python
 import rospy
 
-import atf_core
+from atf_core.atf import ATF
 from atf_msgs.msg import MetricResult, Groundtruth
-from atf_test_tools import PublishTf
+from atf_test_tools.publish_tf import PublishTf
 
 class Application:
     def __init__(self):
-        self.atf = atf_core.ATF()
+        self.atf = ATF()
         self.ptf = PublishTf()
 
     def execute(self):

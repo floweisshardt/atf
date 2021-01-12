@@ -4,10 +4,12 @@ import rostest
 import smach
 import smach_ros
 import sys
-import threading
 import unittest
 
 import atf_core
+from atf_core.configuration_parser import ATFConfigurationParser
+from atf_core.recorder import ATFRecorder
+from atf_core.sm_atf import SmAtfTestblock
 
 class Recorder():
     def __init__(self):
@@ -24,7 +26,7 @@ class Recorder():
         test_name = rospy.get_param("/atf/test_name")
         print "test_name:", test_name
         
-        atf_configuration_parser = atf_core.ATFConfigurationParser(package_name, test_generation_config_file)
+        atf_configuration_parser = ATFConfigurationParser(package_name, test_generation_config_file)
         tests = atf_configuration_parser.get_tests()
         for test in tests:
             #print "test.name:", test.name
@@ -40,7 +42,7 @@ class Recorder():
         outcome_map = {'succeeded':outcome_map_succeeded,
                         'error':outcome_map_error}
         
-        recorder_handle = atf_core.ATFRecorder(test)
+        recorder_handle = ATFRecorder(test)
 
         # Open the container
         with self.sm_top:
@@ -57,7 +59,7 @@ class Recorder():
                 # Add states to the container
                 for testblock in test.testblockset_config.keys():
                     #print "adding testblock:", testblock
-                    smach.Concurrence.add(testblock, atf_core.SmAtfTestblock(testblock, recorder_handle))
+                    smach.Concurrence.add(testblock, SmAtfTestblock(testblock, recorder_handle))
             
             # TODO preempt all other concurrent States as soon as one state returns 'error'
 

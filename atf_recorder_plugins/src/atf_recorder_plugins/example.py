@@ -1,14 +1,12 @@
 #!/usr/bin/env python
-from atf_recorder import BagfileWriter
-
 
 class Example:
-    def __init__(self, topic_prefix, config_file, robot_config_file, write_lock, bag_file):
-        self.topic_prefix = topic_prefix
-        self.test_config = config_file
+    def __init__(self, write_lock, bag_file_writer):
+        self.name = "example"
+        self.bag_file_writer = bag_file_writer
 
-        self.BfW = BagfileWriter(bag_file, write_lock)
-
-    def trigger_callback(self, msg):
+    def trigger_callback(self, testblock_name):
         # Process Trigger
+        # e.g. write to bag file
+        # self.bag_file_writer.write_to_bagfile(TOPIC, MSG, STAMP)
         pass

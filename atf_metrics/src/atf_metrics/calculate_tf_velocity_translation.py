@@ -4,10 +4,9 @@ import os
 import rospy
 import sys
 import tf
-import tf2_py
 import tf2_ros
 
-from atf_core import ATFAnalyserError, ATFConfigurationError
+from atf_metrics.error import ATFConfigurationError
 from atf_msgs.msg import MetricResult, Groundtruth, KeyValue, DataStamped, TestblockStatus
 from atf_metrics import metrics_helper
 
@@ -121,11 +120,11 @@ class CalculateTfVelocityTranslation:
             sys.stdout = sys.__stdout__  # restore stdout
             #print "Exception in metric '%s' %s %s"%(self.name, type(e), e)
             return None
-        except tf2_py.ExtrapolationException as e:
+        except tf2_ros.ExtrapolationException as e:
             sys.stdout = sys.__stdout__  # restore stdout
             #print "Exception in metric '%s' %s %s"%(self.name, type(e), e)
             return None
-        except tf2_py.ConnectivityException as e:
+        except tf2_ros.ConnectivityException as e:
             sys.stdout = sys.__stdout__  # restore stdout
             #print "Exception in metric '%s' %s %s"%(self.name, type(e), e)
             return None

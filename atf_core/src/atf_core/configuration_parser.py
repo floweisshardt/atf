@@ -1,17 +1,15 @@
 #!/usr/bin/env python
-import atf_core
 import fnmatch
 import yaml
 import rospkg
-import rosparam
-import atf_metrics
 import os
-import itertools as it
 import json
 import rosbag
 
-from atf_core import ATFConfigurationError
-from atf_core import Test, Testblock
+from atf_metrics.error import ATFConfigurationError
+from atf_core.test import Test
+from atf_core.testblock import Testblock
+import atf_metrics
 
 class ATFConfigurationParser:
     def __init__(self, package_name = None, test_generation_config_file = None, skip_metrics = False):

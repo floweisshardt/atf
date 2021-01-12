@@ -103,7 +103,7 @@ class PublishTf:
         alpha = math.pi / 2
         r = np.round(
             np.array([
-                [np.cos(alpha), -math.sin(alpha)],
+                [math.cos(alpha), -math.sin(alpha)],
                 [math.sin(alpha), math.cos(alpha)],
             ]),
             6
