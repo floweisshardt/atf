@@ -135,6 +135,18 @@ class CalculateTopicData:
         except Exception as e:
             raise ATFConfigurationError("cannot parse field reference [%s]: %s" % (fields, str(e)))
 
+    # from rqt_plot/rosplot.py
+    def _array_eval(self, field_name, slot_num):
+        """
+        :param field_name: name of field to index into, ``str``
+        :param slot_num: index of slot to return, ``str``
+        :returns: fn(msg_field)->msg_field[slot_num]
+        """
+        def fn(f):
+            return getattr(f, field_name).__getitem__(slot_num)
+        return fn
+
+    # from rqt_plot/rosplot.py
     def _field_eval(self, field_name):
         """
         :param field_name: name of field to return, ``str``
