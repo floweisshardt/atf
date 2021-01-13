@@ -25,7 +25,7 @@ jobs:
         env:
           - {ROS_DISTRO: kinetic}
           - {ROS_DISTRO: melodic}
-#          - {ROS_DISTRO: noetic}
+          - {ROS_DISTRO: noetic}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v1
