@@ -107,7 +107,7 @@ class CalculateTopicData:
         field_evals = self.generate_field_evals(self.message_field)
         try:
             if not field_evals:
-                if isinstance(val, Bool):
+                if isinstance(val, bool):
                     # extract boolean field from bool messages
                     val = val.data
                 return float(val)
@@ -115,9 +115,9 @@ class CalculateTopicData:
                 val = f(val)
             return float(val)
         except IndexError:
-            self.error = ATFAnalyserError("[%s] index error for: %s" % (self.name, str(val).replace('\n', ', ')))
+            raise ATFConfigurationError("[%s] index error for: %s" % (self.name, str(val).replace('\n', ', ')))
         except TypeError:
-            self.error = ATFAnalyserError("[%s] value was not numeric: %s" % (self.name, val))
+            raise ATFConfigurationError("[%s] value was not numeric: %s" % (self.name, val))
 
     # from rqt_plot/rosplot.py
     def generate_field_evals(self, fields):
@@ -133,7 +133,7 @@ class CalculateTopicData:
                     evals.append(self._field_eval(f))
             return evals
         except Exception as e:
-            raise ATFAnalyserError("cannot parse field reference [%s]: %s" % (fields, str(e)))
+            raise ATFConfigurationError("cannot parse field reference [%s]: %s" % (fields, str(e)))
 
     def _field_eval(self, field_name):
         """
