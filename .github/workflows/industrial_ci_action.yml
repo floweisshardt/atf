@@ -26,7 +26,7 @@ jobs:
         env:
           - {ROS_DISTRO: kinetic}
           - {ROS_DISTRO: melodic}
-          - {ROS_DISTRO: noetic}
+          - {ROS_DISTRO: noetic, BEFORE_SETUP_UPSTREAM_WORKSPACE: 'sudo -H apt install -qq python-is-python3'}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v1
