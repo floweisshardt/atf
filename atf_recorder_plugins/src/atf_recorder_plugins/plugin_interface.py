@@ -3,7 +3,7 @@ import rospy
 import rosgraph
 import rosservice
 import socket
-import httplib
+from six.moves.http_client import HTTPException
 
 from atf_msgs.msg import Api, NodeApi, InterfaceItem
 
@@ -31,7 +31,7 @@ class RecordInterface:
             except socket.error:
                 rospy.logerr("Unable to communicate with master!")
                 continue
-            except httplib.HTTPException:
+            except HTTPException:
                 rospy.logerr("Cannot get api from master: HTTPException")
                 continue
             break
@@ -106,14 +106,14 @@ class RecordInterface:
         api.testblock_name = testblock_name
         #print "api=", api
         # fill Api message
-        for node, data in api_dict.items():
+        for node, data in list(api_dict.items()):
             #print ""
             #print "node=", node
             #print "data=", data
             node_api = NodeApi()
             node_api.name = node
             #print "node_api1=", node_api
-            for api_descriptor, api_data in data.items():
+            for api_descriptor, api_data in list(data.items()):
                 #print "api_descriptor=", api_descriptor
                 #print "api_data=", api_data
                 for item in api_data:

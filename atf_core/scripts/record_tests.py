@@ -21,15 +21,15 @@ if __name__ == '__main__':
         test = sys.argv[2]
         test_generation_config_file = sys.argv[3]
     else:
-        print "wrong arguments. Usage: 'record_tests.py <<pkg>> [<<test>>]'"
-        print "e.g. 'record_tests.py atf_test'                                      --> record all tests"
-        print "e.g. 'record_tests.py atf_test ts0_c0_r0_e0_s0_0'                    --> record test ts0_c0_r0_e0_s0_0"
-        print "e.g. 'record_tests.py atf_test ts0_c0_r0_e0_s0_*'                    --> record all iterations of test ts0_c0_r0_e0_s0_*"
-        print "e.g. 'record_tests.py atf_test ts0_*'                                --> record all tests with ts0"
-        print "e.g. 'record_tests.py atf_test ts0_*_r0_*'                           --> record all tests with ts0 and r0"
-        print "e.g. 'record_tests.py atf_test ts* atf/test_generation_config.yaml'  --> record all tests defined in atf/test_generation_config.yaml"
+        print("wrong arguments. Usage: 'record_tests.py <<pkg>> [<<test>>]'")
+        print("e.g. 'record_tests.py atf_test'                                      --> record all tests")
+        print("e.g. 'record_tests.py atf_test ts0_c0_r0_e0_s0_0'                    --> record test ts0_c0_r0_e0_s0_0")
+        print("e.g. 'record_tests.py atf_test ts0_c0_r0_e0_s0_*'                    --> record all iterations of test ts0_c0_r0_e0_s0_*")
+        print("e.g. 'record_tests.py atf_test ts0_*'                                --> record all tests with ts0")
+        print("e.g. 'record_tests.py atf_test ts0_*_r0_*'                           --> record all tests with ts0 and r0")
+        print("e.g. 'record_tests.py atf_test ts* atf/test_generation_config.yaml'  --> record all tests defined in atf/test_generation_config.yaml")
         sys.exit(1)
-    print "recording test in package '%s' with test generation file '%s'"%(pkg, test_generation_config_file)
+    print("recording test in package '%s' with test generation file '%s'"%(pkg, test_generation_config_file))
 
     cmake_prefix_path = os.environ['CMAKE_PREFIX_PATH']
 
@@ -47,9 +47,9 @@ if __name__ == '__main__':
 
     # check overall search result
     if path_to_build_space != None:
-        print "found package '%s' in '%s'"%(pkg, path_to_build_space)
+        print("found package '%s' in '%s'"%(pkg, path_to_build_space))
     else:
-        print "Could not find package '%s' in current CMAKE_PREFIX_PATH '%s'"%(pkg, cmake_prefix_path)
+        print("Could not find package '%s' in current CMAKE_PREFIX_PATH '%s'"%(pkg, cmake_prefix_path))
         sys.exit(1)
     
     # get all recording files
@@ -61,12 +61,12 @@ if __name__ == '__main__':
     path_to_test_files = os.path.join(path_to_build_space, "test_generated", test_generation_config_file_replaced)
     filenames = glob.glob(os.path.join(path_to_test_files, "recording_*" + test + "*.test"))
     filenames.sort() # sort tests alphabetically
-    print "found %d files for '%s':\n%s"%(len(filenames), pkg, str(filenames))
+    print("found %d files for '%s':\n%s"%(len(filenames), pkg, str(filenames)))
 
     # record all
     counter = 1
     for f in filenames:
-        print "\n--> recording " + str(counter) + "/" + str(len(filenames)) + " (" + str(os.path.basename(f)) + ")"
+        print("\n--> recording " + str(counter) + "/" + str(len(filenames)) + " (" + str(os.path.basename(f)) + ")")
         command = "roslaunch " + os.path.join(path_to_test_files, f) + " execute_as_test:=false"
         subprocess.call(command, shell=True)
         counter += 1

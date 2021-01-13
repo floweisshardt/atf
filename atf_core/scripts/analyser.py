@@ -18,7 +18,7 @@ from atf_metrics import metrics_helper
 
 class Analyser:
     def __init__(self, package_name, test_generation_config_file = "atf/test_generation_config.yaml"):
-        print "ATF analyser: started!"
+        print("ATF analyser: started!")
         start_time = time.time()
         self.ns = "/atf/"
         self.package_name = package_name
@@ -31,19 +31,19 @@ class Analyser:
         i = 1
         for test in self.tests:
             inputfile = os.path.join(test.generation_config["bagfile_output"] + test.name + ".bag")
-            print "Processing test %i/%i: %s"%(i, len(self.tests), test.name)
+            print("Processing test %i/%i: %s"%(i, len(self.tests), test.name))
             try:
                 bag = rosbag.Bag(inputfile)
             except rosbag.bag.ROSBagException as e:
-                print "ERROR empty bag file", e
+                print("ERROR empty bag file", e)
                 i += 1
                 continue
             except IOError as e:
-                print "Error bag file not found", e
+                print("Error bag file not found", e)
                 i += 1
                 continue
             if bag.get_message_count() == 0:
-                print "ERROR empty bag file"
+                print("ERROR empty bag file")
                 i += 1
                 continue
             bar = progressbar.ProgressBar(maxval=bag.get_message_count(), \
@@ -74,23 +74,23 @@ class Analyser:
                                 else:
                                     metric_handle.update(topic, msg, t)
                     except StopIteration as e:
-                        print "stop iterator", type(e), e
+                        print("stop iterator", type(e), e)
                         break
                     except Exception as e:
-                        print "general Exception in ATF analyser", type(e), e
-                        print traceback.format_exc()
+                        print("general Exception in ATF analyser", type(e), e)
+                        print(traceback.format_exc())
                         count_error += 1
                         continue
                     bar.update(j)
             except Exception as e:
-                print "FATAL exception in bag file", type(e), e
-                print traceback.format_exc()
+                print("FATAL exception in bag file", type(e), e)
+                print(traceback.format_exc())
                 continue
             bar.finish()
 
 
 
-            print "%d errors detected during test processing"%count_error
+            print("%d errors detected during test processing"%count_error)
             i += 1
 
         #export test list
@@ -100,11 +100,11 @@ class Analyser:
         #self.configuration_parser.export_to_file(test_list, os.path.join(self.configuration_parser.generation_config["yaml_output"], "test_list.yaml"))
 
         try:
-            print "Processing tests took %s sec"%str(round((time.time() - start_time), 4))
+            print("Processing tests took %s sec"%str(round((time.time() - start_time), 4)))
         except:
             pass
 
-        print "ATF analyser: done!"
+        print("ATF analyser: done!")
 
     def get_file_paths(self, directory, prefix):
         result = []
@@ -167,24 +167,24 @@ class Analyser:
 
         mbt = ret['mbt']
         mbt_aggregated = {}
-        for metric in mbt.keys():
+        for metric in list(mbt.keys()):
             #print "m=", metric
-            if metric not in mbt_aggregated.keys():
+            if metric not in list(mbt_aggregated.keys()):
                 mbt_aggregated[metric] = {}
-            for testblock in mbt[metric].keys():
+            for testblock in list(mbt[metric].keys()):
                 #print "  b=", testblock
-                if testblock not in mbt_aggregated[metric].keys():
+                if testblock not in list(mbt_aggregated[metric].keys()):
                     mbt_aggregated[metric][testblock] = {}
                 for tl_tests in test_list:
                     #print "tl_tests=", tl_tests
-                    for tl_test in tl_tests.keys():
+                    for tl_test in list(tl_tests.keys()):
                         #print "    tl_test=", tl_test
                         metric_result = MetricResult()
                         status = TestblockStatus.SUCCEEDED
                         groundtruth_result = Groundtruth.SUCCEEDED
                         groundtruth_error_message = ""
                         details = []
-                        for test in mbt[metric][testblock].keys():
+                        for test in list(mbt[metric][testblock].keys()):
                             if test.startswith(tl_test):
                                 # aggregate status SUCCEEDED from every metric_result
                                 if mbt[metric][testblock][test].status != TestblockStatus.SUCCEEDED:
@@ -232,15 +232,15 @@ class Analyser:
 
         # convert mbt to tbm
         tbm = {}
-        for metric in mbt_aggregated.keys():
+        for metric in list(mbt_aggregated.keys()):
             #print "m=", metric
-            for testblock in mbt_aggregated[metric].keys():
+            for testblock in list(mbt_aggregated[metric].keys()):
                 #print "  b=", testblock
-                for test in mbt_aggregated[metric][testblock].keys():
+                for test in list(mbt_aggregated[metric][testblock].keys()):
                     #print "    t=", test
-                    if test not in tbm.keys():
+                    if test not in list(tbm.keys()):
                         tbm[test] = {}
-                    if testblock not in tbm[test].keys():
+                    if testblock not in list(tbm[test].keys()):
                         tbm[test][testblock] = {}
                     tbm[test][testblock][metric] = mbt_aggregated[metric][testblock][test]
 
@@ -291,36 +291,36 @@ class Analyser:
 
     def print_result(self, atf_result):
         if atf_result.result != None and not atf_result.result:
-            print "\n"
-            print "*************************"
-            print "*** SOME TESTS FAILED ***"
-            print "*************************"
-            print atf_result.error_message
+            print("\n")
+            print("*************************")
+            print("*** SOME TESTS FAILED ***")
+            print("*************************")
+            print(atf_result.error_message)
             self.print_result_summary(atf_result)
         else:
-            print "\n"
-            print "********************"
-            print "*** ALL TESTS OK ***"
-            print "********************"
+            print("\n")
+            print("********************")
+            print("*** ALL TESTS OK ***")
+            print("********************")
             self.print_result_summary(atf_result)
 
     def print_result_details(self, atf_result):
-        print "\n"
-        print "**********************"
-        print "*** result details ***"
-        print "**********************"
-        print atf_result
+        print("\n")
+        print("**********************")
+        print("*** result details ***")
+        print("**********************")
+        print(atf_result)
 
     def print_result_summary(self, atf_result):
-        print "\n"
-        print "**********************"
-        print "*** result summary ***"
-        print "**********************"
+        print("\n")
+        print("**********************")
+        print("*** result summary ***")
+        print("**********************")
         for result in atf_result.results:
             if result.result:
-                print "test '%s' (%s, %s, %s, %s): succeeded"%(result.name, result.test_config, result.robot, result.env, result.testblockset)
+                print("test '%s' (%s, %s, %s, %s): succeeded"%(result.name, result.test_config, result.robot, result.env, result.testblockset))
             else:
-                print "test '%s' (%s, %s, %s, %s): failed"%(result.name, result.test_config, result.robot, result.env, result.testblockset)
+                print("test '%s' (%s, %s, %s, %s): failed"%(result.name, result.test_config, result.robot, result.env, result.testblockset))
 
 class TestAnalysing(unittest.TestCase):
     def test_analysing(self):
@@ -338,10 +338,10 @@ if __name__ == '__main__':
         package_name = sys.argv[1]
         test_generation_config_file = sys.argv[2]
     else:
-        print "ERROR: please specify a test package"
-        print "usage: rosrun atf_core analyser.py <<ATF TEST PACKAGE>> [<<TEST_GENERATION_CONFIG_FILE>>]"
+        print("ERROR: please specify a test package")
+        print("usage: rosrun atf_core analyser.py <<ATF TEST PACKAGE>> [<<TEST_GENERATION_CONFIG_FILE>>]")
         sys.exit(1)
-    print "analysing for package '%s' and test generation config file '%s'" %(package_name, test_generation_config_file)
+    print("analysing for package '%s' and test generation config file '%s'" %(package_name, test_generation_config_file))
 
     if "execute_as_test" in sys.argv:
         rostest.rosrun("atf_core", 'analysing', TestAnalysing)

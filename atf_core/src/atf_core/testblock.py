@@ -23,7 +23,7 @@ class Testblock:
         if self.status == TestblockStatus.ERROR:
             testblock_result.result = False
             testblock_result.error_message = "An error occured during analysis of testblock '%s', no results available."%self.name
-            print testblock_result.error_message
+            print(testblock_result.error_message)
         else:
             #print "testblock.metrics=", self.metric_handles
             for metric_handle in self.metric_handles:

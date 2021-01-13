@@ -48,7 +48,7 @@ class ATFRecorder:
         self.recorder_plugin_list = []
         #print "recorder_config", recorder_config
         if len(recorder_config) > 0:
-            for value in recorder_config.values():
+            for value in list(recorder_config.values()):
                 #print "value=", value
                 self.recorder_plugin_list.append(getattr(atf_recorder_plugins, value)(self.lock_write,
                                                                                       self.bag_file_writer))
@@ -130,7 +130,7 @@ class ATFRecorder:
     def create_subscriber_callback(self, event):
         for testblock in self.test.testblocks:
             for topic in self.get_topics_of_testblock(testblock.name):
-                if topic not in self.subscribers.keys():
+                if topic not in list(self.subscribers.keys()):
                     subscriber = self.create_subscriber(topic)
                     if subscriber == None:
                         continue
@@ -179,7 +179,7 @@ class ATFRecorder:
             raise ATFRecorderError("Testblock '%s' not in test config" % testblock_name)
 
         for topic in self.get_topics_of_testblock(testblock_name):
-            if topic not in self.active_topics.keys():
+            if topic not in list(self.active_topics.keys()):
                 self.active_topics[topic] = [testblock_name]
             else:
                 self.active_topics[topic].append(testblock_name)
@@ -191,7 +191,7 @@ class ATFRecorder:
         #print "self.recorder_plugin_list=", self.recorder_plugin_list
         for recorder_plugin in self.recorder_plugin_list:
             # filter the recorder plugins not needed for current trigger/testblock
-            if recorder_plugin.name in self.test.testblockset_config[testblock_name].keys():
+            if recorder_plugin.name in list(self.test.testblockset_config[testblock_name].keys()):
                 #rospy.loginfo("recorder plugin callback for testblock: '%s'", testblock_name)
                 recorder_plugin.trigger_callback(testblock_name)
 
@@ -202,7 +202,7 @@ class ATFRecorder:
 
         for topic in self.get_topics_of_testblock(testblock_name):
             #print "self.active_topics", self.active_topics
-            if topic in self.active_topics.keys():
+            if topic in list(self.active_topics.keys()):
                 self.active_topics[topic].remove(testblock_name)
             #print "self.active_topics of topic '%s'"%topic, self.active_topics[topic]
             if len(self.active_topics[topic]) == 0:
@@ -274,7 +274,7 @@ class ATFRecorder:
                     self.tf_static_message.transforms.append(transform)
                     #rospy.loginfo("added to self.tf_static_message.transforms. len = %d", len(self.tf_static_message.transforms))
         
-        if name in self.active_topics.keys():
+        if name in list(self.active_topics.keys()):
             self.bag_file_writer.write_to_bagfile(name, msg, rospy.Time.now())
 
     def is_transform_in_tf_message(self, transform, tf_message):
@@ -288,7 +288,7 @@ class ATFRecorder:
 
     def tf_static_timer_callback(self, event):
             # republish latched /tf_static messages to /tf_static again
-            if "/tf_static" in self.active_topics.keys():
+            if "/tf_static" in list(self.active_topics.keys()):
                 for transform in self.tf_static_message.transforms:
                     transform.header.stamp = rospy.Time.now()
                 self.bag_file_writer.write_to_bagfile("/tf_static", self.tf_static_message, rospy.Time.now())

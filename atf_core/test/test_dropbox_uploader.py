@@ -7,7 +7,7 @@ import sys
 
 class Test(unittest.TestCase):
     def setUp(self):
-        print sys.argv
+        print(sys.argv)
         if len(sys.argv) < 6:
             rospy.logerr("wrong number of arguments: expected 5, got %d", len(sys.argv))
             sys.exit(1)

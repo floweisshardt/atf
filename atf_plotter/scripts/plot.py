@@ -33,24 +33,24 @@ class AtfPlotter(object):
             if topic == "atf_result":
                 self.atf_result = msg
             else:
-                print "ERROR: invalid topic name in bag. ATF only expects topic 'atf_result'"
+                print("ERROR: invalid topic name in bag. ATF only expects topic 'atf_result'")
             bag.close()
             break
 
     def print_structure(self):
         for test in self.atf_result.results:
-            print test.name
+            print(test.name)
             for testblock in test.results:
-                print "  -", testblock.name
+                print("  -", testblock.name)
                 for metric in testblock.results:
-                    print "    -", metric.name
+                    print("    -", metric.name)
 
     def plot_benchmark(self, style, sharey, hide_groundtruth, hide_min_max, filter_tests, filter_testblocks, filter_metrics):
 
         sorted_atf_results = ATFConfigurationParser().get_sorted_plot_dicts(self.atf_result, filter_tests, filter_testblocks, filter_metrics)
 
-        if style not in sorted_atf_results.keys():
-            print "ERROR: style '%s' not implemented"%style
+        if style not in list(sorted_atf_results.keys()):
+            print("ERROR: style '%s' not implemented"%style)
             return
         plot_dict = sorted_atf_results[style]
 
@@ -58,13 +58,13 @@ class AtfPlotter(object):
         cols = []
         plots = []
         nr_unique_plots = 0
-        for row in plot_dict.keys():
+        for row in list(plot_dict.keys()):
             if row not in rows:
                 rows.append(row)
-            for col in plot_dict[row].keys():
+            for col in list(plot_dict[row].keys()):
                 if col not in cols:
                     cols.append(col)
-                for plot in plot_dict[row][col].keys():
+                for plot in list(plot_dict[row][col].keys()):
                     if plot not in plots:
                         plots.append(plot)
 
@@ -73,7 +73,7 @@ class AtfPlotter(object):
         cols.sort()
         plots.sort()
 
-        print "\nplotting in style '%s' (rows: %d, cols: %d, plots: %d)"%(style, len(rows), len(cols), len(plots))
+        print("\nplotting in style '%s' (rows: %d, cols: %d, plots: %d)"%(style, len(rows), len(cols), len(plots)))
 
         fig, axs = plt.subplots(len(rows), len(cols), squeeze=False, sharex=True, sharey=sharey, figsize=(10, 12)) # FIXME calculate width with nr_testblocks
 
@@ -214,12 +214,12 @@ if __name__ == '__main__':
 
 
     atf_plotter = AtfPlotter()
-    print 'loading file...',
+    print('loading file...')
     sys.stdout.flush()
     stime = time.time()
     atf_plotter.load_atf_result(filename=argparse_result.filenames[0])
     dtime = time.time() - stime
-    print 'DONE (took %.3fs)' % (dtime)
+    print('DONE (took %.3fs)' % (dtime))
     sys.stdout.flush()
 
     #atf_plotter.print_structure()

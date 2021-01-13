@@ -16,11 +16,11 @@ class ATF():
     def __init__(self):
         # get test config
         package_name = rospy.get_param("/atf/package_name")
-        print "package_name:", package_name
+        print("package_name:", package_name)
         test_generation_config_file = rospy.get_param("/atf/test_generation_config_file")
-        print "test_generation_config_file:", test_generation_config_file
+        print("test_generation_config_file:", test_generation_config_file)
         test_name = rospy.get_param("/atf/test_name")
-        print "test_name:", test_name
+        print("test_name:", test_name)
 
         atf_configuration_parser = ATFConfigurationParser(package_name, test_generation_config_file)
         tests = atf_configuration_parser.get_tests()
@@ -42,7 +42,7 @@ class ATF():
         rospy.loginfo("...smach container in sm_test is ready.")
     
     def start(self, testblock):
-        if testblock not in self.test.testblockset_config.keys():
+        if testblock not in list(self.test.testblockset_config.keys()):
             error_msg = "testblock \'%s\' not in list of testblocks"%testblock
             self._send_error(error_msg)
             raise ATFError(error_msg)
@@ -54,7 +54,7 @@ class ATF():
         self.publisher_trigger.publish(trigger)
 
     def stop(self, testblock, metric_result = None):
-        if testblock not in self.test.testblockset_config.keys():
+        if testblock not in list(self.test.testblockset_config.keys()):
             error_msg = "testblock \'%s\' not in list of testblocks"%testblock
             self._send_error(error_msg)
             raise ATFError(error_msg)

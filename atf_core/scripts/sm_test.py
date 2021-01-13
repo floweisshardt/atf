@@ -20,11 +20,11 @@ class Recorder():
         
         # get test config
         package_name = rospy.get_param("/atf/package_name")
-        print "package_name:", package_name
+        print("package_name:", package_name)
         test_generation_config_file = rospy.get_param("/atf/test_generation_config_file", "atf/test_generation_config.yaml")
-        print "test_generation_config_file:", test_generation_config_file
+        print("test_generation_config_file:", test_generation_config_file)
         test_name = rospy.get_param("/atf/test_name")
-        print "test_name:", test_name
+        print("test_name:", test_name)
         
         atf_configuration_parser = ATFConfigurationParser(package_name, test_generation_config_file)
         tests = atf_configuration_parser.get_tests()
@@ -36,7 +36,7 @@ class Recorder():
             
         outcome_map_succeeded = {}
         outcome_map_error = {}
-        for testblock in test.testblockset_config.keys():
+        for testblock in list(test.testblockset_config.keys()):
             outcome_map_succeeded[testblock] = 'succeeded'
             outcome_map_error[testblock] = 'error'
         outcome_map = {'succeeded':outcome_map_succeeded,
@@ -57,7 +57,7 @@ class Recorder():
             # Open the container
             with sm_con:
                 # Add states to the container
-                for testblock in test.testblockset_config.keys():
+                for testblock in list(test.testblockset_config.keys()):
                     #print "adding testblock:", testblock
                     smach.Concurrence.add(testblock, SmAtfTestblock(testblock, recorder_handle))
             

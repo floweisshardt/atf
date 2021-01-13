@@ -32,7 +32,7 @@ class CalculateInterfaceParamHandler:
             rospy.logerr("metric config not a dictionary")
             raise ATFConfigurationError("no valid metric configuration for metric '%s' in testblock '%s': %s" %(metric_name, testblock_name, str(params)))
 
-        for interface, data in params.items():
+        for interface, data in list(params.items()):
             if type(data) is list:
                 new_data = []
                 for interface_name, interface_type in data:
@@ -137,12 +137,12 @@ class CalculateInterface:
     def get_topics(self):
         topics = []
         #print "self.metric=", self.metric
-        if "publishers" in self.params.keys():
+        if "publishers" in list(self.params.keys()):
             for topic_with_type in self.params["publishers"]:
                 topic = topic_with_type[0]
                 if topic not in topics:
                     topics.append(topic)
-        if "subscribers" in self.params.keys():
+        if "subscribers" in list(self.params.keys()):
             for topic_with_type in self.params["subscribers"]:
                 topic = topic_with_type[0]
                 if topic not in topics:
@@ -169,7 +169,7 @@ class CalculateInterface:
         details = "node " + node_name + " is in api"
         groundtruth.result = Groundtruth.SUCCEEDED
         data = 100.0
-        for interface, interface_data in self.params.items():
+        for interface, interface_data in list(self.params.items()):
             if interface == "publishers" or interface == "subscribers" or interface == "services":
                 for topic_name, topic_type in interface_data:
                     #print "node_name=", node_name

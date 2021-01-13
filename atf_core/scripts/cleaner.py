@@ -38,10 +38,10 @@ if __name__ == '__main__':
         package_name = sys.argv[1]
         test_generation_config_file = sys.argv[2]
     else:
-        print "ERROR: please specify a test package"
-        print "usage: rosrun atf_core cleaner.py <<ATF TEST PACKAGE>> [<<TEST_GENERATION_CONFIG_FILE>>]"
+        print("ERROR: please specify a test package")
+        print("usage: rosrun atf_core cleaner.py <<ATF TEST PACKAGE>> [<<TEST_GENERATION_CONFIG_FILE>>]")
         sys.exit(1)
-    print "cleaning for package '%s' and test generation config file '%s'" %(package_name, test_generation_config_file)
+    print("cleaning for package '%s' and test generation config file '%s'" %(package_name, test_generation_config_file))
 
     if "execute_as_test" in sys.argv:
         rostest.rosrun("atf_core", 'cleaning', TestCleaning)
