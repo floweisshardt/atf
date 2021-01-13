@@ -135,7 +135,7 @@ class CalculateTfLengthRotation:
             return None
         except Exception as e:
             sys.stdout = sys.__stdout__  # restore stdout
-            print "general exeption in metric '%s':"%self.name, type(e), e
+            print("general exeption in metric '%s':"%self.name, type(e), e)
             return None
         sys.stdout = sys.__stdout__  # restore stdout
 

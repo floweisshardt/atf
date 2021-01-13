@@ -22,7 +22,7 @@ class ATFConfigurationParser:
 
         if test_generation_config_file == None:
             test_generation_config_file = "atf/test_generation_config.yaml"
-            print "ATF Warning: No test_generation_config_file specified. Continue using default '%s'"%test_generation_config_file
+            print("ATF Warning: No test_generation_config_file specified. Continue using default '%s'"%test_generation_config_file)
 
         self.generation_config = self.load_data(os.path.join(full_path_to_test_package, test_generation_config_file))
         #print "generation_config:", self.generation_config
@@ -42,7 +42,7 @@ class ATFConfigurationParser:
             self.generation_config["testsuites"]
         except KeyError as e:
             error_message = "ATF Error: parsing test configuration failed. Missing Key: " + str(e)
-            print error_message
+            print(error_message)
             raise ATFConfigurationError(error_message)
 
         # check for optional parameters
@@ -52,9 +52,9 @@ class ATFConfigurationParser:
                 ("upload_data", False),
                 ("upload_result", False)]
         for key, default_value in keys:
-            if key not in self.generation_config.keys():
+            if key not in list(self.generation_config.keys()):
                 self.generation_config[key] = default_value
-                print "ATF Warning: parsing test configuration incomplete, missing key '%s'. Continuing with default value of %s."%(key, str(self.generation_config[key]))
+                print("ATF Warning: parsing test configuration incomplete, missing key '%s'. Continuing with default value of %s."%(key, str(self.generation_config[key])))
 
         self.tests = []
         self.test_list = []
@@ -109,13 +109,13 @@ class ATFConfigurationParser:
                                 if not skip_metrics:
                                     test.metrics = self.load_data(rospkg.RosPack().get_path("atf_metrics") + "/config/metrics.yaml")
                                     test.testblocks = []
-                                    for testblock_name in test.testblockset_config.keys():
+                                    for testblock_name in list(test.testblockset_config.keys()):
                                         metric_handles = self.create_metric_handles(test, testblock_name, True)
                                         #print "metric_handles", metric_handles
                                         testblock = Testblock(testblock_name, metric_handles, None)
                                         test.testblocks.append(testblock)
                                 else:
-                                    print "ATF: skip_metrics is set. Skipping metric and testblock configuration."
+                                    print("ATF: skip_metrics is set. Skipping metric and testblock configuration.")
                                 
                                 self.tests.append(test)
                                 test_list_element[test_group_name]["subtests"].append(test.name)
@@ -169,7 +169,7 @@ class ATFConfigurationParser:
             metric_handlers_config = self.load_data(rospkg.RosPack().get_path("atf_metrics") + "/config/metrics.yaml")
             #print "metric_handlers_config=", metric_handlers_config
             if metric_handlers_config and metrics:
-                for metric_type in metrics.keys():
+                for metric_type in list(metrics.keys()):
                     if metric_type not in metric_handlers_config:
     	                raise ATFConfigurationError("metric '%s' is not implemented"%metric_type)
 
@@ -199,11 +199,11 @@ class ATFConfigurationParser:
 
     def validate_metric_parameters(self, metric_type, params):
         if params == None:
-            print "params None"
+            print("params None")
             return False
 
         if type(params) is not dict:
-            print "params not a dict"
+            print("params not a dict")
             return False        
 
         try:
@@ -217,7 +217,7 @@ class ATFConfigurationParser:
             return True # groundtruth specified
         except (TypeError, KeyError):
             # e.g. (params["groundtruth"]["data"] == None and params["groundtruth"]["epsilon"] != None) or (params["groundtruth"]["data"] != None and params["groundtruth"]["epsilon"] == None)
-            print "invalid groundtruth specified:", params
+            print("invalid groundtruth specified:", params)
             return False
 
         return True # all checks successfull
@@ -230,12 +230,12 @@ class ATFConfigurationParser:
                 return doc
         else:
             error_message = "ATF Error: file not found: %s"%filename
-            print error_message
+            print(error_message)
             raise ATFConfigurationError(error_message)
 
     def parse_key_as_list(self, dictionary, key):
         #print "dict=\n", dictionary
-        if dictionary != None and key in dictionary.keys():
+        if dictionary != None and key in list(dictionary.keys()):
             value = dictionary[key]
             value_type = type(dictionary[key])
             # make sure all additional_parameters and additional_arguments are lists
@@ -250,7 +250,7 @@ class ATFConfigurationParser:
                         return
         
             error_message = "ATF configuration Error: key '%s' of type '%s' with value '%s' cannot be parsed as list of dictionaries"%(str(key), value_type, value)
-            print error_message
+            print(error_message)
             raise ATFConfigurationError(error_message)
 
     def match_filter(self, name, filter):
@@ -290,38 +290,38 @@ class ATFConfigurationParser:
                         continue
 
                     # tbm
-                    if test.name                 not in tbm.keys():
+                    if test.name                 not in list(tbm.keys()):
                         tbm[test.name] = {}
-                    if testblock.name            not in tbm[test.name].keys():
+                    if testblock.name            not in list(tbm[test.name].keys()):
                         tbm[test.name][testblock.name] = {}
                     tbm[test.name][testblock.name][metric.name] = metric
 
                     # tmb
-                    if test.name                 not in tmb.keys():
+                    if test.name                 not in list(tmb.keys()):
                         tmb[test.name] = {}
-                    if metric.name               not in tmb[test.name].keys():
+                    if metric.name               not in list(tmb[test.name].keys()):
                         tmb[test.name][metric.name] = {}
                     tmb[test.name][metric.name][testblock.name] = metric
 
                     # bmt
-                    if testblock.name            not in bmt.keys():
+                    if testblock.name            not in list(bmt.keys()):
                         bmt[testblock.name] = {}
-                    if metric.name               not in bmt[testblock.name].keys():
+                    if metric.name               not in list(bmt[testblock.name].keys()):
                         bmt[testblock.name][metric.name] = {}
                     bmt[testblock.name][metric.name][test.name] = metric
 
                     # mbt
-                    if metric.name            not in mbt.keys():
+                    if metric.name            not in list(mbt.keys()):
                         mbt[metric.name] = {}
-                    if testblock.name         not in mbt[metric.name].keys():
+                    if testblock.name         not in list(mbt[metric.name].keys()):
                         mbt[metric.name][testblock.name] = {}
                     #mbt[metric.name][testblock.name][test.name] = metric
                     mbt[metric.name][testblock.name][test.name + "\n" + test_description] = metric
 
                     # mtb
-                    if metric.name            not in mtb.keys():
+                    if metric.name            not in list(mtb.keys()):
                         mtb[metric.name] = {}
-                    if test.name              not in mtb[metric.name].keys():
+                    if test.name              not in list(mtb[metric.name].keys()):
                         mtb[metric.name][test.name] = {}
                     mtb[metric.name][test.name][testblock.name] = metric
 

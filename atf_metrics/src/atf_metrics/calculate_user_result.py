@@ -59,12 +59,12 @@ class CalculateUserResult:
     def start(self, status):
         self.status = status
         if self.metric_result != None:
-            print "WARN: user_result should be None but is already set for testblock %s"%self.testblock_name
+            print("WARN: user_result should be None but is already set for testblock %s"%self.testblock_name)
 
     def stop(self, status):
         self.status = status
         if self.metric_result != None:
-            print "WARN: user_result should be None but is already set for testblock %s"%self.testblock_name
+            print("WARN: user_result should be None but is already set for testblock %s"%self.testblock_name)
         self.metric_result = status.user_result
 
     def pause(self, status):

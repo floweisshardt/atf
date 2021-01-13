@@ -20,7 +20,7 @@ class GenerateTests:
         expected_arg_length = 5
         if len(arguments) != expected_arg_length:
             error_message = "ATF configuration Error: invalid number of arguments for generating tests. Number of arguments is %d but should be %d"%(len(arguments), expected_arg_length)
-            print error_message
+            print(error_message)
             sys.exit(1)
 
         self.package_name = arguments[1]
@@ -185,7 +185,7 @@ class GenerateTests:
             elements = dictionary[key]
             if len(elements) > 0:
                 for element in elements:
-                    for name, value in element.items():
+                    for name, value in list(element.items()):
                         xml_parent.append(xml_type(str(value), param=str(name), subst_value="True"))
 
     def append_arguments(self, xml_parent, xml_type, dictionary, key):
@@ -193,7 +193,7 @@ class GenerateTests:
             elements = dictionary[key]
             if len(elements) > 0:
                 for element in elements:
-                    for name, value in element.items():
+                    for name, value in list(element.items()):
                         xml_parent.append(xml_type(name=str(name), value=str(value)))
 
     @staticmethod
@@ -210,6 +210,6 @@ class GenerateTests:
 
 
 if __name__ == '__main__':
-    print "ATF: Test generation started..."
+    print("ATF: Test generation started...")
     GenerateTests(sys.argv).generate_tests()
-    print "ATF: ...Test generation done!"
+    print("ATF: ...Test generation done!")
