@@ -226,7 +226,7 @@ class ATFConfigurationParser:
         #print "config parser filename:", filename
         if os.path.isfile(filename):
             with open(filename, 'r') as stream:
-                doc = yaml.load(stream)
+                doc = yaml.safe_load(stream)
                 return doc
         else:
             error_message = "ATF Error: file not found: %s"%filename

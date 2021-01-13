@@ -259,7 +259,7 @@ class ATFRecorder:
     @staticmethod
     def load_data(filename):
         with open(filename, 'r') as stream:
-            doc = yaml.load(stream)
+            doc = yaml.safe_load(stream)
         if doc == None:
             doc = {}
         return doc
