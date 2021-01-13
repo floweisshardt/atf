@@ -12,7 +12,7 @@ env:
     - NOT_TEST_DOWNSTREAM=true
     - PYLINT_ARGS="--output-format=parseable --errors-only --ignored-modules=tf2_ros"
     - PYLINT2_CHECK=true
-    - PYLINT3_CHECK=false
+    - PYLINT3_CHECK=true
     - PARALLEL_TESTS=false
     - ROS_REPO=ros
     - VERBOSE_OUTPUT=false
