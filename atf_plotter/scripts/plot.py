@@ -214,7 +214,7 @@ if __name__ == '__main__':
 
 
     atf_plotter = AtfPlotter()
-    print('loading file...', end=' ')
+    print('loading file...')
     sys.stdout.flush()
     stime = time.time()
     atf_plotter.load_atf_result(filename=argparse_result.filenames[0])

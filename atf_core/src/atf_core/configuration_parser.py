@@ -146,7 +146,7 @@ class ATFConfigurationParser:
     def export_to_file(self, data, target):
         if not os.path.exists(os.path.dirname(target)):
             os.makedirs(os.path.dirname(target))
-        stream = file(target, 'w')
+        stream = open(target, 'w')
         file_extension = os.path.splitext(target)[1]
         if file_extension == ".json": # get file extension
             json.dump(data, stream)
