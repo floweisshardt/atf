@@ -11,12 +11,12 @@ jobs:
   industrial_ci:
     timeout-minutes: 30
     env:
-      ADDITIONAL_DEBS: git-core openssh-client openssh-server curl
+      ADDITIONAL_DEBS: apt-utils git-core openssh-client openssh-server curl
       AFTER_INIT: mkdir -p ~/.ssh && touch ~/.ssh/known_hosts && ssh-keyscan github.com >> ~/.ssh/known_hosts && git config --global url."https://token:${{secrets.GITHUBPAT}}@github.com/".insteadOf "https://github.com/" && curl -s https://packagecloud.io/install/repositories/github/git-lfs/script.deb.sh | bash && apt-get install git-lfs -y && cd $HOME && git lfs install && cd -
       CATKIN_LINT: pedantic
       NOT_TEST_DOWNSTREAM: true
       PYLINT_ARGS: "--output-format=parseable --errors-only --ignored-modules=catkin_pkg.python_setup,lxml.etree,lxml.builder,matplotlib,numpy,progressbar,rospkg,six.moves.http_client,tf2_ros,yaml"
-      PYLINT2_CHECK: true
+      PYLINT2_CHECK: true  # pylint2 for kinetic, pylint3 for noetic
       PYLINT3_CHECK: false
       PARALLEL_TESTS: true
       ROS_REPO: ros
@@ -27,7 +27,7 @@ jobs:
         env:
           - {ROS_DISTRO: kinetic}
           - {ROS_DISTRO: melodic}
-          - {ROS_DISTRO: noetic, AFTER_SETUP_ROSDEP: 'apt-get install python-is-python3'}
+          - {ROS_DISTRO: noetic, AFTER_SETUP_ROSDEP: 'sudo apt install -qq python-is-python3'}
     name: ${{matrix.env.ROS_DISTRO}}
     runs-on: ubuntu-latest
     steps:

@@ -8,7 +8,7 @@ notifications:
     on_failure: always
 env:
   global:
-    - ADDITIONAL_DEBS='apt-utils'
+    - ADDITIONAL_DEBS="apt-utils git-core openssh-client openssh-server curl"
     - CATKIN_LINT=pedantic
     - NOT_TEST_DOWNSTREAM=true
     - PYLINT_ARGS="--output-format=parseable --errors-only --ignored-modules=catkin_pkg.python_setup,lxml.etree,lxml.builder,matplotlib,numpy,progressbar,rospkg,six.moves.http_client,tf2_ros,yaml"
@@ -21,7 +21,7 @@ env:
   matrix:
     - ROS_DISTRO=kinetic
     - ROS_DISTRO=melodic
-    - ROS_DISTRO=noetic BEFORE_SETUP_TARGET_WORKSPACE='sudo -H apt install -qq python-is-python3'
+    - ROS_DISTRO=noetic AFTER_SETUP_ROSDEP='sudo apt install -qq python-is-python3'
 install:
   - git clone --quiet --depth 1 https://github.com/fmessmer/industrial_ci.git .industrial_ci -b master_pylint
 script:
