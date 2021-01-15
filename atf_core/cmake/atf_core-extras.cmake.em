@@ -31,7 +31,7 @@ function(atf_test TEST_GENERATION_CONFIG_FILE)
         ############
         message(STATUS "ATF: generating test files")
         execute_process(
-            COMMAND python ${generate_tests_script} ${PROJECT_NAME} ${TEST_GENERATION_CONFIG_FILE} ${PROJECT_SOURCE_DIR} ${PROJECT_BINARY_DIR}
+            COMMAND env python ${generate_tests_script} ${PROJECT_NAME} ${TEST_GENERATION_CONFIG_FILE} ${PROJECT_SOURCE_DIR} ${PROJECT_BINARY_DIR}
             RESULT_VARIABLE generation_result
         )
         if(NOT "${generation_result}" STREQUAL "0")
