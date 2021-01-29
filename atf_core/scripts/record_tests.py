@@ -68,8 +68,6 @@ class TestRecording(unittest.TestCase):
 #        self.assertTrue(False, "so nicht")
 
 if __name__ == '__main__':
-
-
     parser = argparse.ArgumentParser(description='Manual exection of ATF recording phase.', formatter_class=RawTextHelpFormatter)
     parser.add_argument('pkg', type=str,
                         help='test package name')
