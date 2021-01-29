@@ -64,8 +64,7 @@ class TestRecording(unittest.TestCase):
 
     def test_recording_results(self):
         recorder = Recorder()
-        self.assertTrue(recorder.record(args.pkg, args.test_generation_config_file, True), "Could not record results.")
-#        self.assertTrue(False, "so nicht")
+        self.assertTrue(recorder.record(args.pkg, args.test_generation_config_file, args.dry_run), "Could not record results.")
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Manual exection of ATF recording phase.', formatter_class=RawTextHelpFormatter)
@@ -85,6 +84,8 @@ if __name__ == '__main__':
                         )
     parser.add_argument('-e', dest='execute_as_test', action='count',
                         help='execute as rostest')
+    parser.add_argument('-d', dest='dry_run', action='count',
+                        help='execute dry run')
 
     args, unknown = parser.parse_known_args()
     if args.execute_as_test:
@@ -93,4 +94,4 @@ if __name__ == '__main__':
         args = parser.parse_args() # strictly parse only known arguments again. will raise an error if unknown arguments are specified
         print("recording test in package '%s' with test generation file '%s'"%(args.pkg, args.test_generation_config_file))
         recorder = Recorder()
-        recorder.record(args.pkg, args.test_generation_config_file, False)
+        recorder.record(args.pkg, args.test_generation_config_file, args.dry_run)

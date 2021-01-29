@@ -30,7 +30,7 @@ class Analyser:
         self.tests = self.configuration_parser.get_tests()
 
         self.dry_run = dry_run
-        if dry_run:
+        if self.dry_run:
             return
 
         # generate results
@@ -129,12 +129,19 @@ class Analyser:
         atf_result.result = None
         atf_result.error_message = "All tests OK"
 
-        if self.dry_run:
-            return atf_result
-
         for test in self.tests:
             # get result
-            test_result = test.get_result()
+            if self.dry_run:
+                test_result = TestResult()
+                test_result.name = test.name
+                test_result.test_config = test.test_config_name
+                test_result.robot = test.robot_name
+                test_result.env = test.env_name
+                test_result.testblockset = test.testblockset_name
+                test_result.result = True
+                test_result.error_message ="dry run"
+            else:
+                test_result = test.get_result()
 
             # export test result to file
             self.configuration_parser.export_to_file(test_result, os.path.join(test.generation_config["txt_output"], test.name + ".txt"))
@@ -354,17 +361,12 @@ if __name__ == '__main__':
     parser.add_argument('-d', dest='dry_run', action='count',
                         help='execute dry run')
 
-    print("start1")
-
     args, unknown = parser.parse_known_args()
     if args.execute_as_test:
-        print("start2")
         rostest.rosrun("atf_core", 'analysing', TestAnalysing)
     else:
-        print("start3")
         args = parser.parse_args() # strictly parse only known arguments again. will raise an error if unknown arguments are specified
         print("analysing for package '%s' and test generation config file '%s'" %(args.pkg, args.test_generation_config_file))
-        print(args)
         analyser = Analyser(args.pkg, args.test_generation_config_file, args.dry_run)
         atf_result = analyser.get_result()
         if args.verbose:

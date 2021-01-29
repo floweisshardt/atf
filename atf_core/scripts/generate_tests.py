@@ -66,7 +66,7 @@ class GenerateTests:
                     'pkg': "atf_core",
                     'type': "cleaner.py",
                     'time-limit': "60",
-                    'args': self.package_name + " " + self.test_generation_config_file + " " + "execute_as_test"})
+                    'args': self.package_name + " -g " + self.test_generation_config_file + " -e"})
         )
         xmlstr = minidom.parseString(ElementTree.tostring(test_clean)).toprettyxml(indent="    ")
         filepath = os.path.join(self.test_generated_path, "cleaning.test")
@@ -149,7 +149,7 @@ class GenerateTests:
                     'type': "analyser.py",
                     'time-limit': str(self.atf_configuration_parser.generation_config["time_limit_analysing"]),
                     'required': "true",
-                    'args': self.package_name + " " + self.test_generation_config_file + " " + 'execute_as_test'})
+                    'args': self.package_name + " -g " + self.test_generation_config_file + " -e"})
         )
 
         xmlstr = minidom.parseString(ElementTree.tostring(test_analyse)).toprettyxml(indent="    ")
