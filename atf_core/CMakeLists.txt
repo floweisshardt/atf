@@ -44,11 +44,3 @@ install(
     DESTINATION
         ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
-
-##########
-## Test ##
-##########
-if(CATKIN_ENABLE_TESTING)
-  find_package(rostest REQUIRED)
-  add_rostest(test/manual_execution.test)
-endif()
