@@ -22,10 +22,10 @@ install(DIRECTORY atf launch
 #############
 ## Testing ##
 #############
-if(CATKIN_ENABLE_TESTING)
-  find_package(rostest REQUIRED)
-  add_rostest(test/manual_execution.test)
-endif()
+#if(CATKIN_ENABLE_TESTING)
+#  find_package(rostest REQUIRED)
+#  add_rostest(test/manual_execution.test)
+#endif()
 
 if(CATKIN_ENABLE_TESTING)
   find_package(atf_core REQUIRED)
