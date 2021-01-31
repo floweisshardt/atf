@@ -12,6 +12,8 @@
 
     <buildtool_depend>catkin</buildtool_depend>
 
+    <build_depend>rostest</build_depend>
+
     <exec_depend>atf_core</exec_depend>
     <exec_depend>atf_test_tools</exec_depend>
     <exec_depend>rospy</exec_depend>
@@ -19,6 +21,5 @@
     <exec_depend>tf2_ros</exec_depend>
 
     <test_depend>atf_core</test_depend>
-    <test_depend>rostest</test_depend>
 
 </package>
