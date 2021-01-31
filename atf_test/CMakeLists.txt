@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.0.2)
 project(atf_test)
 
-find_package(catkin REQUIRED)
+find_package(catkin REQUIRED COMPONENTS rostest)
 
 catkin_package()
 
@@ -24,7 +24,6 @@ install(DIRECTORY atf launch test
 #############
 if(CATKIN_ENABLE_TESTING)
   find_package(atf_core REQUIRED)
-  find_package(rostest REQUIRED)
   add_rostest(test/manual_execution.test)
 endif()
 
