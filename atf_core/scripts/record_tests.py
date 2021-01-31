@@ -20,7 +20,7 @@ class Recorder():
         for directory in cmake_prefix_path.split(":"):
             command="catkin locate --workspace " + directory + " -be " + pkg
             try: 
-                path_to_build_space = subprocess.check_output(command, shell=True,  universal_newlines=True).strip('\n')
+                path_to_build_space = subprocess.check_output(command, shell=True, universal_newlines=True)
             except subprocess.CalledProcessError as e:
                 #print "output=", e.output
                 #print "returncode=", e.returncode
