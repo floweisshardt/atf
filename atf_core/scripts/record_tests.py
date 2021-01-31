@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 import argparse
-from argparse import RawTextHelpFormatter
 import unittest
 import rostest
 import glob
@@ -67,7 +66,7 @@ class TestRecording(unittest.TestCase):
         self.assertTrue(recorder.record(args.pkg, args.test_generation_config_file, args.dry_run), "Could not record results.")
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='Manual exection of ATF recording phase.', formatter_class=RawTextHelpFormatter)
+    parser = argparse.ArgumentParser(description='Manual exection of ATF recording phase.', formatter_class=argparse.RawTextHelpFormatter)
     parser.add_argument('pkg', type=str,
                         help='test package name')
     parser.add_argument('-g', dest='test_generation_config_file',

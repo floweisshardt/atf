@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 import argparse
-from argparse import RawTextHelpFormatter
 import json
 import os
 import progressbar
@@ -19,7 +18,7 @@ from atf_msgs.msg import AtfResult, TestResult, TestblockResult, MetricResult, T
 from atf_metrics import metrics_helper
 
 class Analyser:
-    def __init__(self, package_name, test_generation_config_file="atf/test_generation_config.yaml", dry_run=False):
+    def __init__(self, package_name, test_generation_config_file="atf/test_generation_config.yaml"):
         print("ATF analyser: started!")
         start_time = time.time()
         self.ns = "/atf/"
@@ -29,8 +28,8 @@ class Analyser:
         self.configuration_parser = ATFConfigurationParser(package_name, test_generation_config_file)
         self.tests = self.configuration_parser.get_tests()
 
-        self.dry_run = dry_run
-        if self.dry_run:
+    def analyse(self, dry_run):
+        if dry_run:
             return
 
         # generate results
@@ -122,7 +121,7 @@ class Analyser:
         result.sort()
         return result
 
-    def get_result(self):
+    def get_result(self, dry_run):
         atf_result = AtfResult()
         atf_result.header.stamp = rospy.Time(time.time())
         atf_result.name = self.package_name
@@ -131,7 +130,7 @@ class Analyser:
 
         for test in self.tests:
             # get result
-            if self.dry_run:
+            if dry_run:
                 test_result = TestResult()
                 test_result.name = test.name
                 test_result.test_config = test.test_config_name
@@ -341,14 +340,15 @@ class Analyser:
 
 class TestAnalysing(unittest.TestCase):
     def test_analysing(self):
-        analyser = Analyser(args.pkg, args.test_generation_config_file, args.dry_run)
-        atf_result = analyser.get_result()
+        analyser = Analyser(args.pkg, args.test_generation_config_file)
+        analyser.analyse(args.dry_run)
+        atf_result = analyser.get_result(args.dry_run)
         analyser.print_result(atf_result)
         if atf_result.result != None:
             self.assertTrue(atf_result.result, atf_result.error_message)
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='Manual exection of ATF analysing phase.', formatter_class=RawTextHelpFormatter)
+    parser = argparse.ArgumentParser(description='Manual exection of ATF analysing phase.', formatter_class=argparse.RawTextHelpFormatter)
     parser.add_argument('pkg', type=str,
                         help='test package name')
     parser.add_argument('-g', dest='test_generation_config_file',
@@ -367,8 +367,9 @@ if __name__ == '__main__':
     else:
         args = parser.parse_args() # strictly parse only known arguments again. will raise an error if unknown arguments are specified
         print("analysing for package '%s' and test generation config file '%s'" %(args.pkg, args.test_generation_config_file))
-        analyser = Analyser(args.pkg, args.test_generation_config_file, args.dry_run)
-        atf_result = analyser.get_result()
+        analyser = Analyser(args.pkg, args.test_generation_config_file)
+        analyser.analyse(args.dry_run)
+        atf_result = analyser.get_result(args.dry_run)
         if args.verbose:
             analyser.print_result_details(atf_result)
         analyser.print_result(atf_result)

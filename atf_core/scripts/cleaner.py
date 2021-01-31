@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 import argparse
-from argparse import RawTextHelpFormatter
 import unittest
 import rostest
 import shutil
@@ -15,7 +14,7 @@ class Cleaner():
         # parse configuration
         self.atf_configuration_parser = ATFConfigurationParser(package_name, test_generation_config_file)
 
-    def clean(self, dry_run=False):
+    def clean(self, dry_run):
         if dry_run:
             return True
 
@@ -36,7 +35,7 @@ class TestCleaning(unittest.TestCase):
         self.assertTrue(cleaner.clean(args.dry_run), "Could not clean results.")
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='Manual exection of ATF cleaning phase.', formatter_class=RawTextHelpFormatter)
+    parser = argparse.ArgumentParser(description='Manual exection of ATF cleaning phase.', formatter_class=argparse.RawTextHelpFormatter)
     parser.add_argument('pkg', type=str,
                         help='test package name')
     parser.add_argument('-g', dest='test_generation_config_file',
