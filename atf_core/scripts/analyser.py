@@ -20,7 +20,6 @@ from atf_metrics import metrics_helper
 class Analyser:
     def __init__(self, package_name, test_generation_config_file="atf/test_generation_config.yaml"):
         print("ATF analyser: started!")
-        start_time = time.time()
         self.ns = "/atf/"
         self.package_name = package_name
 
@@ -33,6 +32,7 @@ class Analyser:
             return
 
         # generate results
+        start_time = time.time()
         i = 1
         for test in self.tests:
             inputfile = os.path.join(test.generation_config["bagfile_output"] + test.name + ".bag")
