@@ -27,7 +27,7 @@ jobs:
         env:
           - {ROS_DISTRO: kinetic}
           - {ROS_DISTRO: melodic}
-          - {ROS_DISTRO: noetic, BEFORE_BUILD_TARGET_WORKSPACE: apt install -y python3-osrf-pycommon, BUILDER: catkin_tools} # manual installation of osrf-pycomm is a workaround for https://github.com/catkin/catkin_tools/issues/594#issuecomment-688149976
+          - {ROS_DISTRO: noetic, BEFORE_BUILD_TARGET_WORKSPACE: apt install -y python3-osrf-pycommon} # manual installation of osrf-pycomm is a workaround for https://github.com/catkin/catkin_tools/issues/594#issuecomment-688149976
     name: ${{matrix.env.ROS_DISTRO}}
     runs-on: ubuntu-latest
     steps:
