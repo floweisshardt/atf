@@ -127,7 +127,7 @@ class CalculateTime:
         # fill details as KeyValue messages
         details = []
         details.append(KeyValue("start_time", str(self.start_time.to_sec())))
-        details.append(KeyValue("stop_time", str(metric_result.data.stamp)))
+        details.append(KeyValue("stop_time", str(metric_result.data.stamp.to_sec())))
         metric_result.details = details
 
         # evaluate metric data

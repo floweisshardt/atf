@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+import argparse
 import json
 import os
 import progressbar
@@ -17,9 +18,8 @@ from atf_msgs.msg import AtfResult, TestResult, TestblockResult, MetricResult, T
 from atf_metrics import metrics_helper
 
 class Analyser:
-    def __init__(self, package_name, test_generation_config_file = "atf/test_generation_config.yaml"):
+    def __init__(self, package_name, test_generation_config_file="atf/test_generation_config.yaml"):
         print("ATF analyser: started!")
-        start_time = time.time()
         self.ns = "/atf/"
         self.package_name = package_name
 
@@ -27,7 +27,12 @@ class Analyser:
         self.configuration_parser = ATFConfigurationParser(package_name, test_generation_config_file)
         self.tests = self.configuration_parser.get_tests()
 
+    def analyse(self, dry_run):
+        if dry_run:
+            return
+
         # generate results
+        start_time = time.time()
         i = 1
         for test in self.tests:
             inputfile = os.path.join(test.generation_config["bagfile_output"] + test.name + ".bag")
@@ -116,15 +121,26 @@ class Analyser:
         result.sort()
         return result
 
-    def get_result(self):
+    def get_result(self, dry_run):
         atf_result = AtfResult()
         atf_result.header.stamp = rospy.Time(time.time())
         atf_result.name = self.package_name
         atf_result.result = None
         atf_result.error_message = "All tests OK"
+
         for test in self.tests:
             # get result
-            test_result = test.get_result()
+            if dry_run:
+                test_result = TestResult()
+                test_result.name = test.name
+                test_result.test_config = test.test_config_name
+                test_result.robot = test.robot_name
+                test_result.env = test.env_name
+                test_result.testblockset = test.testblockset_name
+                test_result.result = True
+                test_result.error_message ="dry run"
+            else:
+                test_result = test.get_result()
 
             # export test result to file
             self.configuration_parser.export_to_file(test_result, os.path.join(test.generation_config["txt_output"], test.name + ".txt"))
@@ -324,30 +340,36 @@ class Analyser:
 
 class TestAnalysing(unittest.TestCase):
     def test_analysing(self):
-        analyser = Analyser(package_name, test_generation_config_file)
-        atf_result = analyser.get_result()
+        analyser = Analyser(args.pkg, args.test_generation_config_file)
+        analyser.analyse(args.dry_run)
+        atf_result = analyser.get_result(args.dry_run)
         analyser.print_result(atf_result)
         if atf_result.result != None:
             self.assertTrue(atf_result.result, atf_result.error_message)
 
 if __name__ == '__main__':
-    if len(sys.argv) == 2:
-        package_name = sys.argv[1]
-        test_generation_config_file = "atf/test_generation_config.yaml"
-    elif len(sys.argv) > 2:
-        package_name = sys.argv[1]
-        test_generation_config_file = sys.argv[2]
-    else:
-        print("ERROR: please specify a test package")
-        print("usage: rosrun atf_core analyser.py <<ATF TEST PACKAGE>> [<<TEST_GENERATION_CONFIG_FILE>>]")
-        sys.exit(1)
-    print("analysing for package '%s' and test generation config file '%s'" %(package_name, test_generation_config_file))
+    parser = argparse.ArgumentParser(description='Manual exection of ATF analysing phase.', formatter_class=argparse.RawTextHelpFormatter)
+    parser.add_argument('pkg', type=str,
+                        help='test package name')
+    parser.add_argument('-g', dest='test_generation_config_file',
+                        default='atf/test_generation_config.yaml',
+                        help='path to test_generation_config file, relative to package root')
+    parser.add_argument('-v', dest='verbose', action='count',
+                        help='verbose output')
+    parser.add_argument('-e', dest='execute_as_test', action='count',
+                        help='execute as rostest')
+    parser.add_argument('-d', dest='dry_run', action='count',
+                        help='execute dry run')
 
-    if "execute_as_test" in sys.argv:
+    args, unknown = parser.parse_known_args()
+    if args.execute_as_test:
         rostest.rosrun("atf_core", 'analysing', TestAnalysing)
     else:
-        analyser = Analyser(package_name, test_generation_config_file)
-        atf_result = analyser.get_result()
-        if "verbose" in sys.argv:
+        args = parser.parse_args() # strictly parse only known arguments again. will raise an error if unknown arguments are specified
+        print("analysing for package '%s' and test generation config file '%s'" %(args.pkg, args.test_generation_config_file))
+        analyser = Analyser(args.pkg, args.test_generation_config_file)
+        analyser.analyse(args.dry_run)
+        atf_result = analyser.get_result(args.dry_run)
+        if args.verbose:
             analyser.print_result_details(atf_result)
         analyser.print_result(atf_result)

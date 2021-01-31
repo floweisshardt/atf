@@ -65,7 +65,7 @@ rosrun atf_plotter plot.py --help
 
 Example usage:
 ```
-rosrun atf_plotter plot.py plot-benchmark /tmp/atf_test_app_publish_rate/results_txt/atf_result_aggregated.bag
+rosrun atf_plotter plot.py plot-benchmark /tmp/atf_test/results_txt/atf_result_aggregated.bag
 ```
 
 ## Integrate the ATF into your own application
@@ -188,19 +188,24 @@ catkin build --force-cmake atf_test
 ### Recording
 Record a single test
 ```
-rosrun atf_core record_tests.py atf_test ts0_c0_r0_e0_s0_0
+rosrun atf_core record_tests.py atf_test -t ts0_c0_r0_e0_s0_0
 ```
 
 Record a subset of tests
 ```
-record_tests.py atf_test ts0_c0_r0_e0_s0  --> record all iterations of test ts0_c0_r0_e0_s0_*
-record_tests.py atf_test ts0              --> record all tests with ts0: ts0_c*_r*_e*_s*_*
-record_tests.py atf_test c0*r0*           --> record all tests with c0 and r0: ts*_c0_r0_s*_*
+rosrun atf_core record_tests.py atf_test -t ts0_c0_r0_e0_s0  --> record all iterations of test ts0_c0_r0_e0_s0_*
+rosrun atf_core record_tests.py atf_test -t ts0              --> record all tests with ts0: ts0_c*_r*_e*_s*_*
+rosrun atf_core record_tests.py atf_test -t c0*r0*           --> record all tests with c0 and r0: ts*_c0_r0_s*_*
 ```
 
 Record all tests
 ```
 rosrun atf_core record_tests.py atf_test
+```
+
+Full list of arguments
+```
+rosrun atf_core record_tests.py -h
 ```
 
 While tests are executed:
@@ -220,7 +225,12 @@ rosrun atf_core analyser.py atf_test
 ```
 or for full result print
 ```
-rosrun atf_core analyser.py atf_test verbose
+rosrun atf_core analyser.py atf_test -v
+```
+
+Full list of arguments
+```
+rosrun atf_core analyser.py -h
 ```
 
 check results

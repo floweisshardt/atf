@@ -1,0 +1,6 @@
+<?xml version="1.0" ?>
+<launch>
+    <test test-name="cleaning" pkg="atf_core" type="cleaner.py" time-limit="10" args="atf_test -e -d"/>
+    <test test-name="recording" pkg="atf_core" type="record_tests.py" time-limit="10" args="atf_test -e -d"/>
+    <test test-name="analysing" pkg="atf_core" type="analyser.py" time-limit="10" args="atf_test -e -d"/>
+</launch>

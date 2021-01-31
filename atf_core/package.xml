@@ -21,6 +21,8 @@
     <exec_depend>atf_metrics</exec_depend>
     <exec_depend>atf_msgs</exec_depend>
     <exec_depend>atf_recorder_plugins</exec_depend>
+    <exec_depend condition="$ROS_PYTHON_VERSION == 2">python-catkin-tools</exec_depend>
+    <exec_depend condition="$ROS_PYTHON_VERSION == 3">python3-catkin-tools</exec_depend>
     <exec_depend>diagnostic_msgs</exec_depend>
     <exec_depend condition="$ROS_PYTHON_VERSION == 2">python-lxml</exec_depend>
     <exec_depend condition="$ROS_PYTHON_VERSION == 2">python-progressbar</exec_depend>

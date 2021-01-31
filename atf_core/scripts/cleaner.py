@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+import argparse
 import unittest
 import rostest
 import shutil
@@ -13,7 +14,10 @@ class Cleaner():
         # parse configuration
         self.atf_configuration_parser = ATFConfigurationParser(package_name, test_generation_config_file)
 
-    def clean(self):
+    def clean(self, dry_run):
+        if dry_run:
+            return True
+
         if os.path.exists(self.atf_configuration_parser.generation_config["bagfile_output"]):
             shutil.rmtree(self.atf_configuration_parser.generation_config["bagfile_output"])
         if os.path.exists(self.atf_configuration_parser.generation_config["txt_output"]):
@@ -27,24 +31,26 @@ class Cleaner():
 class TestCleaning(unittest.TestCase):
 
     def test_cleaning_results(self):
-        cleaner = Cleaner(package_name, test_generation_config_file)
-        self.assertTrue(cleaner.clean(), "Could not clean results.")
+        cleaner = Cleaner(args.pkg, args.test_generation_config_file)
+        self.assertTrue(cleaner.clean(args.dry_run), "Could not clean results.")
 
 if __name__ == '__main__':
-    if len(sys.argv) == 2:
-        package_name = sys.argv[1]
-        test_generation_config_file = "atf/test_generation_config.yaml"
-    elif len(sys.argv) > 2:
-        package_name = sys.argv[1]
-        test_generation_config_file = sys.argv[2]
-    else:
-        print("ERROR: please specify a test package")
-        print("usage: rosrun atf_core cleaner.py <<ATF TEST PACKAGE>> [<<TEST_GENERATION_CONFIG_FILE>>]")
-        sys.exit(1)
-    print("cleaning for package '%s' and test generation config file '%s'" %(package_name, test_generation_config_file))
+    parser = argparse.ArgumentParser(description='Manual exection of ATF cleaning phase.', formatter_class=argparse.RawTextHelpFormatter)
+    parser.add_argument('pkg', type=str,
+                        help='test package name')
+    parser.add_argument('-g', dest='test_generation_config_file',
+                        default='atf/test_generation_config.yaml',
+                        help='path to test_generation_config file, relative to package root')
+    parser.add_argument('-e', dest='execute_as_test', action='count',
+                        help='execute as rostest')
+    parser.add_argument('-d', dest='dry_run', action='count',
+                        help='execute dry run')
 
-    if "execute_as_test" in sys.argv:
+    args, unknown = parser.parse_known_args()
+    if args.execute_as_test:
         rostest.rosrun("atf_core", 'cleaning', TestCleaning)
     else:
-        cleaner = Cleaner(package_name, test_generation_config_file)
-        cleaner.clean()
+        args = parser.parse_args() # strictly parse only known arguments again. will raise an error if unknown arguments are specified
+        print("cleaning for package '%s' and test generation config file '%s'" %(args.pkg, args.test_generation_config_file))
+        cleaner = Cleaner(args.pkg, args.test_generation_config_file)
+        cleaner.clean(args.dry_run)
