@@ -1,4 +1,12 @@
-set(generate_tests_script @(CMAKE_SOURCE_DIR)/scripts/generate_tests.py)
+if(EXISTS "@(CMAKE_INSTALL_PREFIX)/lib/atf_core/generate_tests.py")
+    set(generate_tests_script @(CMAKE_INSTALL_PREFIX)/lib/atf_core/generate_tests.py)
+    message("ATF: install space found. generate_tests_script=${generate_tests_script}")
+elseif(EXISTS "@(CMAKE_SOURCE_DIR)/scripts/generate_tests.py")                    # 2. atf_core and atf_test in same workspace (devel)
+    set(generate_tests_script @(CMAKE_SOURCE_DIR)/scripts/generate_tests.py)
+    message("ATF: devel space found. generate_tests_script=${generate_tests_script}")
+else()
+    message(FATAL_ERROR "ATF: no install and no devel space found. CMAKE_SOURCE_DIR=@(CMAKE_SOURCE_DIR), CMAKE_INSTALL_PREFIX=@(CMAKE_INSTALL_PREFIX)")
+endif()
 
 function(atf_test TEST_GENERATION_CONFIG_FILE)
     set(ExtraMacroArgs ${ARGN})
