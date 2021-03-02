@@ -161,7 +161,8 @@ class CalculateTfDistanceTranslation:
         if len(self.series) == 0:
             # let the analyzer know that this test failed
             metric_result.groundtruth.result = Groundtruth.FAILED
-            metric_result.groundtruth.error_message = "testblock %s stopped without result"%self.testblock_name
+            metric_result.groundtruth.error_message = "testblock {} stopped without result. " \
+                "No transforms found between {} & {}".format(self.testblock_name, self.root_frame, self.measured_frame)
             return metric_result
 
         # at this point we're sure that any result is available
