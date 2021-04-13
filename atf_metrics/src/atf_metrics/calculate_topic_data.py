@@ -128,8 +128,8 @@ class CalculateTopicData:
             for f in fields:
                 if '[' in f:
                     field_name, rest = f.split('[')
-                    slot_num = string.atoi(rest[:rest.find(']')])
-                    evals.append(_array_eval(field_name, slot_num))
+                    slot_num = int(rest[:rest.find(']')])
+                    evals.append(self._array_eval(field_name, slot_num))
                 else:
                     evals.append(self._field_eval(f))
             return evals

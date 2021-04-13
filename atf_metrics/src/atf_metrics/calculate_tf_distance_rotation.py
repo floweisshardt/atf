@@ -117,15 +117,15 @@ class CalculateTfDistanceRotation:
         try:
             sys.stdout = open(os.devnull, 'w') # supress stdout
             (trans, rot) = self.t.lookupTransform(self.root_frame, self.measured_frame, rospy.Time(0))
-        except tf2_ros.LookupException as e:
+        except tf.LookupException as e:
             sys.stdout = sys.__stdout__  # restore stdout
             #print "Exception in metric '%s' %s %s"%(self.name, type(e), e)
             return None
-        except tf2_ros.ExtrapolationException as e:
+        except tf.ExtrapolationException as e:
             sys.stdout = sys.__stdout__  # restore stdout
             #print "Exception in metric '%s' %s %s"%(self.name, type(e), e)
             return None
-        except tf2_ros.ConnectivityException as e:
+        except tf.ConnectivityException as e:
             sys.stdout = sys.__stdout__  # restore stdout
             #print "Exception in metric '%s' %s %s"%(self.name, type(e), e)
             return None
