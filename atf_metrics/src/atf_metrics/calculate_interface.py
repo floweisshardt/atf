@@ -21,6 +21,7 @@ class CalculateInterfaceParamHandler:
         :param params: Parameter
         """
         metric_type = "interface"
+        unit = "%"
 
         split_name = metric_name.split("::")
         if len(split_name) != 2:
@@ -53,10 +54,10 @@ class CalculateInterfaceParamHandler:
         except (TypeError, KeyError):
             series_mode = None
 
-        return CalculateInterface(metric_name, testblock_name, params, mode, series_mode)
+        return CalculateInterface(metric_name, testblock_name, params, mode, series_mode, unit)
 
 class CalculateInterface:
-    def __init__(self, name, testblock_name, params, mode, series_mode):
+    def __init__(self, name, testblock_name, params, mode, series_mode, unit):
         """
         Class for calculating the interface type.
         """
@@ -70,6 +71,7 @@ class CalculateInterface:
         self.mode = mode
         self.series_mode = series_mode
         self.series = []
+        self.unit = unit
 
         self.interface_details = {}
         self.params = params
@@ -191,6 +193,7 @@ class CalculateInterface:
     def get_result(self):
         metric_result = MetricResult()
         metric_result.name = self.name
+        metric_result.unit = self.unit
         metric_result.mode = self.mode
         metric_result.status = self.status.status
         metric_result.series = []

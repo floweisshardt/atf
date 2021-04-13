@@ -6,6 +6,7 @@ uint8 SPAN_MAX    = 4
 uint8 SPAN_ABSMAX = 5
 
 string name
+string unit
 uint8 mode
 int8 status # ENUM from TestblockStatus
 DataStamped[] series

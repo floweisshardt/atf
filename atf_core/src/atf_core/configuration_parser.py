@@ -285,45 +285,49 @@ class ATFConfigurationParser:
 
                 for metric in testblock.results:
                     #print "    -", metric.name
-                    split_name = metric.name.split("::")
-                    if not self.match_filter(metric.name, filter_metrics) and not self.match_filter(metric.name[0], filter_metrics):
+                    if not self.match_filter(metric.name, filter_metrics):
                         continue
+
+                    # use metric_name with unit
+                    if metric.unit == "":
+                        metric_name = metric.name
+                    else:
+                        metric_name = metric.name + "\n[" + metric.unit + "]"
 
                     # tbm
                     if test.name                 not in list(tbm.keys()):
                         tbm[test.name] = {}
                     if testblock.name            not in list(tbm[test.name].keys()):
                         tbm[test.name][testblock.name] = {}
-                    tbm[test.name][testblock.name][metric.name] = metric
+                    tbm[test.name][testblock.name][metric_name] = metric
 
                     # tmb
                     if test.name                 not in list(tmb.keys()):
                         tmb[test.name] = {}
-                    if metric.name               not in list(tmb[test.name].keys()):
-                        tmb[test.name][metric.name] = {}
-                    tmb[test.name][metric.name][testblock.name] = metric
+                    if metric_name               not in list(tmb[test.name].keys()):
+                        tmb[test.name][metric_name] = {}
+                    tmb[test.name][metric_name][testblock.name] = metric
 
                     # bmt
                     if testblock.name            not in list(bmt.keys()):
                         bmt[testblock.name] = {}
-                    if metric.name               not in list(bmt[testblock.name].keys()):
-                        bmt[testblock.name][metric.name] = {}
-                    bmt[testblock.name][metric.name][test.name] = metric
+                    if metric_name               not in list(bmt[testblock.name].keys()):
+                        bmt[testblock.name][metric_name] = {}
+                    bmt[testblock.name][metric_name][test.name] = metric
 
                     # mbt
-                    if metric.name            not in list(mbt.keys()):
-                        mbt[metric.name] = {}
-                    if testblock.name         not in list(mbt[metric.name].keys()):
-                        mbt[metric.name][testblock.name] = {}
-                    #mbt[metric.name][testblock.name][test.name] = metric
-                    mbt[metric.name][testblock.name][test.name + "\n" + test_description] = metric
+                    if metric_name            not in list(mbt.keys()):
+                        mbt[metric_name] = {}
+                    if testblock.name         not in list(mbt[metric_name].keys()):
+                        mbt[metric_name][testblock.name] = {}
+                    mbt[metric_name][testblock.name][test.name + "\n" + test_description] = metric
 
                     # mtb
-                    if metric.name            not in list(mtb.keys()):
-                        mtb[metric.name] = {}
-                    if test.name              not in list(mtb[metric.name].keys()):
-                        mtb[metric.name][test.name] = {}
-                    mtb[metric.name][test.name][testblock.name] = metric
+                    if metric_name            not in list(mtb.keys()):
+                        mtb[metric_name] = {}
+                    if test.name              not in list(mtb[metric_name].keys()):
+                        mtb[metric_name][test.name] = {}
+                    mtb[metric_name][test.name][testblock.name] = metric
 
         ret = {}
         ret['tbm'] = tbm
