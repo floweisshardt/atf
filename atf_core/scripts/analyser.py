@@ -233,6 +233,7 @@ class Analyser:
                         metric_result.groundtruth.error_message = groundtruth_error_message
 
                         metric_result.name          = mbt[metric][testblock][test].name
+                        metric_result.unit          = mbt[metric][testblock][test].unit
                         metric_result.mode          = MetricResult.SPAN_MEAN # aggregated metrics are always SPAN_MEAN
                         metric_result.status        = status
                         # metric_result.series is set above

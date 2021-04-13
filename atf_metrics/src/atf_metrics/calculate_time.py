@@ -19,6 +19,7 @@ class CalculateTimeParamHandler:
         :param params: Parameter
         """
         metric_type = "time"
+        unit = "s"
 
         split_name = metric_name.split("::")
         if len(split_name) != 2:
@@ -49,10 +50,10 @@ class CalculateTimeParamHandler:
         except (TypeError, KeyError):
             series_mode = None
 
-        return CalculateTime(metric_name, testblock_name, groundtruth, mode, series_mode)
+        return CalculateTime(metric_name, testblock_name, groundtruth, mode, series_mode, unit)
 
 class CalculateTime:
-    def __init__(self, name, testblock_name, groundtruth, mode, series_mode):
+    def __init__(self, name, testblock_name, groundtruth, mode, series_mode, unit):
         """
         Class for calculating the time between the trigger 'ACTIVATE' and 'FINISH' on the topic assigned to the
         testblock.
@@ -65,6 +66,7 @@ class CalculateTime:
         self.mode = mode
         self.series_mode = series_mode
         self.series = []
+        self.unit = unit
 
         self.start_time = None
 
@@ -96,6 +98,7 @@ class CalculateTime:
     def get_result(self):
         metric_result = MetricResult()
         metric_result.name = self.name
+        metric_result.unit = self.unit
         metric_result.mode = self.mode
         metric_result.status = self.status.status
         metric_result.series = []

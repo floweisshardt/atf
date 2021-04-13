@@ -19,6 +19,7 @@ class CalculatePublishRateParamHandler:
         :param params: Parameter
         """
         metric_type = "publish_rate"
+        unit = "Hz"
 
         split_name = metric_name.split("::")
         if len(split_name) != 2:
@@ -54,10 +55,10 @@ class CalculatePublishRateParamHandler:
         except (TypeError, KeyError):
             min_observation_time = 1.0
 
-        return CalculatePublishRate(metric_name, testblock_name, min_observation_time, params["topic"], groundtruth, mode, series_mode)
+        return CalculatePublishRate(metric_name, testblock_name, min_observation_time, params["topic"], groundtruth, mode, series_mode, unit)
 
 class CalculatePublishRate:
-    def __init__(self, name, testblock_name, min_observation_time, topic, groundtruth, mode, series_mode):
+    def __init__(self, name, testblock_name, min_observation_time, topic, groundtruth, mode, series_mode, unit):
         self.name = name
         self.testblock_name = testblock_name
         self.status = TestblockStatus()
@@ -66,6 +67,7 @@ class CalculatePublishRate:
         self.mode = mode
         self.series_mode = series_mode
         self.series = []
+        self.unit = unit
 
         self.start_time = None
         self.min_observation_time = min_observation_time
@@ -115,6 +117,7 @@ class CalculatePublishRate:
     def get_result(self):
         metric_result = MetricResult()
         metric_result.name = self.name
+        metric_result.unit = self.unit
         metric_result.mode = self.mode
         metric_result.status = self.status.status
         metric_result.series = []

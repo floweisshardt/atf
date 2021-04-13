@@ -23,6 +23,7 @@ class CalculateTfAccelerationTranslationParamHandler:
         :param params: Parameter
         """
         metric_type = "tf_acceleration_translation"
+        unit = "m/s^2"
 
         split_name = metric_name.split("::")
         if len(split_name) != 2:
@@ -53,10 +54,10 @@ class CalculateTfAccelerationTranslationParamHandler:
         except (TypeError, KeyError):
             series_mode = None
 
-        return CalculateTfAccelerationTranslation(metric_name, testblock_name, params["topics"], params["root_frame"], params["measured_frame"], groundtruth, mode, series_mode)
+        return CalculateTfAccelerationTranslation(metric_name, testblock_name, params["topics"], params["root_frame"], params["measured_frame"], groundtruth, mode, series_mode, unit)
 
 class CalculateTfAccelerationTranslation:
-    def __init__(self, name, testblock_name, topics, root_frame, measured_frame, groundtruth, mode, series_mode):
+    def __init__(self, name, testblock_name, topics, root_frame, measured_frame, groundtruth, mode, series_mode, unit):
         """
         Class for calculating the acceleration by the given frame in relation to a given root frame.
         The tf data is sent over the tf topics given in the test_config.yaml.
@@ -73,6 +74,7 @@ class CalculateTfAccelerationTranslation:
         self.mode = mode
         self.series_mode = series_mode
         self.series = []
+        self.unit = unit
 
         self.topics = topics
         self.root_frame = root_frame
@@ -172,6 +174,7 @@ class CalculateTfAccelerationTranslation:
     def get_result(self):
         metric_result = MetricResult()
         metric_result.name = self.name
+        metric_result.unit = self.unit
         metric_result.mode = self.mode
         metric_result.status = self.status.status
         metric_result.series = []
