@@ -60,6 +60,39 @@ testblock_small:
     - topics: [/tf, /tf_static]
       root_frame: world
       measured_frame: reference1_static
+  topic_data:
+    - topic: reference1/x
+      message_field: /data
+      unit: my_unit
+      suffix: snap
+      mode: 0
+      series_mode: True
+    - topic: reference1/x
+      message_field: /data
+      unit: my_other_unit
+      suffix: span_mean
+      mode: 1
+      series_mode: True
+    - topic: reference1/x
+      message_field: /data
+      suffix: span_min
+      mode: 2
+      series_mode: True
+    - topic: reference1/x
+      message_field: /data
+      suffix: span_absmin
+      mode: 3
+      series_mode: True
+    - topic: reference1/x
+      message_field: /data
+      suffix: span_max
+      mode: 4
+      series_mode: True
+    - topic: reference1/x
+      message_field: /data
+      suffix: span_absmax
+      mode: 5
+      series_mode: True
   publish_rate:
     - topic: topic1
     - topic: topic2
