@@ -6,10 +6,6 @@ from atf_metrics.error import ATFConfigurationError
 from atf_msgs.msg import MetricResult, Groundtruth, KeyValue, DataStamped, TestblockStatus
 from atf_metrics import metrics_helper
 
-#from rqt_plot import rosplot
-#import roslib
-#from std_msgs.msg import Bool
-
 class CalculateTopicDataParamHandler:
     def __init__(self):
         """
@@ -40,6 +36,10 @@ class CalculateTopicDataParamHandler:
             message_field = ""
 
         # check for optional parameters
+        try:
+            unit = params["unit"]
+        except (TypeError, KeyError):
+            unit = ""
         groundtruth = Groundtruth()
         try:
             groundtruth.data = params["groundtruth"]["data"]
@@ -58,10 +58,10 @@ class CalculateTopicDataParamHandler:
         except (TypeError, KeyError):
             series_mode = None
 
-        return CalculateTopicData(metric_name, testblock_name, params["topic"], message_field, groundtruth, mode, series_mode)
+        return CalculateTopicData(metric_name, testblock_name, params["topic"], message_field, groundtruth, mode, series_mode, unit)
 
 class CalculateTopicData:
-    def __init__(self, name, testblock_name, topic, message_field, groundtruth, mode, series_mode):
+    def __init__(self, name, testblock_name, topic, message_field, groundtruth, mode, series_mode, unit):
         self.name = name
         self.testblock_name = testblock_name
         self.status = TestblockStatus()
@@ -70,6 +70,7 @@ class CalculateTopicData:
         self.mode = mode
         self.series_mode = series_mode
         self.series = []
+        self.unit = unit
 
         if topic.startswith("/"): # we need to use global topics because rostopic.get_topic_class(topic) can not handle non-global topics and recorder will always record global topics starting with "/"
             self.topic = topic
@@ -162,6 +163,7 @@ class CalculateTopicData:
     def get_result(self):
         metric_result = MetricResult()
         metric_result.name = self.name
+        metric_result.unit = self.unit
         metric_result.mode = self.mode
         metric_result.status = self.status.status
         metric_result.series = []
