@@ -167,11 +167,12 @@ If you'd like to run tests using gazebo, you just setup a launch file which star
 catkin run_tests -j1
 ```
 
-For travis scripts using [industrial_ci](https://github.com/ros-industrial/industrial_ci) you can set the ```PARALLEL_TESTS``` environment variable:
+For github actions or travis scripts using [industrial_ci](https://github.com/ros-industrial/industrial_ci) you can set the ```PARALLEL_TESTS``` environment variable:
 ```
-env:
-  global:
-    - PARALLEL_TESTS=false
+jobs:
+  industrial_ci:
+    env:
+      PARALLEL_TESTS: 1
 ```
 
 ## How to use the ATF for benchmarking
