@@ -3,8 +3,8 @@ name: CI
 on:
   push:
   pull_request:
-#  schedule:
-#    - cron: "0 23 * * *" # everyday at 11pm
+  schedule:
+    - cron: "0 23 * * *" # everyday at 11pm
   workflow_dispatch:
 
 jobs:
