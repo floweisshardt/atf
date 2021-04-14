@@ -1,8 +1,8 @@
 # The Automated Test Framework (ATF)
 
-CI-Status ```master```: [![Build Status](https://github.com/floweisshardt/atf/workflows/CI/badge.svg?branch=master)](https://github.com/floweisshardt/atf/actions?query=workflow%3ACI)
+CI-Status ```master```: [![Build Status](https://github.com/floweisshardt/atf/workflows/CI/badge.svg?branch=master)](https://github.com/floweisshardt/atf/actions/workflows/main.yml?query=branch%3Amaster)
 
-CI-Status ```atf_test_apps/master```: [![Build Status](https://github.com/floweisshardt/atf_test_apps/workflows/CI/badge.svg?branch=master)](https://github.com/floweisshardt/atf_test_apps/actions?query=workflow%3ACI)
+CI-Status ```atf_test_apps/master```: [![Build Status](https://github.com/floweisshardt/atf_test_apps/workflows/CI/badge.svg?branch=master)](https://github.com/floweisshardt/atf_test_apps/actions/workflows/main.yml?query=branch%3Amaster)
 
 The ATF is a testing framework written for [ROS](http://www.ros.org/) which supports executing integration and system tests, running benchmarks and monitor the code behaviour over time. The ATF provides basic building blocks for easy integration of the tests into your application. Furthermore the ATF provides everything to automate the execution and analysis of tests as well as a graphical web-based frontend to visualize the results.
 
