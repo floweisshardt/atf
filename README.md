@@ -29,22 +29,25 @@ The following metrics have been implemented so far:
 
 | Metric        | Description   | Unit  | Mode (span, snap) |
 |:-------------:|:--------------|:-----:|:--------------------------:|
-| ```time```    | The ```time``` metric measures the elapsed time. | [sec] | span |
-| ```publish_rate``` | The ```publish_rate``` metric measures the publising rate of a topic   | [1/sec] | span |
 | ```interface``` | The ```interface``` metric checks if an interfaces (nodes, publishers, subscribers, service servers, action servers) matches its specification. | [bool] | snap |
+| ```publish_rate``` | The ```publish_rate``` metric measures the publising rate of a topic   | [1/sec] | span |
+| ```tf_acceleration_translation```   | The ```tf_acceleration_translation``` metric measures the cartesian acceleration of a TF frame with respect to another frame.    |  [m/s^2] |  span |
+| ```tf_distance_rotation```      | The ```tf_distance_rotation``` metric measures the cartesian angular distance of a TF frame with respect to another frame at the end of a testblock.    |  [rad] | snap |
 | ```tf_distance_translation```   | The ```tf_distance_translation``` metric measures the cartesian distance of a TF frame with respect to another frame at the end of a testblock.    |  [m] | snap |
-| ```tf_distance_rotation```      | The ```tf_distance_rotation``` metric measures the cartesian angular distance of a TF frame with respect to another frame at the end of a testblock.    |  [m] | snap |
+| ```tf_jerk_translation```   | The ```tf_jerk_translation``` metric measures the cartesian jerk of a TF frame with respect to another frame.    |  [m/s^3] |  span |
+| ```tf_length_rotation```        | The ```tf_length_rotation``` metric measures the cartesian angular path (angular distance integrated over time) of a TF frame with respect to another frame.    |  [rad] | span |
 | ```tf_length_translation```     | The ```tf_length_translation``` metric measures the cartesian path (distance integrated over time) of a TF frame with respect to another frame.    |  [m] | span |
-| ```tf_length_rotation```        | The ```tf_length_rotation``` metric measures the cartesian angular path (angular distance integrated over time) of a TF frame with respect to another frame.    |  [m] | span |
+| ```tf_velocity_translation```   | The ```tf_velocity_translation``` metric measures the cartesian velocity of a TF frame with respect to another frame.    |  [m/s] |  span |
+| ```time```    | The ```time``` metric measures the elapsed time. | [sec] | span |
+| ```topic_data```      | The ```topic_data``` metric fetches a numerical data filed from a message    |  [any] | span, snap |
 | ```user_result```      | The result for the ```user_result``` metric can be set from the user within the `application.py`.    |  [any] | span, snap |
+See full list of implemented metrics at https://github.com/floweisshardt/atf/tree/master/atf_metrics.
 
 Further metrics (in development):
 
 | Metric        | Description   | Unit  | Mode (span, snap) |
 |:-------------:|:--------------|:-----:|:--------------------------:|
 | ```resources```    | The ```resources``` metric measures the resource consumption of a node on the operating system level (CPU, RAM, IO). | [%], [MB], [MB/sec] | snap |
-| ```path_velocity```      | The ```path_velocity``` metric measures the cartesian velocity (distance differntiated over time) of a TF frame with respect to another frame.    |  [m/sec] | span |
-| ```distance```      | The ```distance``` metric measures the cartesian distance between two TF frames.    |  [m] | snap |
 | ```obstacle_distance``` | The ```obstacle_distance``` metric measures the distance between two meshes   | [m] | snap |
 | ```message_match``` | The ```message_match``` metric checks if a message content matches its desired content. | [bool] | snap |
 
