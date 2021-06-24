@@ -34,7 +34,7 @@ class Recorder():
         else:
             print("Could not find package '%s' in current CMAKE_PREFIX_PATH '%s'"%(pkg, cmake_prefix_path))
             sys.exit(1)
-        
+
         # get all recording files
         test_generation_config_file_replaced = test_generation_config_file
         # replace directory "/" with "_"
@@ -43,8 +43,11 @@ class Recorder():
         test_generation_config_file_replaced = test_generation_config_file_replaced.replace(".", "_")
         path_to_test_files = os.path.join(path_to_build_space, "test_generated", test_generation_config_file_replaced)
         filenames = glob.glob(os.path.join(path_to_test_files, "recording_*" + args.test + "*.test"))
-        filenames.sort() # sort tests alphabetically
-        print("found %d files for '%s':\n%s"%(len(filenames), pkg, str(filenames)))
+        if not filenames:
+            print("No files found using test generation config file '%s'" % test_generation_config_file)
+            sys.exit(1)
+        filenames.sort()  # sort tests alphabetically
+        print("found %d files for '%s':\n%s" % (len(filenames), pkg, str(filenames)))
 
         # record all
         counter = 1
