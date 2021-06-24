@@ -12,7 +12,7 @@ jobs:
     timeout-minutes: 30
     env:
       ADDITIONAL_DEBS: apt-utils git-core openssh-client openssh-server curl
-      AFTER_INIT: mkdir -p ~/.ssh && touch ~/.ssh/known_hosts && ssh-keyscan github.com >> ~/.ssh/known_hosts && git config --global url."https://token:${{secrets.GITHUBPAT}}@github.com/".insteadOf "https://github.com/" && curl -s https://packagecloud.io/install/repositories/github/git-lfs/script.deb.sh | bash && apt-get install git-lfs -y && cd $HOME && git lfs install && cd -
+      AFTER_INIT: mkdir -p ~/.ssh && touch ~/.ssh/known_hosts && ssh-keyscan github.com >> ~/.ssh/known_hosts && curl -s https://packagecloud.io/install/repositories/github/git-lfs/script.deb.sh | bash && apt-get install git-lfs -y && cd $HOME && git lfs install && cd -
       CATKIN_LINT: pedantic
       NOT_TEST_DOWNSTREAM: true
       PYLINT_ARGS: "--output-format=parseable --errors-only --ignored-modules=catkin_pkg.python_setup,lxml.etree,lxml.builder,matplotlib,numpy,progressbar,rospkg,six.moves.http_client,tf2_ros,yaml"
@@ -27,7 +27,7 @@ jobs:
         env:
           - {ROS_DISTRO: kinetic}
           - {ROS_DISTRO: melodic}
-          - {ROS_DISTRO: noetic, BEFORE_RUN_TARGET_TEST: apt install -y python3-osrf-pycommon} # manual installation of osrf-pycomm is a workaround for https://github.com/catkin/catkin_tools/issues/594#issuecomment-688149976
+          - {ROS_DISTRO: noetic, BEFORE_BUILD_TARGET_WORKSPACE: apt install -y python3-osrf-pycommon} # manual installation of osrf-pycomm is a workaround for https://github.com/catkin/catkin_tools/issues/594#issuecomment-688149976
     name: ${{matrix.env.ROS_DISTRO}}
     runs-on: ubuntu-latest
     steps:

@@ -12,6 +12,8 @@
 
     <buildtool_depend>catkin</buildtool_depend>
 
+    <exec_depend>rostest</exec_depend>
+
     <exec_depend>atf_core</exec_depend>
     <exec_depend>atf_test_tools</exec_depend>
     <exec_depend>rospy</exec_depend>
