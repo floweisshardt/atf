@@ -3,7 +3,7 @@ import rospy
 import rosgraph
 import rosservice
 import socket
-from six.moves.http_client import HTTPException
+from six.moves.http_client import HTTPException # pylint: disable=import-error
 
 from atf_msgs.msg import Api, NodeApi, InterfaceItem
 

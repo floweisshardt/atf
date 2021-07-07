@@ -1,16 +1,12 @@
 #!/usr/bin/env python
 import math
-import os
 import rospy
-import sys
-import tf
-import tf2_ros
 
 from atf_metrics.error import ATFConfigurationError
 from atf_msgs.msg import MetricResult, Groundtruth, KeyValue, DataStamped, TestblockStatus
 from atf_metrics import metrics_helper
 
-class CalculateTfLengthTranslationParamHandler:
+class CalculateTopicDataParamHandler:
     def __init__(self):
         """
         Class for returning the corresponding metric class with the given parameter.
@@ -22,8 +18,7 @@ class CalculateTfLengthTranslationParamHandler:
         Method that returns the metric method with the given parameter.
         :param params: Parameter
         """
-        metric_type = "tf_length_translation"
-        unit = "m"
+        metric_type = "topic_data"
 
         split_name = metric_name.split("::")
         if len(split_name) != 2:
@@ -35,7 +30,16 @@ class CalculateTfLengthTranslationParamHandler:
             rospy.logerr("metric config not a dictionary")
             raise ATFConfigurationError("no valid metric configuration for metric '%s' in testblock '%s': %s" %(metric_name, testblock_name, str(params)))
 
+        try:
+            message_field = params["message_field"]
+        except (TypeError, KeyError):
+            message_field = ""
+
         # check for optional parameters
+        try:
+            unit = params["unit"]
+        except (TypeError, KeyError):
+            unit = ""
         groundtruth = Groundtruth()
         try:
             groundtruth.data = params["groundtruth"]["data"]
@@ -48,24 +52,16 @@ class CalculateTfLengthTranslationParamHandler:
         try:
             mode = params["mode"]
         except (TypeError, KeyError):
-            mode = MetricResult.SNAP
+            mode = MetricResult.SPAN_MEAN
         try:
             series_mode = params["series_mode"]
         except (TypeError, KeyError):
             series_mode = None
 
-        return CalculateTfLengthTranslation(metric_name, testblock_name, params["topics"], params["root_frame"], params["measured_frame"], groundtruth, mode, series_mode, unit)
+        return CalculateTopicData(metric_name, testblock_name, params["topic"], message_field, groundtruth, mode, series_mode, unit)
 
-class CalculateTfLengthTranslation:
-    def __init__(self, name, testblock_name, topics, root_frame, measured_frame, groundtruth, mode, series_mode, unit):
-        """
-        Class for calculating the distance covered by the given frame in relation to a given root frame.
-        The tf data is sent over the tf topics given in the test_config.yaml.
-        :param root_frame: name of the first frame
-        :type  root_frame: string
-        :param measured_frame: name of the second frame. The distance will be measured in relation to the root_frame.
-        :type  measured_frame: string
-        """
+class CalculateTopicData:
+    def __init__(self, name, testblock_name, topic, message_field, groundtruth, mode, series_mode, unit):
         self.name = name
         self.testblock_name = testblock_name
         self.status = TestblockStatus()
@@ -76,14 +72,12 @@ class CalculateTfLengthTranslation:
         self.series = []
         self.unit = unit
 
-        self.topics = topics
-        self.root_frame = root_frame
-        self.measured_frame = measured_frame
-        self.trans_old = []
-        self.rot_old = []
-        self.time_old = None
-
-        self.t = tf.Transformer(True, rospy.Duration(10.0))
+        if topic.startswith("/"): # we need to use global topics because rostopic.get_topic_class(topic) can not handle non-global topics and recorder will always record global topics starting with "/"
+            self.topic = topic
+        else:
+            self.topic = "/" + topic
+        
+        self.message_field = message_field
 
     def start(self, status):
         self.status = status
@@ -92,69 +86,79 @@ class CalculateTfLengthTranslation:
         self.status = status
 
     def pause(self, status):
+        # TODO: Implement pause
         pass
 
     def purge(self, status):
+        # TODO: Implement purge as soon as pause is implemented
         pass
 
     def update(self, topic, msg, t):
-        # make sure we're handling a TFMessage (from /tf or /tf_static)
-        # TODO check type instead of topic names
-        if topic in self.topics:
-            for transform in msg.transforms:
-                self.t.setTransform(transform)
-
         # get data if testblock is active
         if self.status.status == TestblockStatus.ACTIVE:
-            raw_data = self.get_data(t)
-            if raw_data == None:
-                return
-            data = DataStamped()
-            data.stamp = t
-            if len(self.series) == 0:
-                data.data = round(raw_data, 6)
-            else:
-                data.data = round(self.series[-1].data + raw_data, 6)
-            self.series.append(data)  # FIXME handle fixed rates
+            if topic == self.topic:
+                ds = DataStamped()
+                ds.stamp = t
+                ds.data = self.get_data(msg)
+                self.series.append(ds)
 
-    def get_data(self, t):
+    # from rqt_plot/rosplot.py
+    def get_data(self, msg):
+        val = msg
+        field_evals = self.generate_field_evals(self.message_field)
         try:
-            sys.stdout = open(os.devnull, 'w') # supress stdout
-            (trans, rot) = self.t.lookupTransform(self.root_frame, self.measured_frame, rospy.Time(0))
-        except tf.LookupException as e:
-            sys.stdout = sys.__stdout__  # restore stdout
-            #print "Exception in metric '%s' %s %s"%(self.name, type(e), e)
-            return None
-        except tf.ExtrapolationException as e:
-            sys.stdout = sys.__stdout__  # restore stdout
-            #print "Exception in metric '%s' %s %s"%(self.name, type(e), e)
-            return None
-        except tf.ConnectivityException as e:
-            sys.stdout = sys.__stdout__  # restore stdout
-            #print "Exception in metric '%s' %s %s"%(self.name, type(e), e)
-            return None
+            if not field_evals:
+                if isinstance(val, bool):
+                    # extract boolean field from bool messages
+                    val = val.data
+                return float(val)
+            for f in field_evals:
+                val = f(val)
+            return float(val)
+        except IndexError:
+            raise ATFConfigurationError("[%s] index error for: %s" % (self.name, str(val).replace('\n', ', ')))
+        except TypeError:
+            raise ATFConfigurationError("[%s] value was not numeric: %s" % (self.name, val))
+
+    # from rqt_plot/rosplot.py
+    def generate_field_evals(self, fields):
+        try:
+            evals = []
+            fields = [f for f in fields.split('/') if f]
+            for f in fields:
+                if '[' in f:
+                    field_name, rest = f.split('[')
+                    slot_num = int(rest[:rest.find(']')])
+                    evals.append(self._array_eval(field_name, slot_num))
+                else:
+                    evals.append(self._field_eval(f))
+            return evals
         except Exception as e:
-            sys.stdout = sys.__stdout__  # restore stdout
-            print("general exeption in metric '%s':"%self.name, type(e), e)
-            return None
-        sys.stdout = sys.__stdout__  # restore stdout
+            raise ATFConfigurationError("cannot parse field reference [%s]: %s" % (fields, str(e)))
 
-        if self.time_old == None:
-            self.trans_old = trans
-            self.rot_old = rot
-            self.time_old = t
-            return None
+    # from rqt_plot/rosplot.py
+    def _array_eval(self, field_name, slot_num):
+        """
+        :param field_name: name of field to index into, ``str``
+        :param slot_num: index of slot to return, ``str``
+        :returns: fn(msg_field)->msg_field[slot_num]
+        """
+        def fn(f):
+            return getattr(f, field_name).__getitem__(slot_num)
+        return fn
 
-        path_increment = sum([(axis - axis_old)**2 for axis, axis_old in zip(trans, self.trans_old)])**0.5
-
-        self.trans_old = trans
-        self.rot_old = rot
-        self.time_old = t
-
-        return path_increment
+    # from rqt_plot/rosplot.py
+    def _field_eval(self, field_name):
+        """
+        :param field_name: name of field to return, ``str``
+        :returns: fn(msg_field)->msg_field.field_name
+        """
+        def fn(f):
+            return getattr(f, field_name)
+        return fn
 
     def get_topics(self):
-        return self.topics
+        return [self.topic]
 
     def get_result(self):
         metric_result = MetricResult()
@@ -176,10 +180,7 @@ class CalculateTfLengthTranslation:
         if len(self.series) == 0:
             # let the analyzer know that this test failed
             metric_result.groundtruth.result = Groundtruth.FAILED
-            metric_result.groundtruth.error_message = "testblock {} stopped without result. " \
-                                                      "No transforms found between {} & {}".format(self.testblock_name,
-                                                                                                   self.root_frame,
-                                                                                                   self.measured_frame)
+            metric_result.groundtruth.error_message = "testblock %s stopped without result"%self.testblock_name
             return metric_result
 
         # at this point we're sure that any result is available
@@ -193,8 +194,7 @@ class CalculateTfLengthTranslation:
 
         # fill details as KeyValue messages
         details = []
-        details.append(KeyValue("root_frame", self.root_frame))
-        details.append(KeyValue("measured_frame", self.measured_frame))
+        details.append(KeyValue("topic", self.topic))
         metric_result.details = details
 
         # evaluate metric data

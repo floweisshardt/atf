@@ -123,7 +123,7 @@ class ATFRecorder:
         self.tf_static_message = TFMessage()
 
         rospy.Timer(rospy.Duration(0.1), self.create_subscriber_callback)
-        rospy.Timer(rospy.Duration(0.1), self.tf_static_timer_callback)
+        rospy.Timer(rospy.Duration(0.05), self.tf_static_timer_callback)
 
         rospy.loginfo("ATF recorder: started!")
 

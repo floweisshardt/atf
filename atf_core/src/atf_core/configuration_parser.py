@@ -289,17 +289,15 @@ class ATFConfigurationParser:
                         continue
 
                     # use metric_name with unit
-                    if metric.unit == "":
-                        metric_name = metric.name
-                    else:
-                        metric_name = metric.name + "\n[" + metric.unit + "]"
+                    metric_name = metric.name + "\n[" + metric.unit + "]"
+                    metric_name_tbm = metric.name + " [" + metric.unit + "]"
 
                     # tbm
                     if test.name                 not in list(tbm.keys()):
                         tbm[test.name] = {}
                     if testblock.name            not in list(tbm[test.name].keys()):
                         tbm[test.name][testblock.name] = {}
-                    tbm[test.name][testblock.name][metric_name] = metric
+                    tbm[test.name][testblock.name][metric_name_tbm] = metric
 
                     # tmb
                     if test.name                 not in list(tmb.keys()):

@@ -95,6 +95,51 @@ testblock_small:
       groundtruth:
         data: 0
         epsilon: 0.1
+  topic_data:
+    - topic: reference1/x
+      message_field: /data
+      unit: my_unit
+      suffix: snap
+      mode: 0
+      groundtruth:
+        data: 0
+        epsilon: 1.0
+    - topic: reference1/x
+      message_field: /data
+      unit: my_other_unit
+      suffix: span_mean
+      mode: 1
+      groundtruth:
+        data: 0
+        epsilon: 0.01
+    - topic: reference1/x
+      message_field: /data
+      suffix: span_min
+      mode: 2
+      groundtruth:
+        data: -1.0
+        epsilon: 0.1
+    - topic: reference1/x
+      message_field: /data
+      suffix: span_absmin
+      mode: 3
+      groundtruth:
+        data: 0.0
+        epsilon: 0.1
+    - topic: reference1/x
+      message_field: /data
+      suffix: span_max
+      mode: 4
+      groundtruth:
+        data: 1.0
+        epsilon: 0.1
+    - topic: reference1/x
+      message_field: /data
+      suffix: span_absmax
+      mode: 5
+      groundtruth:
+        data: 1.0
+        epsilon: 0.1
   publish_rate:
     - topic: topic1
       groundtruth:
