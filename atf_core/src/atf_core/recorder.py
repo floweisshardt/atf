@@ -65,8 +65,8 @@ class ATFRecorder:
         start_time = rospy.Time.now()
         if test.robot_config != None and 'wait_timeout' in test.robot_config:
             if test.robot_config["wait_timeout"] > 0:
-                wait_timeout = rospy.Duration(test.robot_config["wait_timeout"])
-                rospy.loginfo("wait_timeout is set to %s", str(wait_timeout.to_sec()))
+                wait_timeout = test.robot_config["wait_timeout"]
+                rospy.loginfo("wait_timeout is set to %s", str(wait_timeout))
 
         if test.robot_config != None and 'wait_for_topics' in test.robot_config:
             for topic in test.robot_config["wait_for_topics"]:
@@ -106,7 +106,7 @@ class ATFRecorder:
                 if wait_timeout == None:
                     client.wait_for_server()
                 else:
-                    client.wait_for_server(wait_timeout)
+                    client.wait_for_server(rospy.Duration(wait_timeout))
                 rospy.loginfo("... action '%s' available.", action)
 
         if test.robot_config != None and 'wait_for_tfs' in test.robot_config:
@@ -151,8 +151,8 @@ class ATFRecorder:
         rospy.loginfo("ATF recorder: started!")
 
     def check_for_timeout(self, start_time, timeout):
-        if timeout != None and rospy.Time.now() - start_time > timeout:
-            msg = "... wait_timeout of %.1f sec exceeded."%timeout.to_sec()
+        if timeout != None and rospy.Time.now() - start_time > rospy.Duration(timeout):
+            msg = "... wait_timeout of %.1f sec exceeded."%timeout
             rospy.logerr(msg)
             raise ATFRecorderError(msg)
 

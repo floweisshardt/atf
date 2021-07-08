@@ -21,4 +21,3 @@ wait_for_services:
 wait_for_tfs:
   - [reference1_static, reference1] # [parent, child]
   - [reference1, reference1_static] # [parent, child]
-wait_timeout: 60
