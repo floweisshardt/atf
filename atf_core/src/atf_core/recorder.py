@@ -1,15 +1,16 @@
 #!/usr/bin/env python
+import os
 import roslib
 import rospy
 import rospkg
 import rostopic
 import rosbag
-import yaml
-import os
 import tf
 import tf2_ros
+import yaml
 
 from threading import Lock
+
 from tf2_msgs.msg import TFMessage
 from diagnostic_msgs.msg import DiagnosticStatus
 
@@ -17,7 +18,6 @@ from actionlib.simple_action_client import SimpleActionClient
 from atf_core.bagfile_helper import BagfileWriter
 from atf_core.error import ATFRecorderError
 import atf_recorder_plugins
-
 
 class ATFRecorder:
     def __init__(self, test):
@@ -119,7 +119,7 @@ class ATFRecorder:
                     try:
                         listener.waitForTransform(root_frame, measured_frame, rospy.Time(), rospy.Duration(1))
                         break # transform is available
-                    except tf2_ros.TransformException as e:
+                    except tf2_ros.TransformException as e: #pylint: disable=no-member
                         pass
                     rospy.logdebug("... waiting since %.1f sec for transformation from '%s' to '%s' to become available ..."%((rospy.Time.now() - start_time).to_sec(), root_frame, measured_frame))
                 rospy.loginfo("... transformation from '%s' to '%s' available.", root_frame, measured_frame)
