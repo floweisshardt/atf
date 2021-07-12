@@ -184,7 +184,7 @@ testblock_small:
 testblock_large:
   time:
     - groundtruth:
-        data: 5
+        data: 10
         epsilon: 0.5
   tf_length_translation:
     - topics: [/tf, /tf_static]
