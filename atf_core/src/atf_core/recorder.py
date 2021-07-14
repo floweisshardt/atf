@@ -213,6 +213,13 @@ class ATFRecorder:
                 msg_class = TFMessage
             else:
                 msg_class, _, _ = rostopic.get_topic_class(topic)
+            rospy.logdebug("received message class for topic %s: %s"%(topic, str(msg_class)))
+        except Exception as e:
+            msg = "Error while requesting message class for %s: %s."%(topic, e)
+            rospy.logerr(msg)
+            #raise ATFRecorderError(msg)
+            return None
+        try:
             subscriber = rospy.Subscriber(topic, msg_class, self.global_topic_callback, callback_args=topic)
             rospy.logdebug("created subsriber for topic %s", topic)
         except Exception as e:
