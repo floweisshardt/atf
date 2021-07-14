@@ -347,8 +347,8 @@ class ATFRecorder:
         return False
 
     def tf_static_timer_callback(self, event):
-            # republish latched /tf_static messages to /tf_static again
-            if "/tf_static" in list(self.active_topics.keys()):
-                for transform in self.tf_static_message.transforms:
-                    transform.header.stamp = rospy.Time.now()
-                self.bag_file_writer.write_to_bagfile("/tf_static", self.tf_static_message, rospy.Time.now())
+        # republish latched /tf_static messages to /tf_static again
+        if "/tf_static" in list(self.active_topics.keys()):
+            for transform in self.tf_static_message.transforms:
+                transform.header.stamp = rospy.Time.now()
+            self.bag_file_writer.write_to_bagfile("/tf_static", self.tf_static_message, rospy.Time.now())
