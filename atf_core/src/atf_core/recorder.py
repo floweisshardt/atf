@@ -13,7 +13,7 @@ from threading import Lock
 from rospy.exceptions import ROSException
 
 from tf2_msgs.msg import TFMessage
-from diagnostic_msgs.msg import DiagnosticStatus
+from diagnostic_msgs.msg import DiagnosticStatus, DiagnosticArray
 
 from actionlib.simple_action_client import SimpleActionClient
 from atf_core.bagfile_helper import BagfileWriter
@@ -58,7 +58,9 @@ class ATFRecorder:
 
         #rospy.Service(self.topic + "recorder_command", RecorderCommand, self.command_callback)
         self.diagnostics = None
+        self.diagnostics_agg = None
         rospy.Subscriber("/diagnostics_toplevel_state", DiagnosticStatus, self.diagnostics_callback)
+        rospy.Subscriber("/diagnostics_agg", DiagnosticArray, self.diagnostics_agg_callback)
         rospy.on_shutdown(self.shutdown)
         
         # wait for topics, services, actions and tfs to become active
@@ -145,8 +147,8 @@ class ATFRecorder:
         if test.robot_config != None and 'wait_for_diagnostics' in test.robot_config and test.robot_config["wait_for_diagnostics"]:
             rospy.loginfo("Waiting for diagnostics to become OK ...")
             r = rospy.Rate(100)
-            while not rospy.is_shutdown() and self.diagnostics != None and self.diagnostics.level != 0:
-                msg = "... wait_timeout of {} sec exceeded during wait_for_diagnostics:\n{}".format(wait_timeout, self.diagnostics)
+            while not rospy.is_shutdown() and self.diagnostics != None and self.diagnostics.level != DiagnosticStatus.OK:
+                msg = "... wait_timeout of {} sec exceeded during wait_for_diagnostics:\n{}".format(wait_timeout, self.diagnostics_agg)
                 self.check_for_timeout(start_time, wait_timeout, message=msg)
                 rospy.logdebug("... waiting since %.1f sec for diagnostics to become OK ...", (rospy.Time.now() - start_time).to_sec())
                 r.sleep()
@@ -191,6 +193,9 @@ class ATFRecorder:
 
     def diagnostics_callback(self, msg):
         self.diagnostics = msg
+
+    def diagnostics_agg_callback(self, msg):
+        self.diagnostics_agg = msg
 
     def shutdown(self):
         rospy.loginfo("Shutdown ATF recorder and close bag file.")
