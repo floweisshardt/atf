@@ -10,6 +10,7 @@ import tf2_ros
 import yaml
 
 from threading import Lock
+from rospy.exceptions import ROSException
 
 from tf2_msgs.msg import TFMessage
 from diagnostic_msgs.msg import DiagnosticStatus
@@ -70,25 +71,37 @@ class ATFRecorder:
 
         if test.robot_config != None and 'wait_for_topics' in test.robot_config:
             for topic in test.robot_config["wait_for_topics"]:
-                self.check_for_timeout(start_time, wait_timeout)
-                rospy.loginfo("Waiting for topic '%s'...", topic)
-                rospy.wait_for_message(topic, rospy.AnyMsg, wait_timeout)
-                rospy.loginfo("... got message on topic '%s'.", topic)
+                try:
+                    rospy.loginfo("Waiting for topic '%s'...", topic)
+                    rospy.wait_for_message(topic, rospy.AnyMsg, wait_timeout)
+                    rospy.loginfo("... got message on topic '%s'.", topic)
+                except ROSException as e:
+                    msg = "... wait_timeout of {} sec exceeded during wait_for_topics: {}".format(wait_timeout, e)
+                    rospy.logerr(msg)
+                    raise ATFRecorderError(msg)
 
         if test.robot_config != None and 'wait_for_services' in test.robot_config:
             for service in test.robot_config["wait_for_services"]:
-                self.check_for_timeout(start_time, wait_timeout)
-                rospy.loginfo("Waiting for service '%s'...", service)
-                rospy.wait_for_service(service, wait_timeout)
-                rospy.loginfo("... service '%s' available.", service)
+                try:
+                    rospy.loginfo("Waiting for service '%s'...", service)
+                    rospy.wait_for_service(service, wait_timeout)
+                    rospy.loginfo("... service '%s' available.", service)
+                except ROSException as e:
+                    msg = "... wait_timeout of {} sec exceeded during wait_for_services: {}".format(wait_timeout, e)
+                    rospy.logerr(msg)
+                    raise ATFRecorderError(msg)
 
         if test.robot_config != None and 'wait_for_actions' in test.robot_config:
             for action in test.robot_config["wait_for_actions"]:
-                self.check_for_timeout(start_time, wait_timeout)
                 rospy.loginfo("Waiting for action '%s'...", action)
 
-                # wait for action status topic
-                rospy.wait_for_message(action + "/status", rospy.AnyMsg, wait_timeout)
+                try:
+                    # wait for action status topic
+                    rospy.wait_for_message(action + "/status", rospy.AnyMsg, wait_timeout)
+                except ROSException as e:
+                    msg = "... wait_timeout of {} sec exceeded during wait_for_actions: {}".format(wait_timeout, e)
+                    rospy.logerr(msg)
+                    raise ATFRecorderError(msg)
 
                 # get action type of goal topic
                 topic_type = rostopic._get_topic_type(action + "/goal")[0]
@@ -104,18 +117,23 @@ class ATFRecorder:
 
                 # wait for action server
                 if wait_timeout == None:
-                    client.wait_for_server()
+                    success = client.wait_for_server()
                 else:
-                    client.wait_for_server(rospy.Duration(wait_timeout))
-                rospy.loginfo("... action '%s' available.", action)
+                    success = client.wait_for_server(rospy.Duration(wait_timeout))
+                if success:
+                    rospy.loginfo("... action '%s' available.", action)
+                else:
+                    msg = "... wait_timeout of {} sec exceeded during wait_for_actions: server not available".format(wait_timeout)
+                    rospy.logerr(msg)
+                    raise ATFRecorderError(msg)
 
         if test.robot_config != None and 'wait_for_tfs' in test.robot_config:
             listener = tf.TransformListener()
             for root_frame, measured_frame in test.robot_config["wait_for_tfs"]:
-                self.check_for_timeout(start_time, wait_timeout)
                 rospy.loginfo("Waiting for transformation from '%s' to '%s' ...", root_frame, measured_frame)
                 while not rospy.is_shutdown():
-                    self.check_for_timeout(start_time, wait_timeout)
+                    msg = "... wait_timeout of {} sec exceeded during wait_for_tfs".format(wait_timeout)
+                    self.check_for_timeout(start_time, wait_timeout, message=msg)
                     try:
                         listener.waitForTransform(root_frame, measured_frame, rospy.Time(), rospy.Duration(1))
                         break # transform is available
@@ -128,7 +146,8 @@ class ATFRecorder:
             rospy.loginfo("Waiting for diagnostics to become OK ...")
             r = rospy.Rate(100)
             while not rospy.is_shutdown() and self.diagnostics != None and self.diagnostics.level != 0:
-                self.check_for_timeout(start_time, wait_timeout)
+                msg = "... wait_timeout of {} sec exceeded during wait_for_diagnostics:\n{}".format(wait_timeout, self.diagnostics)
+                self.check_for_timeout(start_time, wait_timeout, message=msg)
                 rospy.logdebug("... waiting since %.1f sec for diagnostics to become OK ...", (rospy.Time.now() - start_time).to_sec())
                 r.sleep()
             rospy.loginfo("... diagnostics are OK.")
@@ -150,9 +169,9 @@ class ATFRecorder:
 
         rospy.loginfo("ATF recorder: started!")
 
-    def check_for_timeout(self, start_time, timeout):
+    def check_for_timeout(self, start_time, timeout, message=None):
         if timeout != None and rospy.Time.now() - start_time > rospy.Duration(timeout):
-            msg = "... wait_timeout of %.1f sec exceeded."%timeout
+            msg = message if message else "... wait_timeout of %.1f sec exceeded."%timeout
             rospy.logerr(msg)
             raise ATFRecorderError(msg)
 
