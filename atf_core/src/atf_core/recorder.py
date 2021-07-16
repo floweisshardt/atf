@@ -193,7 +193,7 @@ class ATFRecorder:
             rospy.logdebug("created subsriber for topic %s", topic)
         except Exception as e:
             msg = "Error while adding a subscriber for %s: %s."%(topic, e)
-            rospy.logerr(msg)
+            rospy.logdebug(msg)
             #raise ATFRecorderError(msg)
             return None
         return subscriber
