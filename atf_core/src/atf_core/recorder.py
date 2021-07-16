@@ -150,7 +150,7 @@ class ATFRecorder:
             rospy.loginfo("Waiting for diagnostics to become OK ...")
             r = rospy.Rate(100)
             while not rospy.is_shutdown() and self.diagnostics != None and self.diagnostics.level != DiagnosticStatus.OK:
-                msg = "... wait_timeout of {} sec exceeded during wait_for_diagnostics:\n{}".format(wait_timeout, self.diagnostics_agg)
+                msg = "... wait_timeout of {} sec exceeded during wait_for_diagnostics. Latest diagnostic failures are:\n{}".format(wait_timeout, self.filter_diagnostics_agg(self.diagnostics_agg))
                 self.check_for_timeout(start_time, wait_timeout, message=msg)
                 rospy.logdebug("... waiting since %.1f sec for diagnostics to become OK ...", (rospy.Time.now() - start_time).to_sec())
                 r.sleep()
@@ -198,6 +198,14 @@ class ATFRecorder:
 
     def diagnostics_agg_callback(self, msg):
         self.diagnostics_agg = msg
+
+    def filter_diagnostics_agg(self, diagnostics_agg):
+        diagnostics_agg_error_only = DiagnosticArray()
+        diagnostics_agg_error_only.header = diagnostics_agg.header
+        for status in diagnostics_agg.status:
+            if status.level != DiagnosticStatus.OK:
+                diagnostics_agg_error_only.status.append(status)
+        return diagnostics_agg_error_only
 
     def shutdown(self):
         rospy.loginfo("Shutdown ATF recorder and close bag file.")
