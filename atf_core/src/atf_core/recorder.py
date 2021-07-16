@@ -1,22 +1,24 @@
 #!/usr/bin/env python
+import os
 import roslib
 import rospy
 import rospkg
 import rostopic
 import rosbag
-import yaml
-import os
 import tf
+import tf2_ros
+import yaml
 
 from threading import Lock
+from rospy.exceptions import ROSException
+
 from tf2_msgs.msg import TFMessage
-from diagnostic_msgs.msg import DiagnosticStatus
+from diagnostic_msgs.msg import DiagnosticStatus, DiagnosticArray
 
 from actionlib.simple_action_client import SimpleActionClient
 from atf_core.bagfile_helper import BagfileWriter
 from atf_core.error import ATFRecorderError
 import atf_recorder_plugins
-
 
 class ATFRecorder:
     def __init__(self, test):
@@ -56,28 +58,54 @@ class ATFRecorder:
 
         #rospy.Service(self.topic + "recorder_command", RecorderCommand, self.command_callback)
         self.diagnostics = None
+        self.diagnostics_agg = None
         rospy.Subscriber("/diagnostics_toplevel_state", DiagnosticStatus, self.diagnostics_callback)
+        rospy.Subscriber("/diagnostics_agg", DiagnosticArray, self.diagnostics_agg_callback)
         rospy.on_shutdown(self.shutdown)
         
         # wait for topics, services, actions and tfs to become active
+        wait_timeout = None # None is infinite timeout
+        start_time = rospy.Time.now()
+        if test.robot_config != None and 'wait_timeout' in test.robot_config:
+            if test.robot_config["wait_timeout"] > 0:
+                wait_timeout = test.robot_config["wait_timeout"]
+                rospy.loginfo("wait_timeout is set to %s", str(wait_timeout))
+
         if test.robot_config != None and 'wait_for_topics' in test.robot_config:
             for topic in test.robot_config["wait_for_topics"]:
-                rospy.loginfo("Waiting for topic '%s'...", topic)
-                rospy.wait_for_message(topic, rospy.AnyMsg)
-                rospy.loginfo("... got message on topic '%s'.", topic)
+                try:
+                    rospy.loginfo("Waiting for topic '%s'...", topic)
+                    self.check_for_timeout(start_time, wait_timeout)
+                    rospy.wait_for_message(topic, rospy.AnyMsg, wait_timeout)
+                    rospy.loginfo("... got message on topic '%s'.", topic)
+                except ROSException as e:
+                    msg = "... wait_timeout of {} sec exceeded during wait_for_topics: {}".format(wait_timeout, e)
+                    rospy.logerr(msg)
+                    raise ATFRecorderError(msg)
 
         if test.robot_config != None and 'wait_for_services' in test.robot_config:
             for service in test.robot_config["wait_for_services"]:
-                rospy.loginfo("Waiting for service '%s'...", service)
-                rospy.wait_for_service(service)
-                rospy.loginfo("... service '%s' available.", service)
+                try:
+                    rospy.loginfo("Waiting for service '%s'...", service)
+                    self.check_for_timeout(start_time, wait_timeout)
+                    rospy.wait_for_service(service, wait_timeout)
+                    rospy.loginfo("... service '%s' available.", service)
+                except ROSException as e:
+                    msg = "... wait_timeout of {} sec exceeded during wait_for_services: {}".format(wait_timeout, e)
+                    rospy.logerr(msg)
+                    raise ATFRecorderError(msg)
 
         if test.robot_config != None and 'wait_for_actions' in test.robot_config:
             for action in test.robot_config["wait_for_actions"]:
                 rospy.loginfo("Waiting for action '%s'...", action)
-
-                # wait for action status topic
-                rospy.wait_for_message(action + "/status", rospy.AnyMsg)
+                self.check_for_timeout(start_time, wait_timeout)
+                try:
+                    # wait for action status topic
+                    rospy.wait_for_message(action + "/status", rospy.AnyMsg, wait_timeout)
+                except ROSException as e:
+                    msg = "... wait_timeout of {} sec exceeded during wait_for_actions: {}".format(wait_timeout, e)
+                    rospy.logerr(msg)
+                    raise ATFRecorderError(msg)
 
                 # get action type of goal topic
                 topic_type = rostopic._get_topic_type(action + "/goal")[0]
@@ -92,21 +120,39 @@ class ATFRecorder:
                 client = SimpleActionClient(action, roslib.message.get_message_class(topic_type))
 
                 # wait for action server
-                client.wait_for_server()
-                rospy.loginfo("... action '%s' available.", action)
+                if wait_timeout == None:
+                    success = client.wait_for_server()
+                else:
+                    success = client.wait_for_server(rospy.Duration(wait_timeout))
+                if success:
+                    rospy.loginfo("... action '%s' available.", action)
+                else:
+                    msg = "... wait_timeout of {} sec exceeded during wait_for_actions: server not available".format(wait_timeout)
+                    rospy.logerr(msg)
+                    raise ATFRecorderError(msg)
 
         if test.robot_config != None and 'wait_for_tfs' in test.robot_config:
             listener = tf.TransformListener()
             for root_frame, measured_frame in test.robot_config["wait_for_tfs"]:
                 rospy.loginfo("Waiting for transformation from '%s' to '%s' ...", root_frame, measured_frame)
-                listener.waitForTransform(root_frame, measured_frame, rospy.Time(), rospy.Duration(1))
+                while not rospy.is_shutdown():
+                    msg = "... wait_timeout of {} sec exceeded during wait_for_tfs".format(wait_timeout)
+                    self.check_for_timeout(start_time, wait_timeout, message=msg)
+                    try:
+                        listener.waitForTransform(root_frame, measured_frame, rospy.Time(), rospy.Duration(1))
+                        break # transform is available
+                    except tf2_ros.TransformException as e: #pylint: disable=no-member
+                        pass
+                    rospy.logdebug("... waiting since %.1f sec for transformation from '%s' to '%s' to become available ..."%((rospy.Time.now() - start_time).to_sec(), root_frame, measured_frame))
                 rospy.loginfo("... transformation from '%s' to '%s' available.", root_frame, measured_frame)
 
         if test.robot_config != None and 'wait_for_diagnostics' in test.robot_config and test.robot_config["wait_for_diagnostics"]:
             rospy.loginfo("Waiting for diagnostics to become OK ...")
             r = rospy.Rate(100)
-            while not rospy.is_shutdown() and self.diagnostics != None and self.diagnostics.level != 0:
-                rospy.logdebug("... waiting for diagnostics to become OK ...")
+            while not rospy.is_shutdown() and self.diagnostics != None and self.diagnostics.level != DiagnosticStatus.OK:
+                msg = "... wait_timeout of {} sec exceeded during wait_for_diagnostics. Latest diagnostic failures are:\n{}".format(wait_timeout, self.filter_diagnostics_agg(self.diagnostics_agg))
+                self.check_for_timeout(start_time, wait_timeout, message=msg)
+                rospy.logdebug("... waiting since %.1f sec for diagnostics to become OK ...", (rospy.Time.now() - start_time).to_sec())
                 r.sleep()
             rospy.loginfo("... diagnostics are OK.")
 
@@ -127,6 +173,12 @@ class ATFRecorder:
 
         rospy.loginfo("ATF recorder: started!")
 
+    def check_for_timeout(self, start_time, timeout, message=None):
+        if timeout != None and rospy.Time.now() - start_time > rospy.Duration(timeout):
+            msg = message if message else "... wait_timeout of %.1f sec exceeded."%timeout
+            rospy.logerr(msg)
+            raise ATFRecorderError(msg)
+
     def create_subscriber_callback(self, event):
         for testblock in self.test.testblocks:
             for topic in self.get_topics_of_testblock(testblock.name):
@@ -143,6 +195,17 @@ class ATFRecorder:
 
     def diagnostics_callback(self, msg):
         self.diagnostics = msg
+
+    def diagnostics_agg_callback(self, msg):
+        self.diagnostics_agg = msg
+
+    def filter_diagnostics_agg(self, diagnostics_agg):
+        diagnostics_agg_error_only = DiagnosticArray()
+        diagnostics_agg_error_only.header = diagnostics_agg.header
+        for status in diagnostics_agg.status:
+            if status.level != DiagnosticStatus.OK:
+                diagnostics_agg_error_only.status.append(status)
+        return diagnostics_agg_error_only
 
     def shutdown(self):
         rospy.loginfo("Shutdown ATF recorder and close bag file.")
@@ -164,7 +227,7 @@ class ATFRecorder:
             rospy.logdebug("created subsriber for topic %s", topic)
         except Exception as e:
             msg = "Error while adding a subscriber for %s: %s."%(topic, e)
-            rospy.logerr(msg)
+            rospy.logdebug(msg)
             #raise ATFRecorderError(msg)
             return None
         return subscriber
@@ -273,6 +336,7 @@ class ATFRecorder:
                 if not self.is_transform_in_tf_message(transform, self.tf_static_message):
                     self.tf_static_message.transforms.append(transform)
                     #rospy.loginfo("added to self.tf_static_message.transforms. len = %d", len(self.tf_static_message.transforms))
+            return # this prevents TF_REPEATED_DATA
         
         if name in list(self.active_topics.keys()):
             self.bag_file_writer.write_to_bagfile(name, msg, rospy.Time.now())
@@ -287,8 +351,8 @@ class ATFRecorder:
         return False
 
     def tf_static_timer_callback(self, event):
-            # republish latched /tf_static messages to /tf_static again
-            if "/tf_static" in list(self.active_topics.keys()):
-                for transform in self.tf_static_message.transforms:
-                    transform.header.stamp = rospy.Time.now()
-                self.bag_file_writer.write_to_bagfile("/tf_static", self.tf_static_message, rospy.Time.now())
+        # republish latched /tf_static messages to /tf_static again
+        if "/tf_static" in list(self.active_topics.keys()):
+            for transform in self.tf_static_message.transforms:
+                transform.header.stamp = rospy.Time.now()
+            self.bag_file_writer.write_to_bagfile("/tf_static", self.tf_static_message, rospy.Time.now())
