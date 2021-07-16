@@ -302,6 +302,7 @@ class ATFRecorder:
                 if not self.is_transform_in_tf_message(transform, self.tf_static_message):
                     self.tf_static_message.transforms.append(transform)
                     #rospy.loginfo("added to self.tf_static_message.transforms. len = %d", len(self.tf_static_message.transforms))
+            return # this prevents TF_REPEATED_DATA
         
         if name in list(self.active_topics.keys()):
             self.bag_file_writer.write_to_bagfile(name, msg, rospy.Time.now())
