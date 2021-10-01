@@ -41,9 +41,11 @@ testblock_small:
     - topics: [/tf, /tf_static]
       root_frame: world
       measured_frame: reference1
+      series_mode: True
     - topics: [/tf, /tf_static]
       root_frame: world
       measured_frame: reference1_static
+      series_mode: True
   tf_distance_translation:
     - topics: [/tf, /tf_static]
       root_frame: world
@@ -52,6 +54,7 @@ testblock_small:
     - topics: [/tf, /tf_static]
       root_frame: world
       measured_frame: reference1_static
+      series_mode: True
   tf_distance_rotation:
     - topics: [/tf, /tf_static]
       root_frame: world
@@ -60,6 +63,7 @@ testblock_small:
     - topics: [/tf, /tf_static]
       root_frame: world
       measured_frame: reference1_static
+      series_mode: True
   topic_data:
     - topic: reference1/x
       message_field: /data
@@ -155,16 +159,20 @@ testblock_large:
     - topics: [/tf, /tf_static]
       root_frame: world
       measured_frame: reference1
+      series_mode: True
     - topics: [/tf, /tf_static]
       root_frame: world
       measured_frame: reference1_static
+      series_mode: True
   tf_distance_rotation:
     - topics: [/tf, /tf_static]
       root_frame: world
       measured_frame: reference1
+      series_mode: True
     - topics: [/tf, /tf_static]
       root_frame: world
       measured_frame: reference1_static
+      series_mode: True
   publish_rate:
     - topic: /topic1
     - topic: /topic2
