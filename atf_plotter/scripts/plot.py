@@ -45,7 +45,7 @@ class AtfPlotter(object):
                 for metric in testblock.results:
                     print("    -", metric.name)
 
-    def plot_benchmark(self, style, sharey, hide_groundtruth, hide_min_max, filter_tests, filter_testblocks, filter_metrics):
+    def plot_benchmark(self, style, sharey, hide_title, hide_groundtruth, hide_min_max, filter_tests, filter_testblocks, filter_metrics):
 
         sorted_atf_results = ATFConfigurationParser().get_sorted_plot_dicts(self.atf_result, filter_tests, filter_testblocks, filter_metrics)
 
@@ -159,8 +159,10 @@ class AtfPlotter(object):
         fig.autofmt_xdate(rotation=45)
         plt.tight_layout()
 
-        title = "ATF result for %s"%(self.atf_result.name)
-        st = fig.suptitle(title, fontsize="large")
+        if not hide_title:
+            title = "ATF result for %s"%(self.atf_result.name)
+            st = fig.suptitle(title, fontsize="large")
+
         # shift subplots down:
         fig.subplots_adjust(top=0.90) # move top for title
 
@@ -184,8 +186,9 @@ if __name__ == '__main__':
     add_metric = lambda sp: sp.add_argument('--metric', '-m', type=str, dest='metric', default="", help='TBD')
     add_style = lambda sp: sp.add_argument('--style', '-s', type=str, dest='style', default='mbt', help='style, e.g. mbt (default), tmb, bmt, ...')
     add_sharey = lambda sp: sp.add_argument('--sharey', type=str, dest='sharey', default='none', help='share y axis for all plots. [none|all|row|col], default = none')
-    add_hide_groundtruth = lambda sp: sp.add_argument('--hide-groundtruth', dest='hide_groundtruth', action='store_true', help='hide groundtruth values even if goundtruth.available=True. default = False')
-    add_hide_min_max = lambda sp: sp.add_argument('--hide-min-max', dest='hide_min_max', action='store_true', help='hide min and max values even if mode=SPAN. default = False')
+    add_hide_title = lambda sp: sp.add_argument('--hide-title', '-ht', dest='hide_title', action='store_true', help='hide title. default = False')
+    add_hide_groundtruth = lambda sp: sp.add_argument('--hide-groundtruth', '-hg' ,dest='hide_groundtruth', action='store_true', help='hide groundtruth values even if goundtruth.available=True. default = False')
+    add_hide_min_max = lambda sp: sp.add_argument('--hide-min-max', '-hm', dest='hide_min_max', action='store_true', help='hide min and max values even if mode=SPAN. default = False')
 
     parser = argparse.ArgumentParser(
         conflict_handler='resolve',
@@ -198,6 +201,7 @@ if __name__ == '__main__':
     sub_parser = subparsers.add_parser('plot-benchmark', help='Visualize benchmark plots. Can be filtered via tests, testblocks and metrics. Style is a combination (order) of _t_est, test_b_lock and _m_etric')
     add_style(sub_parser)
     add_sharey(sub_parser)
+    add_hide_title(sub_parser)
     add_hide_groundtruth(sub_parser)
     add_hide_min_max(sub_parser)
     add_test(sub_parser)
@@ -229,6 +233,7 @@ if __name__ == '__main__':
         atf_plotter.plot_benchmark(
             style =                 argparse_result.style,
             sharey =                argparse_result.sharey,
+            hide_title =            argparse_result.hide_title,
             hide_groundtruth =      argparse_result.hide_groundtruth,
             hide_min_max =          argparse_result.hide_min_max,
             filter_tests =          argparse_result.test,
