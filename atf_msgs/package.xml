@@ -17,6 +17,12 @@
     <exec_depend>message_runtime</exec_depend>
 
     <depend>actionlib_msgs</depend>
+    <depend>rosbag_migration_rule</depend>
     <depend>std_msgs</depend>
+
+    <export>
+        <architecture_independent/>
+        <rosbag migration_rule_file="migration_rules/rule202005.bmr.py"/>
+    </export>
 
 </package>
