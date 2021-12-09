@@ -17,7 +17,7 @@ class Application:
         # FIXME: due to timing problem the first tf message is sometimes omitted
         #        so next line (pub_zero) is used as a workaround
         self.ptf.pub_zero()
-        self.ptf.pub_circ(radius=1, period_time=3)
+        self.ptf.pub_circ(radius=1, period_time=10)
 
         # user result
         metric_result = MetricResult()
@@ -26,9 +26,9 @@ class Application:
         metric_result.groundtruth.error_message = "all ok in application of atf_test"
         self.atf.stop("testblock_small", metric_result)
 
-        # large testblock (circle r=2, time=5)
+        # large testblock (circle r=2, time=10)
         self.atf.start("testblock_large")
-        self.ptf.pub_circ(radius=2, period_time=5)
+        self.ptf.pub_circ(radius=2, period_time=10)
 
         # user result
         metric_result = MetricResult()
