@@ -323,9 +323,11 @@ class ATFConfigurationParser:
                     # mtb
                     if metric_name            not in list(mtb.keys()):
                         mtb[metric_name] = {}
-                    if test.name              not in list(mtb[metric_name].keys()):
-                        mtb[metric_name][test.name] = {}
-                    mtb[metric_name][test.name][testblock.name] = metric
+                    #test_name = test.name
+                    test_name = test.name + "\n" + test.robot
+                    if test_name              not in list(mtb[metric_name].keys()):
+                        mtb[metric_name][test_name] = {}
+                    mtb[metric_name][test_name][testblock.name] = metric
 
         ret = {}
         ret['tbm'] = tbm
