@@ -4,6 +4,7 @@ project(atf_msgs)
 find_package(catkin REQUIRED COMPONENTS
     actionlib_msgs
     message_generation
+    rosbag_migration_rule
     std_msgs
 )
 
@@ -49,6 +50,7 @@ catkin_package(
     CATKIN_DEPENDS
         actionlib_msgs
         message_runtime
+        rosbag_migration_rule
         std_msgs
 )
 
