@@ -250,13 +250,13 @@ class ATFRecorder:
         #print ">>> start recording for %s, active_topics="%testblock_name, self.active_topics
         self.lock.release()
 
-        # Send message to all recorder plugins
+        # Send start message to all recorder plugins
         #print "self.recorder_plugin_list=", self.recorder_plugin_list
         for recorder_plugin in self.recorder_plugin_list:
             # filter the recorder plugins not needed for current trigger/testblock
             if recorder_plugin.name in list(self.test.testblockset_config[testblock_name].keys()):
                 #rospy.loginfo("recorder plugin callback for testblock: '%s'", testblock_name)
-                recorder_plugin.trigger_callback(testblock_name)
+                recorder_plugin.trigger_start_callback(testblock_name)
 
     def stop_recording(self, testblock_name):
         self.lock.acquire()
@@ -270,6 +270,14 @@ class ATFRecorder:
             #print "self.active_topics of topic '%s'"%topic, self.active_topics[topic]
             if len(self.active_topics[topic]) == 0:
                 self.active_topics.pop(topic)
+
+        # Send stop message to all recorder plugins
+        #print "self.recorder_plugin_list=", self.recorder_plugin_list
+        for recorder_plugin in self.recorder_plugin_list:
+            # filter the recorder plugins not needed for current trigger/testblock
+            if recorder_plugin.name in list(self.test.testblockset_config[testblock_name].keys()):
+                #rospy.loginfo("recorder plugin callback for testblock: '%s'", testblock_name)
+                recorder_plugin.trigger_stop_callback(testblock_name)
 
         #print "<<< stop recording for %s, active_topics="%testblock_name, self.active_topics
         self.lock.release()
