@@ -13,7 +13,10 @@ class RecordInterface:
         self.name = "interface"
         self.bag_file_writer = bag_file_writer
 
-    def trigger_callback(self, testblock_name):
+    def trigger_start_callback(self, testblock_name):
+        return None
+
+    def trigger_stop_callback(self, testblock_name):
         #print "RecordInterface testblock_name=", testblock_name
 
         publishers = {}
