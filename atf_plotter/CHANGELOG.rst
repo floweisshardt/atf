@@ -2,8 +2,8 @@
 Changelog for package atf_plotter
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.1.1 (2024-02-21)
+------------------
 * Merge pull request `#190 <https://github.com/floweisshardt/atf/issues/190>`_ from fmessmer/fix/python_shebang
   fix python shebang
 * fix python shebang

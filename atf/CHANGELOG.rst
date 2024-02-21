@@ -2,8 +2,8 @@
 Changelog for package atf
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.1.1 (2024-02-21)
+------------------
 * Merge pull request `#170 <https://github.com/floweisshardt/atf/issues/170>`_ from floweisshardt/feature/actions
   noetic with updated action config
 * roscompile noetic_migration

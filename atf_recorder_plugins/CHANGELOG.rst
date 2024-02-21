@@ -2,8 +2,8 @@
 Changelog for package atf_recorder_plugins
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.1.1 (2024-02-21)
+------------------
 * Merge pull request `#164 <https://github.com/floweisshardt/atf/issues/164>`_ from floweisshardt/feature/metric_topic_data
   new metric topic_data
 * ignore pylint import error

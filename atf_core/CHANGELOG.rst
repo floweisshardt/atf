@@ -2,8 +2,8 @@
 Changelog for package atf_core
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.1.1 (2024-02-21)
+------------------
 * Merge pull request `#191 <https://github.com/floweisshardt/atf/issues/191>`_ from floweisshardt/feature/disable_non_supported_OS
   disable kinetic and melodic
 * disable kinetic and melodic

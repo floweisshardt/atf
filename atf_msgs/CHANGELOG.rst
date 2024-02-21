@@ -2,8 +2,8 @@
 Changelog for package atf_msgs
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.1.1 (2024-02-21)
+------------------
 * Merge pull request `#181 <https://github.com/floweisshardt/atf/issues/181>`_ from floweisshardt/feature/add_units
   add units
 * add units
