@@ -4,7 +4,7 @@
   schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
     <name>atf_core</name>
-    <version>0.1.0</version>
+    <version>0.1.1</version>
     <description>ATF functionalities for generating tests, recording data, analysing data and aggregating results.</description>
 
     <maintainer email="florian.weisshardt@mojin-robotics.de">Florian Weisshardt</maintainer>
